@@ -3,11 +3,13 @@
 
 set -euo pipefail
 
+PROFILE="${1:-ai370}"
+MODE="${2:-safe}"
+PERSISTENCE="${3:-runtime}"
+
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
 STATUS_FILE="$LATEST_DIR/final-validation.txt"
-
-mkdir -p "$LATEST_DIR"
 
 status="PASS"
 
@@ -21,28 +23,34 @@ check_file() {
   fi
 }
 
-echo "[INFO] Running final validation..."
+main() {
+  echo "[INFO] Running final validation (profile=${PROFILE} mode=${MODE} persistence=${PERSISTENCE})..."
 
-check_file "$LATEST_DIR/hardware.json"
-check_file "$LATEST_DIR/gpu-acceleration-status.txt"
-check_file "$LATEST_DIR/npu-acceleration-status.txt"
-check_file "$LATEST_DIR/ai-stack-status.txt"
+  mkdir -p "$LATEST_DIR"
 
-echo
-echo "[INFO] Checking ONNX Runtime..."
+  check_file "$LATEST_DIR/hardware.json"
+  check_file "$LATEST_DIR/gpu-acceleration-status.txt"
+  check_file "$LATEST_DIR/npu-acceleration-status.txt"
+  check_file "$LATEST_DIR/ai-stack-status.txt"
 
-if [[ -x "$PROJECT_ROOT/.ai370-ai/venv/bin/python" ]]; then
-  "$PROJECT_ROOT/.ai370-ai/venv/bin/python" -c \
-    "import onnxruntime as ort; print('Providers:', ort.get_available_providers())" \
-    || status="FAIL"
-else
-  echo "[FAIL] Python AI environment missing"
-  status="FAIL"
-fi
+  echo
+  echo "[INFO] Checking ONNX Runtime..."
 
-echo
-echo "Final Status: $status" | tee "$STATUS_FILE"
+  if [[ -x "$PROJECT_ROOT/.ai370-ai/venv/bin/python" ]]; then
+    "$PROJECT_ROOT/.ai370-ai/venv/bin/python" -c \
+      "import onnxruntime as ort; print('Providers:', ort.get_available_providers())" \
+      || status="FAIL"
+  else
+    echo "[FAIL] Python AI environment missing"
+    status="FAIL"
+  fi
 
-if [[ "$status" == "FAIL" ]]; then
-  exit 3
-fi
+  echo
+  echo "Final Status: $status" | tee "$STATUS_FILE"
+
+  if [[ "$status" == "FAIL" ]]; then
+    exit 3
+  fi
+}
+
+main "$@"
