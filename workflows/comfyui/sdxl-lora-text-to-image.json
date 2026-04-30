@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    {"id": 1, "type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "model.safetensors"}},
+    {"id": 2, "type": "LoraLoader", "inputs": {"lora_name": "lora.safetensors"}},
+    {"id": 3, "type": "CLIPTextEncode", "inputs": {"text": "portrait, high detail"}},
+    {"id": 4, "type": "KSampler", "inputs": {"steps": 25}},
+    {"id": 5, "type": "VAEDecode"},
+    {"id": 6, "type": "SaveImage"}
+  ],
+  "links": [[1,2],[2,3],[3,4],[4,5],[5,6]]
+}
