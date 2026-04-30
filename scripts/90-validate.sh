@@ -16,37 +16,39 @@ status="PASS"
 check_file() {
   local file="$1"
   if [[ -f "$file" ]]; then
-    echo "[OK] $file"
+    echo "[INFO] Found: $file"
   else
-    echo "[FAIL] Missing: $file"
+    echo "[ERROR] Missing: $file"
     status="FAIL"
   fi
 }
 
 main() {
-  echo "[INFO] Running final validation (profile=${PROFILE} mode=${MODE} persistence=${PERSISTENCE})..."
-
   mkdir -p "$LATEST_DIR"
+
+  exec > >(tee "$STATUS_FILE") 2>&1
+
+  echo "[INFO] Running final validation (profile=${PROFILE} mode=${MODE} persistence=${PERSISTENCE})..."
 
   check_file "$LATEST_DIR/hardware.json"
   check_file "$LATEST_DIR/gpu-acceleration-status.txt"
   check_file "$LATEST_DIR/npu-acceleration-status.txt"
   check_file "$LATEST_DIR/ai-stack-status.txt"
 
-  echo
+  printf '\n'
   echo "[INFO] Checking ONNX Runtime..."
 
   if [[ -x "$PROJECT_ROOT/.ai370-ai/venv/bin/python" ]]; then
     "$PROJECT_ROOT/.ai370-ai/venv/bin/python" -c \
       "import onnxruntime as ort; print('Providers:', ort.get_available_providers())" \
-      || status="FAIL"
+      || { echo "[ERROR] ONNX Runtime check failed"; status="FAIL"; }
   else
-    echo "[FAIL] Python AI environment missing"
+    echo "[ERROR] Python AI environment missing: $PROJECT_ROOT/.ai370-ai/venv/bin/python"
     status="FAIL"
   fi
 
-  echo
-  echo "Final Status: $status" | tee "$STATUS_FILE"
+  printf '\n'
+  echo "Final Status: $status"
 
   if [[ "$status" == "FAIL" ]]; then
     exit 3
