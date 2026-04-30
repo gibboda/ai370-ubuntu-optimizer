@@ -1,0 +1,12 @@
+{
+  "nodes": [
+    {"id": 1, "type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "model.safetensors"}},
+    {"id": 2, "type": "CLIPTextEncode", "inputs": {"text": "a cinematic landscape, ultra detailed"}},
+    {"id": 3, "type": "KSampler", "inputs": {"steps": 20, "cfg": 7.5}},
+    {"id": 4, "type": "VAEDecode"},
+    {"id": 5, "type": "SaveImage"}
+  ],
+  "links": [
+    [1,2],[2,3],[3,4],[4,5]
+  ]
+}
