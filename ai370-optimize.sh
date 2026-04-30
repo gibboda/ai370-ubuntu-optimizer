@@ -16,16 +16,23 @@ usage() {
 Usage:
   ./ai370-optimize.sh audit [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh plan [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh install [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime|system]
-  ./ai370-optimize.sh validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime|system]
+  ./ai370-optimize.sh install [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh gpu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh npu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh guide [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh execute [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh comfyui [--profile=ai370] [--mode=safe] [--persistence=runtime]
+  ./ai370-optimize.sh validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh all [--profile=ai370] [--mode=safe] [--persistence=runtime]
 
 Defaults:
   profile     ai370
   mode        safe
   persistence runtime
 
-Safety:
-  system persistence is reserved for future persistent tuning and is blocked unless explicitly supported by a script.
+Notes:
+  Use --profile=generic-ryzen-ai only when intentionally broadening beyond strict AI370 validation.
+  system persistence is reserved for a future persistent tuning phase and is blocked by current scripts.
 USAGE
 }
 
@@ -59,6 +66,12 @@ require_file() {
   fi
 }
 
+run_script() {
+  local script="$1"
+  require_file "$PROJECT_ROOT/$script"
+  bash "$PROJECT_ROOT/$script" "$PROFILE" "$MODE" "$PERSISTENCE"
+}
+
 load_runtime_config() {
   require_file "$PROFILE_FILE"
   require_file "$MODE_FILE"
@@ -83,20 +96,52 @@ print_context
 
 case "$CMD" in
   audit)
-    bash "$PROJECT_ROOT/scripts/01-hardware-audit.sh" "$PROFILE" "$MODE" "$PERSISTENCE"
+    run_script "scripts/01-hardware-audit.sh"
     ;;
 
   plan)
-    bash "$PROJECT_ROOT/scripts/02-generate-report.sh" "$PROFILE" "$MODE" "$PERSISTENCE"
+    run_script "scripts/02-generate-report.sh"
     ;;
 
   install)
-    bash "$PROJECT_ROOT/scripts/10-amd-baseline.sh" "$PROFILE" "$MODE" "$PERSISTENCE"
-    bash "$PROJECT_ROOT/scripts/20-ai-stack.sh" "$PROFILE" "$MODE" "$PERSISTENCE"
+    run_script "scripts/10-amd-baseline.sh"
+    run_script "scripts/20-ai-stack.sh"
+    ;;
+
+  gpu)
+    run_script "scripts/30-rocm-igpu.sh"
+    ;;
+
+  npu)
+    run_script "scripts/40-ryzen-ai-npu.sh"
+    ;;
+
+  guide)
+    run_script "scripts/50-guided-acceleration.sh"
+    ;;
+
+  execute)
+    run_script "scripts/60-acceleration-execution.sh"
+    ;;
+
+  comfyui)
+    run_script "scripts/70-comfyui-workflows.sh"
     ;;
 
   validate)
-    bash "$PROJECT_ROOT/scripts/90-validate.sh" "$PROFILE" "$MODE" "$PERSISTENCE"
+    run_script "scripts/90-validate.sh"
+    ;;
+
+  all)
+    run_script "scripts/01-hardware-audit.sh"
+    run_script "scripts/02-generate-report.sh"
+    run_script "scripts/10-amd-baseline.sh"
+    run_script "scripts/20-ai-stack.sh"
+    run_script "scripts/30-rocm-igpu.sh"
+    run_script "scripts/40-ryzen-ai-npu.sh"
+    run_script "scripts/50-guided-acceleration.sh"
+    run_script "scripts/60-acceleration-execution.sh"
+    run_script "scripts/90-validate.sh"
     ;;
 
   help|-h|--help)
