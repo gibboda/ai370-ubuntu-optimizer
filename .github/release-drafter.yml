@@ -12,15 +12,26 @@ categories:
     labels:
       - 'enhancement'
       - 'feature'
+    title-filter: '^feat(\(.+\))?!?:'
   - title: '### Fixed'
     labels:
       - 'bug'
       - 'fix'
+    title-filter: '^fix(\(.+\))?!?:'
   - title: '### Changed'
     labels:
       - 'refactor'
       - 'chore'
       - 'improvement'
+    title-filter: '^(refactor|chore|perf)(\(.+\))?!?:'
+  - title: '### Documentation'
+    labels:
+      - 'documentation'
+    title-filter: '^docs(\(.+\))?!?:'
+  - title: '### CI/CD'
+    labels:
+      - 'ci'
+    title-filter: '^(ci|test)(\(.+\))?!?:'
 
 change-template: '- $TITLE (@$AUTHOR)'
 change-title-escapes: '\<*_&'
