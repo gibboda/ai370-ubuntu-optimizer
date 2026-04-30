@@ -10,65 +10,57 @@ Default profile:
 - AMD Ryzen AI 9 HX 370 / Strix Point
 - Radeon 890M integrated GPU
 - AMD XDNA2 NPU
-- LPDDR5X-7500 memory
-- PCIe 4.0 NVMe storage
-- BIOS 2.01 baseline
+
+## New: Local AI Workflows (ComfyUI)
+
+This repository now includes:
+
+- Prebuilt ComfyUI workflow templates
+- Local AI model directory structure
+- Safe CPU-first execution model
+
+### Run ComfyUI
+
+```bash
+./scripts/70-comfyui-workflows.sh
+./run-comfyui.sh
+```
+
+### Import workflows
+
+Drag files from:
+
+```text
+workflows/comfyui/
+```
+
+Into the ComfyUI interface.
+
+### Models location
+
+```text
+.ai370-ai/models/checkpoints/
+.ai370-ai/models/loras/
+.ai370-ai/models/controlnet/
+```
 
 ## Design Model
 
-This project is profile-based.
-
-The AI370 profile is the reference implementation, but the core engine is intentionally separated from device profiles so the project can be forked or extended later for other Ryzen AI systems.
-
-```text
-core engine + hardware audit + profile rules = safe optimization plan
-```
+Profile-based + hardware-aware optimization.
 
 ## Execution Order
 
 ```text
 1. Audit
-2. Generate Profile
-3. Plan
-4. Install
-5. Validate
-```
-
-The optimizer must never combine audit and install in one step.
-
-## Usage
-
-```bash
-./ai370-optimize.sh audit
-./ai370-optimize.sh plan --profile ai370
-./ai370-optimize.sh install --profile ai370
-./ai370-optimize.sh validate --profile ai370
-```
-
-## Repository Standards
-
-This repository uses:
-
-- Semantic Versioning
-- Conventional Commits
-- Gitmoji
-- Keep a Changelog
-- GPLv3 licensing
-
-Commit format:
-
-```text
-<gitmoji> <type>(scope): <summary>
-```
-
-Example:
-
-```text
-✨ feat(audit): add full AI370 hardware inventory script
+2. Plan
+3. Install
+4. Validate
+5. AI Runtime
+6. Acceleration Detection
+7. Guided Enablement
+8. ComfyUI Workflows
 ```
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 only.
-
-See [LICENSE](LICENSE) for details.
+GPLv3
