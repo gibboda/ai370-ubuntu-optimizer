@@ -16,7 +16,7 @@ This document captures four concrete follow-up tasks identified during a quick a
 
 ## 3) Documentation discrepancy task
 
-- **Issue**: `README.md` says this repository includes **"Prebuilt ComfyUI workflow templates"**, but the workflow JSON files are generic examples and don't document required model compatibility constraints.
+- **Issue**: The root `README.md` describes this repository as including **"Prebuilt ComfyUI workflow templates"** without linking to `workflows/comfyui/README.md`, which already clarifies these are starter/model-agnostic templates that may require model filename adjustments. The root README wording alone can mislead users into treating them as drop-in production templates.
 - **Task**: Clarify wording in `README.md` (e.g., "sample workflows") and add a short compatibility note linking to `workflows/comfyui/README.md`.
 - **Why it matters**: Reduces risk that users treat examples as drop-in production templates for all models.
 
