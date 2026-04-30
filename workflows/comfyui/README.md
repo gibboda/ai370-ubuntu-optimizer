@@ -45,3 +45,8 @@ Then drag one of the JSON files into the browser window.
 ## Notes
 
 These are starter templates. Model filenames inside the workflow may need to be changed to match the exact model files installed locally.
+
+
+## Production Workflows
+
+For real production graphs and benchmarking guidance, use files under `workflows/comfyui/production/`.

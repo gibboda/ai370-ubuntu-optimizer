@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "name": "SDXL Img2Img Production",
+    "version": "1.0",
+    "intent": "controlled variant generation for approved assets"
+  },
+  "nodes": [
+    {"id": 1, "type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "sd_xl_base_1.0.safetensors"}},
+    {"id": 2, "type": "LoadImage", "inputs": {"image": "input/reference.png"}},
+    {"id": 3, "type": "VAEEncode"},
+    {"id": 4, "type": "CLIPTextEncode", "inputs": {"text": "same framing, improved material definition, neutral background"}},
+    {"id": 5, "type": "CLIPTextEncode", "inputs": {"text": "heavy distortion, altered proportions"}},
+    {"id": 6, "type": "KSampler", "inputs": {"seed": 700123, "steps": 22, "cfg": 5.5, "sampler_name": "dpmpp_sde", "scheduler": "karras", "denoise": 0.42}},
+    {"id": 7, "type": "VAEDecode"},
+    {"id": 8, "type": "SaveImage", "inputs": {"filename_prefix": "prod/img2img"}}
+  ],
+  "links": [[1,6],[2,3],[3,6],[4,6],[5,6],[1,7],[6,7],[7,8]]
+}

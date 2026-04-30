@@ -1,6 +1,6 @@
 # Production ComfyUI Workflows
 
-These workflows are production-oriented templates for the AI370 local AI stack.
+These workflows are production-oriented ComfyUI graphs for the AI370 local AI stack, tuned for repeatable operations and benchmarkability.
 
 They are intentionally safe and model-name neutral:
 
@@ -35,3 +35,14 @@ They are intentionally safe and model-name neutral:
 Start in CPU-safe mode first. After Phase 5/6/7 validation succeeds, test GPU acceleration separately.
 
 The production workflows are structured for repeatability, but model compatibility is controlled by the local model files selected inside ComfyUI.
+
+
+## Benchmarking
+
+Run:
+
+```bash
+bash scripts/comfyui-benchmark.sh
+```
+
+See `benchmarking.md` for methodology and output artifact paths.

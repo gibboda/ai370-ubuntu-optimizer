@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "name": "SDXL LoRA Production",
+    "version": "1.0",
+    "intent": "style-constrained production generation"
+  },
+  "nodes": [
+    {"id": 1, "type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "sd_xl_base_1.0.safetensors"}},
+    {"id": 2, "type": "LoraLoader", "inputs": {"lora_name": "product_style_v1.safetensors", "strength_model": 0.8, "strength_clip": 0.8}},
+    {"id": 3, "type": "CLIPTextEncode", "inputs": {"text": "studio beauty shot, luxury packaging, premium matte texture"}},
+    {"id": 4, "type": "CLIPTextEncode", "inputs": {"text": "artifacting, duplicate object, low contrast"}},
+    {"id": 5, "type": "EmptyLatentImage", "inputs": {"width": 1024, "height": 1024, "batch_size": 2}},
+    {"id": 6, "type": "KSampler", "inputs": {"seed": 900011, "steps": 28, "cfg": 6.5, "sampler_name": "euler", "scheduler": "normal", "denoise": 1.0}},
+    {"id": 7, "type": "VAEDecode"},
+    {"id": 8, "type": "SaveImage", "inputs": {"filename_prefix": "prod/sdxl-lora"}}
+  ],
+  "links": [[1,2],[2,6],[3,6],[4,6],[5,6],[1,7],[6,7],[7,8]]
+}
