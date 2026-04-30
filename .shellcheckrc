@@ -1,0 +1,8 @@
+# shellcheck project-wide settings
+# https://www.shellcheck.net/wiki/Directive
+
+# Default shell dialect
+shell=bash
+
+# Follow sourced files when possible; use '# shellcheck source=/dev/null' inline when not
+external-sources=true
