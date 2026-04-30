@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.2.3)'
+        required: true
+      release_notes:
+        description: 'Release notes for CHANGELOG.md (optional)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine release tag
+        id: tag
+        shell: bash
+        env:
+          GH_EVENT_NAME: ${{ github.event_name }}
+          GH_DISPATCH_TAG: ${{ github.event.inputs.tag }}
+          GH_RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$GH_EVENT_NAME" == "workflow_dispatch" ]]; then
+            TAG="$GH_DISPATCH_TAG"
+          else
+            TAG="$GH_RELEASE_TAG"
+          fi
+          # Strip leading 'v' to get plain semver
+          VERSION="${TAG#v}"
+          echo "[INFO] Resolved tag: $TAG (version: $VERSION)"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Update VERSION file
+        shell: bash
+        env:
+          NEW_VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          set -euo pipefail
+          echo "[INFO] Writing VERSION: $NEW_VERSION"
+          echo "$NEW_VERSION" > VERSION
+
+      - name: Update CHANGELOG.md
+        uses: stefanzweifel/changelog-updater-action@v1
+        with:
+          latest-version: ${{ steps.tag.outputs.version }}
+          release-notes: ${{ github.event.inputs.release_notes || github.event.release.body }}
+
+      - name: Commit updated files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: release ${{ steps.tag.outputs.tag }} [skip ci]"
+          file_pattern: VERSION CHANGELOG.md
+          branch: main
+
+      - name: Move tag to release commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_EVENT_NAME: ${{ github.event_name }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          RELEASE_SHA="$(git rev-parse HEAD)"
+          echo "[INFO] Moving tag $TAG to commit $RELEASE_SHA"
+          git tag -f "$TAG" "$RELEASE_SHA"
+          git push origin "refs/tags/$TAG" --force
+
+          if [[ "$GH_EVENT_NAME" == "release" ]]; then
+            echo "[INFO] Updating GitHub Release $TAG target to $RELEASE_SHA"
+            gh release edit "$TAG" --target "$RELEASE_SHA"
+          fi
