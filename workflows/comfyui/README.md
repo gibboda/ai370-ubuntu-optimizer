@@ -50,3 +50,4 @@ These are starter templates. Model filenames inside the workflow may need to be 
 ## Production Workflows
 
 For real production graphs and benchmarking guidance, use files under `workflows/comfyui/production/`.
+These production JSONs may also include hard-coded local filenames or paths, so review and update them as needed for your environment before assuming they are drop-in runnable.

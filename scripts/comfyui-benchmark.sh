@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+
 set -euo pipefail
+
+# Accept standard repo positional args for interface consistency.
+# This synthetic benchmark script does not currently vary behavior by them.
+PROFILE="${1:-default}"
+MODE="${2:-production}"
+PERSISTENCE="${3:-ephemeral}"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="$ROOT/reports/latest"
 CSV="$OUT_DIR/comfyui-benchmark.csv"
 SUMMARY="$OUT_DIR/comfyui-benchmark-summary.md"
-
-mkdir -p "$OUT_DIR"
-
-echo "workflow,trial,seconds,images,images_per_min" > "$CSV"
 
 run_case() {
   local name="$1"
@@ -23,20 +27,28 @@ run_case() {
   done
 }
 
-# Replace with API-driven runtime probes when ComfyUI API execution is enabled.
-run_case "sdxl-base-production" 1 19
-run_case "sdxl-lora-production" 2 34
-run_case "img2img-production" 1 15
+main() {
+  mkdir -p "$OUT_DIR"
 
-{
-  echo "# ComfyUI Benchmark Summary"
-  echo
-  echo "Generated: $(date -Is)"
-  echo
-  echo "| Workflow | Avg Seconds | Avg Images/min |"
-  echo "|---|---:|---:|"
-  awk -F, 'NR>1{sec[$1]+=$3; ipm[$1]+=$5; n[$1]+=1} END{for (k in n) printf "| %s | %.2f | %.2f |\n", k, sec[k]/n[k], ipm[k]/n[k]}' "$CSV" | sort
-} > "$SUMMARY"
+  echo "workflow,trial,seconds,images,images_per_min" > "$CSV"
 
-echo "Wrote $CSV"
-echo "Wrote $SUMMARY"
+  # Replace with API-driven runtime probes when ComfyUI API execution is enabled.
+  run_case "sdxl-base-production" 1 19
+  run_case "sdxl-lora-production" 2 34
+  run_case "img2img-production" 1 15
+
+  {
+    echo "# ComfyUI Benchmark Summary"
+    echo
+    echo "Generated: $(date -Is)"
+    echo
+    echo "| Workflow | Avg Seconds | Avg Images/min |"
+    echo "|---|---:|---:|"
+    awk -F, 'NR>1{sec[$1]+=$3; ipm[$1]+=$5; n[$1]+=1} END{for (k in n) printf "| %s | %.2f | %.2f |\n", k, sec[k]/n[k], ipm[k]/n[k]}' "$CSV" | sort
+  } > "$SUMMARY"
+
+  echo "[INFO] Wrote $CSV"
+  echo "[INFO] Wrote $SUMMARY"
+}
+
+main "$@"

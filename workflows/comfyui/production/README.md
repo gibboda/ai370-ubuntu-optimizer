@@ -2,12 +2,12 @@
 
 These workflows are production-oriented ComfyUI graphs for the AI370 local AI stack, tuned for repeatable operations and benchmarkability.
 
-They are intentionally safe and model-name neutral:
+They are intentionally safe, but reference specific model filenames that must be present locally:
 
 - They do not assume ROCm is installed.
 - They do not assume XDNA2 NPU runtime is installed.
 - They are designed to be imported into ComfyUI after the `70-comfyui-workflows.sh` setup phase.
-- Model filenames must be adjusted in the ComfyUI UI to match locally installed files.
+- Hard-coded model filenames (e.g. `sd_xl_base_1.0.safetensors`, `product_style_v1.safetensors`) and input paths (e.g. `input/reference.png`) must be updated to match locally installed files before use.
 
 ## Included Workflows
 

@@ -12,8 +12,12 @@ This benchmark pack is meant for **real operational workflows**, not toy templat
 
 1. Warm up each workflow once.
 2. Run 5 measured trials per workflow.
-3. Capture wall clock seconds and compute throughput (images/min).
+3. Compute throughput (images/min) from placeholder timings (see note below).
 4. Use fixed seeds and fixed prompts for reproducibility.
+
+> **Note:** `scripts/comfyui-benchmark.sh` currently uses synthetic placeholder timings rather than
+> live wall-clock measurement. Replace the `run_case` calls with API-driven runtime probes once
+> ComfyUI queue API execution is enabled in your environment.
 
 ## Run Command
 
