@@ -141,6 +141,7 @@ case "$CMD" in
     run_script "scripts/40-ryzen-ai-npu.sh"
     run_script "scripts/50-guided-acceleration.sh"
     run_script "scripts/60-acceleration-execution.sh"
+    run_script "scripts/70-comfyui-workflows.sh"
     run_script "scripts/90-validate.sh"
     ;;
 
