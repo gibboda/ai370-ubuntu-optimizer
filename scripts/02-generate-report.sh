@@ -45,7 +45,7 @@ CPU_MODEL="$(lscpu 2>/dev/null | awk -F: '/Model name/ {gsub(/^[ \t]+/, "", $2);
 CPU_VENDOR="$(lscpu 2>/dev/null | awk -F: '/Vendor ID/ {gsub(/^[ \t]+/, "", $2); print $2; exit}')"
 CPU_CORES="$(lscpu 2>/dev/null | awk -F: '/^CPU\(s\)/ {gsub(/^[ \t]+/, "", $2); print $2; exit}')"
 KERNEL="$(uname -r 2>/dev/null || true)"
-OS_DESCRIPTION="$(lsb_release -ds 2>/dev/null || . /etc/os-release 2>/dev/null && echo "${PRETTY_NAME:-unknown}")"
+OS_DESCRIPTION="$(lsb_release -ds 2>/dev/null || { . /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-unknown}"; })"
 
 PCI_TEXT="$(lspci -nnk 2>/dev/null || true)"
 GPU_TEXT="$(printf '%s\n' "$PCI_TEXT" | grep -Ei 'vga|display|3d|radeon|amd/ati' || true)"
