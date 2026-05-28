@@ -31,6 +31,7 @@
 ## Checklist
 
 - [ ] PR title follows the Conventional Commits format (`type(scope): Subject`)
+- [ ] Commit subjects in this PR follow the Conventional Commits format (`type(scope): Subject`)
 - [ ] A `bump:patch`, `bump:minor`, or `bump:major` label has been applied
 - [ ] Changes are tested locally where applicable
 - [ ] `CHANGELOG.md` `[Unreleased]` section updated if needed

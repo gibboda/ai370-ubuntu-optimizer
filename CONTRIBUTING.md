@@ -3,13 +3,14 @@
 ## Commit message format
 
 This project uses **[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)**.
-Every PR title (which becomes the squash-merge commit message) **must** follow this format:
+Every PR title (which becomes the squash-merge commit message, with GitHub appending ` (#PR)` on merge) **must** follow this format:
 
 ```
 type(scope): Subject
 ```
 
 The subject must begin with an upper-case letter and describe the change concisely.
+Commit subjects pushed to a PR should follow the same convention so the branch history and final squash-merge commit stay consistent.
 
 ### Types
 
@@ -88,7 +89,7 @@ All scripts in this repository follow these conventions:
 2. Make your changes following the shell script standards above.
 3. Open a PR with a title that follows the Conventional Commits format.
 4. Apply the appropriate `bump:*` label.
-5. CI will validate the PR title automatically.
+5. CI will validate the PR title automatically and reject PR commits whose subjects do not follow the same convention.
 6. Once merged, release-drafter updates the draft release notes.
 7. When a GitHub Release is published, the `release.yml` workflow bumps `VERSION`
    and finalises `CHANGELOG.md` automatically.
