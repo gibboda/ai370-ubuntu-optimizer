@@ -1,0 +1,94 @@
+name: Grok PR Review (via GitHub Models)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  grok-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR details & diff
+        id: pr-info
+        run: |
+          echo "title=$(gh pr view ${{ github.event.pull_request.number }} --json title -q .title)" >> $GITHUB_OUTPUT
+          echo "body=$(gh pr view ${{ github.event.pull_request.number }} --json body -q .body || echo 'No description provided.')" >> $GITHUB_OUTPUT
+          gh pr diff ${{ github.event.pull_request.number }} > diff.txt
+
+      - name: Call Grok for review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python - << 'EOF'
+          import os
+          import requests
+
+          # Read diff (truncate if very large)
+          with open("diff.txt", "r") as f:
+              diff = f.read()[:90000]  # Grok 3 handles large context well
+
+          payload = {
+              "model": "grok-3",          # Try "grok-3-mini" for speed or other variants available in your Models tab
+              "messages": [
+                  {
+                      "role": "system",
+                      "content": "You are an expert senior software engineer. Be concise, constructive, truthful, and helpful."
+                  },
+                  {
+                      "role": "user",
+                      "content": f"""Review this Pull Request:
+
+          Title: {os.environ.get('PR_TITLE')}
+          Description: {os.environ.get('PR_BODY')}
+
+          Code diff:
+          {diff}
+
+          Provide:
+          • Overall summary
+          • Potential issues / bugs
+          • Improvement suggestions (style, performance, security, tests)
+          • Positive aspects
+          Keep it professional and actionable."""
+                  }
+              ],
+              "temperature": 0.3,
+              "max_tokens": 2000
+          }
+
+          response = requests.post(
+              "https://api.github.com/models/chat/completions",
+              headers={
+                  "Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}",
+                  "Content-Type": "application/json"
+              },
+              json=payload
+          )
+
+          if response.status_code != 200:
+              print("Error:", response.text)
+              exit(1)
+
+          review = response.json()["choices"][0]["message"]["content"]
+
+          # Post the review as a comment on the PR
+          requests.post(
+              f"https://api.github.com/repos/{os.getenv('GITHUB_REPOSITORY')}/issues/{os.getenv('PR_NUMBER')}/comments",
+              headers={"Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}"},
+              json={"body": f"### Grok Code Review\n\n{review}"}
+          )
+          print("✅ Grok review posted!")
+          EOF
+        env:
+          PR_TITLE: ${{ steps.pr-info.outputs.title }}
+          PR_BODY: ${{ steps.pr-info.outputs.body }}
