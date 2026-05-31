@@ -10,6 +10,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      models: read
 
     steps:
       - name: Checkout code
@@ -19,15 +20,31 @@ jobs:
 
       - name: Get PR details & diff
         id: pr-info
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "title=$(gh pr view ${{ github.event.pull_request.number }} --json title -q .title)" >> $GITHUB_OUTPUT
-          echo "body=$(gh pr view ${{ github.event.pull_request.number }} --json body -q .body || echo 'No description provided.')" >> $GITHUB_OUTPUT
+          echo "title=$(gh pr view ${{ github.event.pull_request.number }} --json title -q .title)" >> "$GITHUB_OUTPUT"
+          {
+            echo 'body<<PR_BODY_EOF'
+            gh pr view "${{ github.event.pull_request.number }}" --json body -q .body || echo 'No description provided.'
+            echo 'PR_BODY_EOF'
+          } >> "$GITHUB_OUTPUT"
           gh pr diff ${{ github.event.pull_request.number }} > diff.txt
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests
 
       - name: Call Grok for review
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ steps.pr-info.outputs.title }}
+          PR_BODY: ${{ steps.pr-info.outputs.body }}
         run: |
           python - << 'EOF'
           import os
@@ -38,7 +55,7 @@ jobs:
               diff = f.read()[:90000]  # Grok 3 handles large context well
 
           payload = {
-              "model": "grok-3",          # Try "grok-3-mini" for speed or other variants available in your Models tab
+              "model": "xai/grok-3",
               "messages": [
                   {
                       "role": "system",
@@ -66,10 +83,11 @@ jobs:
               "max_tokens": 2000
           }
 
+          auth_header = "Bearer " + os.getenv("GITHUB_TOKEN")
           response = requests.post(
-              "https://api.github.com/models/chat/completions",
+              "https://models.github.ai/inference/chat/completions",
               headers={
-                  "Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}",
+                  "Authorization": auth_header,
                   "Content-Type": "application/json"
               },
               json=payload
@@ -82,13 +100,13 @@ jobs:
           review = response.json()["choices"][0]["message"]["content"]
 
           # Post the review as a comment on the PR
-          requests.post(
+          comment_response = requests.post(
               f"https://api.github.com/repos/{os.getenv('GITHUB_REPOSITORY')}/issues/{os.getenv('PR_NUMBER')}/comments",
-              headers={"Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}"},
+              headers={"Authorization": auth_header},
               json={"body": f"### Grok Code Review\n\n{review}"}
           )
-          print("✅ Grok review posted!")
+          if comment_response.status_code != 201:
+              print("Error posting comment:", comment_response.text)
+              exit(1)
+          print("\u2705 Grok review posted!")
           EOF
-        env:
-          PR_TITLE: ${{ steps.pr-info.outputs.title }}
-          PR_BODY: ${{ steps.pr-info.outputs.body }}
