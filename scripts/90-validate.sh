@@ -30,7 +30,11 @@ main() {
 
   echo "[INFO] Running final validation (profile=${PROFILE} mode=${MODE} persistence=${PERSISTENCE})..."
 
+  check_file "$LATEST_DIR/hardware-inventory.json"
   check_file "$LATEST_DIR/hardware.json"
+  check_file "$LATEST_DIR/baseline-plan.json"
+  check_file "$LATEST_DIR/baseline-postcheck.json"
+  check_file "$LATEST_DIR/baseline-validation.txt"
   check_file "$LATEST_DIR/gpu-acceleration-status.txt"
   check_file "$LATEST_DIR/npu-acceleration-status.txt"
   check_file "$LATEST_DIR/ai-stack-status.txt"

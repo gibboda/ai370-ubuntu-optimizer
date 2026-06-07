@@ -35,6 +35,7 @@ jobs:
           # Optional scopes matching project script areas
           scopes: |
             audit
+            baseline
             amd
             ai-stack
             rocm
@@ -60,7 +61,7 @@ jobs:
         with:
           script: |
             const allowedTypes = ['feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci', 'perf'];
-            const allowedScopes = ['audit', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'workflows', 'release'];
+            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'workflows', 'release'];
             const commitSubjectPattern = new RegExp(
               `^(?:${allowedTypes.join('|')})(?:\\((?:${allowedScopes.join('|')})\\))?!?: [A-Z].+$`
             );
@@ -108,7 +109,7 @@ jobs:
                   'The following commit subjects do not follow the required format `type(scope): Subject`:',
                   ...invalidSubjects.map(({ sha, subject }) => `- ${sha} ${subject}`),
                   'Allowed types: feat, fix, chore, refactor, docs, test, ci, perf.',
-                  'Allowed scopes: audit, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, release.',
+                  'Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, release.',
                 ].join('\n')
               );
             }

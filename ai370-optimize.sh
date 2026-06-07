@@ -10,10 +10,16 @@ CMD="${1:-help}"
 PROFILE="ai370"
 MODE="safe"
 PERSISTENCE="runtime"
+DRY_RUN="false"
 
 usage() {
   cat <<'USAGE'
 Usage:
+  ./ai370-optimize.sh inventory [--profile=ai370] [--mode=safe] [--persistence=runtime]
+  ./ai370-optimize.sh baseline-plan [--profile=ai370] [--mode=safe] [--persistence=runtime]
+  ./ai370-optimize.sh baseline-apply [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--dry-run]
+  ./ai370-optimize.sh baseline-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh ai-runtime [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh audit [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh plan [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh install [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
@@ -32,6 +38,8 @@ Defaults:
 
 Notes:
   Use --profile=generic-ryzen-ai only when intentionally broadening beyond strict AI370 validation.
+  audit/plan/install remain backward-compatible aliases for inventory/baseline-plan/baseline-apply+baseline-validate+ai-runtime.
+  baseline-apply --dry-run prints the approved plan without installing packages.
   system persistence is reserved for a future persistent tuning phase and is blocked by current scripts.
 USAGE
 }
@@ -41,6 +49,7 @@ for arg in "$@"; do
     --profile=*) PROFILE="${arg#*=}" ;;
     --mode=*) MODE="${arg#*=}" ;;
     --persistence=*) PERSISTENCE="${arg#*=}" ;;
+    --dry-run) DRY_RUN="true" ;;
   esac
 done
 
@@ -68,8 +77,9 @@ require_file() {
 
 run_script() {
   local script="$1"
+  shift || true
   require_file "$PROJECT_ROOT/$script"
-  bash "$PROJECT_ROOT/$script" "$PROFILE" "$MODE" "$PERSISTENCE"
+  bash "$PROJECT_ROOT/$script" "$PROFILE" "$MODE" "$PERSISTENCE" "$@"
 }
 
 load_runtime_config() {
@@ -89,22 +99,38 @@ print_context() {
   echo "[INFO] Profile: $PROFILE"
   echo "[INFO] Mode: $MODE"
   echo "[INFO] Persistence: $PERSISTENCE"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo "[INFO] Dry run: true"
+  fi
 }
 
 load_runtime_config
 print_context
 
 case "$CMD" in
-  audit)
+  inventory|audit)
     run_script "scripts/01-hardware-audit.sh"
     ;;
 
-  plan)
+  baseline-plan|plan)
     run_script "scripts/02-generate-report.sh"
     ;;
 
+  baseline-apply)
+    run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
+    ;;
+
+  baseline-validate)
+    run_script "scripts/03-baseline-validate.sh"
+    ;;
+
+  ai-runtime)
+    run_script "scripts/20-ai-stack.sh"
+    ;;
+
   install)
-    run_script "scripts/10-amd-baseline.sh"
+    run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
+    run_script "scripts/03-baseline-validate.sh"
     run_script "scripts/20-ai-stack.sh"
     ;;
 
@@ -135,7 +161,8 @@ case "$CMD" in
   all)
     run_script "scripts/01-hardware-audit.sh"
     run_script "scripts/02-generate-report.sh"
-    run_script "scripts/10-amd-baseline.sh"
+    run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
+    run_script "scripts/03-baseline-validate.sh"
     run_script "scripts/20-ai-stack.sh"
     run_script "scripts/30-rocm-igpu.sh"
     run_script "scripts/40-ryzen-ai-npu.sh"
