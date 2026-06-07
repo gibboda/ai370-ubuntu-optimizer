@@ -11,6 +11,7 @@ PROFILE="ai370"
 MODE="safe"
 PERSISTENCE="runtime"
 DRY_RUN="false"
+OFFLINE="false"
 
 usage() {
   cat <<'USAGE'
@@ -19,14 +20,14 @@ Usage:
   ./ai370-optimize.sh baseline-plan [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh baseline-apply [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--dry-run]
   ./ai370-optimize.sh baseline-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh ai-runtime [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh ai-runtime [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh audit [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh plan [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh install [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh gpu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh npu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh guide [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh execute [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh gpu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh npu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh guide [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh execute [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh comfyui [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh all [--profile=ai370] [--mode=safe] [--persistence=runtime]
@@ -40,6 +41,7 @@ Notes:
   Use --profile=generic-ryzen-ai only when intentionally broadening beyond strict AI370 validation.
   audit/plan/install remain backward-compatible aliases for inventory/baseline-plan/baseline-apply+baseline-validate+ai-runtime.
   baseline-apply --dry-run prints the approved plan without installing packages.
+  --offline makes phases 4-7 use only local wheelhouse/artifact/tool/model inputs.
   system persistence is reserved for a future persistent tuning phase and is blocked by current scripts.
 USAGE
 }
@@ -50,6 +52,7 @@ for arg in "$@"; do
     --mode=*) MODE="${arg#*=}" ;;
     --persistence=*) PERSISTENCE="${arg#*=}" ;;
     --dry-run) DRY_RUN="true" ;;
+    --offline) OFFLINE="true" ;;
   esac
 done
 
@@ -102,6 +105,9 @@ print_context() {
   if [[ "$DRY_RUN" == "true" ]]; then
     echo "[INFO] Dry run: true"
   fi
+  if [[ "$OFFLINE" == "true" ]]; then
+    echo "[INFO] Offline mode: true"
+  fi
 }
 
 load_runtime_config
@@ -125,29 +131,29 @@ case "$CMD" in
     ;;
 
   ai-runtime)
-    run_script "scripts/20-ai-stack.sh"
+    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
     ;;
 
   install)
     run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
     run_script "scripts/03-baseline-validate.sh"
-    run_script "scripts/20-ai-stack.sh"
+    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
     ;;
 
   gpu)
-    run_script "scripts/30-rocm-igpu.sh"
+    run_script "scripts/30-rocm-igpu.sh" "$OFFLINE"
     ;;
 
   npu)
-    run_script "scripts/40-ryzen-ai-npu.sh"
+    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
     ;;
 
   guide)
-    run_script "scripts/50-guided-acceleration.sh"
+    run_script "scripts/50-guided-acceleration.sh" "$OFFLINE"
     ;;
 
   execute)
-    run_script "scripts/60-acceleration-execution.sh"
+    run_script "scripts/60-acceleration-execution.sh" "$OFFLINE"
     ;;
 
   comfyui)
@@ -163,11 +169,11 @@ case "$CMD" in
     run_script "scripts/02-generate-report.sh"
     run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
     run_script "scripts/03-baseline-validate.sh"
-    run_script "scripts/20-ai-stack.sh"
-    run_script "scripts/30-rocm-igpu.sh"
-    run_script "scripts/40-ryzen-ai-npu.sh"
-    run_script "scripts/50-guided-acceleration.sh"
-    run_script "scripts/60-acceleration-execution.sh"
+    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
+    run_script "scripts/30-rocm-igpu.sh" "$OFFLINE"
+    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
+    run_script "scripts/50-guided-acceleration.sh" "$OFFLINE"
+    run_script "scripts/60-acceleration-execution.sh" "$OFFLINE"
     run_script "scripts/70-comfyui-workflows.sh"
     run_script "scripts/90-validate.sh"
     ;;

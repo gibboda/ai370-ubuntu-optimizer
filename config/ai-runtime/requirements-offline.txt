@@ -1,0 +1,15 @@
+pip
+setuptools
+wheel
+numpy
+scipy
+pandas
+pillow
+psutil
+py-cpuinfo
+onnx
+onnxruntime
+transformers
+tokenizers
+safetensors
+huggingface-hub
