@@ -48,6 +48,32 @@ add_rule() {
   rule_messages+=("$4")
 }
 
+inventory_value() {
+  python3 - "$INVENTORY_JSON" "$1" <<'PY'
+import json, sys
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    value = json.load(fh)
+
+for part in sys.argv[2].split("."):
+    if isinstance(value, dict):
+        value = value.get(part, "")
+    else:
+        value = ""
+        break
+
+if isinstance(value, bool):
+    print("true" if value else "false")
+elif isinstance(value, list):
+    for item in value:
+        print(item)
+elif value is None:
+    print("")
+else:
+    print(value)
+PY
+}
+
 mark_warn() {
   if [[ "$status" == "PASS" ]]; then
     status="WARN"
@@ -60,29 +86,58 @@ mark_fail() {
   failures+=("$1")
 }
 
-CPU_MODEL="$(detect_cpu_model)"
-CPU_VENDOR="$(detect_cpu_vendor)"
-CPU_CORES="$(detect_cpu_logical)"
-KERNEL="$(detect_kernel)"
-OS_DESCRIPTION="$(detect_os_description)"
-OS_ID="$(detect_os_id)"
-OS_VERSION_ID="$(detect_os_version_id)"
-OS_CODENAME="$(detect_os_codename)"
-GPU_TEXT="$(detect_gpu_text)"
-GPU_ARCH_DETECTED="$(detect_gpu_arch "$GPU_TEXT")"
-AMDGPU_MODULE="$(detect_amdgpu_module)"
-VULKAN_SUMMARY="$(detect_vulkan_summary)"
-OPENCL_SUMMARY="$(detect_opencl_summary)"
-NPU_TEXT="$(detect_npu_module_text)"
-NPU_DEVICE_TEXT="$(detect_npu_device_text)"
-NPU_PRESENT="$(detect_npu_present "$NPU_TEXT" "$NPU_DEVICE_TEXT")"
-MEMORY_TOTAL="$(detect_memory_total)"
-STORAGE_TEXT="$(detect_storage_text)"
-BIOS_VERSION="$(detect_bios_version)"
-SYSTEM_PRODUCT="$(detect_system_product)"
-SYSTEM_VENDOR="$(detect_system_vendor)"
-POWER_PROFILES="$(detect_powerprofiles)"
-MISSING_TOOLS="$(collect_missing_tools)"
+if [[ -f "$INVENTORY_JSON" ]]; then
+  echo "[INFO] Loading hardware inventory from $INVENTORY_JSON"
+  CPU_MODEL="$(inventory_value "cpu.model")"
+  CPU_VENDOR="$(inventory_value "cpu.vendor")"
+  CPU_CORES="$(inventory_value "cpu.logical_cpus")"
+  KERNEL="$(inventory_value "system.kernel")"
+  OS_DESCRIPTION="$(inventory_value "system.os.description")"
+  OS_ID="$(inventory_value "system.os.id")"
+  OS_VERSION_ID="$(inventory_value "system.os.version_id")"
+  OS_CODENAME="$(inventory_value "system.os.codename")"
+  GPU_TEXT="$(inventory_value "gpu.pci_text")"
+  GPU_ARCH_DETECTED="$(inventory_value "gpu.arch")"
+  AMDGPU_MODULE="$(inventory_value "gpu.amdgpu_module_text")"
+  VULKAN_SUMMARY="$([[ "$(inventory_value "gpu.vulkan_visible")" == "true" ]] && echo inventory-visible || true)"
+  OPENCL_SUMMARY="$([[ "$(inventory_value "gpu.opencl_visible")" == "true" ]] && echo inventory-visible || true)"
+  NPU_TEXT="$(inventory_value "npu.module_text")"
+  NPU_DEVICE_TEXT="$(inventory_value "npu.device_text")"
+  NPU_PRESENT="$(inventory_value "npu.present")"
+  MEMORY_TOTAL="$(inventory_value "memory.total")"
+  STORAGE_TEXT="$(inventory_value "storage.devices_text")"
+  BIOS_VERSION="$(inventory_value "system.bios_version")"
+  SYSTEM_PRODUCT="$(inventory_value "system.product")"
+  SYSTEM_VENDOR="$(inventory_value "system.vendor")"
+  POWER_PROFILES="$(inventory_value "power.profiles_text")"
+  MISSING_TOOLS="$(inventory_value "tools.missing")"
+else
+  echo "[WARN] Missing hardware inventory: $INVENTORY_JSON"
+  echo "[WARN] Falling back to live hardware detection for baseline planning."
+  CPU_MODEL="$(detect_cpu_model)"
+  CPU_VENDOR="$(detect_cpu_vendor)"
+  CPU_CORES="$(detect_cpu_logical)"
+  KERNEL="$(detect_kernel)"
+  OS_DESCRIPTION="$(detect_os_description)"
+  OS_ID="$(detect_os_id)"
+  OS_VERSION_ID="$(detect_os_version_id)"
+  OS_CODENAME="$(detect_os_codename)"
+  GPU_TEXT="$(detect_gpu_text)"
+  GPU_ARCH_DETECTED="$(detect_gpu_arch "$GPU_TEXT")"
+  AMDGPU_MODULE="$(detect_amdgpu_module)"
+  VULKAN_SUMMARY="$(detect_vulkan_summary)"
+  OPENCL_SUMMARY="$(detect_opencl_summary)"
+  NPU_TEXT="$(detect_npu_module_text)"
+  NPU_DEVICE_TEXT="$(detect_npu_device_text)"
+  NPU_PRESENT="$(detect_npu_present "$NPU_TEXT" "$NPU_DEVICE_TEXT")"
+  MEMORY_TOTAL="$(detect_memory_total)"
+  STORAGE_TEXT="$(detect_storage_text)"
+  BIOS_VERSION="$(detect_bios_version)"
+  SYSTEM_PRODUCT="$(detect_system_product)"
+  SYSTEM_VENDOR="$(detect_system_vendor)"
+  POWER_PROFILES="$(detect_powerprofiles)"
+  MISSING_TOOLS="$(collect_missing_tools)"
+fi
 
 if [[ "${PROFILE_VALIDATION:-strict}" == "strict" ]]; then
   if [[ -n "${EXPECTED_CPU:-}" && "$CPU_MODEL" != *"$EXPECTED_CPU"* ]]; then

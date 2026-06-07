@@ -29,6 +29,7 @@ POST_CHECKS=()
 ALREADY_INSTALLED=()
 NEWLY_REQUESTED=()
 MISSING_BEFORE=()
+PLAN_EXPECTS_NPU="false"
 
 require_root_privilege() {
   if [[ "$DRY_RUN" == "true" ]]; then
@@ -69,6 +70,13 @@ PY
 import json, sys
 with open(sys.argv[1], encoding="utf-8") as fh:
     print(json.load(fh).get("validation", {}).get("status", "unknown"))
+PY
+  )"
+
+  PLAN_EXPECTS_NPU="$(python3 - "$BASELINE_PLAN_JSON" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as fh:
+    print("true" if json.load(fh).get("hardware", {}).get("npu_present") else "false")
 PY
   )"
 
@@ -120,7 +128,7 @@ require_phase2_pass() {
   fi
 
   if [[ "$status" == "WARN" || "$PLAN_STATUS" == "warn-only" ]]; then
-    echo "[WARN] Baseline plan contains warnings. Continuing with runtime-only SAFE baseline."
+    echo "[WARN] Baseline plan contains warnings. Continuing with the approved runtime baseline plan."
     sed -n '1,80p' "$VALIDATION_STATUS"
   fi
 }
@@ -218,11 +226,14 @@ write_postcheck_json() {
   npu_module="$(lsmod 2>/dev/null | grep -Ei 'amdxdna|xrt|xdna' || true)"
   npu_device="$(find /dev -maxdepth 2 \( -name 'accel*' -o -name '*xdna*' -o -name '*xrt*' \) 2>/dev/null || true)"
   post_status="PASS"
-  if [[ -z "$amdgpu" || -z "$vulkan" || -z "$opencl" || -z "$npu_module$npu_device" ]]; then
+  if [[ -z "$amdgpu" || -z "$vulkan" || -z "$opencl" ]]; then
+    post_status="WARN"
+  fi
+  if [[ "$PLAN_EXPECTS_NPU" == "true" && -z "$npu_module$npu_device" ]]; then
     post_status="WARN"
   fi
 
-  export kernel gpu_pci amdgpu vulkan opencl npu_module npu_device post_status DRY_RUN
+  export kernel gpu_pci amdgpu vulkan opencl npu_module npu_device post_status DRY_RUN PLAN_EXPECTS_NPU
   export ALREADY_INSTALLED_TEXT="$(printf '%s\n' "${ALREADY_INSTALLED[@]}")"
   export REQUESTED_TEXT="$(printf '%s\n' "${NEWLY_REQUESTED[@]}")"
   python3 - <<'PY' > "$BASELINE_POSTCHECK_JSON"
@@ -230,6 +241,9 @@ import json, os
 
 def env(name): return os.environ.get(name, "")
 def lines(name): return [x for x in env(name).splitlines() if x.strip()]
+npu_visible = bool(env("npu_module") or env("npu_device"))
+expects_npu = env("PLAN_EXPECTS_NPU") == "true"
+npu_status = "PASS" if npu_visible else ("WARN" if expects_npu else "SKIP")
 result={
   "status": env("post_status"),
   "dry_run": env("DRY_RUN") == "true",
@@ -239,7 +253,7 @@ result={
     "amdgpu_module": {"status": "PASS" if env("amdgpu") else "WARN", "text": env("amdgpu")},
     "vulkan": {"status": "PASS" if env("vulkan") else "WARN", "text": env("vulkan")},
     "opencl": {"status": "PASS" if env("opencl") else "WARN", "text": env("opencl")},
-    "npu_xdna": {"status": "PASS" if (env("npu_module") or env("npu_device")) else "WARN", "module_text": env("npu_module"), "device_text": env("npu_device")},
+    "npu_xdna": {"status": npu_status, "expected": expects_npu, "module_text": env("npu_module"), "device_text": env("npu_device")},
   },
   "packages": {"already_installed_before_apply": lines("ALREADY_INSTALLED_TEXT"), "requested_for_install": lines("REQUESTED_TEXT")},
 }

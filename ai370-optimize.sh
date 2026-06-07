@@ -38,7 +38,7 @@ Defaults:
 
 Notes:
   Use --profile=generic-ryzen-ai only when intentionally broadening beyond strict AI370 validation.
-  audit/plan/install remain backward-compatible aliases for inventory/baseline-plan/baseline-apply+ai-runtime.
+  audit/plan/install remain backward-compatible aliases for inventory/baseline-plan/baseline-apply+baseline-validate+ai-runtime.
   baseline-apply --dry-run prints the approved plan without installing packages.
   system persistence is reserved for a future persistent tuning phase and is blocked by current scripts.
 USAGE
@@ -130,6 +130,7 @@ case "$CMD" in
 
   install)
     run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
+    run_script "scripts/03-baseline-validate.sh"
     run_script "scripts/20-ai-stack.sh"
     ;;
 

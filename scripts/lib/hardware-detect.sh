@@ -5,6 +5,8 @@
 # The functions in this file are intentionally best-effort: missing tools should
 # be recorded as facts, not treated as fatal errors during inventory or planning.
 
+set -euo pipefail
+
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
 run_or_empty() {

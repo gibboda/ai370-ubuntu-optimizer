@@ -41,6 +41,8 @@ with open(sys.argv[2], encoding="utf-8") as fh:
     post=json.load(fh)
 if plan.get("plan_status") == "blocked":
     print("FAIL")
+elif post.get("dry_run"):
+    print("WARN")
 elif post.get("status") == "PASS":
     print("PASS")
 else:
@@ -56,6 +58,12 @@ PY
     echo "Inventory: $([[ -f "$INVENTORY_JSON" ]] && echo "$INVENTORY_JSON" || echo not-generated)"
     echo "Baseline plan: $BASELINE_PLAN_JSON"
     echo "Baseline postcheck: $BASELINE_POSTCHECK_JSON"
+    echo "Postcheck dry run: $(python3 - "$BASELINE_POSTCHECK_JSON" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as fh:
+    print("true" if json.load(fh).get("dry_run") else "false")
+PY
+)"
   } > "$BASELINE_VALIDATION_TXT"
 
   python3 - "$BASELINE_PLAN_JSON" "$BASELINE_POSTCHECK_JSON" "$INVENTORY_JSON" > "$BASELINE_VALIDATION_MD" <<'PY'
@@ -70,6 +78,7 @@ print()
 print(f"Plan status: {plan.get('plan_status', 'unknown')}")
 print(f"Validation status: {plan.get('validation', {}).get('status', 'unknown')}")
 print(f"Postcheck status: {post.get('status', 'unknown')}")
+print(f"Postcheck dry run: {post.get('dry_run', False)}")
 print(f"Inventory: {inventory_path if os.path.exists(inventory_path) else 'not-generated'}")
 print()
 print("## Postcheck results")
@@ -79,6 +88,8 @@ print()
 print("## Next steps")
 if plan.get("plan_status") == "blocked":
     print("- Resolve blocked validation rules before applying AI runtime or acceleration phases.")
+elif post.get("dry_run"):
+    print("- Run baseline-apply without --dry-run before proceeding to ai-runtime or acceleration phases.")
 elif post.get("status") == "PASS":
     print("- Proceed to ai-runtime if local Python AI packages are needed.")
     print("- Proceed to GPU/NPU detection before attempting acceleration enablement.")

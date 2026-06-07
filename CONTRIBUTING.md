@@ -34,6 +34,7 @@ Scope narrows the area of change:
 | Scope | Area |
 |---|---|
 | `audit` | `scripts/01-hardware-audit.sh` |
+| `baseline` | Baseline inventory/plan/validate flow |
 | `amd` | `scripts/10-amd-baseline.sh` |
 | `ai-stack` | `scripts/20-ai-stack.sh` |
 | `rocm` | `scripts/30-rocm-igpu.sh` |
