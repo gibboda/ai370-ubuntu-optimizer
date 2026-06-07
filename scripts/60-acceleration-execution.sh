@@ -43,7 +43,7 @@ generate_cpu_steps() {
 set -euo pipefail
 
 if [[ ! -x .ai370-ai/venv/bin/python ]]; then
-  echo '[FAIL] AI virtual environment not found. Run Phase 4 first.'
+  echo '[ERROR] AI virtual environment not found. Run Phase 4 first.'
   exit 3
 fi
 
@@ -53,7 +53,7 @@ import onnxruntime as ort
 providers = ort.get_available_providers()
 print('ONNX Runtime providers:', providers)
 if 'CPUExecutionProvider' not in providers:
-    raise SystemExit('[FAIL] CPUExecutionProvider is not available')
+    raise SystemExit('[ERROR] CPUExecutionProvider is not available')
 PY
 
 printf '%s\n' '[CPU] Step 2: Run local matrix and ONNX smoke benchmark'

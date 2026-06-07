@@ -59,7 +59,7 @@ detect_gpu_stack() {
   fi
 
   if command -v glxinfo >/dev/null 2>&1; then
-    mesa_state="$(glxinfo -B 2>/dev/null | awk -F: '/OpenGL version string/ {gsub(/^[ \t]+/, "", $2); print $2; exit}')"
+    mesa_state="$(glxinfo -B 2>/dev/null | awk -F: '/OpenGL version string/ {gsub(/^[ \t]+/, "", $2); print $2; exit}' || true)"
     [[ -z "$mesa_state" ]] && mesa_state="unknown"
   fi
 
