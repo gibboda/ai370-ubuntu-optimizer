@@ -16,21 +16,42 @@ OFFLINE="false"
 usage() {
   cat <<'USAGE'
 Usage:
-  ./ai370-optimize.sh inventory [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh baseline-plan [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh baseline-apply [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--dry-run]
-  ./ai370-optimize.sh baseline-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh ai-runtime [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh audit [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh plan [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh install [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh gpu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh npu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh guide [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh execute [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh comfyui [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh all [--profile=ai370] [--mode=safe] [--persistence=runtime]
+  ./ai370-optimize.sh hardware [--profile=ai370] [--mode=safe] [--persistence=runtime]
+  ./ai370-optimize.sh firmware [--profile=ai370] [--mode=safe] [--persistence=runtime]
+  ./ai370-optimize.sh kernel-amd [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--dry-run]
+  ./ai370-optimize.sh tune [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh accel-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh ai-bench [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh llm-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh comfyui-install [--profile=ai370] [--mode=safe] [--persistence=runtime]
+  ./ai370-optimize.sh comfyui-bench [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh final-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh all [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
+
+Requested nine-phase structure:
+  Phase 1  hardware          Hardware detection
+  Phase 2  firmware          BIOS / firmware baseline
+  Phase 3  kernel-amd        Kernel + AMD driver baseline
+  Phase 4  tune              CPU / RAM / storage tuning plan
+  Phase 5  accel-validate    ROCm / Vulkan / OpenCL / XDNA validation
+  Phase 6  ai-bench          Local AI benchmark suite
+  Phase 7  llm-validate      Ollama / llama.cpp validation
+  Phase 8  comfyui-install   ComfyUI installation
+  Phase 9  comfyui-bench     ComfyUI workflow benchmarking
+
+Backward-compatible aliases remain available:
+  inventory, audit        -> hardware
+  baseline-plan, plan     -> legacy baseline planning only
+  baseline-apply          -> legacy baseline apply only
+  baseline-validate       -> legacy baseline validation only
+  ai-runtime              -> ai-bench
+  gpu                     -> GPU half of accel-validate
+  npu                     -> NPU half of accel-validate
+  guide                   -> guided acceleration readiness plan
+  execute                 -> generated acceleration checklists
+  comfyui                 -> comfyui-install
+  validate                -> final-validate
+  install                 -> kernel-amd + ai-bench
 
 Defaults:
   profile     ai370
@@ -39,10 +60,9 @@ Defaults:
 
 Notes:
   Use --profile=generic-ryzen-ai only when intentionally broadening beyond strict AI370 validation.
-  audit/plan/install remain backward-compatible aliases for inventory/baseline-plan/baseline-apply+baseline-validate+ai-runtime.
-  baseline-apply --dry-run prints the approved plan without installing packages.
-  --offline makes phases 4-7 use only local wheelhouse/artifact/tool/model inputs.
-  system persistence is reserved for a future persistent tuning phase and is blocked by current scripts.
+  baseline-apply --dry-run and kernel-amd --dry-run print the approved plan without installing packages.
+  --offline makes phases 5-7 use only local wheelhouse/artifact/tool/model inputs where applicable.
+  system persistence is reserved for future persistent tuning and is blocked by current scripts.
 USAGE
 }
 
@@ -114,8 +134,47 @@ load_runtime_config
 print_context
 
 case "$CMD" in
-  inventory|audit)
+  hardware|inventory|audit)
     run_script "scripts/01-hardware-audit.sh"
+    ;;
+
+  firmware)
+    run_script "scripts/05-firmware-baseline.sh"
+    ;;
+
+  kernel-amd)
+    run_script "scripts/02-generate-report.sh"
+    run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
+    run_script "scripts/03-baseline-validate.sh"
+    ;;
+
+  tune)
+    run_script "scripts/25-system-tuning.sh"
+    ;;
+
+  accel-validate)
+    run_script "scripts/30-rocm-igpu.sh" "$OFFLINE"
+    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
+    ;;
+
+  ai-bench|ai-runtime)
+    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
+    ;;
+
+  llm-validate)
+    run_script "scripts/80-llm-validation.sh" "$OFFLINE"
+    ;;
+
+  comfyui-install|comfyui)
+    run_script "scripts/70-comfyui-workflows.sh"
+    ;;
+
+  comfyui-bench)
+    run_script "scripts/comfyui-benchmark.sh"
+    ;;
+
+  final-validate|validate)
+    run_script "scripts/90-validate.sh"
     ;;
 
   baseline-plan|plan)
@@ -130,11 +189,8 @@ case "$CMD" in
     run_script "scripts/03-baseline-validate.sh"
     ;;
 
-  ai-runtime)
-    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
-    ;;
-
   install)
+    run_script "scripts/02-generate-report.sh"
     run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
     run_script "scripts/03-baseline-validate.sh"
     run_script "scripts/20-ai-stack.sh" "$OFFLINE"
@@ -156,25 +212,19 @@ case "$CMD" in
     run_script "scripts/60-acceleration-execution.sh" "$OFFLINE"
     ;;
 
-  comfyui)
-    run_script "scripts/70-comfyui-workflows.sh"
-    ;;
-
-  validate)
-    run_script "scripts/90-validate.sh"
-    ;;
-
   all)
     run_script "scripts/01-hardware-audit.sh"
+    run_script "scripts/05-firmware-baseline.sh"
     run_script "scripts/02-generate-report.sh"
     run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
     run_script "scripts/03-baseline-validate.sh"
-    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
+    run_script "scripts/25-system-tuning.sh"
     run_script "scripts/30-rocm-igpu.sh" "$OFFLINE"
     run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
-    run_script "scripts/50-guided-acceleration.sh" "$OFFLINE"
-    run_script "scripts/60-acceleration-execution.sh" "$OFFLINE"
+    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
+    run_script "scripts/80-llm-validation.sh" "$OFFLINE"
     run_script "scripts/70-comfyui-workflows.sh"
+    run_script "scripts/comfyui-benchmark.sh"
     run_script "scripts/90-validate.sh"
     ;;
 

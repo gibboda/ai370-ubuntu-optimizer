@@ -315,7 +315,7 @@ write_baseline_report() {
 }
 
 main() {
-  echo "[INFO] Phase 3: Ubuntu baseline apply"
+  echo "[INFO] Phase 3: Kernel + AMD driver baseline apply"
   echo "[INFO] Profile: $PROFILE"
   echo "[INFO] Mode: $MODE"
   echo "[INFO] Persistence: $PERSISTENCE"

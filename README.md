@@ -15,64 +15,69 @@ Default profile:
 
 Profile-based + hardware-aware optimization.
 
-The early Ubuntu baseline flow is intentionally split into three auditable steps:
+The toolkit is organized into a nine-phase, audit-first flow. Hardware and firmware facts are captured before conservative kernel/AMD baseline work, tuning is runtime-only by default, and fragile acceleration stacks remain validation-gated. ROCm, XRT, Ryzen AI runtime packages, vendor binary installers, and model downloads are detected or guided; they are not installed automatically by the baseline, tuning, validation, or LLM phases.
 
-1. **Inventory** gathers the hardware and OS facts needed to configure Ubuntu.
-2. **Baseline plan** validates those facts against the selected profile and writes an explicit machine-readable Ubuntu baseline plan.
-3. **Baseline apply** implements only the validated baseline plan, then writes structured post-check results.
-
-This keeps fragile acceleration stacks separate from conservative Ubuntu baseline setup. ROCm, XRT, Ryzen AI runtime packages, and vendor binary installers are detected or guided later; they are not installed by the baseline phase.
-
-## Execution Order
+## Nine-Phase Execution Order
 
 ```text
-1. Inventory              ./ai370-optimize.sh inventory
-2. Baseline Plan          ./ai370-optimize.sh baseline-plan
-3. Baseline Apply         ./ai370-optimize.sh baseline-apply --dry-run
-                          ./ai370-optimize.sh baseline-apply
-4. Baseline Validate      ./ai370-optimize.sh baseline-validate
-5. AI Runtime             ./ai370-optimize.sh ai-runtime [--offline]
-6. Acceleration Detection ./ai370-optimize.sh gpu [--offline] && ./ai370-optimize.sh npu [--offline]
-7. Guided Enablement      ./ai370-optimize.sh guide [--offline] && ./ai370-optimize.sh execute [--offline]
-8. ComfyUI Workflows      ./ai370-optimize.sh comfyui
-9. Final Validate         ./ai370-optimize.sh validate
+Phase 1 — Hardware detection                 ./ai370-optimize.sh hardware
+Phase 2 — BIOS / firmware baseline           ./ai370-optimize.sh firmware
+Phase 3 — Kernel + AMD driver baseline       ./ai370-optimize.sh kernel-amd --dry-run
+                                             ./ai370-optimize.sh kernel-amd
+Phase 4 — CPU / RAM / storage tuning         ./ai370-optimize.sh tune
+Phase 5 — ROCm / Vulkan / OpenCL validation  ./ai370-optimize.sh accel-validate [--offline]
+Phase 6 — Local AI benchmark suite           ./ai370-optimize.sh ai-bench [--offline]
+Phase 7 — Ollama / llama.cpp validation      ./ai370-optimize.sh llm-validate [--offline]
+Phase 8 — ComfyUI installation               ./ai370-optimize.sh comfyui-install
+Phase 9 — ComfyUI workflow benchmarking      ./ai370-optimize.sh comfyui-bench
+Final validation                             ./ai370-optimize.sh final-validate
 ```
 
 Backward-compatible aliases remain available:
 
 ```text
-audit   -> inventory
-plan    -> baseline-plan
-install -> baseline-apply + ai-runtime
+inventory, audit    -> hardware
+baseline-plan, plan -> legacy baseline planning only
+baseline-apply      -> legacy baseline apply only
+baseline-validate   -> legacy baseline validation only
+ai-runtime          -> ai-bench
+gpu && npu          -> accel-validate components
+comfyui             -> comfyui-install
+validate            -> final-validate
+install             -> kernel-amd + ai-bench
 ```
 
-## Baseline Artifacts
+## Phase Artifacts
 
-The first phases communicate through `reports/latest/`:
+The phases communicate through `reports/latest/`:
 
-- `hardware-inventory.json` records structured hardware, OS, firmware, power, GPU, NPU, storage, and missing-tool facts.
-- `hardware.json` records validation rules and normalized detected hardware.
-- `baseline-plan.json` records package groups, runtime settings, post-checks, blocked actions, and recommendations.
-- `baseline-postcheck.json` records machine-readable results after baseline apply.
-- `baseline-validation.txt` and `baseline-validation.md` summarize whether the applied baseline is ready for AI runtime and acceleration detection.
+- `hardware-inventory.json`, `hardware-audit.txt`, and `hardware-summary.md` record structured Phase 1 hardware, OS, firmware, power, GPU, NPU, storage, and missing-tool facts.
+- `firmware-baseline.json` and `firmware-baseline.md` record Phase 2 BIOS, fwupd, and `linux-firmware` baseline state without applying firmware updates.
+- `hardware.json`, `baseline-plan.json`, `baseline-postcheck.json`, `baseline-validation.txt`, and `baseline-validation.md` record Phase 3 kernel/AMD baseline validation, approved packages, blocked actions, and post-checks.
+- `system-tuning-plan.json`, `system-tuning-plan.md`, and `runtime-tuning-commands.sh` record Phase 4 CPU/RAM/storage recommendations and reviewable runtime-only commands.
+- `gpu-capabilities.json`, `gpu-smoke-benchmark.md`, `npu-capabilities.json`, `npu-smoke-benchmark.md`, and `xrt-status.txt` record Phase 5 local ROCm/Vulkan/OpenCL/XDNA visibility.
+- `ai-runtime-benchmark.json` and `ai-runtime-benchmark.md` record Phase 6 CPU/ONNX Runtime smoke benchmarks.
+- `llm-validation.json` and `llm-validation.md` record Phase 7 local Ollama, llama.cpp, and GGUF model visibility.
+- `comfyui-status.txt` and `comfyui-workflow-guide.md` record Phase 8 installation paths and launch guidance.
+- `comfyui-benchmark.csv` and `comfyui-benchmark-summary.md` record Phase 9 workflow benchmark output.
 
 ## Offline AI Hardware Optimization Before ComfyUI
 
-Phases 4-7 can be run with `--offline` to focus on local CPU/iGPU/NPU readiness before any ComfyUI setup. Offline mode does not fetch packages, clone repositories, or install ROCm/XRT/Ryzen AI runtime stacks. It expects local artifacts to already be staged.
+Phases 5-7 can be run with `--offline` to focus on local CPU/iGPU/NPU/LLM readiness before any ComfyUI setup. Offline mode does not fetch packages, clone repositories, download models, or install ROCm/XRT/Ryzen AI runtime stacks. It expects local artifacts to already be staged.
 
 Default offline artifact paths are configured in `config/offline/ai-runtime.env`:
 
-- `.ai370-ai/wheelhouse/` for Python wheels used by Phase 4.
+- `.ai370-ai/wheelhouse/` for Python wheels used by Phase 6.
 - `config/ai-runtime/requirements-offline.txt` for the offline Python package list.
-- `.ai370-ai/models/` for local smoke-test and representative AI models.
-- `.ai370-ai/tools/` for local benchmark/helper binaries.
+- `.ai370-ai/models/` for local smoke-test, representative AI, and GGUF models.
+- `.ai370-ai/tools/` for local benchmark/helper binaries such as approved llama.cpp builds.
 
 Recommended offline-first flow:
 
 ```bash
-./ai370-optimize.sh ai-runtime --offline
-./ai370-optimize.sh gpu --offline
-./ai370-optimize.sh npu --offline
+./ai370-optimize.sh accel-validate --offline
+./ai370-optimize.sh ai-bench --offline
+./ai370-optimize.sh llm-validate --offline
 ./ai370-optimize.sh guide --offline
 ./ai370-optimize.sh execute --offline
 
@@ -82,28 +87,21 @@ bash reports/latest/gpu-enable-approved-steps.sh
 bash reports/latest/npu-enable-approved-steps.sh
 ```
 
-Important Phase 4-7 artifacts include:
+Run `./ai370-optimize.sh comfyui-install` only after these reports show the local AI runtime and hardware paths are stable.
 
-- `reports/latest/ai-runtime-benchmark.json` and `.md` for CPU/ONNX Runtime smoke benchmarks.
-- `reports/latest/gpu-capabilities.json` and `gpu-smoke-benchmark.md` for local iGPU visibility.
-- `reports/latest/npu-capabilities.json`, `npu-smoke-benchmark.md`, and `xrt-status.txt` for local NPU/XRT visibility.
-- `reports/latest/offline-hardware-readiness.md` and `.json` for the Phase 6 readiness matrix.
-- `reports/latest/offline-required-artifacts.md` for the staged artifact checklist.
-
-Run `./ai370-optimize.sh comfyui` only after these reports show the local AI runtime and hardware paths are stable.
-
-## New: Local AI Workflows (ComfyUI)
+## Local AI Workflows (ComfyUI)
 
 This repository includes:
 
-- Prebuilt ComfyUI workflow templates
+- Starter ComfyUI workflow templates
+- Production-oriented workflow examples
 - Local AI model directory structure
 - Safe CPU-first execution model
 
 ### Run ComfyUI
 
 ```bash
-./ai370-optimize.sh comfyui
+./ai370-optimize.sh comfyui-install
 ./run-comfyui.sh
 ```
 
@@ -124,6 +122,8 @@ Into the ComfyUI interface.
 .ai370-ai/models/loras/
 .ai370-ai/models/controlnet/
 ```
+
+The workflow templates are model-agnostic starters. Review `workflows/comfyui/README.md` and `workflows/comfyui/production/README.md` before treating any JSON workflow as drop-in runnable for your local model filenames.
 
 ## License
 
