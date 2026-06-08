@@ -52,9 +52,9 @@ main() {
 
 set -euo pipefail
 
-printf '%s\n' '[TUNE] Target power profile: $target_power'
+printf '%s\n' "[TUNE] Target power profile: $target_power"
 if command -v powerprofilesctl >/dev/null 2>&1; then
-  powerprofilesctl set '$target_power'
+  powerprofilesctl set "$target_power"
 else
   echo '[WARN] powerprofilesctl is unavailable.'
 fi

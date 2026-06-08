@@ -26,7 +26,7 @@ Usage:
   ./ai370-optimize.sh comfyui-install [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh comfyui-bench [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh final-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh all [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh all [--profile=ai370] [--mode=safe] [--persistence=runtime]
 
 Requested nine-phase structure:
   Phase 1  hardware          Hardware detection
@@ -213,6 +213,10 @@ case "$CMD" in
     ;;
 
   all)
+    if [[ "$OFFLINE" == "true" ]]; then
+      echo "[ERROR] Command 'all' does not support --offline. Run phases 5-7 individually with --offline."
+      exit 2
+    fi
     run_script "scripts/01-hardware-audit.sh"
     run_script "scripts/05-firmware-baseline.sh"
     run_script "scripts/02-generate-report.sh"
