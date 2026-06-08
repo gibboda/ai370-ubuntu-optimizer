@@ -9,7 +9,7 @@ Every PR title (which becomes the squash-merge commit message, with GitHub appen
 type(scope): Subject
 ```
 
-The subject must begin with an upper-case letter and describe the change concisely.
+The subject must begin with a letter and describe the change concisely.
 Commit subjects pushed to a PR should follow the same convention so the branch history and final squash-merge commit stay consistent.
 
 ### Types

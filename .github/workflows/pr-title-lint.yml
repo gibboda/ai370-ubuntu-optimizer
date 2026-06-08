@@ -46,9 +46,9 @@ jobs:
             workflows
             release
           requireScope: false
-          subjectPattern: ^[A-Z].+$
+          subjectPattern: ^[A-Za-z].+$
           subjectPatternError: |
-            The subject must start with an upper-case letter.
+            The subject must start with a letter.
             Example: "feat(comfyui): Add SDXL workflow template"
           wip: true
           validateSingleCommit: false
@@ -63,7 +63,7 @@ jobs:
             const allowedTypes = ['feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci', 'perf'];
             const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'workflows', 'release'];
             const commitSubjectPattern = new RegExp(
-              `^(?:${allowedTypes.join('|')})(?:\\((?:${allowedScopes.join('|')})\\))?!?: [A-Z].+$`
+              `^(?:${allowedTypes.join('|')})(?:\\((?:${allowedScopes.join('|')})\\))?!?: [A-Za-z].+$`
             );
             const workflowPath = '.github/workflows/pr-title-lint.yml';
 
@@ -110,6 +110,7 @@ jobs:
                   ...invalidSubjects.map(({ sha, subject }) => `- ${sha} ${subject}`),
                   'Allowed types: feat, fix, chore, refactor, docs, test, ci, perf.',
                   'Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, release.',
+                  'The subject must start with a letter.',
                 ].join('\n')
               );
             }
