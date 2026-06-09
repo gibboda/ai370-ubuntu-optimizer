@@ -10,7 +10,7 @@ type(scope): Subject
 ```
 
 The subject must begin with a letter and describe the change concisely.
-Commit subjects pushed to a PR should follow the same convention so the branch history and final squash-merge commit stay consistent.
+Commit subjects pushed to a PR should follow the same convention so the branch history and final squash-merge commit stay consistent. CI enforces this for multi-commit PRs; single-commit PRs rely on title lint.
 
 ### Types
 
@@ -90,7 +90,7 @@ All scripts in this repository follow these conventions:
 2. Make your changes following the shell script standards above.
 3. Open a PR with a title that follows the Conventional Commits format.
 4. Apply the appropriate `bump:*` label.
-5. CI will validate the PR title automatically and reject PR commits whose subjects do not follow the same convention.
+5. CI will validate the PR title automatically and reject commit subjects that do not follow the same convention on multi-commit PRs.
 6. Once merged, release-drafter updates the draft release notes.
 7. When a GitHub Release is published, the `release.yml` workflow bumps `VERSION`
    and finalises `CHANGELOG.md` automatically.

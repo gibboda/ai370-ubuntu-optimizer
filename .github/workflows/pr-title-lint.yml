@@ -130,6 +130,11 @@ jobs:
               per_page: 100,
             });
 
+            if (commits.length <= 1) {
+              core.info('Skipping commit-subject enforcement for single-commit PRs because the PR title lint already validates the squash-merge subject.');
+              return;
+            }
+
             const invalidSubjects = commits
               .map(({ sha, commit }) => ({
                 sha: sha.slice(0, 7),
