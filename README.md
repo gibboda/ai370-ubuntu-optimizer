@@ -28,9 +28,10 @@ Phase 4 — CPU / RAM / storage tuning         ./ai370-optimize.sh tune
 Phase 5 — ROCm / Vulkan / OpenCL validation  ./ai370-optimize.sh accel-validate [--offline]
 Phase 6 — Local AI benchmark suite           ./ai370-optimize.sh ai-bench [--offline]
 Phase 7 — Ollama / llama.cpp validation      ./ai370-optimize.sh llm-validate [--offline]
-Phase 8 — ComfyUI installation               ./ai370-optimize.sh comfyui-install
-Phase 9 — ComfyUI workflow benchmarking      ./ai370-optimize.sh comfyui-bench
-Final validation                             ./ai370-optimize.sh final-validate
+Phase 7.5 — Explicit AMD acceleration install ./ai370-optimize.sh amd-accel-install --accept-amd-acceleration-risk
+Phase 8 — ComfyUI installation                ./ai370-optimize.sh comfyui-install
+Phase 9 — ComfyUI workflow benchmarking       ./ai370-optimize.sh comfyui-bench
+Final validation                              ./ai370-optimize.sh final-validate
 ```
 
 Backward-compatible aliases remain available:
@@ -45,6 +46,7 @@ gpu && npu          -> accel-validate components
 comfyui             -> comfyui-install
 validate            -> final-validate
 install             -> kernel-amd + ai-bench
+full-ai-install     -> safe readiness + opt-in AMD acceleration + ComfyUI + validation
 ```
 
 ## Phase Artifacts
@@ -58,6 +60,7 @@ The phases communicate through `reports/latest/`:
 - `gpu-capabilities.json`, `gpu-smoke-benchmark.md`, `npu-capabilities.json`, `npu-smoke-benchmark.md`, and `xrt-status.txt` record Phase 5 local ROCm/Vulkan/OpenCL/XDNA visibility.
 - `ai-runtime-benchmark.json` and `ai-runtime-benchmark.md` record Phase 6 CPU/ONNX Runtime smoke benchmarks.
 - `llm-validation.json` and `llm-validation.md` record Phase 7 local Ollama, llama.cpp, and GGUF model visibility.
+- `amd-acceleration-install.json`, `amd-acceleration-install.md`, and `amd-acceleration-env.sh` record the explicit opt-in AMD acceleration installation state when Phase 7.5 is run.
 - `comfyui-status.txt` and `comfyui-workflow-guide.md` record Phase 8 installation paths and launch guidance.
 - `comfyui-benchmark.csv` and `comfyui-benchmark-summary.md` record Phase 9 workflow benchmark output.
 
@@ -88,6 +91,31 @@ bash reports/latest/npu-enable-approved-steps.sh
 ```
 
 Run `./ai370-optimize.sh comfyui-install` only after these reports show the local AI runtime and hardware paths are stable.
+
+## Opt-in Full AMD Acceleration Before ComfyUI
+
+The default flow remains conservative. If you explicitly want the toolkit to install AMD ROCm GPU packages plus staged XRT/Ryzen AI NPU artifacts before ComfyUI, use the risk-acknowledged acceleration phase:
+
+```bash
+# Online ROCm path; XRT/Ryzen AI artifacts still need to be staged locally.
+./ai370-optimize.sh amd-accel-install --accept-amd-acceleration-risk
+./ai370-optimize.sh accel-validate
+./ai370-optimize.sh comfyui-install
+```
+
+For an end-to-end safe-readiness + AMD-acceleration + ComfyUI flow:
+
+```bash
+./ai370-optimize.sh full-ai-install --accept-amd-acceleration-risk
+```
+
+Important constraints:
+
+- ROCm repository version, repository codename, package list, artifact paths, and ComfyUI acceleration mode are configured in `config/amd-acceleration.env`.
+- The default ROCm repository codename is `noble` because AMD's current package-manager examples target Ubuntu 24.04; update the config when AMD publishes a supported Ubuntu 26.04 repository.
+- Ryzen AI / XRT NPU packages are not fetched automatically from AMD account-gated download pages. Stage the required `.deb` files and `ryzen_ai-*.tgz` under `.ai370-ai/amd-artifacts/` or override `AMD_ARTIFACT_ROOT`.
+- ComfyUI is generated without `--cpu` only after the explicit AMD acceleration phase has completed and ROCm remains visible in the Phase 5 GPU validation report. Otherwise it stays CPU-safe.
+
 
 ## Local AI Workflows (ComfyUI)
 
