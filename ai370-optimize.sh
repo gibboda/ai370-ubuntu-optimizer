@@ -12,6 +12,7 @@ MODE="safe"
 PERSISTENCE="runtime"
 DRY_RUN="false"
 OFFLINE="false"
+ACCEPT_AMD_ACCELERATION_RISK="false"
 
 usage() {
   cat <<'USAGE'
@@ -23,6 +24,8 @@ Usage:
   ./ai370-optimize.sh accel-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh ai-bench [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh llm-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh amd-accel-install [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline] --accept-amd-acceleration-risk
+  ./ai370-optimize.sh full-ai-install [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] --accept-amd-acceleration-risk
   ./ai370-optimize.sh comfyui-install [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh comfyui-bench [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh final-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
@@ -36,6 +39,7 @@ Requested nine-phase structure:
   Phase 5  accel-validate    ROCm / Vulkan / OpenCL / XDNA validation
   Phase 6  ai-bench          Local AI benchmark suite
   Phase 7  llm-validate      Ollama / llama.cpp validation
+  Phase 7.5 amd-accel-install Explicit AMD GPU/NPU driver/runtime install
   Phase 8  comfyui-install   ComfyUI installation
   Phase 9  comfyui-bench     ComfyUI workflow benchmarking
 
@@ -61,7 +65,8 @@ Defaults:
 Notes:
   Use --profile=generic-ryzen-ai only when intentionally broadening beyond strict AI370 validation.
   baseline-apply --dry-run and kernel-amd --dry-run print the approved plan without installing packages.
-  --offline makes phases 5-7 use only local wheelhouse/artifact/tool/model inputs where applicable.
+  --offline makes phases 5-7 and amd-accel-install use only local wheelhouse/artifact/tool/model inputs where applicable.
+  --accept-amd-acceleration-risk is required before installing AMD ROCm/XRT/Ryzen AI stacks.
   system persistence is reserved for future persistent tuning and is blocked by current scripts.
 USAGE
 }
@@ -73,6 +78,7 @@ for arg in "$@"; do
     --persistence=*) PERSISTENCE="${arg#*=}" ;;
     --dry-run) DRY_RUN="true" ;;
     --offline) OFFLINE="true" ;;
+    --accept-amd-acceleration-risk) ACCEPT_AMD_ACCELERATION_RISK="true" ;;
   esac
 done
 
@@ -128,6 +134,9 @@ print_context() {
   if [[ "$OFFLINE" == "true" ]]; then
     echo "[INFO] Offline mode: true"
   fi
+  if [[ "$ACCEPT_AMD_ACCELERATION_RISK" == "true" ]]; then
+    echo "[INFO] AMD acceleration risk accepted: true"
+  fi
 }
 
 load_runtime_config
@@ -163,6 +172,10 @@ case "$CMD" in
 
   llm-validate)
     run_script "scripts/80-llm-validation.sh" "$OFFLINE"
+    ;;
+
+  amd-accel-install)
+    run_script "scripts/65-amd-acceleration-install.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     ;;
 
   comfyui-install|comfyui)
@@ -210,6 +223,33 @@ case "$CMD" in
 
   execute)
     run_script "scripts/60-acceleration-execution.sh" "$OFFLINE"
+    ;;
+
+  full-ai-install)
+    if [[ "$OFFLINE" == "true" ]]; then
+      echo "[ERROR] Command 'full-ai-install' does not support --offline because ComfyUI installation fetches upstream sources. Run individual offline phases instead."
+      exit 2
+    fi
+    if [[ "$ACCEPT_AMD_ACCELERATION_RISK" != "true" ]]; then
+      echo "[ERROR] Command 'full-ai-install' requires --accept-amd-acceleration-risk."
+      exit 2
+    fi
+    run_script "scripts/01-hardware-audit.sh"
+    run_script "scripts/05-firmware-baseline.sh"
+    run_script "scripts/02-generate-report.sh"
+    run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
+    run_script "scripts/03-baseline-validate.sh"
+    run_script "scripts/25-system-tuning.sh"
+    run_script "scripts/30-rocm-igpu.sh" "$OFFLINE"
+    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
+    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
+    run_script "scripts/80-llm-validation.sh" "$OFFLINE"
+    run_script "scripts/65-amd-acceleration-install.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
+    run_script "scripts/30-rocm-igpu.sh" "$OFFLINE"
+    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
+    run_script "scripts/70-comfyui-workflows.sh"
+    run_script "scripts/comfyui-benchmark.sh"
+    run_script "scripts/90-validate.sh"
     ;;
 
   all)

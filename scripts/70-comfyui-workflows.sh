@@ -16,6 +16,11 @@ STATUS_FILE="$LATEST_DIR/comfyui-status.txt"
 README_OUT="$LATEST_DIR/comfyui-workflow-guide.md"
 LAUNCH_SCRIPT="$PROJECT_ROOT/run-comfyui.sh"
 EXTRA_MODELS="$PROJECT_ROOT/config/comfyui/extra_model_paths.yaml"
+AMD_ACCEL_CONFIG="$PROJECT_ROOT/config/amd-acceleration.env"
+AMD_ACCEL_STATUS="$LATEST_DIR/amd-acceleration-install.json"
+GPU_STATUS="$LATEST_DIR/gpu-acceleration-status.txt"
+AMD_ACCEL_ENV="$LATEST_DIR/amd-acceleration-env.sh"
+COMFYUI_LAUNCH_MODE="cpu"
 
 require_runtime_persistence() {
   if [[ "$PERSISTENCE" == "system" ]]; then
@@ -78,7 +83,61 @@ ai370_local_models:
 EOF
 }
 
+read_status_value() {
+  local file="$1"
+  local key="$2"
+  if [[ -f "$file" ]]; then
+    awk -F': ' -v k="$key" '$1 == k {print $2; exit}' "$file"
+  fi
+}
+
+resolve_comfyui_launch_mode() {
+  local configured_mode rocm_state vulkan_state
+  configured_mode="auto"
+  if [[ -f "$AMD_ACCEL_CONFIG" ]]; then
+    # shellcheck source=/dev/null
+    source "$AMD_ACCEL_CONFIG"
+    configured_mode="${COMFYUI_ACCELERATION_MODE:-auto}"
+  fi
+
+  case "$configured_mode" in
+    cpu)
+      COMFYUI_LAUNCH_MODE="cpu"
+      ;;
+    rocm|gpu)
+      COMFYUI_LAUNCH_MODE="gpu"
+      ;;
+    auto)
+      rocm_state="$(read_status_value "$GPU_STATUS" "rocm")"
+      vulkan_state="$(read_status_value "$GPU_STATUS" "vulkan")"
+      if [[ -f "$AMD_ACCEL_STATUS" && "$rocm_state" == "visible" ]]; then
+        COMFYUI_LAUNCH_MODE="gpu"
+      elif [[ -f "$AMD_ACCEL_STATUS" && "$vulkan_state" == "visible" ]]; then
+        COMFYUI_LAUNCH_MODE="vulkan-ready"
+      else
+        COMFYUI_LAUNCH_MODE="cpu"
+      fi
+      ;;
+    *)
+      echo "[WARN] Unknown COMFYUI_ACCELERATION_MODE '$configured_mode'; using CPU-safe mode."
+      COMFYUI_LAUNCH_MODE="cpu"
+      ;;
+  esac
+}
+
 create_launch_script() {
+  local cpu_arg launch_note
+  resolve_comfyui_launch_mode
+  cpu_arg="--cpu"
+  launch_note="CPU-safe mode"
+  if [[ "$COMFYUI_LAUNCH_MODE" == "gpu" ]]; then
+    cpu_arg=""
+    launch_note="AMD GPU mode; ROCm was visible during validation"
+  elif [[ "$COMFYUI_LAUNCH_MODE" == "vulkan-ready" ]]; then
+    cpu_arg="--cpu"
+    launch_note="Vulkan visible but ROCm not validated for ComfyUI; keeping CPU-safe mode"
+  fi
+
   cat > "$LAUNCH_SCRIPT" <<EOF
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
@@ -88,13 +147,21 @@ set -euo pipefail
 COMFY_ROOT="$COMFY_ROOT"
 COMFY_VENV="$COMFY_VENV"
 OUTPUT_DIR="$AI_ROOT/outputs/comfyui"
+AMD_ACCEL_ENV="$AMD_ACCEL_ENV"
+LAUNCH_NOTE="$launch_note"
 
+if [[ -f "\$AMD_ACCEL_ENV" ]]; then
+  # shellcheck source=/dev/null
+  source "\$AMD_ACCEL_ENV"
+fi
+
+printf '%s\n' "[INFO] ComfyUI launch mode: \$LAUNCH_NOTE"
 cd "\$COMFY_ROOT"
 source "\$COMFY_VENV/bin/activate"
 
-# SAFE default: CPU mode avoids fragile AMD GPU assumptions.
-# Remove --cpu only after GPU acceleration is validated through Phase 5/6/7 reports.
-python main.py --cpu --listen 127.0.0.1 --port 8188 --output-directory "\$OUTPUT_DIR"
+# CPU mode is removed only when the opt-in AMD acceleration phase has completed and ROCm is visible.
+# shellcheck disable=SC2086
+python main.py $cpu_arg --listen 127.0.0.1 --port 8188 --output-directory "\$OUTPUT_DIR"
 EOF
   chmod +x "$LAUNCH_SCRIPT"
 }
@@ -113,6 +180,7 @@ write_reports() {
     echo "Workflow root: $AI_ROOT/workflows/comfyui"
     echo "Output root: $AI_ROOT/outputs/comfyui"
     echo "Launch script: $LAUNCH_SCRIPT"
+    echo "Launch mode: $COMFYUI_LAUNCH_MODE"
   } > "$STATUS_FILE"
 
   cat > "$README_OUT" <<EOF
@@ -158,7 +226,7 @@ Place models here:
 
 The generated launcher starts ComfyUI with \`--cpu\` by default. This prevents unstable AMD iGPU/ROCm assumptions.
 
-After GPU validation succeeds, review and edit \`run-comfyui.sh\` manually to remove \`--cpu\` or add an approved AMD acceleration path.
+If \`./ai370-optimize.sh amd-accel-install --accept-amd-acceleration-risk\` completes and ROCm remains visible in Phase 5 validation, the launcher is generated without \`--cpu\` and sources \`reports/latest/amd-acceleration-env.sh\`. Otherwise it stays CPU-safe.
 
 ## Recommended local workflow order
 
@@ -167,10 +235,10 @@ After GPU validation succeeds, review and edit \`run-comfyui.sh\` manually to re
 3. Run AI stack setup.
 4. Run GPU/NPU detection tracks.
 5. Run guided acceleration plans.
-6. Install ComfyUI workflow layer.
-7. Add models manually.
-8. Launch ComfyUI in CPU-safe mode first.
-9. Only then test GPU/NPU acceleration.
+6. Optionally run the explicit AMD acceleration install phase and rerun GPU/NPU validation.
+7. Install ComfyUI workflow layer.
+8. Add models manually.
+9. Launch ComfyUI; it uses GPU mode only when ROCm was explicitly installed and validated.
 EOF
 
   echo "[INFO] Wrote $STATUS_FILE"
