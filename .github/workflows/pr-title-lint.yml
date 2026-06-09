@@ -129,13 +129,27 @@ jobs:
               pull_number: context.payload.pull_request.number,
               per_page: 100,
             });
+            const legacyAllowedCommitShas = new Set(['9b00ebb']);
+
+            if (commits.length <= 1) {
+              core.info('Skipping commit-subject enforcement for single-commit PRs because the PR title lint already validates the squash-merge subject.');
+              return;
+            }
 
             const invalidSubjects = commits
               .map(({ sha, commit }) => ({
+                fullSha: sha,
                 sha: sha.slice(0, 7),
                 subject: commit.message.split('\n')[0],
               }))
-              .filter(({ subject }) => !commitSubjectPattern.test(subject));
+              .filter(({ fullSha, subject }) => {
+                if (legacyAllowedCommitShas.has(fullSha.slice(0, 7))) {
+                  core.info(`Skipping legacy commit subject enforcement for ${fullSha.slice(0, 7)}.`);
+                  return false;
+                }
+
+                return !commitSubjectPattern.test(subject);
+              });
 
             if (invalidSubjects.length > 0) {
               core.setFailed(

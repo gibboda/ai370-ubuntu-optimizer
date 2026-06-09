@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 
-set -euo pipefail
+AI370_OPTIMIZER_SOURCE_ONLY="${AI370_OPTIMIZER_SOURCE_ONLY:-false}"
 
-PROFILE="${1:-ai370}"
-MODE="${2:-safe}"
-PERSISTENCE="${3:-runtime}"
-OFFLINE="${4:-false}"
+if [[ "$AI370_OPTIMIZER_SOURCE_ONLY" != "true" ]]; then
+  set -euo pipefail
+
+  PROFILE="${1:-ai370}"
+  MODE="${2:-safe}"
+  PERSISTENCE="${3:-runtime}"
+  OFFLINE="${4:-false}"
+else
+  PROFILE="${PROFILE:-ai370}"
+  MODE="${MODE:-safe}"
+  PERSISTENCE="${PERSISTENCE:-runtime}"
+  OFFLINE="${OFFLINE:-false}"
+fi
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
@@ -102,17 +111,66 @@ install_online_packages() {
   python -m pip install --upgrade "${OPTIONAL_PACKAGES[@]}" || true
 }
 
+offline_requirements_satisfied() {
+  "$VENV_DIR/bin/python" - "$OFFLINE_REQUIREMENTS" <<'PY'
+import importlib.metadata as metadata
+import sys
+from pathlib import Path
+
+try:
+    from packaging.requirements import Requirement
+except ImportError:
+    from pip._vendor.packaging.requirements import Requirement
+
+requirements_path = Path(sys.argv[1])
+unsatisfied = []
+for raw_line in requirements_path.read_text().splitlines():
+    line = raw_line.split("#", 1)[0].strip()
+    if not line or line.startswith(("-", "--")):
+        continue
+    try:
+        requirement = Requirement(line)
+    except Exception:
+        continue
+
+    if requirement.marker and not requirement.marker.evaluate():
+        continue
+
+    try:
+        installed_version = metadata.version(requirement.name)
+    except metadata.PackageNotFoundError:
+        unsatisfied.append(str(requirement))
+        continue
+
+    if requirement.specifier and installed_version not in requirement.specifier:
+        unsatisfied.append(f"{requirement} (installed {installed_version})")
+
+if unsatisfied:
+    print(", ".join(unsatisfied))
+    sys.exit(1)
+PY
+}
+
 install_offline_packages() {
   # shellcheck source=/dev/null
   source "$VENV_DIR/bin/activate"
 
-  if [[ ! -d "$OFFLINE_WHEELHOUSE" ]]; then
-    echo "[ERROR] Offline wheelhouse is missing: $OFFLINE_WHEELHOUSE"
+  if [[ ! -f "$OFFLINE_REQUIREMENTS" ]]; then
+    echo "[ERROR] Offline requirements file is missing: $OFFLINE_REQUIREMENTS"
     exit 4
   fi
 
-  if [[ ! -f "$OFFLINE_REQUIREMENTS" ]]; then
-    echo "[ERROR] Offline requirements file is missing: $OFFLINE_REQUIREMENTS"
+  if [[ ! -d "$OFFLINE_WHEELHOUSE" ]]; then
+    local missing_packages
+    if missing_packages="$(offline_requirements_satisfied)"; then
+      echo "[WARN] Offline wheelhouse is missing, but the existing virtual environment satisfies $OFFLINE_REQUIREMENTS."
+      echo "[WARN] Skipping offline package installation and continuing with installed local packages."
+      return
+    fi
+
+    echo "[ERROR] Offline wheelhouse is missing: $OFFLINE_WHEELHOUSE"
+    echo "[ERROR] Unsatisfied offline requirements in $VENV_DIR: $missing_packages"
+    echo "[ERROR] Stage wheels in the configured wheelhouse, update $OFFLINE_CONFIG, or preinstall the requirements into the existing venv before rerunning --offline."
     exit 4
   fi
 
@@ -350,7 +408,8 @@ EOF_JSON
     echo "## Offline policy"
     echo
     echo "Phase 6 prepares a local AI Python environment, validates CPU ONNX Runtime execution, and records acceleration visibility."
-    echo "When --offline is used, packages must come from the configured wheelhouse; missing wheels are fatal."
+    echo "When --offline is used, packages come from the configured wheelhouse."
+    echo "If the wheelhouse is missing, this phase can continue only when the existing venv already satisfies the configured offline requirements."
     echo "This phase does not force ROCm installation for the integrated Radeon 890M iGPU and does not install proprietary AMD Ryzen AI binaries."
     echo
     echo "## Next actions"
@@ -381,4 +440,6 @@ main() {
   echo "[INFO] Phase 6 complete. Conservative AI stack is prepared and benchmarked."
 }
 
-main "$@"
+if [[ "$AI370_OPTIMIZER_SOURCE_ONLY" != "true" ]]; then
+  main "$@"
+fi
