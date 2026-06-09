@@ -157,10 +157,17 @@ fi
 
 printf '%s\n' '[NPU] Step 4: Verify ONNX Runtime provider visibility'
 if [[ -x .ai370-ai/venv/bin/python ]]; then
-  .ai370-ai/venv/bin/python - <<'PY'
-import onnxruntime as ort
-print('ONNX Runtime providers:', ort.get_available_providers())
+  if ! .ai370-ai/venv/bin/python - <<'PY'
+try:
+    import onnxruntime as ort
+except ModuleNotFoundError:
+    print('[WARN] onnxruntime is not installed in .ai370-ai/venv. Run Phase 6 ai-bench or stage offline wheels first.')
+else:
+    print('ONNX Runtime providers:', ort.get_available_providers())
 PY
+  then
+    echo '[WARN] ONNX Runtime provider check failed.'
+  fi
 else
   echo '[WARN] AI virtual environment not found. Run Phase 6 ai-bench first.'
 fi

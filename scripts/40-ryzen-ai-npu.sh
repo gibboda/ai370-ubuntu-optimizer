@@ -52,11 +52,17 @@ detect_npu_stack() {
   fi
 
   if [[ -x "$VENV_PYTHON" ]]; then
-    ort_providers="$($VENV_PYTHON - <<'PY'
-import onnxruntime as ort
-print(",".join(ort.get_available_providers()))
+    if ! ort_providers="$($VENV_PYTHON - <<'PY'
+try:
+    import onnxruntime as ort
+except ModuleNotFoundError:
+    print("missing: onnxruntime")
+else:
+    print(",".join(ort.get_available_providers()))
 PY
-)"
+)"; then
+      ort_providers="error: onnxruntime provider check failed"
+    fi
   fi
 
   {
