@@ -75,6 +75,14 @@ install_rocm_online() {
     echo "[WARN] Detected codename differs from configured ROCm repo codename; continuing because the user accepted the AMD acceleration risk."
   fi
 
+  local missing_tools=()
+  command -v wget >/dev/null 2>&1 || missing_tools+=(wget)
+  command -v gpg  >/dev/null 2>&1 || missing_tools+=(gnupg)
+  if [[ ${#missing_tools[@]} -gt 0 ]]; then
+    echo "[INFO] Installing missing prerequisites: ${missing_tools[*]}"
+    sudo apt-get install -y "${missing_tools[@]}"
+  fi
+
   sudo install -d -m 0755 /etc/apt/keyrings
   wget -qO- https://repo.radeon.com/rocm/rocm.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/rocm.gpg >/dev/null
 
@@ -106,7 +114,7 @@ install_rocm_offline() {
     exit 4
   fi
   echo "[INFO] Installing staged ROCm debs from: $rocm_debs_dir"
-  sudo apt-get install --fix-broken -y "$rocm_debs_dir"/*.deb
+  sudo apt-get install --fix-broken -y --no-download "$rocm_debs_dir"/*.deb
 }
 
 install_rocm_stack() {
@@ -120,6 +128,7 @@ install_rocm_stack() {
 find_first_match() {
   local root="$1"
   local pattern="$2"
+  [[ -d "$root" ]] || return 0
   find "$root" -maxdepth 3 -type f -name "$pattern" 2>/dev/null | sort | head -n 1
 }
 
@@ -132,7 +141,11 @@ install_xrt_debs() {
     if [[ -n "$deb" ]]; then
       found="true"
       echo "[INFO] Installing staged XRT/NPU package: $deb"
-      sudo apt-get install --fix-broken -y "$deb"
+      if [[ "$OFFLINE" == "true" ]]; then
+        sudo apt-get install --fix-broken -y --no-download "$deb"
+      else
+        sudo apt-get install --fix-broken -y "$deb"
+      fi
     else
       missing="true"
       echo "[WARN] Missing staged XRT/NPU package matching: $glob"

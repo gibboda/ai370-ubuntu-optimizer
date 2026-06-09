@@ -105,7 +105,13 @@ resolve_comfyui_launch_mode() {
       COMFYUI_LAUNCH_MODE="cpu"
       ;;
     rocm|gpu)
-      COMFYUI_LAUNCH_MODE="gpu"
+      rocm_state="$(read_status_value "$GPU_STATUS" "rocm")"
+      if [[ -f "$AMD_ACCEL_STATUS" && "$rocm_state" == "visible" ]]; then
+        COMFYUI_LAUNCH_MODE="gpu"
+      else
+        echo "[WARN] COMFYUI_ACCELERATION_MODE=${configured_mode} requires the amd-accel-install phase to have completed and ROCm to be visible; falling back to CPU-safe mode."
+        COMFYUI_LAUNCH_MODE="cpu"
+      fi
       ;;
     auto)
       rocm_state="$(read_status_value "$GPU_STATUS" "rocm")"
@@ -125,9 +131,21 @@ resolve_comfyui_launch_mode() {
   esac
 }
 
+is_rocm_torch_available() {
+  [[ -d "$COMFY_VENV" ]] || return 1
+  "$COMFY_VENV/bin/python" -c "import torch; assert torch.version.hip is not None" 2>/dev/null
+}
+
 create_launch_script() {
-  local cpu_arg launch_note
+  local cpu_arg launch_note amd_env_source
   resolve_comfyui_launch_mode
+
+  # Gate GPU mode on ROCm-enabled PyTorch being installed in the ComfyUI venv.
+  if [[ "$COMFYUI_LAUNCH_MODE" == "gpu" ]] && ! is_rocm_torch_available; then
+    echo "[WARN] GPU mode requested but ROCm-enabled PyTorch is not installed in the ComfyUI venv; keeping CPU-safe mode."
+    COMFYUI_LAUNCH_MODE="cpu"
+  fi
+
   cpu_arg="--cpu"
   launch_note="CPU-safe mode"
   if [[ "$COMFYUI_LAUNCH_MODE" == "gpu" ]]; then
@@ -136,6 +154,14 @@ create_launch_script() {
   elif [[ "$COMFYUI_LAUNCH_MODE" == "vulkan-ready" ]]; then
     cpu_arg="--cpu"
     launch_note="Vulkan visible but ROCm not validated for ComfyUI; keeping CPU-safe mode"
+  fi
+
+  amd_env_source=""
+  if [[ "$COMFYUI_LAUNCH_MODE" == "gpu" ]]; then
+    amd_env_source="if [[ -f \"${AMD_ACCEL_ENV}\" ]]; then
+  # shellcheck source=/dev/null
+  source \"${AMD_ACCEL_ENV}\"
+fi"
   fi
 
   cat > "$LAUNCH_SCRIPT" <<EOF
@@ -147,14 +173,9 @@ set -euo pipefail
 COMFY_ROOT="$COMFY_ROOT"
 COMFY_VENV="$COMFY_VENV"
 OUTPUT_DIR="$AI_ROOT/outputs/comfyui"
-AMD_ACCEL_ENV="$AMD_ACCEL_ENV"
 LAUNCH_NOTE="$launch_note"
 
-if [[ -f "\$AMD_ACCEL_ENV" ]]; then
-  # shellcheck source=/dev/null
-  source "\$AMD_ACCEL_ENV"
-fi
-
+${amd_env_source}
 printf '%s\n' "[INFO] ComfyUI launch mode: \$LAUNCH_NOTE"
 cd "\$COMFY_ROOT"
 source "\$COMFY_VENV/bin/activate"
