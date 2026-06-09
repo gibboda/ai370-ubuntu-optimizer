@@ -102,17 +102,54 @@ install_online_packages() {
   python -m pip install --upgrade "${OPTIONAL_PACKAGES[@]}" || true
 }
 
+offline_requirements_satisfied() {
+  "$VENV_DIR/bin/python" - "$OFFLINE_REQUIREMENTS" <<'PY'
+import importlib.metadata as metadata
+import re
+import sys
+from pathlib import Path
+
+requirements_path = Path(sys.argv[1])
+missing = []
+for raw_line in requirements_path.read_text().splitlines():
+    line = raw_line.split("#", 1)[0].strip()
+    if not line or line.startswith(("-", "--")):
+        continue
+    match = re.match(r"([A-Za-z0-9_.-]+)", line)
+    if not match:
+        continue
+    package_name = match.group(1)
+    try:
+        metadata.version(package_name)
+    except metadata.PackageNotFoundError:
+        missing.append(package_name)
+
+if missing:
+    print(", ".join(missing))
+    sys.exit(1)
+PY
+}
+
 install_offline_packages() {
   # shellcheck source=/dev/null
   source "$VENV_DIR/bin/activate"
 
-  if [[ ! -d "$OFFLINE_WHEELHOUSE" ]]; then
-    echo "[ERROR] Offline wheelhouse is missing: $OFFLINE_WHEELHOUSE"
+  if [[ ! -f "$OFFLINE_REQUIREMENTS" ]]; then
+    echo "[ERROR] Offline requirements file is missing: $OFFLINE_REQUIREMENTS"
     exit 4
   fi
 
-  if [[ ! -f "$OFFLINE_REQUIREMENTS" ]]; then
-    echo "[ERROR] Offline requirements file is missing: $OFFLINE_REQUIREMENTS"
+  if [[ ! -d "$OFFLINE_WHEELHOUSE" ]]; then
+    local missing_packages
+    if missing_packages="$(offline_requirements_satisfied)"; then
+      echo "[WARN] Offline wheelhouse is missing, but the existing virtual environment satisfies $OFFLINE_REQUIREMENTS."
+      echo "[WARN] Skipping offline package installation and continuing with installed local packages."
+      return
+    fi
+
+    echo "[ERROR] Offline wheelhouse is missing: $OFFLINE_WHEELHOUSE"
+    echo "[ERROR] Missing packages in $VENV_DIR: $missing_packages"
+    echo "[ERROR] Stage wheels in the configured wheelhouse, update $OFFLINE_CONFIG, or preinstall the requirements into the existing venv before rerunning --offline."
     exit 4
   fi
 
@@ -350,7 +387,7 @@ EOF_JSON
     echo "## Offline policy"
     echo
     echo "Phase 6 prepares a local AI Python environment, validates CPU ONNX Runtime execution, and records acceleration visibility."
-    echo "When --offline is used, packages must come from the configured wheelhouse; missing wheels are fatal."
+    echo "When --offline is used, packages come from the configured wheelhouse, or from an existing venv that already satisfies the offline requirements."
     echo "This phase does not force ROCm installation for the integrated Radeon 890M iGPU and does not install proprietary AMD Ryzen AI binaries."
     echo
     echo "## Next actions"
@@ -381,4 +418,6 @@ main() {
   echo "[INFO] Phase 6 complete. Conservative AI stack is prepared and benchmarked."
 }
 
-main "$@"
+if [[ "${AI370_OPTIMIZER_SOURCE_ONLY:-false}" != "true" ]]; then
+  main "$@"
+fi
