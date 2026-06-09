@@ -176,7 +176,7 @@ PY
 }
 
 main() {
-  echo "[INFO] Phase 5B: NPU acceleration track"
+  echo "[INFO] Phase 5: XDNA NPU validation track"
   echo "[INFO] Offline: $OFFLINE"
   require_runtime_persistence
   detect_npu_stack

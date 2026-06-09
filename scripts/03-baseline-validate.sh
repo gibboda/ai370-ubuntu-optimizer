@@ -24,7 +24,7 @@ require_file() {
 }
 
 main() {
-  echo "[INFO] Phase 4: Baseline validation"
+  echo "[INFO] Phase 3: Kernel + AMD driver baseline validation"
   echo "[INFO] Profile: $PROFILE"
   echo "[INFO] Mode: $MODE"
   echo "[INFO] Persistence: $PERSISTENCE"

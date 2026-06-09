@@ -85,7 +85,7 @@ require_phase2_not_failed() {
 
 require_runtime_persistence() {
   if [[ "$PERSISTENCE" == "system" ]]; then
-    echo "[ERROR] Phase 4 does not implement persistent system tuning. Use --persistence=runtime."
+    echo "[ERROR] Phase 6 does not implement persistent AI benchmark tuning. Use --persistence=runtime."
     exit 2
   fi
 }
@@ -349,14 +349,14 @@ EOF_JSON
     echo
     echo "## Offline policy"
     echo
-    echo "Phase 4 prepares a local AI Python environment, validates CPU ONNX Runtime execution, and records acceleration visibility."
+    echo "Phase 6 prepares a local AI Python environment, validates CPU ONNX Runtime execution, and records acceleration visibility."
     echo "When --offline is used, packages must come from the configured wheelhouse; missing wheels are fatal."
     echo "This phase does not force ROCm installation for the integrated Radeon 890M iGPU and does not install proprietary AMD Ryzen AI binaries."
     echo
     echo "## Next actions"
     echo
     echo "- Review \`$BENCHMARK_MD\` before GPU/NPU optimization."
-    echo "- Run Phase 5 GPU/NPU tracks to capture local hardware capability reports."
+    echo "- Run Phase 5 acceleration validation to capture local hardware capability reports."
   } > "$RECOMMENDATIONS_FILE"
 
   echo "[INFO] Wrote $STATUS_FILE"
@@ -365,7 +365,7 @@ EOF_JSON
 }
 
 main() {
-  echo "[INFO] Phase 4: AI stack preparation"
+  echo "[INFO] Phase 6: Local AI benchmark suite"
   echo "[INFO] Profile: $PROFILE"
   echo "[INFO] Mode: $MODE"
   echo "[INFO] Persistence: $PERSISTENCE"
@@ -378,7 +378,7 @@ main() {
   run_cpu_benchmark
   detect_acceleration
 
-  echo "[INFO] Phase 4 complete. Conservative AI stack is prepared and benchmarked."
+  echo "[INFO] Phase 6 complete. Conservative AI stack is prepared and benchmarked."
 }
 
 main "$@"

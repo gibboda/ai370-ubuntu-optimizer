@@ -162,7 +162,7 @@ import onnxruntime as ort
 print('ONNX Runtime providers:', ort.get_available_providers())
 PY
 else
-  echo '[WARN] AI virtual environment not found. Run Phase 4 first.'
+  echo '[WARN] AI virtual environment not found. Run Phase 6 ai-bench first.'
 fi
 
 printf '%s\n' '[NPU] PASS: NPU validation checklist completed.'
@@ -238,7 +238,7 @@ Generated: $(date -Is)
 
 ## Execution Policy
 
-Phase 7 is still guided. It creates explicit local validation and benchmark scripts but does not install GPU or NPU runtime stacks automatically.
+This phase is still guided. It creates explicit local validation and benchmark scripts but does not install GPU or NPU runtime stacks automatically.
 
 ## CPU/ONNX Runtime Script
 
@@ -295,7 +295,7 @@ EOF
 }
 
 main() {
-  echo "[INFO] Phase 7: Guided acceleration execution"
+  echo "[INFO] Generated acceleration checklist execution planner"
   echo "[INFO] Profile: $PROFILE"
   echo "[INFO] Mode: $MODE"
   echo "[INFO] Persistence: $PERSISTENCE"

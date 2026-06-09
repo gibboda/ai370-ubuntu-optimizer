@@ -173,7 +173,7 @@ PY
   cat > "$ARTIFACTS_MD" <<EOF_ARTIFACTS
 # Offline Required Artifacts
 
-Use this checklist before running Phase 4-7 in --offline mode.
+Use this checklist before running Phases 5-7 in --offline mode.
 
 - Wheelhouse: \`$OFFLINE_WHEELHOUSE\` ($wheel_status)
 - Requirements lock/list: \`$OFFLINE_REQUIREMENTS\` ($requirements_status)
@@ -219,7 +219,7 @@ This phase is offline-first and approval-gated. It generates suggested local val
 1. Make CPU ONNX Runtime ready using the offline wheelhouse.
 2. Validate local GPU visibility with Vulkan/OpenCL/ROCm tools already on the machine.
 3. Validate local NPU visibility with XRT/Ryzen AI tools only if already staged and installed from approved offline artifacts.
-4. Run Phase 7 generated benchmark/checklist scripts.
+4. Run generated benchmark/checklist scripts.
 5. Install ComfyUI only after hardware/runtime reports are stable.
 EOF_PLAN
 

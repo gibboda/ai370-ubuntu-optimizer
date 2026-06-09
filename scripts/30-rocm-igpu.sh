@@ -201,7 +201,7 @@ PY
 }
 
 main() {
-  echo "[INFO] Phase 5A: GPU acceleration track"
+  echo "[INFO] Phase 5: ROCm / Vulkan / OpenCL GPU validation track"
   echo "[INFO] Offline: $OFFLINE"
   require_runtime_persistence
   detect_gpu_stack
