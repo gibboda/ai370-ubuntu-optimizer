@@ -66,7 +66,7 @@ The phases communicate through `reports/latest/`:
 
 ## Offline AI Hardware Optimization Before ComfyUI
 
-Phases 5-7 can be run with `--offline` to focus on local CPU/iGPU/NPU/LLM readiness before any ComfyUI setup. Offline mode does not fetch packages, clone repositories, download models, or install ROCm/XRT/Ryzen AI runtime stacks. It expects local artifacts to already be staged.
+Phases 5-7 can be run with `--offline` to focus on local CPU/iGPU/NPU/LLM readiness before any ComfyUI setup. Offline mode does not fetch packages, clone repositories, download models, or install ROCm/XRT/Ryzen AI runtime stacks. It expects local artifacts to already be staged. For Phase 6 specifically, if the configured wheelhouse is missing, the run can continue only when the existing virtual environment already satisfies `config/ai-runtime/requirements-offline.txt`.
 
 Default offline artifact paths are configured in `config/offline/ai-runtime.env`:
 
