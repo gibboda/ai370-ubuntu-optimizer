@@ -100,7 +100,7 @@ main() {
     printf '%s\n' "${MISSING_TOOLS:-none}"
   } | tee "$TXT_FILE"
 
-  export PROFILE MODE PERSISTENCE TIMESTAMP SYSTEM_VENDOR SYSTEM_PRODUCT BIOS_VERSION \
+  export PROFILE MODE PERSISTENCE TIMESTAMP TARGET_UBUNTU_VERSION TARGET_UBUNTU_CODENAME TARGET_UBUNTU_DESCRIPTION SYSTEM_VENDOR SYSTEM_PRODUCT BIOS_VERSION \
     OS_DESCRIPTION OS_ID OS_VERSION_ID OS_CODENAME KERNEL CPU_VENDOR CPU_MODEL CPU_CORES \
     CPU_GOVERNORS CPU_GOVERNOR GPU_TEXT GPU_ARCH_DETECTED AMDGPU_MODULE VULKAN_SUMMARY \
     OPENCL_SUMMARY NPU_PRESENT NPU_TEXT NPU_DEVICE_TEXT MEMORY_TOTAL MEMORY_TOTAL_KIB \
@@ -130,7 +130,7 @@ data = {
     "vendor": env("SYSTEM_VENDOR"),
     "product": env("SYSTEM_PRODUCT"),
     "bios_version": env("BIOS_VERSION"),
-    "os": {"description": env("OS_DESCRIPTION"), "id": env("OS_ID"), "version_id": env("OS_VERSION_ID"), "codename": env("OS_CODENAME")},
+    "os": {"description": env("OS_DESCRIPTION"), "id": env("OS_ID"), "version_id": env("OS_VERSION_ID"), "codename": env("OS_CODENAME"), "target": env("TARGET_UBUNTU_DESCRIPTION")},
     "kernel": env("KERNEL"),
   },
   "cpu": {
@@ -168,6 +168,7 @@ PY
     echo "## Key facts"
     echo "- System: ${SYSTEM_VENDOR:-unknown} ${SYSTEM_PRODUCT:-unknown}"
     echo "- OS: ${OS_DESCRIPTION:-unknown} (${OS_CODENAME:-unknown})"
+    echo "- Ubuntu target: $TARGET_UBUNTU_DESCRIPTION"
     echo "- Kernel: ${KERNEL:-unknown}"
     echo "- CPU: ${CPU_MODEL:-unknown}"
     echo "- GPU architecture: $GPU_ARCH_DETECTED"

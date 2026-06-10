@@ -59,11 +59,11 @@ load_config() {
   AMD_ARTIFACT_ROOT="$(resolve_project_path "${AMD_ARTIFACT_ROOT:-.ai370-ai/amd-artifacts}")"
   RYZEN_AI_INSTALL_ROOT="$(resolve_project_path "${RYZEN_AI_INSTALL_ROOT:-.ai370-ai/ryzen-ai}")"
   : "${ROCM_VERSION:=7.2.4}"
-  : "${ROCM_REPO_CODENAME:=noble}"
+  : "${ROCM_REPO_CODENAME:=resolute}"
   : "${ROCM_PACKAGES:=rocm rocm-hip-runtime rocm-hip-sdk rocm-ml-sdk rocm-opencl-sdk amdgpu-lib}"
   : "${ROCM_INSTALL_MODE:=online}"
   : "${RYZEN_AI_ARTIFACT_GLOB:=ryzen_ai-*.tgz}"
-  : "${XRT_DEB_GLOBS:=xrt_*_24.04-amd64-base.deb xrt_*_24.04-amd64-base-dev.deb xrt_*_24.04-amd64-npu.deb xrt_*_24.04-amd64-xrt.deb xrt_plugin.*_24.04-amd64-amdxdna.deb xrt_plugin.*_ubuntu24.04-x86_64-amdxdna.deb}"
+  : "${XRT_DEB_GLOBS:=xrt_*_26.04-amd64-base.deb xrt_*_26.04-amd64-base-dev.deb xrt_*_26.04-amd64-npu.deb xrt_*_26.04-amd64-xrt.deb xrt_plugin.*_26.04-amd64-amdxdna.deb xrt_plugin.*_ubuntu26.04-x86_64-amdxdna.deb}"
 }
 
 require_acknowledgement() {
@@ -175,13 +175,13 @@ print_artifact_inventory() {
 print_xrt_staging_help() {
   cat <<EOF_XRT_HELP
 [ERROR] Stage the Ryzen AI Linux NPU driver .deb files before rerunning this phase.
-[ERROR] Expected current Ubuntu 24.04 package names resemble:
-[ERROR]   xrt_<version>_24.04-amd64-base.deb
-[ERROR]   xrt_<version>_24.04-amd64-base-dev.deb
-[ERROR]   xrt_<version>_24.04-amd64-npu.deb
-[ERROR]   xrt_plugin.<version>_24.04-amd64-amdxdna.deb
-[ERROR] Source-built XDNA driver package names such as xrt_<version>_24.04-amd64-xrt.deb
-[ERROR] and xrt_plugin.<version>_ubuntu24.04-x86_64-amdxdna.deb are also accepted.
+[ERROR] Expected Ubuntu 26.04 package names resemble:
+[ERROR]   xrt_<version>_26.04-amd64-base.deb
+[ERROR]   xrt_<version>_26.04-amd64-base-dev.deb
+[ERROR]   xrt_<version>_26.04-amd64-npu.deb
+[ERROR]   xrt_plugin.<version>_26.04-amd64-amdxdna.deb
+[ERROR] Source-built XDNA driver package names such as xrt_<version>_26.04-amd64-xrt.deb
+[ERROR] and xrt_plugin.<version>_ubuntu26.04-x86_64-amdxdna.deb are also accepted.
 [ERROR] If your files are elsewhere, rerun with AMD_ARTIFACT_ROOT=/absolute/path/to/amd-artifacts.
 [ERROR] If AMD supplied a compressed driver bundle, extract it under AMD_ARTIFACT_ROOT first.
 EOF_XRT_HELP

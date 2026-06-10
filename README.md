@@ -112,9 +112,9 @@ For an end-to-end safe-readiness + AMD-acceleration + ComfyUI flow:
 Important constraints:
 
 - ROCm repository version, repository codename, package list, artifact paths, and ComfyUI acceleration mode are configured in `config/amd-acceleration.env`.
-- The default ROCm repository codename is `noble` because AMD's current package-manager examples target Ubuntu 24.04; update the config when AMD publishes a supported Ubuntu 26.04 repository.
-- Ryzen AI / XRT NPU packages are not fetched automatically from AMD account-gated download pages. Stage the required `.deb` files and `ryzen_ai-*.tgz` under `.ai370-ai/amd-artifacts/`, or run with `AMD_ARTIFACT_ROOT=/absolute/path/to/amd-artifacts` when the files live outside the checkout.
-- For current Ubuntu 24.04 Ryzen AI Linux driver bundles, the staged NPU driver files should include names like `xrt_<version>_24.04-amd64-base.deb`, `xrt_<version>_24.04-amd64-base-dev.deb`, `xrt_<version>_24.04-amd64-npu.deb`, and `xrt_plugin.<version>_24.04-amd64-amdxdna.deb`; extract any compressed AMD driver bundle under the artifact root before running `amd-accel-install`. Source-built XDNA packages such as `xrt_<version>_24.04-amd64-xrt.deb` and `xrt_plugin.<version>_ubuntu24.04-x86_64-amdxdna.deb` are also recognized.
+- The default ROCm repository codename is `resolute`, matching Ubuntu 26.04 LTS (Resolute Raccoon), so the AMD acceleration phase remains aligned with the toolkit target release.
+- Ryzen AI / XRT NPU packages are not fetched automatically from AMD account-gated download pages. Stage the required Ubuntu 26.04 `.deb` files and `ryzen_ai-*.tgz` under `.ai370-ai/amd-artifacts/`, or run with `AMD_ARTIFACT_ROOT=/absolute/path/to/amd-artifacts` when the files live outside the checkout.
+- For Ubuntu 26.04 Ryzen AI Linux driver bundles, the staged NPU driver files should include names like `xrt_<version>_26.04-amd64-base.deb`, `xrt_<version>_26.04-amd64-base-dev.deb`, `xrt_<version>_26.04-amd64-npu.deb`, and `xrt_plugin.<version>_26.04-amd64-amdxdna.deb`; extract any compressed AMD driver bundle under the artifact root before running `amd-accel-install`. Source-built XDNA packages such as `xrt_<version>_26.04-amd64-xrt.deb` and `xrt_plugin.<version>_ubuntu26.04-x86_64-amdxdna.deb` are also recognized.
 - ComfyUI is generated without `--cpu` only after the explicit AMD acceleration phase has completed and ROCm remains visible in the Phase 5 GPU validation report. Otherwise it stays CPU-safe.
 
 

@@ -198,11 +198,15 @@ else
 fi
 
 if [[ "$OS_ID" != "ubuntu" ]]; then
-  msg="Operating system is not clearly Ubuntu: ${OS_DESCRIPTION:-unknown}"
+  msg="Operating system is not clearly Ubuntu: ${OS_DESCRIPTION:-unknown}; target is $TARGET_UBUNTU_DESCRIPTION"
   mark_warn "$msg"
-  add_rule "ubuntu.distribution" "WARN" "WARN" "$msg"
+  add_rule "ubuntu.version_target" "WARN" "WARN" "$msg"
+elif [[ "$OS_VERSION_ID" != "$TARGET_UBUNTU_VERSION" || "$OS_CODENAME" != "$TARGET_UBUNTU_CODENAME" ]]; then
+  msg="Ubuntu target mismatch: detected ${OS_DESCRIPTION:-unknown} (${OS_VERSION_ID:-unknown}/${OS_CODENAME:-unknown}); target is $TARGET_UBUNTU_DESCRIPTION"
+  mark_warn "$msg"
+  add_rule "ubuntu.version_target" "WARN" "WARN" "$msg"
 else
-  add_rule "ubuntu.distribution" "PASS" "PASS" "Ubuntu distribution detected."
+  add_rule "ubuntu.version_target" "PASS" "PASS" "$TARGET_UBUNTU_DESCRIPTION target detected."
 fi
 
 if [[ -z "$POWER_PROFILES" ]]; then
@@ -250,6 +254,7 @@ fi
 recommendations+=("Run ai-runtime separately after baseline validation if local AI packages are needed.")
 
 export PROFILE MODE PERSISTENCE PROFILE_ID PROFILE_NAME PROFILE_VALIDATION EXPECTED_CPU EXPECTED_GPU_ARCH EXPECTED_NPU_FAMILY
+export TARGET_UBUNTU_VERSION TARGET_UBUNTU_CODENAME TARGET_UBUNTU_DESCRIPTION
 export status CPU_MODEL CPU_VENDOR CPU_CORES KERNEL OS_DESCRIPTION OS_ID OS_VERSION_ID OS_CODENAME GPU_TEXT GPU_ARCH_DETECTED AMDGPU_MODULE VULKAN_SUMMARY OPENCL_SUMMARY NPU_TEXT NPU_DEVICE_TEXT NPU_PRESENT MEMORY_TOTAL STORAGE_TEXT BIOS_VERSION SYSTEM_PRODUCT SYSTEM_VENDOR POWER_PROFILES MISSING_TOOLS INVENTORY_JSON
 export RULE_IDS="$(printf '%s\n' "${rule_ids[@]}")"
 export RULE_STATUSES="$(printf '%s\n' "${rule_statuses[@]}")"
@@ -318,7 +323,7 @@ plan={
   "persistence": env("PERSISTENCE"),
   "plan_status": plan_status,
   "validation": {"status": status, "rules": rules, "failures": lines("FAILURES"), "warnings": lines("WARNINGS"), "opportunities": lines("OPPORTUNITIES"), "skips": lines("SKIPS")},
-  "hardware": {"cpu": env("CPU_MODEL"), "gpu_arch": env("GPU_ARCH_DETECTED"), "npu_present": env("NPU_PRESENT") == "true", "kernel": env("KERNEL"), "ubuntu": env("OS_DESCRIPTION")},
+  "hardware": {"cpu": env("CPU_MODEL"), "gpu_arch": env("GPU_ARCH_DETECTED"), "npu_present": env("NPU_PRESENT") == "true", "kernel": env("KERNEL"), "ubuntu": env("OS_DESCRIPTION"), "ubuntu_version": env("OS_VERSION_ID"), "ubuntu_codename": env("OS_CODENAME"), "ubuntu_target": env("TARGET_UBUNTU_DESCRIPTION")},
   "baseline": {"package_groups": package_groups, "packages": all_packages, "runtime_settings": runtime_settings, "post_checks": ["kernel", "amd_gpu_pci", "amdgpu_module", "vulkan", "opencl", "npu_xdna"]},
   "blocked_actions": ["install_rocm", "install_xrt", "install_ryzen_ai_runtime", "install_vendor_binaries"],
   "recommendations": lines("RECOMMENDATIONS"),
@@ -378,10 +383,11 @@ PY
 } > "$RECOMMENDATIONS_MD"
 
 {
-  echo "# Ubuntu Baseline Plan"
+  echo "# Ubuntu 26.04 LTS Baseline Plan"
   echo
   echo "Plan status: $([[ "$status" == "FAIL" ]] && echo blocked || ([[ "$status" == "WARN" ]] && echo warn-only || echo safe))"
   echo "Validation status: $status"
+  echo "Ubuntu target: $TARGET_UBUNTU_DESCRIPTION"
   echo
   echo "## Package groups"
   echo "- diagnostics: pciutils usbutils dmidecode lshw inxi jq lm-sensors"
