@@ -200,8 +200,8 @@ fi
 if [[ "$OS_ID" != "ubuntu" ]]; then
   msg="Operating system is not clearly Ubuntu: ${OS_DESCRIPTION:-unknown}; target is $TARGET_UBUNTU_DESCRIPTION"
   mark_warn "$msg"
-  add_rule "ubuntu.distribution" "WARN" "WARN" "$msg"
-elif [[ "$OS_VERSION_ID" != "$TARGET_UBUNTU_VERSION" && "$OS_CODENAME" != "$TARGET_UBUNTU_CODENAME" ]]; then
+  add_rule "ubuntu.version_target" "WARN" "WARN" "$msg"
+elif [[ "$OS_VERSION_ID" != "$TARGET_UBUNTU_VERSION" || "$OS_CODENAME" != "$TARGET_UBUNTU_CODENAME" ]]; then
   msg="Ubuntu target mismatch: detected ${OS_DESCRIPTION:-unknown} (${OS_VERSION_ID:-unknown}/${OS_CODENAME:-unknown}); target is $TARGET_UBUNTU_DESCRIPTION"
   mark_warn "$msg"
   add_rule "ubuntu.version_target" "WARN" "WARN" "$msg"
