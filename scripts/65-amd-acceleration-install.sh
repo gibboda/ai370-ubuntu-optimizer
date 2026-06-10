@@ -31,8 +31,31 @@ load_config() {
     echo "[ERROR] Missing AMD acceleration config: $CONFIG_FILE"
     exit 2
   fi
+
+  # Preserve caller-provided environment overrides. The checked-in config supplies
+  # defaults, but README-documented overrides such as AMD_ARTIFACT_ROOT=/path/to/artifacts
+  # must win when users keep AMD packages outside the repository checkout.
+  local env_amd_artifact_root="${AMD_ARTIFACT_ROOT:-}"
+  local env_ryzen_ai_install_root="${RYZEN_AI_INSTALL_ROOT:-}"
+  local env_rocm_version="${ROCM_VERSION:-}"
+  local env_rocm_repo_codename="${ROCM_REPO_CODENAME:-}"
+  local env_rocm_packages="${ROCM_PACKAGES:-}"
+  local env_rocm_install_mode="${ROCM_INSTALL_MODE:-}"
+  local env_ryzen_ai_artifact_glob="${RYZEN_AI_ARTIFACT_GLOB:-}"
+  local env_xrt_deb_globs="${XRT_DEB_GLOBS:-}"
+
   # shellcheck source=/dev/null
   source "$CONFIG_FILE"
+
+  [[ -n "$env_amd_artifact_root" ]] && AMD_ARTIFACT_ROOT="$env_amd_artifact_root"
+  [[ -n "$env_ryzen_ai_install_root" ]] && RYZEN_AI_INSTALL_ROOT="$env_ryzen_ai_install_root"
+  [[ -n "$env_rocm_version" ]] && ROCM_VERSION="$env_rocm_version"
+  [[ -n "$env_rocm_repo_codename" ]] && ROCM_REPO_CODENAME="$env_rocm_repo_codename"
+  [[ -n "$env_rocm_packages" ]] && ROCM_PACKAGES="$env_rocm_packages"
+  [[ -n "$env_rocm_install_mode" ]] && ROCM_INSTALL_MODE="$env_rocm_install_mode"
+  [[ -n "$env_ryzen_ai_artifact_glob" ]] && RYZEN_AI_ARTIFACT_GLOB="$env_ryzen_ai_artifact_glob"
+  [[ -n "$env_xrt_deb_globs" ]] && XRT_DEB_GLOBS="$env_xrt_deb_globs"
+
   AMD_ARTIFACT_ROOT="$(resolve_project_path "${AMD_ARTIFACT_ROOT:-.ai370-ai/amd-artifacts}")"
   RYZEN_AI_INSTALL_ROOT="$(resolve_project_path "${RYZEN_AI_INSTALL_ROOT:-.ai370-ai/ryzen-ai}")"
   : "${ROCM_VERSION:=7.2.4}"
@@ -40,7 +63,7 @@ load_config() {
   : "${ROCM_PACKAGES:=rocm rocm-hip-runtime rocm-hip-sdk rocm-ml-sdk rocm-opencl-sdk amdgpu-lib}"
   : "${ROCM_INSTALL_MODE:=online}"
   : "${RYZEN_AI_ARTIFACT_GLOB:=ryzen_ai-*.tgz}"
-  : "${XRT_DEB_GLOBS:=xrt_*_24.04-amd64-base.deb xrt_*_24.04-amd64-base-dev.deb xrt_*_24.04-amd64-npu.deb xrt_plugin.*_24.04-amd64-amdxdna.deb}"
+  : "${XRT_DEB_GLOBS:=xrt_*_24.04-amd64-base.deb xrt_*_24.04-amd64-base-dev.deb xrt_*_24.04-amd64-npu.deb xrt_*_24.04-amd64-xrt.deb xrt_plugin.*_24.04-amd64-amdxdna.deb xrt_plugin.*_ubuntu24.04-x86_64-amdxdna.deb}"
 }
 
 require_acknowledgement() {
@@ -129,7 +152,39 @@ find_first_match() {
   local root="$1"
   local pattern="$2"
   [[ -d "$root" ]] || return 0
-  find "$root" -maxdepth 3 -type f -name "$pattern" 2>/dev/null | sort | head -n 1
+  find "$root" -maxdepth 5 -type f -name "$pattern" 2>/dev/null | sort | head -n 1
+}
+
+print_artifact_inventory() {
+  echo "[INFO] AMD artifact root: $AMD_ARTIFACT_ROOT"
+  if [[ ! -d "$AMD_ARTIFACT_ROOT" ]]; then
+    echo "[INFO] Artifact root does not exist yet. Create it or set AMD_ARTIFACT_ROOT=/absolute/path/to/amd-artifacts."
+    return
+  fi
+
+  local candidates
+  candidates="$(find "$AMD_ARTIFACT_ROOT" -maxdepth 5 -type f \( -name '*.deb' -o -name '*.tgz' -o -name '*.tar.gz' -o -name '*.zip' \) 2>/dev/null | sort | head -n 40 || true)"
+  if [[ -n "$candidates" ]]; then
+    echo "[INFO] Staged AMD artifact candidates found:"
+    printf '%s\n' "$candidates" | sed 's/^/[INFO]   /'
+  else
+    echo "[INFO] No .deb, .tgz, .tar.gz, or .zip artifacts were found within five directory levels."
+  fi
+}
+
+print_xrt_staging_help() {
+  cat <<EOF_XRT_HELP
+[ERROR] Stage the Ryzen AI Linux NPU driver .deb files before rerunning this phase.
+[ERROR] Expected current Ubuntu 24.04 package names resemble:
+[ERROR]   xrt_<version>_24.04-amd64-base.deb
+[ERROR]   xrt_<version>_24.04-amd64-base-dev.deb
+[ERROR]   xrt_<version>_24.04-amd64-npu.deb
+[ERROR]   xrt_plugin.<version>_24.04-amd64-amdxdna.deb
+[ERROR] Source-built XDNA driver package names such as xrt_<version>_24.04-amd64-xrt.deb
+[ERROR] and xrt_plugin.<version>_ubuntu24.04-x86_64-amdxdna.deb are also accepted.
+[ERROR] If your files are elsewhere, rerun with AMD_ARTIFACT_ROOT=/absolute/path/to/amd-artifacts.
+[ERROR] If AMD supplied a compressed driver bundle, extract it under AMD_ARTIFACT_ROOT first.
+EOF_XRT_HELP
 }
 
 install_xrt_debs() {
@@ -154,6 +209,8 @@ install_xrt_debs() {
 
   if [[ "$found" != "true" ]]; then
     echo "[ERROR] No XRT/NPU deb packages were found under: $AMD_ARTIFACT_ROOT"
+    print_artifact_inventory
+    print_xrt_staging_help
     exit 4
   fi
   if [[ "$missing" == "true" ]]; then
