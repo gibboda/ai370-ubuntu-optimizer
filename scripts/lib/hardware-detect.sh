@@ -7,6 +7,10 @@
 
 set -euo pipefail
 
+TARGET_UBUNTU_VERSION="26.04"
+TARGET_UBUNTU_CODENAME="resolute"
+TARGET_UBUNTU_DESCRIPTION="Ubuntu 26.04 LTS (Resolute Raccoon)"
+
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
 run_or_empty() {
