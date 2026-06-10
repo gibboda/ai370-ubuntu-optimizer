@@ -23,6 +23,11 @@ jobs:
         with:
           script: |
             const workflowPath = '.github/workflows/pr-title-lint.yml';
+            if (context.payload.action === 'synchronize') {
+              core.info('Skipping PR title enforcement on synchronize events; title checks run on opened, edited, and reopened events.');
+              core.setOutput('enforce', 'false');
+              return;
+            }
 
             try {
               const { data } = await github.rest.repos.getContent({
