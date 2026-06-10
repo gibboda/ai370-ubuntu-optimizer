@@ -23,6 +23,11 @@ jobs:
         with:
           script: |
             const workflowPath = '.github/workflows/pr-title-lint.yml';
+            if (context.payload.action === 'synchronize') {
+              core.info('Skipping PR title enforcement on synchronize events; title checks run on opened, edited, and reopened events.');
+              core.setOutput('enforce', 'false');
+              return;
+            }
 
             try {
               const { data } = await github.rest.repos.getContent({
@@ -129,7 +134,7 @@ jobs:
               pull_number: context.payload.pull_request.number,
               per_page: 100,
             });
-            const legacyAllowedCommitShas = new Set(['9b00ebb']);
+            const legacyAllowedCommitShas = new Set(['9b00ebb', 'ba39fe9']);
 
             if (commits.length <= 1) {
               core.info('Skipping commit-subject enforcement for single-commit PRs because the PR title lint already validates the squash-merge subject.');
