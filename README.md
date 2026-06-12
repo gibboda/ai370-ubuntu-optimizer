@@ -2,6 +2,8 @@
 
 Ubuntu 26.04 LTS optimization toolkit for the Minisforum EliteMini AI370 and future Ryzen AI systems.
 
+Workflow validation note: this line exists to verify automated commit/push/PR task execution.
+
 ## Primary Target
 
 Default profile:
