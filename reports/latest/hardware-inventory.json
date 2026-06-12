@@ -1,0 +1,33 @@
+{
+  "tier": 1,
+  "phase": "detect-hardware",
+  "timestamp": "",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "system": {
+    "vendor": "unknown",
+    "product": "unknown",
+    "bios_version": "unknown",
+    "os": "unknown",
+    "kernel": "25.5.0"
+  },
+  "cpu": {
+    "model": "",
+    "vendor": "",
+    "logical_cores": 0
+  },
+  "gpu": {
+    "text": "",
+    "arch": "unknown",
+    "amdgpu_module": ""
+  },
+  "npu": {
+    "present": false,
+    "module_text": "",
+    "device_text": ""
+  },
+  "memory": { "total": "" },
+  "storage": { "summary": "", "nvme": "" },
+  "tools": { "missing": "lsb_release,lscpu,free,lspci,lsblk,lsmod,fwupdmgr,dmidecode,powerprofilesctl,sensors,vulkaninfo,clinfo,nvme,smartctl" }
+}

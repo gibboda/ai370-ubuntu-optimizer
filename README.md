@@ -11,43 +11,174 @@ Default profile:
 - Radeon 890M integrated GPU
 - AMD XDNA2 NPU
 
-## Design Model
+## Guiding Principles
 
-Profile-based + hardware-aware optimization.
+1. **Offline-first** — Prefer local artifacts, staged wheels, and pre-downloaded models. Network operations are opt-in.
+2. **Local inference preferred** — Cloud-only or SaaS dependencies are non-goals.
+3. **Hardware validation before application installation** — Establish a validated AI hardware foundation before installing end-user AI runtimes or UIs.
+4. **Reproducible automation** — Scripted, profile-driven, with clear reports and dry-run support.
+5. **Safe defaults** — Conservative baseline; ROCm / XRT / Ryzen AI stacks require explicit `--accept-amd-acceleration-risk`.
+6. **Production-ready benchmarks** — Real measurements, not just presence checks.
+7. **Modular architecture** — Tiered design allows adding support for future Ryzen AI systems (new profiles) without rewriting the AI370 implementation.
+8. **Future support for additional Ryzen AI systems** — Strict `ai370` profile by default; `generic-ryzen-ai` profile available for broadening.
 
-The toolkit is organized into a nine-phase, audit-first flow. Hardware and firmware facts are captured before conservative kernel/AMD baseline work, tuning is runtime-only by default, and fragile acceleration stacks remain validation-gated. ROCm, XRT, Ryzen AI runtime packages, vendor binary installers, and model downloads are detected or guided; they are not installed automatically by the baseline, tuning, validation, or LLM phases.
+## AI Stack Tier Architecture
 
-## Nine-Phase Execution Order
+The repository is organized around five AI tiers. Tier 1 is the required foundation. Higher tiers are only installed after lower-tier validation passes (especially: **do not install Tier 5 until Tier 1 + Tier 2 + Tier 3 validation criteria have passed**).
 
-```text
-Phase 1 — Hardware detection                 ./ai370-optimize.sh hardware
-Phase 2 — BIOS / firmware baseline           ./ai370-optimize.sh firmware
-Phase 3 — Kernel + AMD driver baseline       ./ai370-optimize.sh kernel-amd --dry-run
-                                             ./ai370-optimize.sh kernel-amd
-Phase 4 — CPU / RAM / storage tuning         ./ai370-optimize.sh tune
-Phase 5 — ROCm / Vulkan / OpenCL validation  ./ai370-optimize.sh accel-validate [--offline]
-Phase 6 — Local AI benchmark suite           ./ai370-optimize.sh ai-bench [--offline]
-Phase 7 — Ollama / llama.cpp validation      ./ai370-optimize.sh llm-validate [--offline]
-Phase 7.5 — Explicit AMD acceleration install ./ai370-optimize.sh amd-accel-install --accept-amd-acceleration-risk
-Phase 8 — ComfyUI installation                ./ai370-optimize.sh comfyui-install
-Phase 9 — ComfyUI workflow benchmarking       ./ai370-optimize.sh comfyui-bench
-Final validation                              ./ai370-optimize.sh final-validate
+### Tier 1 – Required Core Platform
+**Purpose:** Establish a validated AI hardware foundation.
+
+**Key Components:**
+- Linux kernel + AMDGPU validation
+- AMDXDNA (XDNA2 NPU) detection
+- Mesa / Vulkan / ROCm validation
+- CPU, memory, and storage optimization
+- Benchmark framework
+
+**Canonical commands:**
+```bash
+./ai370-optimize.sh tier1                  # Run the full Tier 1 sequence (recommended)
+./ai370-optimize.sh tier1-validate         # Final Tier 1 gate + acceptance checks
 ```
 
-Backward-compatible aliases remain available:
+**Deliverables (Tier 1 scripts):**
+```
+scripts/
+  10-detect-hardware.sh
+  20-check-bios.sh
+  30-optimize-kernel.sh
+  40-optimize-cpu.sh
+  50-optimize-memory.sh
+  60-optimize-storage.sh
+  70-validate-gpu-stack.sh
+  80-benchmark-local-ai.sh
+  90-validate.sh
+```
+
+**Acceptance Criteria (must all pass):**
+- Radeon 890M (gfx1150) detected
+- AMDXDNA / XDNA2 NPU detected
+- ROCm validated (or explicitly noted as not yet installed)
+- Vulkan validated
+- All Tier 1 validation checks pass (see `reports/latest/tier1-validation.json` and `tier1-summary.md`)
+
+### Tier 2 – Recommended AI Runtime Layer
+**Purpose:** Provide local AI execution capability.
+
+**Components:**
+- Ollama + llama.cpp
+- Open WebUI (optional)
+- PyTorch (ROCm where available)
+- Hugging Face transformers / tokenizers (local)
+
+**Commands:**
+```bash
+./ai370-optimize.sh tier2 [--offline]
+```
+
+**Acceptance Criteria:**
+- Local inference functional (Ollama or llama.cpp can load a GGUF / model)
+- GPU acceleration path validated where hardware allows
+- Benchmark results collected in `reports/latest/`
+
+### Tier 3 – AMD NPU Enablement
+**Purpose:** Enable XDNA2 experimentation and benchmarking.
+
+**Components:**
+- ONNX + ONNX Runtime
+- Ryzen AI Software (staged artifacts)
+- Vitis AI / NPU Execution Provider support
+- NPU-specific benchmark suite (ONNX smoke + XRT tools)
+
+**Commands:**
+```bash
+./ai370-optimize.sh tier3 [--offline]
+./ai370-optimize.sh tier3-validate
+```
+
+**Acceptance Criteria:**
+- ONNX Runtime installed with NPU-capable execution providers visible
+- NPU execution path validated (device nodes + XRT or provider check)
+- NPU benchmark report generated
+
+**Important:** Tier 3 validation is required before Tier 5 (Generative AI) installation.
+
+### Tier 4 – Local Knowledge Systems
+**Components:**
+- AnythingLLM (or equivalent local RAG)
+- Local embeddings models
+- Offline document indexing + retrieval
+
+**Commands (future / staged):**
+```bash
+./ai370-optimize.sh tier4
+```
+
+**Acceptance Criteria:**
+- PDF / document ingestion functional
+- Offline RAG queries operational against local index
+
+### Tier 5 – Generative AI
+**Components:**
+- ComfyUI
+- Flux, SDXL, ControlNet, IPAdapter, upscaling workflows
+- Production benchmarking
+
+**Commands:**
+```bash
+./ai370-optimize.sh tier5
+./ai370-optimize.sh comfyui-install   # alias, gated
+```
+
+**Important gate:** Tier 5 installation and benchmarking are blocked (or emit clear error + guidance) until Tier 1, Tier 2, and Tier 3 validation criteria have passed. ComfyUI will default to CPU-safe mode unless acceleration was explicitly installed and re-validated.
+
+**Acceptance Criteria:**
+- ComfyUI launches successfully
+- Flux (or SDXL) workflow executes
+- SDXL / production benchmark report generated (`comfyui-benchmark.csv` + summary)
+
+### Tier Commands (recommended user interface)
+```bash
+./ai370-optimize.sh tier1                  # Full core platform validation + optimization
+./ai370-optimize.sh tier1-validate
+./ai370-optimize.sh tier2 [--offline]
+./ai370-optimize.sh tier3 [--offline]
+./ai370-optimize.sh tier3-validate
+./ai370-optimize.sh tier4
+./ai370-optimize.sh tier5                  # Requires Tier 1+2+3 validation gate
+./ai370-optimize.sh full-stack             # Tier 1 → 2 → 3 → (risk) accel → 4 → 5 with gates
+```
+
+Legacy nine-phase commands and aliases remain available for compatibility (see below).
+
+## Legacy Phase Mapping (implementation details)
+
+The tier model is the primary user-facing structure. Under the hood the implementation still uses (and you can invoke) the detailed audit-first phases:
+
+- Tier 1 roughly covers the old Phases 1–6 + final core validation.
+- Tier 2 covers old Phase 7 (LLM) + AI runtime.
+- Tier 3 covers NPU half of acceleration + ONNX work.
+- Tier 5 covers old Phase 8–9 (ComfyUI).
+
+You can still run the classic commands (they continue to work and write the same rich `reports/latest/` artifacts):
 
 ```text
-inventory, audit    -> hardware
-baseline-plan, plan -> legacy baseline planning only
-baseline-apply      -> legacy baseline apply only
-baseline-validate   -> legacy baseline validation only
-ai-runtime          -> ai-bench
-gpu && npu          -> accel-validate components
-comfyui             -> comfyui-install
-validate            -> final-validate
-install             -> kernel-amd + ai-bench
-full-ai-install     -> safe readiness + opt-in AMD acceleration + ComfyUI + validation
+hardware | inventory | audit          -> Tier 1 hardware detection
+firmware                               -> Tier 1 BIOS check
+kernel-amd | baseline-plan | plan      -> Tier 1 kernel + AMD baseline (with --dry-run)
+tune                                   -> Tier 1 CPU/RAM/storage optimization
+accel-validate | gpu | npu             -> Tier 1 GPU stack + Tier 3 NPU visibility
+ai-bench | ai-runtime                  -> Tier 1 local AI benchmark (Tier 2 overlap)
+llm-validate                           -> Tier 2
+amd-accel-install                      -> Explicit opt-in (used by Tier 3 / Tier 5 paths)
+comfyui-install | comfyui              -> Tier 5 (gated)
+comfyui-bench                          -> Tier 5
+final-validate | validate              -> Tier 1 + overall
+install | full-ai-install              -> Multi-tier flows (full-ai-install still requires --accept-amd-acceleration-risk)
 ```
+
+All phases continue to communicate through `reports/latest/` (JSON + Markdown + text summaries). New tier commands also produce `tierN-*.json` / `tierN-summary.md` artifacts for clear gates.
 
 ## Phase Artifacts
 
