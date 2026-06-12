@@ -16,21 +16,22 @@
     },
     {
       "label": "Grok Agent: Create Feature Branch",
-      "type": "shell",
-      "command": "git checkout -b ${input:branchName}",
+      "type": "process",
+      "command": "git",
+      "args": ["checkout", "-b", "${input:branchName}"],
       "presentation": {
         "echo": true,
         "reveal": "always"
       },
-      "problemMatcher": [],
-      "inputs": [
-        {
-          "id": "branchName",
-          "type": "promptString",
-          "description": "Feature branch name (e.g. feature/add-user-auth or fix/login-bug)",
-          "default": "feature/"
-        }
-      ]
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "branchName",
+      "type": "promptString",
+      "description": "Feature branch name (e.g. feature/add-user-auth or fix/login-bug)",
+      "default": "feature/"
     }
   ]
 }
