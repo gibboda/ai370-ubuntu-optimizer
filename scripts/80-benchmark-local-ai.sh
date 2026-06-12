@@ -69,15 +69,17 @@ except Exception as e:
     echo "This is a lightweight visibility + import smoke. Full model benchmarks belong in Tier 2/3."
   } > "$LATEST_DIR/tier1-local-ai-benchmark.md"
 
-  cat > "$LATEST_DIR/tier1-local-ai-benchmark.json" <<EOF
-{
+  export providers OFFLINE VENV_DIR
+  python3 - <<'PY' > "$LATEST_DIR/tier1-local-ai-benchmark.json"
+import json, os
+print(json.dumps({
   "tier": 1,
   "phase": "benchmark-local-ai",
-  "offline": $([[ "$OFFLINE" == "true" ]] && echo true || echo false),
-  "onnxruntime_providers": "$providers",
-  "venv": "$VENV_DIR"
-}
-EOF
+  "offline": os.environ.get("OFFLINE", "false").lower() == "true",
+  "onnxruntime_providers": os.environ.get("providers", "unknown"),
+  "venv": os.environ.get("VENV_DIR", "")
+}, indent=2))
+PY
 
   echo "[INFO] 80-benchmark-local-ai.sh complete."
 }

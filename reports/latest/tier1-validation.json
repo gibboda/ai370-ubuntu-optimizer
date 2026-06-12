@@ -10,9 +10,9 @@
     "rocm_note": "ROCm is validated for visibility only in Tier 1. Full stack install is opt-in."
   },
   "artifacts": {
-    "hardware": "/Users/gibboda/Documents/Microsoft/Visual Studio Code Projects/ai370-ubuntu-optimizer/reports/latest/tier1-hardware.json",
-    "gpu_stack": "/Users/gibboda/Documents/Microsoft/Visual Studio Code Projects/ai370-ubuntu-optimizer/reports/latest/tier1-gpu-stack.json",
-    "local_ai": "/Users/gibboda/Documents/Microsoft/Visual Studio Code Projects/ai370-ubuntu-optimizer/reports/latest/tier1-local-ai-benchmark.json"
+    "hardware": "reports/latest/tier1-hardware.json",
+    "gpu_stack": "reports/latest/tier1-gpu-stack.json",
+    "local_ai": "reports/latest/tier1-local-ai-benchmark.json"
   },
   "failures": [],
   "warnings": []

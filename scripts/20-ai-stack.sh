@@ -76,9 +76,22 @@ load_offline_config() {
 }
 
 require_phase2_not_failed() {
+  # Accept the new Tier 1 gate artifact as a sufficient pre-check
+  local tier1_json="$PROJECT_ROOT/reports/latest/tier1-validation.json"
+  if [[ -f "$tier1_json" ]]; then
+    local t1_status
+    t1_status="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("status","UNKNOWN"))' "$tier1_json" 2>/dev/null || echo "UNKNOWN")"
+    if [[ "$t1_status" == "FAIL" ]]; then
+      echo "[ERROR] Tier 1 validation failed. Refusing AI stack setup."
+      exit 3
+    fi
+    return 0
+  fi
+
   if [[ ! -f "$VALIDATION_STATUS" ]]; then
     echo "[ERROR] Missing Phase 2 validation output: $VALIDATION_STATUS"
-    echo "[ERROR] Run: ./ai370-optimize.sh audit && ./ai370-optimize.sh plan --profile=$PROFILE"
+    echo "[ERROR] Run: ./ai370-optimize.sh tier1"
+    echo "[ERROR] Or (legacy): ./ai370-optimize.sh audit && ./ai370-optimize.sh plan --profile=$PROFILE"
     exit 3
   fi
 

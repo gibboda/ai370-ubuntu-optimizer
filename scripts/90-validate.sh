@@ -52,11 +52,11 @@ main() {
   # 3. Vulkan visible (from previous phase artifact or live)
   vulkan_ok=false
   if [[ -f "$LATEST_DIR/tier1-gpu-stack.json" ]]; then
-    if python3 - "$LATEST_DIR/tier1-gpu-stack.json" -c '
+    if python3 -c '
 import json,sys
 d=json.load(open(sys.argv[1]))
 print("true" if d.get("vulkan")=="visible" else "false")
-' 2>/dev/null | grep -q true; then
+' "$LATEST_DIR/tier1-gpu-stack.json" 2>/dev/null | grep -q true; then
       vulkan_ok=true
     fi
   fi
@@ -84,13 +84,15 @@ print("true" if d.get("vulkan")=="visible" else "false")
   done
 
   # Write machine gate artifact (export locals for the python snippet)
-  export LATEST_DIR PROFILE status GPU_ARCH NPU_PRESENT FAILURES WARNINGS
+  FAILURES="$(printf '%s\n' ${failures[@]+"${failures[@]}"})"
+  WARNINGS="$(printf '%s\n' ${warnings[@]+"${warnings[@]}"})"
+  export LATEST_DIR PROFILE status GPU_ARCH NPU_PRESENT FAILURES WARNINGS vulkan_ok
   python3 - <<'PY' > "$OUT_JSON"
 import json, os, datetime
-L = os.environ.get("LATEST_DIR", "reports/latest")
 st = os.environ.get("status", "PASS")
 gpu_arch = os.environ.get("GPU_ARCH", "unknown")
 npu_present = os.environ.get("NPU_PRESENT", "false")
+vulkan_ok = os.environ.get("vulkan_ok", "false")
 fails = [x for x in os.environ.get("FAILURES", "").splitlines() if x.strip()]
 warns = [x for x in os.environ.get("WARNINGS", "").splitlines() if x.strip()]
 
@@ -102,13 +104,13 @@ data = {
   "acceptance": {
     "radeon_890m_gfx1150": gpu_arch == "gfx1150",
     "amdxdna_npu": npu_present == "true",
-    "vulkan_validated": True,
+    "vulkan_validated": vulkan_ok == "true",
     "rocm_note": "ROCm is validated for visibility only in Tier 1. Full stack install is opt-in."
   },
   "artifacts": {
-    "hardware": os.path.join(L, "tier1-hardware.json"),
-    "gpu_stack": os.path.join(L, "tier1-gpu-stack.json"),
-    "local_ai": os.path.join(L, "tier1-local-ai-benchmark.json")
+    "hardware": "reports/latest/tier1-hardware.json",
+    "gpu_stack": "reports/latest/tier1-gpu-stack.json",
+    "local_ai": "reports/latest/tier1-local-ai-benchmark.json"
   },
   "failures": fails,
   "warnings": warns

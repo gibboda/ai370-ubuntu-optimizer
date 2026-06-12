@@ -86,6 +86,7 @@ main() {
   } > "$STATUS_FILE"
 
   # Machine readable for gates / summaries
+  export amdgpu_state gpu_arch vulkan_state opencl_state rocm_state
   python3 - <<'PY' > "$JSON_FILE"
 import json, os
 print(json.dumps({
