@@ -1,0 +1,12 @@
+{
+  "tier": 1,
+  "phase": "check-bios",
+  "timestamp": "",
+  "profile": "ai370",
+  "bios_version": "unknown",
+  "system": {
+    "vendor": "unknown",
+    "product": "unknown"
+  },
+  "fwupd": { "devices_present": false }
+}

@@ -1,0 +1,9 @@
+{
+  "tier": 1,
+  "phase": "optimize-kernel",
+  "plan_status": "safe",
+  "dry_run": false,
+  "packages": ["pciutils","usbutils","dmidecode","lshw","inxi","jq","lm-sensors","linux-firmware","fwupd","mesa-utils","vulkan-tools","clinfo","nvme-cli","smartmontools","python3","python3-venv","python3-pip","curl","wget","git","build-essential","ca-certificates","gnupg","software-properties-common","apt-transport-https"],
+  "blocked": ["rocm", "xrt", "ryzen_ai_runtime"],
+  "notes": "Conservative Ubuntu baseline only. AMD acceleration stacks are installed via amd-accel-install or tier3/tier5 paths with explicit risk acknowledgement."
+}

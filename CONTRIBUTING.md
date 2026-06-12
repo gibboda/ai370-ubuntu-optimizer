@@ -44,6 +44,7 @@ Scope narrows the area of change:
 | `config` | `config/` |
 | `workflows` | `workflows/` |
 | `release` | Release tooling and CI |
+| `tier1` | Tier 1 hardware/firmware detection and validation scripts |
 
 ### Examples
 
