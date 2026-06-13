@@ -59,6 +59,21 @@ resolve_project_path() {
   fi
 }
 
+format_report_path() {
+  local path="${1:-}"
+  if [[ -z "$path" ]]; then
+    printf '%s\n' ""
+  elif [[ "$path" == "$PROJECT_ROOT" ]]; then
+    printf '%s\n' "."
+  elif [[ "$path" == "$PROJECT_ROOT/"* ]]; then
+    printf './%s\n' "${path#"$PROJECT_ROOT/"}"
+  elif [[ "$path" = /* ]]; then
+    printf '%s\n' "<absolute-path-redacted>"
+  else
+    printf '%s\n' "$path"
+  fi
+}
+
 load_offline_config() {
   OFFLINE_WHEELHOUSE="$AI_DIR/wheelhouse"
   OFFLINE_MODEL_ROOT="$AI_DIR/models"
@@ -358,6 +373,10 @@ import onnxruntime as ort
 print(",".join(ort.get_available_providers()))
 PY
 )"
+  report_venv="$(format_report_path "$VENV_DIR")"
+  report_wheelhouse="$(format_report_path "${OFFLINE_WHEELHOUSE:-}")"
+  report_model_root="$(format_report_path "${OFFLINE_MODEL_ROOT:-}")"
+  report_tool_root="$(format_report_path "${OFFLINE_TOOL_ROOT:-}")"
 
   {
     echo "AI Stack Status"
@@ -367,10 +386,10 @@ PY
     echo "Offline: $OFFLINE"
     echo "Timestamp: $(date -Is)"
     echo
-    echo "Python virtual environment: $VENV_DIR"
-    echo "Offline wheelhouse: ${OFFLINE_WHEELHOUSE:-}"
-    echo "Offline model root: ${OFFLINE_MODEL_ROOT:-}"
-    echo "Offline tool root: ${OFFLINE_TOOL_ROOT:-}"
+    echo "Python virtual environment: $report_venv"
+    echo "Offline wheelhouse: $report_wheelhouse"
+    echo "Offline model root: $report_model_root"
+    echo "Offline tool root: $report_tool_root"
     echo "amdgpu: $amdgpu_state"
     echo "Vulkan: $vulkan_state"
     echo "OpenCL: $opencl_state"
@@ -388,10 +407,10 @@ PY
   "mode": "$MODE",
   "persistence": "$PERSISTENCE",
   "offline": $OFFLINE,
-  "venv": "$VENV_DIR",
-  "offline_wheelhouse": "${OFFLINE_WHEELHOUSE:-}",
-  "offline_model_root": "${OFFLINE_MODEL_ROOT:-}",
-  "offline_tool_root": "${OFFLINE_TOOL_ROOT:-}",
+  "venv": "$report_venv",
+  "offline_wheelhouse": "$report_wheelhouse",
+  "offline_model_root": "$report_model_root",
+  "offline_tool_root": "$report_tool_root",
   "amdgpu": "$amdgpu_state",
   "vulkan": "$vulkan_state",
   "opencl": "$opencl_state",
@@ -427,7 +446,7 @@ EOF_JSON
     echo
     echo "## Next actions"
     echo
-    echo "- Review \`$BENCHMARK_MD\` before GPU/NPU optimization."
+    echo "- Review \`reports/latest/ai-runtime-benchmark.md\` before GPU/NPU optimization."
     echo "- Run Phase 5 acceleration validation to capture local hardware capability reports."
   } > "$RECOMMENDATIONS_FILE"
 

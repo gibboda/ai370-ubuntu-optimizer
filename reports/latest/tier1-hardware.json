@@ -1,21 +1,21 @@
 {
   "tier": 1,
   "phase": "detect-hardware",
-  "timestamp": "",
+  "timestamp": "2026-06-13T01:14:05.944748Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
   "system": {
-    "vendor": "unknown",
-    "product": "unknown",
-    "bios_version": "unknown",
-    "os": "unknown",
-    "kernel": "25.5.0"
+    "vendor": "Microsoft Corporation",
+    "product": "Virtual Machine",
+    "bios_version": "Hyper-V UEFI Release v4.1",
+    "os": "Ubuntu 24.04.4 LTS",
+    "kernel": "6.17.0-1018-azure"
   },
   "cpu": {
-    "model": "",
-    "vendor": "",
-    "logical_cores": 0
+    "model": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+    "vendor": "GenuineIntel",
+    "logical_cores": 4
   },
   "gpu": {
     "text": "",
@@ -27,7 +27,14 @@
     "module_text": "",
     "device_text": ""
   },
-  "memory": { "total": "" },
-  "storage": { "summary": "", "nvme": "" },
-  "tools": { "missing": "lsb_release,lscpu,free,lspci,lsblk,lsmod,fwupdmgr,dmidecode,powerprofilesctl,sensors,vulkaninfo,clinfo,nvme,smartctl" }
+  "memory": {
+    "total": "15Gi"
+  },
+  "storage": {
+    "summary": "sda  Virtual Disk  150G disk",
+    "nvme": ""
+  },
+  "tools": {
+    "missing": "powerprofilesctl,sensors,vulkaninfo,clinfo,smartctl"
+  }
 }

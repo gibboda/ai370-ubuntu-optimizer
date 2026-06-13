@@ -1,0 +1,19 @@
+{
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "status": "WARN",
+  "ollama": {
+    "state": "missing",
+    "version": "command-not-found: ollama",
+    "list": "command-not-found: ollama"
+  },
+  "llama_cpp": {
+    "state": "missing",
+    "binary": "",
+    "version": "not-run"
+  },
+  "gguf_models": [],
+  "policy": "local validation only; no model downloads or runtime installs are attempted"
+}

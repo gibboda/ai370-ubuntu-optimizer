@@ -48,41 +48,60 @@ main() {
   MISSING_TOOLS="$(collect_missing_tools)"
 
   # Structured JSON inventory (Tier 1 canonical)
-  cat > "$LATEST_DIR/tier1-hardware.json" <<EOF
-{
-  "tier": 1,
-  "phase": "detect-hardware",
-  "timestamp": "$(date -Is)",
-  "profile": "$PROFILE",
-  "mode": "$MODE",
-  "persistence": "$PERSISTENCE",
-  "system": {
-    "vendor": "${SYSTEM_VENDOR:-unknown}",
-    "product": "${SYSTEM_PRODUCT:-unknown}",
-    "bios_version": "${BIOS_VERSION:-unknown}",
-    "os": "$OS_DESCRIPTION",
-    "kernel": "$KERNEL"
-  },
-  "cpu": {
-    "model": "$CPU_MODEL",
-    "vendor": "$CPU_VENDOR",
-    "logical_cores": ${CPU_CORES:-0}
-  },
-  "gpu": {
-    "text": "$GPU_TEXT",
-    "arch": "$GPU_ARCH",
-    "amdgpu_module": "${AMDGPU_MODULE:+loaded}"
-  },
-  "npu": {
-    "present": $NPU_PRESENT,
-    "module_text": "$NPU_MODULE",
-    "device_text": "$NPU_DEVICE"
-  },
-  "memory": { "total": "$MEMORY_TOTAL" },
-  "storage": { "summary": "$STORAGE_TEXT", "nvme": "$NVME_TEXT" },
-  "tools": { "missing": "$(echo "$MISSING_TOOLS" | tr '\n' ',' | sed 's/,$//')" }
+  MISSING_TOOLS_CSV="$(echo "$MISSING_TOOLS" | tr '\n' ',' | sed 's/,$//')"
+  export PROFILE MODE PERSISTENCE SYSTEM_VENDOR SYSTEM_PRODUCT BIOS_VERSION OS_DESCRIPTION KERNEL CPU_MODEL CPU_VENDOR CPU_CORES GPU_TEXT GPU_ARCH AMDGPU_MODULE NPU_PRESENT NPU_MODULE NPU_DEVICE MEMORY_TOTAL STORAGE_TEXT NVME_TEXT MISSING_TOOLS_CSV
+  python3 - <<'PY' > "$LATEST_DIR/tier1-hardware.json"
+import json
+import os
+from datetime import datetime, UTC
+
+
+def as_int(value: str, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+data = {
+    "tier": 1,
+    "phase": "detect-hardware",
+    "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+    "profile": os.environ.get("PROFILE", "unknown"),
+    "mode": os.environ.get("MODE", "unknown"),
+    "persistence": os.environ.get("PERSISTENCE", "unknown"),
+    "system": {
+        "vendor": os.environ.get("SYSTEM_VENDOR") or "unknown",
+        "product": os.environ.get("SYSTEM_PRODUCT") or "unknown",
+        "bios_version": os.environ.get("BIOS_VERSION") or "unknown",
+        "os": os.environ.get("OS_DESCRIPTION", ""),
+        "kernel": os.environ.get("KERNEL", ""),
+    },
+    "cpu": {
+        "model": os.environ.get("CPU_MODEL", ""),
+        "vendor": os.environ.get("CPU_VENDOR", ""),
+        "logical_cores": as_int(os.environ.get("CPU_CORES", "0")),
+    },
+    "gpu": {
+        "text": os.environ.get("GPU_TEXT", ""),
+        "arch": os.environ.get("GPU_ARCH", ""),
+        "amdgpu_module": "loaded" if os.environ.get("AMDGPU_MODULE", "") else "",
+    },
+    "npu": {
+        "present": os.environ.get("NPU_PRESENT", "false").lower() == "true",
+        "module_text": os.environ.get("NPU_MODULE", ""),
+        "device_text": os.environ.get("NPU_DEVICE", ""),
+    },
+    "memory": {"total": os.environ.get("MEMORY_TOTAL", "")},
+    "storage": {
+        "summary": os.environ.get("STORAGE_TEXT", ""),
+        "nvme": os.environ.get("NVME_TEXT", ""),
+    },
+    "tools": {"missing": os.environ.get("MISSING_TOOLS_CSV", "")},
 }
-EOF
+
+print(json.dumps(data, indent=2))
+PY
 
   # Human readable summary
   {

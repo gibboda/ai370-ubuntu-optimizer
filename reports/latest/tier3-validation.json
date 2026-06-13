@@ -1,0 +1,20 @@
+{
+  "tier": 3,
+  "status": "EXPERIMENTAL-PASS",
+  "timestamp": "2026-06-12T19:53:38-05:00",
+  "profile": "ai370",
+  "acceptance": {
+    "npu_module_loaded": false,
+    "device_nodes_present": true,
+    "xrt_available": false,
+    "onnx_runtime_present": true,
+    "npu_ep_visible": false,
+    "npu_smoke_executed": true
+  },
+  "artifacts": {
+    "npu_status": "reports/latest/npu-acceleration-status.txt",
+    "xrt_status": "reports/latest/xrt-status.txt",
+    "tier3_validation": "reports/latest/tier3-validation.json"
+  },
+  "note": "Tier 3 (NPU / Vitis AI EP / Ryzen AI) is EXPERIMENTAL. Requires staged .deb artifacts under .ai370-ai/amd-artifacts for full driver install. See README and 40-ryzen-ai-npu.sh."
+}

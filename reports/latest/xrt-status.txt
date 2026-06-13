@@ -1,0 +1,11 @@
+# XRT Status
+
+Runtime tools: not-installed
+
+## xrt-smi examine
+
+not-run
+
+## xrt-smi validate
+
+not-run

@@ -1,0 +1,12 @@
+LLM Validation Status
+Profile: ai370
+Mode: safe
+Persistence: runtime
+Offline: false
+Status: WARN
+Timestamp: 2026-06-12T19:50:56-05:00
+
+ollama: missing
+llama_cpp: missing
+llama_binary: not-found
+gguf_models: missing

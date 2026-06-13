@@ -1,0 +1,60 @@
+{
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "python": "3.14.4",
+  "platform": "Linux-7.0.0-22-generic-x86_64-with-glibc2.43",
+  "cpu_count": 24,
+  "env_threads": {
+    "OMP_NUM_THREADS": "",
+    "OPENBLAS_NUM_THREADS": "",
+    "MKL_NUM_THREADS": "",
+    "ORT_NUM_THREADS": ""
+  },
+  "packages": {
+    "numpy": "2.4.6",
+    "onnx": "1.21.0",
+    "onnxruntime": "1.26.0",
+    "psutil": "7.2.2",
+    "py-cpuinfo": "9.0.0"
+  },
+  "onnxruntime_providers": [
+    "AzureExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "benchmarks": {
+    "numpy_matmul_256": {
+      "runs": [
+        0.0003792200004681945,
+        0.00014745599946763832,
+        8.200799948099302e-05
+      ],
+      "median_seconds": 0.00014745599946763832
+    },
+    "numpy_matmul_512": {
+      "runs": [
+        0.0010862209992410499,
+        0.0007357310005318141,
+        0.00041501899977447465
+      ],
+      "median_seconds": 0.0007357310005318141
+    },
+    "onnxruntime_cpu_identity": {
+      "runs": [
+        0.00018782499955705134,
+        1.1789999916800298e-05,
+        4.339999577496201e-06,
+        3.510000169626437e-06,
+        3.7400004657683894e-06,
+        3.448999450483825e-06,
+        3.410000317671802e-06,
+        3.510000169626437e-06,
+        3.289999767730478e-06,
+        3.289999767730478e-06
+      ],
+      "median_seconds": 3.510000169626437e-06
+    }
+  },
+  "errors": []
+}

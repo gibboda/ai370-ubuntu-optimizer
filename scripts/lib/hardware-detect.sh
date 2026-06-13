@@ -104,6 +104,8 @@ detect_storage_text() { run_or_empty lsblk -dn -o NAME,MODEL,SIZE,TYPE; }
 detect_nvme_text() { run_or_empty lsblk -dn -o NAME,MODEL,SIZE,TYPE | awk '$1 ~ /^nvme/ || $0 ~ /nvme|NVMe/ {print}'; }
 
 detect_bios_version() { run_sudo_or_empty dmidecode -s bios-version; }
+detect_bios_release_date() { run_sudo_or_empty dmidecode -s bios-release-date; }
+detect_bios_vendor() { run_sudo_or_empty dmidecode -s bios-vendor; }
 detect_system_product() { run_sudo_or_empty dmidecode -s system-product-name; }
 detect_system_vendor() { run_sudo_or_empty dmidecode -s system-manufacturer; }
 detect_fwupd_devices() { run_or_empty fwupdmgr get-devices; }
