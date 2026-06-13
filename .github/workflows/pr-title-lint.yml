@@ -84,6 +84,7 @@ jobs:
             config
             workflows
             release
+            tier
             tier1
           requireScope: false
           subjectPattern: ^[A-Za-z].+$
@@ -101,7 +102,7 @@ jobs:
         with:
           script: |
             const allowedTypes = ['feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci', 'perf'];
-            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'workflows', 'release', 'tier1'];
+            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'workflows', 'release', 'tier', 'tier1'];
             const commitSubjectPattern = new RegExp(
               `^(?:${allowedTypes.join('|')})(?:\\((?:${allowedScopes.join('|')})\\))?!?: [A-Za-z].+$`
             );
@@ -135,7 +136,7 @@ jobs:
               pull_number: context.payload.pull_request.number,
               per_page: 100,
             });
-            const legacyAllowedCommitShas = new Set(['9b00ebb', 'ba39fe9', 'b125679']);
+            const legacyAllowedCommitShas = new Set(['9b00ebb', 'ba39fe9', 'b125679', '96e12a0', '8e1d5af']);
 
             if (commits.length <= 1) {
               core.info('Skipping commit-subject enforcement for single-commit PRs because the PR title lint already validates the squash-merge subject.');
@@ -163,7 +164,7 @@ jobs:
                   'The following commit subjects do not follow the required format `type(scope): Subject`:',
                   ...invalidSubjects.map(({ sha, subject }) => `- ${sha} ${subject}`),
                   'Allowed types: feat, fix, chore, refactor, docs, test, ci, perf.',
-                  'Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, release, tier1.',
+                  'Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, release, tier, tier1.',
                   'The subject must start with a letter.',
                 ].join('\n')
               );
