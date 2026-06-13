@@ -1,0 +1,21 @@
+{
+  "tier": 2,
+  "status": "WARN",
+  "timestamp": "2026-06-12T19:51:00-05:00",
+  "profile": "ai370",
+  "acceptance": {
+    "ollama_available": false,
+    "llama_cpp_available": false,
+    "gguf_models_present": false,
+    "pytorch_available": true,
+    "pytorch_rocm": false,
+    "hf_cache_ok": true,
+    "open_webui_available": false,
+    "local_inference_smoke": "pass"
+  },
+  "artifacts": {
+    "llm_validation": "reports/latest/llm-validation.json",
+    "tier2_validation": "reports/latest/tier2-validation.json"
+  },
+  "notes": "ROCm PyTorch and full acceleration require explicit amd-accel-install --accept-amd-acceleration-risk and re-validation. NPU via Tier 3 (experimental)."
+}

@@ -59,6 +59,7 @@ scripts/
 **Acceptance Criteria (must all pass):**
 - Radeon 890M (gfx1150) detected
 - AMDXDNA / XDNA2 NPU detected
+- BIOS version target (2.01 for EliteMini AI370) recorded + acceptable flag in tier1-firmware.json / tier1-validation.json
 - ROCm validated (or explicitly noted as not yet installed)
 - Vulkan validated
 - All Tier 1 validation checks pass (see `reports/latest/tier1-validation.json` and `tier1-summary.md`)

@@ -1,19 +1,24 @@
 {
   "tier": 1,
   "status": "WARN",
-  "timestamp": "2026-06-12T04:35:55.611544Z",
+  "timestamp": "2026-06-13T00:46:08.375544Z",
   "profile": "ai370",
   "acceptance": {
-    "radeon_890m_gfx1150": false,
-    "amdxdna_npu": false,
+    "radeon_890m_gfx1150": true,
+    "amdxdna_npu": true,
     "vulkan_validated": true,
+    "bios_version_acceptable": "unknown",
     "rocm_note": "ROCm is validated for visibility only in Tier 1. Full stack install is opt-in."
   },
   "artifacts": {
     "hardware": "reports/latest/tier1-hardware.json",
     "gpu_stack": "reports/latest/tier1-gpu-stack.json",
+    "firmware": "reports/latest/tier1-firmware.json",
     "local_ai": "reports/latest/tier1-local-ai-benchmark.json"
   },
   "failures": [],
-  "warnings": []
+  "warnings": [
+    "Expected Tier 1 artifact missing: tier1-gpu-stack.json",
+    "Expected Tier 1 artifact missing: tier1-local-ai-benchmark.json"
+  ]
 }

@@ -44,9 +44,9 @@ main() {
     record_warn "Radeon 890M / gfx1150 not detected (saw: $GPU_ARCH). Check amdgpu firmware/kernel."
   fi
 
-  # 2. AMDXDNA / XDNA2 NPU
+  # 2. AMDXDNA / XDNA2 NPU (Tier 3 enablement is experimental)
   if [[ "$NPU_PRESENT" != "true" ]]; then
-    record_warn "AMDXDNA / XDNA2 NPU not detected. Kernel module or device node missing."
+    record_warn "AMDXDNA / XDNA2 NPU not detected. Kernel module or device node missing. (Tier 3 is experimental.)"
   fi
 
   # 3. Vulkan visible (from previous phase artifact or live)
@@ -76,6 +76,29 @@ print("true" if d.get("vulkan")=="visible" else "false")
     rocm_note+=" (rocminfo not in PATH yet)"
   fi
 
+  # 5. BIOS version target (2.01 for AI370) – non-fatal, recorded for gate visibility (M1.1)
+  BIOS_ACCEPTABLE="unknown"
+  if [[ -f "$LATEST_DIR/tier1-firmware.json" ]]; then
+    BIOS_ACCEPTABLE="$(python3 - "$LATEST_DIR/tier1-firmware.json" <<'PY' 2>/dev/null || echo unknown
+import json,sys
+d=json.load(open(sys.argv[1]))
+print(d.get("bios_acceptable","unknown"))
+PY
+)"
+  else
+    bver="$(detect_bios_version 2>/dev/null || echo '')"
+    if [[ "$PROFILE" == "ai370" && -n "$bver" && "$bver" != "unknown" ]]; then
+      if [[ "$bver" == "2.01" || "$bver" == *"2.01"* ]]; then
+        BIOS_ACCEPTABLE="true"
+      else
+        BIOS_ACCEPTABLE="false"
+      fi
+    fi
+  fi
+  if [[ "$BIOS_ACCEPTABLE" == "false" ]]; then
+    record_warn "BIOS version not at target 2.01 for AI370 profile (see tier1-firmware.json)."
+  fi
+
   # Require that the main previous Tier 1 steps produced artifacts (loose but useful)
   for f in tier1-hardware.json tier1-gpu-stack.json tier1-local-ai-benchmark.json; do
     if [[ ! -f "$LATEST_DIR/$f" ]]; then
@@ -86,13 +109,14 @@ print("true" if d.get("vulkan")=="visible" else "false")
   # Write machine gate artifact (export locals for the python snippet)
   FAILURES="$(printf '%s\n' ${failures[@]+"${failures[@]}"})"
   WARNINGS="$(printf '%s\n' ${warnings[@]+"${warnings[@]}"})"
-  export LATEST_DIR PROFILE status GPU_ARCH NPU_PRESENT FAILURES WARNINGS vulkan_ok
+  export LATEST_DIR PROFILE status GPU_ARCH NPU_PRESENT FAILURES WARNINGS vulkan_ok BIOS_ACCEPTABLE
   python3 - <<'PY' > "$OUT_JSON"
 import json, os, datetime
 st = os.environ.get("status", "PASS")
 gpu_arch = os.environ.get("GPU_ARCH", "unknown")
 npu_present = os.environ.get("NPU_PRESENT", "false")
 vulkan_ok = os.environ.get("vulkan_ok", "false")
+bios_acc = os.environ.get("BIOS_ACCEPTABLE", "unknown")
 fails = [x for x in os.environ.get("FAILURES", "").splitlines() if x.strip()]
 warns = [x for x in os.environ.get("WARNINGS", "").splitlines() if x.strip()]
 
@@ -105,11 +129,13 @@ data = {
     "radeon_890m_gfx1150": gpu_arch == "gfx1150",
     "amdxdna_npu": npu_present == "true",
     "vulkan_validated": vulkan_ok == "true",
+    "bios_version_acceptable": bios_acc,
     "rocm_note": "ROCm is validated for visibility only in Tier 1. Full stack install is opt-in."
   },
   "artifacts": {
     "hardware": "reports/latest/tier1-hardware.json",
     "gpu_stack": "reports/latest/tier1-gpu-stack.json",
+    "firmware": "reports/latest/tier1-firmware.json",
     "local_ai": "reports/latest/tier1-local-ai-benchmark.json"
   },
   "failures": fails,
@@ -129,6 +155,7 @@ PY
     echo "- Radeon 890M (gfx1150): $([[ "$GPU_ARCH" == "gfx1150" ]] && echo "PASS" || echo "WARN") (detected: $GPU_ARCH)"
     echo "- AMDXDNA / XDNA2 NPU: $([[ "$NPU_PRESENT" == "true" ]] && echo "PASS" || echo "WARN")"
     echo "- Vulkan validated: (see tier1-gpu-stack.json)"
+    echo "- BIOS version (target 2.01 for AI370): $BIOS_ACCEPTABLE (see tier1-firmware.json)"
     echo "- ROCm: visibility-only at this tier. $rocm_note"
     echo
     if (( ${#failures[@]} > 0 )); then

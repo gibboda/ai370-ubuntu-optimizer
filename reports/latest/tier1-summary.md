@@ -4,15 +4,13 @@
 Profile: ai370 | Mode: safe
 
 ## Acceptance Criteria
-- Radeon 890M (gfx1150): WARN (detected: unknown)
-- AMDXDNA / XDNA2 NPU: WARN
+- Radeon 890M (gfx1150): PASS (detected: gfx1150)
+- AMDXDNA / XDNA2 NPU: PASS
 - Vulkan validated: (see tier1-gpu-stack.json)
-- ROCm: visibility-only at this tier. ROCm visibility is optional at pure Tier 1; explicit installation happens via amd-accel-install after risk acceptance. (rocminfo not in PATH yet)
+- BIOS version (target 2.01 for AI370): unknown (see tier1-firmware.json)
+- ROCm: visibility-only at this tier. ROCm visibility is optional at pure Tier 1; explicit installation happens via amd-accel-install after risk acceptance.
 
 ## Warnings
-- Radeon 890M / gfx1150 not detected (saw: unknown). Check amdgpu firmware/kernel.
-- AMDXDNA / XDNA2 NPU not detected. Kernel module or device node missing.
-- Vulkan not clearly validated in Tier 1 GPU stack phase.
 - Expected Tier 1 artifact missing: tier1-gpu-stack.json
 - Expected Tier 1 artifact missing: tier1-local-ai-benchmark.json
 

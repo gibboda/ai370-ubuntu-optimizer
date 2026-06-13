@@ -1,0 +1,13 @@
+{
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "kernel_module": "missing",
+  "device_node": "present",
+  "runtime_tools": "not-installed",
+  "onnxruntime_providers": "AzureExecutionProvider,CPUExecutionProvider",
+  "device_nodes": "/dev/accel\n/dev/accel/accel0",
+  "xrt_smi_examine": "not-run",
+  "xrt_smi_validate": "not-run"
+}

@@ -21,9 +21,28 @@ main() {
   echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
 
   BIOS_VERSION="$(detect_bios_version)"
+  BIOS_DATE="$(detect_bios_release_date)"
+  BIOS_VENDOR="$(detect_bios_vendor)"
   SYSTEM_PRODUCT="$(detect_system_product)"
   SYSTEM_VENDOR="$(detect_system_vendor)"
   FWUPD_DEVICES="$(detect_fwupd_devices)"
+
+  # Target for primary hardware (safe default; non-fatal)
+  if [[ "$PROFILE" == "ai370" ]]; then
+    EXPECTED_BIOS="2.01"
+  else
+    EXPECTED_BIOS=""
+  fi
+
+  if [[ -n "$EXPECTED_BIOS" && -n "${BIOS_VERSION:-}" ]]; then
+    if [[ "$BIOS_VERSION" == "$EXPECTED_BIOS" || "$BIOS_VERSION" == *"$EXPECTED_BIOS"* ]]; then
+      BIOS_ACCEPTABLE="true"
+    else
+      BIOS_ACCEPTABLE="false"
+    fi
+  else
+    BIOS_ACCEPTABLE="unknown"
+  fi
 
   cat > "$LATEST_DIR/tier1-firmware.json" <<EOF
 {
@@ -32,6 +51,10 @@ main() {
   "timestamp": "$(date -Is)",
   "profile": "$PROFILE",
   "bios_version": "${BIOS_VERSION:-unknown}",
+  "bios_date": "${BIOS_DATE:-unknown}",
+  "bios_vendor": "${BIOS_VENDOR:-unknown}",
+  "bios_expected": "${EXPECTED_BIOS:-}",
+  "bios_acceptable": "${BIOS_ACCEPTABLE}",
   "system": {
     "vendor": "${SYSTEM_VENDOR:-unknown}",
     "product": "${SYSTEM_PRODUCT:-unknown}"
@@ -45,12 +68,18 @@ EOF
     echo
     echo "- System: ${SYSTEM_VENDOR:-unknown} ${SYSTEM_PRODUCT:-unknown}"
     echo "- BIOS version: ${BIOS_VERSION:-unknown}"
+    echo "- BIOS release date: ${BIOS_DATE:-unknown}"
+    echo "- BIOS vendor: ${BIOS_VENDOR:-unknown}"
+    if [[ -n "$EXPECTED_BIOS" ]]; then
+      echo "- Target BIOS for $PROFILE: $EXPECTED_BIOS (acceptable: $BIOS_ACCEPTABLE)"
+    fi
     echo "- fwupd devices visible: $([[ -n "$FWUPD_DEVICES" ]] && echo yes || echo "no (or tool missing)")"
     echo
     echo "Note: This phase only records baseline state. No firmware updates are applied."
+    echo "For Minisforum EliteMini AI370 the recommended BIOS is 2.01 (or newer compatible). Review vendor notes before flashing."
   } > "$LATEST_DIR/tier1-firmware.md"
 
-  # Legacy artifact
+  # Legacy artifact (best effort)
   cp "$LATEST_DIR/tier1-firmware.json" "$LATEST_DIR/firmware-baseline.json" 2>/dev/null || true
 
   echo "[INFO] Wrote tier1-firmware.json and tier1-firmware.md"

@@ -20,6 +20,7 @@ Usage (AI Stack Tiers - recommended):
   ./ai370-optimize.sh tier1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh tier1-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh tier2 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh tier2-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh tier3 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh tier3-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh tier4 [--profile=ai370] [--mode=safe] [--persistence=runtime]
@@ -122,10 +123,12 @@ run_script() {
 
 # Tier gate: Tier 5 (and full generative flows) must not proceed until
 # Tier 1 + Tier 2 + Tier 3 have produced passing validation artifacts.
-# The gate looks for tier1-validation.json (or falls back to legacy 90-validate + accel artifacts).
+# Prefers dedicated tierN-validation.json (M2/M3). Falls back to legacy for transition.
 require_tier123_pass() {
   local LATEST_DIR="$PROJECT_ROOT/reports/latest"
   local tier1_status="$LATEST_DIR/tier1-validation.json"
+  local tier2_status="$LATEST_DIR/tier2-validation.json"
+  local tier3_status="$LATEST_DIR/tier3-validation.json"
   local legacy_final="$LATEST_DIR/final-validation.txt"
   local gpu_status="$LATEST_DIR/gpu-acceleration-status.txt"
   local npu_status="$LATEST_DIR/npu-acceleration-status.txt"
@@ -153,17 +156,41 @@ then
     pass="false"
   fi
 
-  # Require some evidence of Tier 2 (LLM/AI runtime) and Tier 3 (NPU path)
-  if [[ ! -f "$llm_status" && ! -f "$ai_status" ]]; then
+  # Tier 2: prefer dedicated json (from 100-tier2), fall back to legacy llm/ai status
+  if [[ -f "$tier2_status" ]]; then
+    if ! python3 - "$tier2_status" <<'PY' >/dev/null 2>&1
+import json, sys
+data=json.load(open(sys.argv[1]))
+status = data.get("status") or "UNKNOWN"
+if status.upper() not in ("PASS", "WARN"):  # WARN allowed for missing optional staged models
+    sys.exit(1)
+PY
+then
+      pass="false"
+    fi
+  elif [[ ! -f "$llm_status" && ! -f "$ai_status" ]]; then
     pass="false"
   fi
-  if [[ ! -f "$npu_status" ]]; then
+
+  # Tier 3: prefer dedicated (future), else legacy npu evidence
+  if [[ -f "$tier3_status" ]]; then
+    if ! python3 - "$tier3_status" <<'PY' >/dev/null 2>&1
+import json, sys
+data=json.load(open(sys.argv[1]))
+status = data.get("status") or "UNKNOWN"
+if status.upper() not in ("PASS", "WARN", "EXPERIMENTAL-PASS"):
+    sys.exit(1)
+PY
+then
+      pass="false"
+    fi
+  elif [[ ! -f "$npu_status" ]]; then
     pass="false"
   fi
 
   if [[ "$pass" != "true" ]]; then
     echo "[ERROR] Tier 1 + Tier 2 + Tier 3 validation has not passed."
-    echo "[ERROR] Run: ./ai370-optimize.sh tier1 && ./ai370-optimize.sh tier2 && ./ai370-optimize.sh tier3-validate"
+    echo "[ERROR] Run: ./ai370-optimize.sh tier1 && ./ai370-optimize.sh tier2 && ./ai370-optimize.sh tier2-validate && ./ai370-optimize.sh tier3-validate"
     echo "[ERROR] Then re-run this command."
     exit 3
   fi
@@ -223,7 +250,13 @@ case "$CMD" in
     echo "[INFO] Running Tier 2 – Recommended AI Runtime Layer"
     run_script "scripts/20-ai-stack.sh" "$OFFLINE"
     run_script "scripts/80-llm-validation.sh" "$OFFLINE"
-    # Skeleton / future expansion point
+    if [[ -f "$PROJECT_ROOT/scripts/100-tier2-ai-runtime.sh" ]]; then
+      run_script "scripts/100-tier2-ai-runtime.sh" "$OFFLINE"
+    fi
+    ;;
+
+  tier2-validate)
+    echo "[INFO] Tier 2 validation (writes/validates tier2-validation.json)"
     if [[ -f "$PROJECT_ROOT/scripts/100-tier2-ai-runtime.sh" ]]; then
       run_script "scripts/100-tier2-ai-runtime.sh" "$OFFLINE"
     fi
@@ -238,9 +271,11 @@ case "$CMD" in
     ;;
 
   tier3-validate)
-    echo "[INFO] Tier 3 NPU validation (re-uses NPU smoke + ONNX provider checks)"
+    echo "[INFO] Tier 3 NPU validation (experimental)"
     run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
-    # In a full implementation this would also run dedicated NPU benchmark and write tier3-validation.json
+    if [[ -f "$PROJECT_ROOT/scripts/110-tier3-npu-enable.sh" ]]; then
+      run_script "scripts/110-tier3-npu-enable.sh" "$OFFLINE"
+    fi
     ;;
 
   tier4)
