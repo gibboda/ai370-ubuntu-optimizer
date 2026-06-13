@@ -108,7 +108,7 @@ PY
   fi
 
   # Require that the main previous Tier 1 steps produced artifacts (loose but useful)
-  for f in tier1-hardware.json tier1-gpu-stack.json tier1-local-ai-benchmark.json; do
+  for f in tier1-hardware.json tier1-firmware.json tier1-kernel-plan.json tier1-gpu-stack.json tier1-npu.json tier1-local-ai-benchmark.json; do
     if [[ ! -f "$LATEST_DIR/$f" ]]; then
       record_warn "Expected Tier 1 artifact missing: $f"
     fi
@@ -142,7 +142,9 @@ data = {
   },
   "artifacts": {
     "hardware": "reports/latest/tier1-hardware.json",
+    "kernel": "reports/latest/tier1-kernel-plan.json",
     "gpu_stack": "reports/latest/tier1-gpu-stack.json",
+    "npu": "reports/latest/tier1-npu.json",
     "firmware": "reports/latest/tier1-firmware.json",
     "local_ai": "reports/latest/tier1-local-ai-benchmark.json"
   },
