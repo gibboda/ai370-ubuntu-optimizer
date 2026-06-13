@@ -5,11 +5,11 @@ set -euo pipefail
 
 # Accept standard repo positional args for interface consistency.
 # This synthetic benchmark script does not currently vary behavior by them.
-PROFILE="${1:-default}"
-MODE="${2:-production}"
-PERSISTENCE="${3:-ephemeral}"
+PROFILE="${1:-ai370}"
+MODE="${2:-safe}"
+PERSISTENCE="${3:-runtime}"
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT_DIR="$ROOT/reports/latest"
 CSV="$OUT_DIR/comfyui-benchmark.csv"
 SUMMARY="$OUT_DIR/comfyui-benchmark-summary.md"

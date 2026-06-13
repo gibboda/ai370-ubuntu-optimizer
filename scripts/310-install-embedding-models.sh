@@ -1,3 +1,15 @@
-#!/bin/bash
-# Embedding models for offline RAG
-echo "Setting up local embedding models..."
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+
+set -euo pipefail
+
+PROFILE="${1:-ai370}"
+MODE="${2:-safe}"
+PERSISTENCE="${3:-runtime}"
+
+main() {
+  echo "[INFO] Setting up local embedding models..."
+  echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
+}
+
+main "$@"

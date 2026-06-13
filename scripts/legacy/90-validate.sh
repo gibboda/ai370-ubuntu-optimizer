@@ -11,7 +11,7 @@ PROFILE="${1:-ai370}"
 MODE="${2:-safe}"
 PERSISTENCE="${3:-runtime}"
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
 OUT_JSON="$LATEST_DIR/tier1-validation.json"
 OUT_MD="$LATEST_DIR/tier1-summary.md"
@@ -119,7 +119,9 @@ PY
   WARNINGS="$(printf '%s\n' ${warnings[@]+"${warnings[@]}"})"
   export LATEST_DIR PROFILE status GPU_ARCH NPU_PRESENT FAILURES WARNINGS vulkan_ok BIOS_ACCEPTABLE
   python3 - <<'PY' > "$OUT_JSON"
-import json, os, datetime
+import json
+import os
+from datetime import UTC, datetime
 st = os.environ.get("status", "PASS")
 gpu_arch = os.environ.get("GPU_ARCH", "unknown")
 npu_present = os.environ.get("NPU_PRESENT", "false")
@@ -131,7 +133,7 @@ warns = [x for x in os.environ.get("WARNINGS", "").splitlines() if x.strip()]
 data = {
   "tier": 1,
   "status": st,
-  "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+  "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
   "profile": os.environ.get("PROFILE", "ai370"),
   "acceptance": {
     "radeon_890m_gfx1150": gpu_arch == "gfx1150",

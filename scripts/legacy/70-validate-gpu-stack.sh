@@ -11,7 +11,7 @@ MODE="${2:-safe}"
 PERSISTENCE="${3:-runtime}"
 OFFLINE="${4:-false}"
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 # shellcheck source=scripts/lib/hardware-detect.sh
 source "$PROJECT_ROOT/scripts/lib/hardware-detect.sh"
 
