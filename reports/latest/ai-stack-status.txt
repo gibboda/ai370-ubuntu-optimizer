@@ -5,10 +5,10 @@ Persistence: runtime
 Offline: false
 Timestamp: 2026-06-12T19:50:56-05:00
 
-Python virtual environment: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/venv
-Offline wheelhouse: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/wheelhouse
-Offline model root: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/models
-Offline tool root: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools
+Python virtual environment: ./.ai370-ai/venv
+Offline wheelhouse: ./.ai370-ai/wheelhouse
+Offline model root: ./.ai370-ai/models
+Offline tool root: ./.ai370-ai/tools
 amdgpu: missing
 Vulkan: visible
 OpenCL: visible

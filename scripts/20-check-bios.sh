@@ -27,11 +27,12 @@ main() {
   SYSTEM_VENDOR="$(detect_system_vendor)"
   FWUPD_DEVICES="$(detect_fwupd_devices)"
 
-  # Target for primary hardware (safe default; non-fatal)
-  if [[ "$PROFILE" == "ai370" ]]; then
-    EXPECTED_BIOS="2.01"
-  else
-    EXPECTED_BIOS=""
+  EXPECTED_BIOS=""
+  PROFILE_ENV="$PROJECT_ROOT/config/profiles/$PROFILE.env"
+  if [[ -f "$PROFILE_ENV" ]]; then
+    # shellcheck source=/dev/null
+    source "$PROFILE_ENV"
+    EXPECTED_BIOS="${EXPECTED_BIOS_VERSION:-}"
   fi
 
   if [[ -n "$EXPECTED_BIOS" && -n "${BIOS_VERSION:-}" ]]; then
@@ -76,7 +77,9 @@ EOF
     echo "- fwupd devices visible: $([[ -n "$FWUPD_DEVICES" ]] && echo yes || echo "no (or tool missing)")"
     echo
     echo "Note: This phase only records baseline state. No firmware updates are applied."
-    echo "For Minisforum EliteMini AI370 the recommended BIOS is 2.01 (or newer compatible). Review vendor notes before flashing."
+    if [[ -n "$EXPECTED_BIOS" ]]; then
+      echo "For Minisforum EliteMini AI370 the recommended BIOS is $EXPECTED_BIOS (or newer compatible). Review vendor notes before flashing."
+    fi
   } > "$LATEST_DIR/tier1-firmware.md"
 
   # Legacy artifact (best effort)

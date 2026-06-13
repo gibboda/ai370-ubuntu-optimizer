@@ -76,7 +76,15 @@ print("true" if d.get("vulkan")=="visible" else "false")
     rocm_note+=" (rocminfo not in PATH yet)"
   fi
 
-  # 5. BIOS version target (2.01 for AI370) – non-fatal, recorded for gate visibility (M1.1)
+  EXPECTED_BIOS=""
+  PROFILE_ENV="$PROJECT_ROOT/config/profiles/$PROFILE.env"
+  if [[ -f "$PROFILE_ENV" ]]; then
+    # shellcheck source=/dev/null
+    source "$PROFILE_ENV"
+    EXPECTED_BIOS="${EXPECTED_BIOS_VERSION:-}"
+  fi
+
+  # 5. BIOS version target (for AI370) – non-fatal, recorded for gate visibility (M1.1)
   BIOS_ACCEPTABLE="unknown"
   if [[ -f "$LATEST_DIR/tier1-firmware.json" ]]; then
     BIOS_ACCEPTABLE="$(python3 - "$LATEST_DIR/tier1-firmware.json" <<'PY' 2>/dev/null || echo unknown
@@ -87,8 +95,8 @@ PY
 )"
   else
     bver="$(detect_bios_version 2>/dev/null || echo '')"
-    if [[ "$PROFILE" == "ai370" && -n "$bver" && "$bver" != "unknown" ]]; then
-      if [[ "$bver" == "2.01" || "$bver" == *"2.01"* ]]; then
+    if [[ -n "$EXPECTED_BIOS" && -n "$bver" && "$bver" != "unknown" ]]; then
+      if [[ "$bver" == "$EXPECTED_BIOS" || "$bver" == *"$EXPECTED_BIOS"* ]]; then
         BIOS_ACCEPTABLE="true"
       else
         BIOS_ACCEPTABLE="false"
@@ -96,7 +104,7 @@ PY
     fi
   fi
   if [[ "$BIOS_ACCEPTABLE" == "false" ]]; then
-    record_warn "BIOS version not at target 2.01 for AI370 profile (see tier1-firmware.json)."
+    record_warn "BIOS version not at target $EXPECTED_BIOS for $PROFILE profile (see tier1-firmware.json)."
   fi
 
   # Require that the main previous Tier 1 steps produced artifacts (loose but useful)
@@ -155,7 +163,11 @@ PY
     echo "- Radeon 890M (gfx1150): $([[ "$GPU_ARCH" == "gfx1150" ]] && echo "PASS" || echo "WARN") (detected: $GPU_ARCH)"
     echo "- AMDXDNA / XDNA2 NPU: $([[ "$NPU_PRESENT" == "true" ]] && echo "PASS" || echo "WARN")"
     echo "- Vulkan validated: (see tier1-gpu-stack.json)"
-    echo "- BIOS version (target 2.01 for AI370): $BIOS_ACCEPTABLE (see tier1-firmware.json)"
+    if [[ -n "$EXPECTED_BIOS" ]]; then
+      echo "- BIOS version (target $EXPECTED_BIOS for $PROFILE): $BIOS_ACCEPTABLE (see tier1-firmware.json)"
+    else
+      echo "- BIOS version target: not configured for profile $PROFILE (see tier1-firmware.json)"
+    fi
     echo "- ROCm: visibility-only at this tier. $rocm_note"
     echo
     if (( ${#failures[@]} > 0 )); then

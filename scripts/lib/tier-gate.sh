@@ -16,4 +16,3 @@ TIER_GATE_SOURCED=1
 
 # For immediate use the logic lives in ai370-optimize.sh (require_tier123_pass).
 # Callers that need it without full dispatcher can still source the main or copy the check.
-echo "[INFO] tier-gate.sh sourced (helpers will consolidate here in follow-on work)" 1>&2 || true

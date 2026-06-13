@@ -23,5 +23,5 @@ This phase does not force ROCm installation for the integrated Radeon 890M iGPU 
 
 ## Next actions
 
-- Review `/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/reports/latest/ai-runtime-benchmark.md` before GPU/NPU optimization.
+- Review `reports/latest/ai-runtime-benchmark.md` before GPU/NPU optimization.
 - Run Phase 5 acceleration validation to capture local hardware capability reports.
