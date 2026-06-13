@@ -84,6 +84,7 @@ jobs:
             config
             workflows
             release
+            tier
             tier1
           requireScope: false
           subjectPattern: ^[A-Za-z].+$
@@ -101,7 +102,7 @@ jobs:
         with:
           script: |
             const allowedTypes = ['feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci', 'perf'];
-            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'workflows', 'release', 'tier1'];
+            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'workflows', 'release', 'tier', 'tier1'];
             const commitSubjectPattern = new RegExp(
               `^(?:${allowedTypes.join('|')})(?:\\((?:${allowedScopes.join('|')})\\))?!?: [A-Za-z].+$`
             );
@@ -163,7 +164,7 @@ jobs:
                   'The following commit subjects do not follow the required format `type(scope): Subject`:',
                   ...invalidSubjects.map(({ sha, subject }) => `- ${sha} ${subject}`),
                   'Allowed types: feat, fix, chore, refactor, docs, test, ci, perf.',
-                  'Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, release, tier1.',
+                  'Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, release, tier, tier1.',
                   'The subject must start with a letter.',
                 ].join('\n')
               );

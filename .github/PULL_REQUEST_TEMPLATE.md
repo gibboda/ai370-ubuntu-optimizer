@@ -19,7 +19,7 @@
 ## Scope (optional)
 
 <!-- If the change targets a specific area, add it in parentheses in the title, e.g. `feat(comfyui): ...` -->
-<!-- Valid scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, release -->
+<!-- Valid scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, release, tier, tier1 -->
 
 ## Version bump label
 
