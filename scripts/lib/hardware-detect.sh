@@ -115,3 +115,13 @@ detect_powerprofiles() {
     powerprofilesctl 2>/dev/null || true
   fi
 }
+
+capture_command() {
+  local command_name="$1"
+  shift || true
+  if command -v "$command_name" >/dev/null 2>&1; then
+    "$command_name" "$@" 2>&1 || true
+  else
+    echo "command-not-found: $command_name"
+  fi
+}

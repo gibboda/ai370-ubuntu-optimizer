@@ -116,7 +116,7 @@ print(json.dumps({
     "kernel": {
         "version": os.environ.get("kernel", "unknown"),
         "target_minimum": os.environ.get("target_kernel", "6.11"),
-        "acceptable": os.environ.get("kernel_ok", "unknown"),
+        "acceptable": None if os.environ.get("kernel_ok", "unknown") == "unknown" else os.environ.get("kernel_ok") == "true",
     },
     "os": {
         "description": os.environ.get("os_description", "unknown"),

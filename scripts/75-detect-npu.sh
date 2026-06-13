@@ -22,16 +22,6 @@ SUMMARY_MD="$LATEST_DIR/tier1-npu.md"
 STATUS_TXT="$LATEST_DIR/tier1-npu.txt"
 mkdir -p "$LATEST_DIR"
 
-capture_command() {
-  local command_name="$1"
-  shift || true
-  if command -v "$command_name" >/dev/null 2>&1; then
-    "$command_name" "$@" 2>&1 || true
-  else
-    echo "command-not-found: $command_name"
-  fi
-}
-
 main() {
   echo "[INFO] Tier 1 / 75-detect-npu.sh"
   echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE  Offline: $OFFLINE"
@@ -74,8 +64,8 @@ print(json.dumps({
         "device_text": os.environ.get("device_text", ""),
     },
     "xrt": {
-        "xrt_smi": os.environ.get("xrt_state", "missing"),
-        "examine": os.environ.get("xrt_smi", ""),
+        "state": os.environ.get("xrt_state", "missing"),
+        "examine_output": os.environ.get("xrt_smi", ""),
     },
     "note": "Missing AMDXDNA/XRT is reported as WARN at Tier 1; Tier 3 owns enablement and benchmarking.",
 }, indent=2))
