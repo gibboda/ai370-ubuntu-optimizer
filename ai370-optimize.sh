@@ -44,11 +44,12 @@ Legacy / detailed phase commands (still supported):
 Tier 1 scripts (deliverables):
   scripts/10-detect-hardware.sh
   scripts/20-check-bios.sh
-  scripts/30-optimize-kernel.sh
+  scripts/30-validate-kernel.sh
   scripts/40-optimize-cpu.sh
   scripts/50-optimize-memory.sh
   scripts/60-optimize-storage.sh
   scripts/70-validate-gpu-stack.sh
+  scripts/75-detect-npu.sh
   scripts/80-benchmark-local-ai.sh
   scripts/90-validate.sh
 
@@ -233,11 +234,12 @@ case "$CMD" in
     echo "[INFO] Running Tier 1 – Required Core Platform (full sequence)"
     run_script "scripts/10-detect-hardware.sh"
     run_script "scripts/20-check-bios.sh"
-    run_script "scripts/30-optimize-kernel.sh" "$DRY_RUN"
+    run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
     run_script "scripts/40-optimize-cpu.sh"
     run_script "scripts/50-optimize-memory.sh"
     run_script "scripts/60-optimize-storage.sh"
     run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
+    run_script "scripts/75-detect-npu.sh" "$OFFLINE"
     run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
     run_script "scripts/90-validate.sh"
     ;;
@@ -301,11 +303,12 @@ case "$CMD" in
     # Tier 1 (core)
     run_script "scripts/10-detect-hardware.sh"
     run_script "scripts/20-check-bios.sh"
-    run_script "scripts/30-optimize-kernel.sh" "$DRY_RUN"
+    run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
     run_script "scripts/40-optimize-cpu.sh"
     run_script "scripts/50-optimize-memory.sh"
     run_script "scripts/60-optimize-storage.sh"
     run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
+    run_script "scripts/75-detect-npu.sh" "$OFFLINE"
     run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
     run_script "scripts/90-validate.sh"
     # Tier 2
