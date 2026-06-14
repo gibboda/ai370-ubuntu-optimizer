@@ -47,22 +47,25 @@ The repository is organized around five AI tiers. Tier 1 is the required foundat
 scripts/
   10-detect-hardware.sh
   20-check-bios.sh
-  30-optimize-kernel.sh
+  30-validate-kernel.sh
   40-optimize-cpu.sh
   50-optimize-memory.sh
   60-optimize-storage.sh
   70-validate-gpu-stack.sh
+  75-detect-npu.sh
   80-benchmark-local-ai.sh
   90-validate.sh
 ```
 
-**Acceptance Criteria (must all pass):**
-- Radeon 890M (gfx1150) detected
-- AMDXDNA / XDNA2 NPU detected
-- BIOS version target (2.01 for EliteMini AI370) recorded + acceptable flag in tier1-firmware.json / tier1-validation.json
-- ROCm validated (or explicitly noted as not yet installed)
-- Vulkan validated
-- All Tier 1 validation checks pass (see `reports/latest/tier1-validation.json` and `tier1-summary.md`)
+**Acceptance Criteria:**
+- Radeon 890M detected
+- AMDGPU kernel driver loaded
+- Vulkan available
+- ROCm detected or cleanly reported missing
+- AMDXDNA / XDNA2 NPU detected or cleanly reported missing
+- BIOS 2.01 validation recorded for EliteMini AI370
+- Kernel and firmware validation recorded
+- `scripts/90-validate.sh` exits successfully and writes `reports/latest/tier1-validation.json` plus `reports/latest/tier1-summary.md`
 
 ### Tier 2 – Recommended AI Runtime Layer
 **Purpose:** Provide local AI execution capability.

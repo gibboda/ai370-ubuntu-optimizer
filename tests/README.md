@@ -20,7 +20,7 @@ Or from repo root after making executable:
 - Syntax (`bash -n`)
 - Non-mutating or dry-run friendly execution of tier scripts
 - Presence + basic structure of `reports/latest/tierN-*.json` (and MD) artifacts
-- Key acceptance fields for the tier (e.g. `bios_version_acceptable` for M1.1)
+- Milestone 1 acceptance signals, including Radeon 890M/gfx1150 detection, AMDGPU, Vulkan, ROCm clean-missing reporting, AMDXDNA clean-missing reporting, BIOS 2.01 validation metadata, and `90-validate.sh` artifact generation
 
 These help prevent regressions in script generation, JSON writers, and the cross-tier gate.
 
