@@ -41,7 +41,7 @@ Legacy / detailed phase commands (still supported):
   ./ai370-optimize.sh final-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh all [--profile=ai370] [--mode=safe] [--persistence=runtime]
 
-Tier 1 scripts (deliverables):
+Milestone scripts (deliverables):
   scripts/10-detect-hardware.sh
   scripts/20-check-bios.sh
   scripts/30-validate-kernel.sh
@@ -52,6 +52,13 @@ Tier 1 scripts (deliverables):
   scripts/75-detect-npu.sh
   scripts/80-benchmark-local-ai.sh
   scripts/90-validate.sh
+
+Tier 2 scripts (deliverables):
+  scripts/100-install-pytorch-rocm.sh
+  scripts/110-install-llama-cpp.sh
+  scripts/120-install-ollama.sh
+  scripts/130-install-open-webui.sh
+  scripts/140-benchmark-llm.sh
 
 Backward-compatible aliases:
   inventory, audit        -> hardware (Tier 1)
@@ -250,18 +257,16 @@ case "$CMD" in
 
   tier2)
     echo "[INFO] Running Tier 2 – Recommended AI Runtime Layer"
-    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
-    run_script "scripts/80-llm-validation.sh" "$OFFLINE"
-    if [[ -f "$PROJECT_ROOT/scripts/100-tier2-ai-runtime.sh" ]]; then
-      run_script "scripts/100-tier2-ai-runtime.sh" "$OFFLINE"
-    fi
+    run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
+    run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
+    run_script "scripts/120-install-ollama.sh" "$OFFLINE"
+    run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
+    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     ;;
 
   tier2-validate)
     echo "[INFO] Tier 2 validation (writes/validates tier2-validation.json)"
-    if [[ -f "$PROJECT_ROOT/scripts/100-tier2-ai-runtime.sh" ]]; then
-      run_script "scripts/100-tier2-ai-runtime.sh" "$OFFLINE"
-    fi
+    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     ;;
 
   tier3)
@@ -312,8 +317,11 @@ case "$CMD" in
     run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
     run_script "scripts/90-validate.sh"
     # Tier 2
-    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
-    run_script "scripts/80-llm-validation.sh" "$OFFLINE"
+    run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
+    run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
+    run_script "scripts/120-install-ollama.sh" "$OFFLINE"
+    run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
+    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     # Tier 3 (NPU visibility + note on explicit accel)
     run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
     # Explicit AMD accel (risk already accepted)
@@ -352,11 +360,11 @@ case "$CMD" in
     ;;
 
   ai-bench|ai-runtime)
-    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
+    run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
     ;;
 
   llm-validate)
-    run_script "scripts/80-llm-validation.sh" "$OFFLINE"
+    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     ;;
 
   amd-accel-install)

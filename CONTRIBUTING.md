@@ -46,6 +46,7 @@ Scope narrows the area of change:
 | `release` | Release tooling and CI |
 | `tier` | Tier 1 hardware/firmware detection and validation scripts |
 | `tier1` | Tier 1 hardware/firmware detection and validation scripts |
+| `tier2` | Tier 2 AI runtime and LLM installation/validation scripts |
 
 ### Examples
 
