@@ -79,12 +79,25 @@ scripts/
 **Commands:**
 ```bash
 ./ai370-optimize.sh tier2 [--offline]
+./ai370-optimize.sh tier2-validate [--offline]
+```
+
+**Deliverables (Tier 2 scripts):**
+```
+scripts/
+  100-install-pytorch-rocm.sh
+  110-install-llama-cpp.sh
+  120-install-ollama.sh
+  130-install-open-webui.sh
+  140-benchmark-llm.sh
 ```
 
 **Acceptance Criteria:**
-- Local inference functional (Ollama or llama.cpp can load a GGUF / model)
-- GPU acceleration path validated where hardware allows
-- Benchmark results collected in `reports/latest/`
+- PyTorch detects ROCm when available, or records CPU-only / missing ROCm cleanly.
+- llama.cpp validates an existing binary or builds from source in online mode when build tools are available.
+- Ollama is installed/validated and local models are reported without pulling cloud manifests during validation.
+- Open WebUI is installed/validated as an optional local UI and cleanly reported missing when offline.
+- Benchmark and Tier 2 gate reports are collected in `reports/latest/` (`tier2-runtime-benchmark.*`, `llm-validation.*`, and `tier2-validation.*`).
 
 ### Tier 3 – AMD NPU Enablement
 **Purpose:** Enable XDNA2 experimentation and benchmarking.
@@ -194,7 +207,7 @@ The phases communicate through `reports/latest/`:
 - `system-tuning-plan.json`, `system-tuning-plan.md`, and `runtime-tuning-commands.sh` record Phase 4 CPU/RAM/storage recommendations and reviewable runtime-only commands.
 - `gpu-capabilities.json`, `gpu-smoke-benchmark.md`, `npu-capabilities.json`, `npu-smoke-benchmark.md`, and `xrt-status.txt` record Phase 5 local ROCm/Vulkan/OpenCL/XDNA visibility.
 - `ai-runtime-benchmark.json` and `ai-runtime-benchmark.md` record Phase 6 CPU/ONNX Runtime smoke benchmarks.
-- `llm-validation.json` and `llm-validation.md` record Phase 7 local Ollama, llama.cpp, and GGUF model visibility.
+- `tier2-pytorch-rocm.json`, `tier2-llama-cpp.json`, `tier2-ollama.json`, `tier2-open-webui.json`, `tier2-runtime-benchmark.json`, `llm-validation.json`, and `tier2-validation.json` record Milestone 2 / Tier 2 runtime installation, local model visibility, and gate status.
 - `amd-acceleration-install.json`, `amd-acceleration-install.md`, and `amd-acceleration-env.sh` record the explicit opt-in AMD acceleration installation state when Phase 7.5 is run.
 - `comfyui-status.txt` and `comfyui-workflow-guide.md` record Phase 8 installation paths and launch guidance.
 - `comfyui-benchmark.csv` and `comfyui-benchmark-summary.md` record Phase 9 workflow benchmark output.
