@@ -98,7 +98,11 @@ main() {
   fi
 
   open_webui_state="missing"
-  if command -v open-webui >/dev/null 2>&1 || docker image ls 2>/dev/null | grep -qi open-webui; then
+  if command -v open-webui >/dev/null 2>&1; then
+    open_webui_state="available"
+  elif [[ -x "$AI_ROOT/venv/bin/python" ]] && "$AI_ROOT/venv/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("open_webui") else 1)' >/dev/null 2>&1; then
+    open_webui_state="available"
+  elif command -v docker >/dev/null 2>&1 && docker image ls 2>/dev/null | grep -qi open-webui; then
     open_webui_state="available"
   fi
 

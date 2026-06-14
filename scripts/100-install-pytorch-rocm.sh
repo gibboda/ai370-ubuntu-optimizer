@@ -81,9 +81,12 @@ main() {
       install_action="skipped-offline-missing-venv"
       detail="Offline mode: $VENV_DIR is missing. Stage a populated venv or wheelhouse before rerunning."
     else
-      python3 -m venv "$VENV_DIR"
-      "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel
-      install_action="created-venv"
+      if python3 -m venv "$VENV_DIR" && "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel; then
+        install_action="created-venv"
+      else
+        install_action="venv-create-failed"
+        detail="Failed to create or bootstrap Python venv at $VENV_DIR. Ensure python3-venv and pip are installed."
+      fi
     fi
   fi
 

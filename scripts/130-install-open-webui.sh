@@ -40,12 +40,16 @@ main() {
   else
     action="pip-install-attempted"
     if [[ ! -x "$VENV_DIR/bin/python" ]]; then
-      python3 -m venv "$VENV_DIR"
-      "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel
+      if ! python3 -m venv "$VENV_DIR" || ! "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel; then
+        action="venv-create-failed"
+        detail="Failed to create or bootstrap Python venv at $VENV_DIR. Ensure python3-venv and pip are installed."
+      fi
     fi
-    "$VENV_DIR/bin/python" -m pip install --upgrade open-webui || detail="Open WebUI pip install failed; see console output."
-    if "$VENV_DIR/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("open_webui") else 1)' >/dev/null 2>&1; then
-      state="available"
+    if [[ -x "$VENV_DIR/bin/python" ]]; then
+      "$VENV_DIR/bin/python" -m pip install --upgrade open-webui || detail="Open WebUI pip install failed; see console output."
+      if "$VENV_DIR/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("open_webui") else 1)' >/dev/null 2>&1; then
+        state="available"
+      fi
     fi
   fi
 

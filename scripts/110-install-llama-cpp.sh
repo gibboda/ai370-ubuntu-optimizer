@@ -53,11 +53,23 @@ main() {
     if command -v git >/dev/null 2>&1 && command -v cmake >/dev/null 2>&1 && command -v make >/dev/null 2>&1; then
       action="clone-and-build"
       if [[ ! -d "$LLAMA_DIR/.git" ]]; then
-        git clone --depth 1 "$LLAMA_CPP_REPO" "$LLAMA_DIR"
+        if ! git clone --depth 1 "$LLAMA_CPP_REPO" "$LLAMA_DIR"; then
+          action="clone-failed"
+          detail="Failed to clone llama.cpp from $LLAMA_CPP_REPO; see console output."
+        fi
       fi
-      cmake -S "$LLAMA_DIR" -B "$LLAMA_DIR/build" -DLLAMA_CURL=OFF
-      cmake --build "$LLAMA_DIR/build" --config Release -j "$(nproc 2>/dev/null || echo 2)"
-      binary="$(find_llama_binary || true)"
+      if [[ -z "$detail" ]]; then
+        if ! cmake -S "$LLAMA_DIR" -B "$LLAMA_DIR/build" -DLLAMA_CURL=OFF; then
+          action="cmake-configure-failed"
+          detail="llama.cpp CMake configure failed; see console output."
+        elif ! cmake --build "$LLAMA_DIR/build" --config Release -j "$(nproc 2>/dev/null || echo 2)"; then
+          action="cmake-build-failed"
+          detail="llama.cpp build failed; see console output."
+        fi
+      fi
+      if [[ -z "$detail" ]]; then
+        binary="$(find_llama_binary || true)"
+      fi
     else
       action="missing-build-tools"
       detail="git, cmake, and make are required for online llama.cpp builds."
