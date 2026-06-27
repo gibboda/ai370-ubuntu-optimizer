@@ -47,6 +47,7 @@ The repository is organized around five AI tiers. Tier 1 is the required foundat
 scripts/
   10-detect-hardware.sh
   20-check-bios.sh
+  25-check-firmware.sh
   30-validate-kernel.sh
   40-optimize-cpu.sh
   50-optimize-memory.sh
@@ -64,7 +65,8 @@ scripts/
 - ROCm detected or cleanly reported missing
 - AMDXDNA / XDNA2 NPU detected or cleanly reported missing
 - BIOS 2.01 validation recorded for EliteMini AI370
-- Kernel and firmware validation recorded
+- Firmware, Secure Boot, and microcode validation recorded
+- Kernel validation recorded
 - `scripts/90-validate.sh` exits successfully and writes `reports/latest/tier1-validation.json` plus `reports/latest/tier1-summary.md`
 
 ### Tier 2 – Recommended AI Runtime Layer

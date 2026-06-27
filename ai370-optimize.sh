@@ -44,6 +44,7 @@ Legacy / detailed phase commands (still supported):
 Milestone scripts (deliverables):
   scripts/10-detect-hardware.sh
   scripts/20-check-bios.sh
+  scripts/25-check-firmware.sh
   scripts/30-validate-kernel.sh
   scripts/40-optimize-cpu.sh
   scripts/50-optimize-memory.sh
@@ -241,6 +242,7 @@ case "$CMD" in
     echo "[INFO] Running Tier 1 – Required Core Platform (full sequence)"
     run_script "scripts/10-detect-hardware.sh"
     run_script "scripts/20-check-bios.sh"
+    run_script "scripts/25-check-firmware.sh"
     run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
     run_script "scripts/40-optimize-cpu.sh"
     run_script "scripts/50-optimize-memory.sh"
@@ -308,6 +310,7 @@ case "$CMD" in
     # Tier 1 (core)
     run_script "scripts/10-detect-hardware.sh"
     run_script "scripts/20-check-bios.sh"
+    run_script "scripts/25-check-firmware.sh"
     run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
     run_script "scripts/40-optimize-cpu.sh"
     run_script "scripts/50-optimize-memory.sh"
