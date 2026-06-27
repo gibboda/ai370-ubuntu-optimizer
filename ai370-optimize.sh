@@ -110,9 +110,9 @@ case "$PERSISTENCE" in
   *) echo "[ERROR] Invalid persistence: $PERSISTENCE"; exit 2 ;;
 esac
 
-PROFILE_FILE="$PROJECT_ROOT/config/profiles/${PROFILE}.env"
-MODE_FILE="$PROJECT_ROOT/config/tuning/${MODE}.env"
-PERSISTENCE_FILE="$PROJECT_ROOT/config/persistence/${PERSISTENCE}.env"
+PROFILE_FILE="$PROJECT_ROOT/configs/profiles/${PROFILE}.env"
+MODE_FILE="$PROJECT_ROOT/configs/tuning/${MODE}.env"
+PERSISTENCE_FILE="$PROJECT_ROOT/configs/persistence/${PERSISTENCE}.env"
 
 require_file() {
   local path="$1"

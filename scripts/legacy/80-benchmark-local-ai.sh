@@ -17,8 +17,8 @@ VENV_DIR="$AI_DIR/venv"
 
 mkdir -p "$LATEST_DIR"
 
-OFFLINE_CONFIG="$PROJECT_ROOT/config/offline/ai-runtime.env"
-OFFLINE_REQUIREMENTS="$PROJECT_ROOT/config/ai-runtime/requirements-offline.txt"
+OFFLINE_CONFIG="$PROJECT_ROOT/configs/offline/ai-runtime.env"
+OFFLINE_REQUIREMENTS="$PROJECT_ROOT/configs/ai-runtime/requirements-offline.txt"
 
 main() {
   echo "[INFO] Tier 1 / 80-benchmark-local-ai.sh"

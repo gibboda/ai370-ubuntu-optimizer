@@ -15,8 +15,8 @@ LATEST_DIR="$PROJECT_ROOT/reports/latest"
 STATUS_FILE="$LATEST_DIR/comfyui-status.txt"
 README_OUT="$LATEST_DIR/comfyui-workflow-guide.md"
 LAUNCH_SCRIPT="$PROJECT_ROOT/run-comfyui.sh"
-EXTRA_MODELS="$PROJECT_ROOT/config/comfyui/extra_model_paths.yaml"
-AMD_ACCEL_CONFIG="$PROJECT_ROOT/config/amd-acceleration.env"
+EXTRA_MODELS="$PROJECT_ROOT/configs/comfyui/extra_model_paths.yaml"
+AMD_ACCEL_CONFIG="$PROJECT_ROOT/configs/amd-acceleration.env"
 AMD_ACCEL_STATUS="$LATEST_DIR/amd-acceleration-install.json"
 GPU_STATUS="$LATEST_DIR/gpu-acceleration-status.txt"
 AMD_ACCEL_ENV="$LATEST_DIR/amd-acceleration-env.sh"
@@ -36,7 +36,7 @@ install_prereqs() {
 }
 
 install_comfyui() {
-  mkdir -p "$AI_ROOT" "$LATEST_DIR" "$PROJECT_ROOT/config/comfyui"
+  mkdir -p "$AI_ROOT" "$LATEST_DIR" "$PROJECT_ROOT/configs/comfyui"
 
   if [[ ! -d "$COMFY_ROOT/.git" ]]; then
     echo "[INFO] Cloning ComfyUI source..."

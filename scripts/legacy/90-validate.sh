@@ -77,7 +77,7 @@ print("true" if d.get("vulkan")=="visible" else "false")
   fi
 
   EXPECTED_BIOS=""
-  PROFILE_ENV="$PROJECT_ROOT/config/profiles/$PROFILE.env"
+  PROFILE_ENV="$PROJECT_ROOT/configs/profiles/$PROFILE.env"
   if [[ -f "$PROFILE_ENV" ]]; then
     # shellcheck source=/dev/null
     source "$PROFILE_ENV"

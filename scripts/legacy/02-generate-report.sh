@@ -8,7 +8,7 @@ MODE="${2:-safe}"
 PERSISTENCE="${3:-runtime}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROFILE_FILE="$PROJECT_ROOT/config/profiles/${PROFILE}.env"
+PROFILE_FILE="$PROJECT_ROOT/configs/profiles/${PROFILE}.env"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
 INVENTORY_JSON="$LATEST_DIR/hardware-inventory.json"
 HARDWARE_JSON="$LATEST_DIR/hardware.json"

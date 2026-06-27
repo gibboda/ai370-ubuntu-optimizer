@@ -11,7 +11,7 @@ ACCEPT_AMD_ACCELERATION_RISK="${5:-false}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
-CONFIG_FILE="$PROJECT_ROOT/config/amd-acceleration.env"
+CONFIG_FILE="$PROJECT_ROOT/configs/amd-acceleration.env"
 STATUS_TXT="$LATEST_DIR/amd-acceleration-install-status.txt"
 STATUS_JSON="$LATEST_DIR/amd-acceleration-install.json"
 ENV_FILE="$LATEST_DIR/amd-acceleration-env.sh"
