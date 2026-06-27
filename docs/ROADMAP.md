@@ -24,10 +24,22 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 
 ### Review Findings
 
-* The roadmap still uses Stage terminology, while `README.md` and `ai370-optimize.sh` expose the primary user workflow as Tier 1 through Tier 5. Future updates should either add a clear Stage-to-Tier mapping here or rename roadmap sections to match the implemented Tier architecture.
-* Several required files listed in milestones are planned rather than implemented. Required-file lists should distinguish between `Implemented`, `Planned`, and `Deprecated/merged` deliverables so contributors do not mistake roadmap intent for current command availability.
+* Stage 1 is aligned with the implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh`; Stage 1 remains the authoritative roadmap language, and Tier 1 remains the primary user-facing command language for the same foundation work.
+* Several required files outside Stage 1 are planned rather than implemented. Required-file lists should distinguish between `Implemented`, `Planned`, and `Deprecated/merged` deliverables so contributors do not mistake roadmap intent for current command availability.
 * Stage 4 milestones list outcomes but omit required deliverables for several sections. Add script/config/report paths before implementation begins so acceptance criteria remain validation-backed.
 * Stage 5 maintenance milestones do not yet define concrete validation reports or command entry points. Add those before release-management work starts.
+
+### Stage-to-Tier Mapping
+
+The roadmap uses **Stages** for implementation order. The command-line interface and `README.md` use **Tiers** for the user workflow. For Stage 1 work, these terms are intentionally equivalent:
+
+| Roadmap stage | User-facing tier | Status | Command gate |
+| --- | --- | --- | --- |
+| Stage 1 — Hardware Detection & System Optimization | Tier 1 — Required Core Platform | Implemented and active | `./ai370-optimize.sh tier1` followed by `./ai370-optimize.sh tier1-validate` |
+| Stage 2 — Local AI Runtime & AI Optimization Software | Tier 2 / Tier 3 / Tier 4 | Partially implemented / staged | `tier2`, `tier2-validate`, `tier3`, `tier3-validate`, `tier4` |
+| Stage 3 — Offline Image Generation | Tier 5 — Generative AI | Partially implemented / gated | `tier5`, `comfyui-install`, `comfyui-bench` |
+| Stage 4 — Offline VS Code & Code Assistant | Future tier or extension | Planned | Not yet available |
+| Stage 5 — Maintenance & Release Validation | Future maintenance workflow | Planned | Not yet available |
 
 ### Review Guidance
 
@@ -189,10 +201,17 @@ Prepare Ubuntu and the AI370 hardware for local AI workloads.
 * Detect Motherboard
 * Generate hardware report
 
-### Required Files (Hardware)
+### Implemented Files (Hardware)
 
 ```text
 scripts/10-detect-hardware.sh
+```
+
+### Stage 1 / Tier 1 Output
+
+```text
+reports/latest/hardware-inventory.json
+reports/latest/hardware-summary.md
 ```
 
 ---
@@ -206,11 +225,18 @@ scripts/10-detect-hardware.sh
 * Validate Secure Boot
 * Validate microcode
 
-### Required Files (BIOS & Firmware)
+### Implemented Files (BIOS & Firmware)
 
 ```text
 scripts/20-check-bios.sh
 scripts/25-check-firmware.sh
+```
+
+### Stage 1 / Tier 1 Output
+
+```text
+reports/latest/firmware-baseline.json
+reports/latest/firmware-baseline.md
 ```
 
 ---
@@ -226,12 +252,20 @@ scripts/25-check-firmware.sh
 * Validate ROCm
 * Validate AMDXDNA
 
-### Required Files (Kernel & Driver)
+### Implemented Files (Kernel & Driver)
 
 ```text
 scripts/30-validate-kernel.sh
 scripts/70-validate-gpu-stack.sh
 scripts/75-detect-npu.sh
+```
+
+### Stage 1 / Tier 1 Output
+
+```text
+reports/latest/baseline-validation.md
+reports/latest/gpu-capabilities.json
+reports/latest/npu-capabilities.json
 ```
 
 ---
@@ -247,12 +281,20 @@ scripts/75-detect-npu.sh
 * Filesystem tuning
 * I/O scheduler tuning
 
-### Required Files (System Optimization)
+### Implemented Files (System Optimization)
 
 ```text
 scripts/40-optimize-cpu.sh
 scripts/50-optimize-memory.sh
 scripts/60-optimize-storage.sh
+```
+
+### Stage 1 / Tier 1 Output
+
+```text
+reports/latest/system-tuning-plan.json
+reports/latest/system-tuning-plan.md
+reports/latest/runtime-tuning-commands.sh
 ```
 
 ---
@@ -267,7 +309,7 @@ scripts/60-optimize-storage.sh
 * Validation summary
 * HTML report
 
-### Required Files (Validation & Benchmarking)
+### Implemented Files (Validation & Benchmarking)
 
 ```text
 scripts/80-benchmark-local-ai.sh
@@ -275,15 +317,29 @@ scripts/90-validate.sh
 reports/
 ```
 
-### Acceptance Criteria (Stage 1)
+### Stage 1 / Tier 1 Output
 
-* BIOS validated
-* Radeon 890M detected
-* Vulkan operational
-* ROCm validated
-* AMDXDNA detected or cleanly reported
-* Optimization completed
-* Validation successful
+```text
+reports/latest/ai-runtime-benchmark.json
+reports/latest/ai-runtime-benchmark.md
+reports/latest/tier1-validation.json
+reports/latest/tier1-summary.md
+```
+
+### Acceptance Criteria (Stage 1 / Tier 1)
+
+* `./ai370-optimize.sh tier1` completes the full Stage 1 sequence in milestone order.
+* `./ai370-optimize.sh tier1-validate` runs `scripts/90-validate.sh` as the final Stage 1 gate.
+* BIOS validation is recorded for the EliteMini AI370 target.
+* Firmware, Secure Boot, and microcode validation are recorded.
+* Radeon 890M is detected, or non-AI370 profile variance is reported clearly.
+* AMDGPU kernel driver state is recorded.
+* Vulkan is operational, or missing Vulkan support is reported clearly.
+* ROCm is detected when present, or missing ROCm is reported clearly without hiding the failure.
+* AMDXDNA / XDNA2 NPU is detected, or missing NPU support is reported clearly.
+* CPU, memory, and storage optimization plans complete without overwriting user data.
+* Local AI benchmark output is generated.
+* Validation writes `reports/latest/tier1-validation.json` and `reports/latest/tier1-summary.md`.
 
 ---
 

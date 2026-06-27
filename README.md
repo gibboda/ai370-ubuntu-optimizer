@@ -36,10 +36,19 @@ The repository is organized around five AI tiers. Tier 1 is the required foundat
 - CPU, memory, and storage optimization
 - Benchmark framework
 
+**Stage alignment:** Roadmap Stage 1 maps directly to Tier 1. Complete this tier before starting any Stage 2 / Tier 2+ work. The sequence is detection first, validation second, optimization third, and benchmarking last, matching the roadmap operating rules.
+
 **Canonical commands:**
 ```bash
-./ai370-optimize.sh tier1                  # Run the full Tier 1 sequence (recommended)
-./ai370-optimize.sh tier1-validate         # Final Tier 1 gate + acceptance checks
+./ai370-optimize.sh tier1                  # Run the full Stage 1 / Tier 1 sequence (recommended)
+./ai370-optimize.sh tier1-validate         # Final Stage 1 / Tier 1 gate + acceptance checks
+```
+
+**Execution order:**
+```text
+10-detect-hardware -> 20-check-bios -> 25-check-firmware -> 30-validate-kernel
+-> 40-optimize-cpu -> 50-optimize-memory -> 60-optimize-storage
+-> 70-validate-gpu-stack -> 75-detect-npu -> 80-benchmark-local-ai -> 90-validate
 ```
 
 **Deliverables (Tier 1 scripts):**
@@ -59,15 +68,18 @@ scripts/
 ```
 
 **Acceptance Criteria:**
-- Radeon 890M detected
-- AMDGPU kernel driver loaded
-- Vulkan available
-- ROCm detected or cleanly reported missing
-- AMDXDNA / XDNA2 NPU detected or cleanly reported missing
-- BIOS 2.01 validation recorded for EliteMini AI370
-- Firmware, Secure Boot, and microcode validation recorded
-- Kernel validation recorded
-- `scripts/90-validate.sh` exits successfully and writes `reports/latest/tier1-validation.json` plus `reports/latest/tier1-summary.md`
+- `./ai370-optimize.sh tier1` completes all Stage 1 / Tier 1 scripts in milestone order.
+- Radeon 890M detected, or profile variance is clearly reported.
+- AMDGPU kernel driver state recorded.
+- Vulkan available, or missing support is clearly reported.
+- ROCm detected or cleanly reported missing.
+- AMDXDNA / XDNA2 NPU detected or cleanly reported missing.
+- BIOS 2.01 validation recorded for EliteMini AI370.
+- Firmware, Secure Boot, and microcode validation recorded.
+- Kernel validation recorded.
+- CPU, memory, and storage optimization plans complete without overwriting user data.
+- Local AI benchmark output is generated.
+- `scripts/90-validate.sh` exits successfully and writes `reports/latest/tier1-validation.json` plus `reports/latest/tier1-summary.md`.
 
 ### Tier 2 – Recommended AI Runtime Layer
 **Purpose:** Provide local AI execution capability.
