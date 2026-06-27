@@ -18,15 +18,15 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 * Stage 1 now includes the dedicated firmware validation script listed below: `scripts/25-check-firmware.sh`.
 * Stage 2 runtime work is partially implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, and `scripts/140-benchmark-llm.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` also exist.
 * Milestone 2.2 is not fully aligned with the implemented Tier 3 structure. `scripts/210-check-ryzen-ai-software.sh` exists, but `scripts/200-install-onnxruntime.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, and `docs/npu-status.md` are not present.
-* Stage 3 has ComfyUI workflow and benchmark artifacts, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. The listed install/model scripts (`scripts/400-install-comfyui.sh`, `scripts/410-install-comfyui-models.sh`) and required workflow subdirectories (`flux/`, `sdxl/`, `controlnet/`) are not currently present.
+* Stage 3 has ComfyUI workflow and benchmark artifacts, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. The listed install/model scripts (`scripts/400-install-comfyui.sh`, `scripts/410-install-comfyui-models.sh`), documentation file (`docs/offline-image-generation.md`), and required workflow subdirectories (`flux/`, `sdxl/`, `controlnet/`) are not currently present.
 * Stages 4 and 5 remain forward-looking roadmap sections and should not be started until earlier stage validation gates pass.
 
 ### Review Findings
 
 * Stage 1 is aligned with the implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh`; Stage 1 remains the authoritative roadmap language, and Tier 1 remains the primary user-facing command language for the same foundation work.
-* Several required files outside Stage 1 are planned rather than implemented. Required-file lists should distinguish between `Implemented`, `Planned`, and `Deprecated/merged` deliverables so contributors do not mistake roadmap intent for current command availability.
-* Stage 4 milestones list outcomes but omit required deliverables for several sections. Add script/config/report paths before implementation begins so acceptance criteria remain validation-backed.
-* Stage 5 maintenance milestones do not yet define concrete validation reports or command entry points. Add those before release-management work starts.
+* Several required files outside Stage 1 are planned rather than implemented. Required-file lists should distinguish between `Implemented` and `Planned / Not present` deliverables so contributors do not mistake roadmap intent for current command availability.
+* Stage 4 repository-intelligence, offline-code-generation, and offline-code-review milestones now include planned script/config/report paths so future implementation can stay validation-backed.
+* Stage 5 maintenance milestones now define planned command entry points and report artifacts before release-management work starts.
 
 ### Stage-to-Tier Mapping
 
@@ -394,8 +394,6 @@ Implemented / Planned:
 * Implemented: `scripts/210-check-ryzen-ai-software.sh`
 * Planned / Not present: `scripts/200-install-onnxruntime.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `docs/npu-status.md`
 
-```
-
 ---
 
 ## Milestone 2.3 — Offline RAG
@@ -525,6 +523,11 @@ scripts/420-benchmark-comfyui.sh
 docs/offline-image-generation.md
 ```
 
+Implemented / Planned:
+
+* Implemented: `scripts/420-benchmark-comfyui.sh`
+* Planned / Not present: `docs/offline-image-generation.md`
+
 ### Acceptance Criteria (Stage 3)
 
 * ComfyUI operational
@@ -602,6 +605,18 @@ scripts/520-install-code-models.sh
 * Semantic search
 * Context optimization
 
+### Required Files (Repository Intelligence)
+
+```text
+scripts/540-index-repositories.sh
+configs/continue/repository-index.yaml
+reports/latest/repository-intelligence.md
+```
+
+Implemented / Planned:
+
+* Planned / Not present: `scripts/540-index-repositories.sh`, `configs/continue/repository-index.yaml`, `reports/latest/repository-intelligence.md`
+
 ---
 
 ## Milestone 4.5 — Offline Code Generation
@@ -614,6 +629,17 @@ scripts/520-install-code-models.sh
 * Documentation
 * Unit tests
 
+### Required Files (Offline Code Generation)
+
+```text
+scripts/550-validate-code-generation.sh
+reports/latest/offline-code-generation.md
+```
+
+Implemented / Planned:
+
+* Planned / Not present: `scripts/550-validate-code-generation.sh`, `reports/latest/offline-code-generation.md`
+
 ---
 
 ## Milestone 4.6 — Offline Code Review
@@ -624,6 +650,17 @@ scripts/520-install-code-models.sh
 * Python review
 * Markdown review
 * GitHub workflow review
+
+### Required Files (Offline Code Review)
+
+```text
+scripts/560-run-offline-code-review.sh
+reports/latest/offline-code-review.md
+```
+
+Implemented / Planned:
+
+* Planned / Not present: `scripts/560-run-offline-code-review.sh`, `reports/latest/offline-code-review.md`
 
 ---
 
@@ -666,6 +703,17 @@ Ensure the optimizer remains maintainable, reproducible, and current over time.
 * Update AI runtimes
 * Update dependencies
 
+### Required Files (Software Updates)
+
+```text
+scripts/600-update-software.sh
+reports/latest/software-update-report.md
+```
+
+Implemented / Planned:
+
+* Planned / Not present: `scripts/600-update-software.sh`, `reports/latest/software-update-report.md`
+
 ---
 
 ## Milestone 5.2 — AI Model Management
@@ -674,6 +722,18 @@ Ensure the optimizer remains maintainable, reproducible, and current over time.
 * Update image models
 * Remove obsolete models
 * Verify model integrity
+
+### Required Files (AI Model Management)
+
+```text
+scripts/610-manage-ai-models.sh
+configs/models/manifest.yaml
+reports/latest/model-integrity-report.md
+```
+
+Implemented / Planned:
+
+* Planned / Not present: `scripts/610-manage-ai-models.sh`, `configs/models/manifest.yaml`, `reports/latest/model-integrity-report.md`
 
 ---
 
@@ -684,6 +744,17 @@ Ensure the optimizer remains maintainable, reproducible, and current over time.
 * Compare performance
 * Detect regressions
 
+### Required Files (Regression Testing)
+
+```text
+scripts/620-run-regression-suite.sh
+reports/latest/regression-report.md
+```
+
+Implemented / Planned:
+
+* Planned / Not present: `scripts/620-run-regression-suite.sh`, `reports/latest/regression-report.md`
+
 ---
 
 ## Milestone 5.4 — Backup & Restore
@@ -692,6 +763,18 @@ Ensure the optimizer remains maintainable, reproducible, and current over time.
 * Backup models
 * Backup scripts
 * Restore validation
+
+### Required Files (Backup & Restore)
+
+```text
+scripts/630-backup-ai370.sh
+scripts/635-restore-ai370.sh
+reports/latest/backup-restore-validation.md
+```
+
+Implemented / Planned:
+
+* Planned / Not present: `scripts/630-backup-ai370.sh`, `scripts/635-restore-ai370.sh`, `reports/latest/backup-restore-validation.md`
 
 ---
 
@@ -703,6 +786,17 @@ Ensure the optimizer remains maintainable, reproducible, and current over time.
 * Track memory usage
 * Track storage health
 
+### Required Files (Performance Monitoring)
+
+```text
+scripts/640-monitor-performance.sh
+reports/latest/performance-monitoring.md
+```
+
+Implemented / Planned:
+
+* Planned / Not present: `scripts/640-monitor-performance.sh`, `reports/latest/performance-monitoring.md`
+
 ---
 
 ## Milestone 5.6 — Release Management
@@ -713,6 +807,18 @@ Ensure the optimizer remains maintainable, reproducible, and current over time.
 * Generate release notes
 * Publish release artifacts
 
+### Required Files (Release Management)
+
+```text
+scripts/650-prepare-release.sh
+CHANGELOG.md
+reports/latest/release-validation.md
+```
+
+Implemented / Planned:
+
+* Planned / Not present: `scripts/650-prepare-release.sh`, `CHANGELOG.md`, `reports/latest/release-validation.md`
+
 ---
 
 ## Milestone 5.7 — Documentation Maintenance
@@ -721,6 +827,21 @@ Ensure the optimizer remains maintainable, reproducible, and current over time.
 * Update optimization guide
 * Update roadmap
 * Update architecture documentation
+
+### Required Files (Documentation Maintenance)
+
+```text
+docs/installation.md
+docs/optimization.md
+docs/ROADMAP.md
+docs/architecture.md
+reports/latest/documentation-review.md
+```
+
+Implemented / Planned:
+
+* Implemented: `docs/ROADMAP.md`
+* Planned / Not present: `docs/installation.md`, `docs/optimization.md`, `docs/architecture.md`, `reports/latest/documentation-review.md`
 
 ### Acceptance Criteria (Stage 5)
 
