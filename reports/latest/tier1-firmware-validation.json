@@ -1,0 +1,39 @@
+{
+  "tier": 1,
+  "phase": "check-firmware",
+  "timestamp": "2026-06-27T14:21:37.342487Z",
+  "profile": "ai370",
+  "status": "PASS",
+  "checks": {
+    "fwupdmgr": {
+      "status": "available",
+      "version_output": [
+        "Idle\u2026: 0%",
+        "compile   info.libusb                   1.0.29",
+        "compile   com.hughsie.libxmlb           0.3.24",
+        "compile   com.hughsie.libjcat           0.2.5",
+        "compile   org.freedesktop.fwupd         2.1.1",
+        "runtime   com.hughsie.libxmlb           0.3.24",
+        "runtime   com.hughsie.libjcat           0.2.5",
+        "runtime   org.kernel                    7.0.0-27-generic",
+        "runtime   org.freedesktop.fwupd         2.1.1"
+      ],
+      "devices_visible": true
+    },
+    "linux_firmware": {
+      "package_version": "20260319.git217ca6e4.1ubuntu",
+      "firmware_root_present": true,
+      "kernel_firmware_dir": "/lib/firmware/7.0.0-27-generic"
+    },
+    "secure_boot": {
+      "state": "SecureBoot disabled"
+    },
+    "microcode": {
+      "packages": [
+        "amd64-microcode 3.20251202.1ubuntu2",
+        "intel-microcode 3.20260210.1ubuntu2"
+      ]
+    }
+  },
+  "warnings": []
+}

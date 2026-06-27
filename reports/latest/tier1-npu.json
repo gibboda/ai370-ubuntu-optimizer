@@ -1,0 +1,20 @@
+{
+  "tier": 1,
+  "phase": "detect-npu",
+  "timestamp": "2026-06-27T14:21:37.924438Z",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "status": "PASS",
+  "amdxdna": {
+    "present": true,
+    "module_text": "amdxdna               172032  0\namd_pmf               131072  1 amdxdna\ngpu_sched              69632  2 amdxdna,amdgpu",
+    "device_text": "/dev/accel\n/dev/accel/accel0"
+  },
+  "xrt": {
+    "state": "missing",
+    "examine_output": "command-not-found: xrt-smi"
+  },
+  "note": "Missing AMDXDNA/XRT is reported as WARN at Tier 1; Tier 3 owns enablement and benchmarking."
+}

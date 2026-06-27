@@ -1,7 +1,7 @@
 {
   "tier": 1,
-  "status": "WARN",
-  "timestamp": "2026-06-13T00:46:08.375544Z",
+  "status": "PASS",
+  "timestamp": "2026-06-27T14:21:41.968292Z",
   "profile": "ai370",
   "acceptance": {
     "radeon_890m_gfx1150": true,
@@ -12,13 +12,13 @@
   },
   "artifacts": {
     "hardware": "reports/latest/tier1-hardware.json",
+    "kernel": "reports/latest/tier1-kernel-plan.json",
     "gpu_stack": "reports/latest/tier1-gpu-stack.json",
+    "npu": "reports/latest/tier1-npu.json",
     "firmware": "reports/latest/tier1-firmware.json",
+    "firmware_validation": "reports/latest/tier1-firmware-validation.json",
     "local_ai": "reports/latest/tier1-local-ai-benchmark.json"
   },
   "failures": [],
-  "warnings": [
-    "Expected Tier 1 artifact missing: tier1-gpu-stack.json",
-    "Expected Tier 1 artifact missing: tier1-local-ai-benchmark.json"
-  ]
+  "warnings": []
 }

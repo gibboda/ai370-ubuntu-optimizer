@@ -49,6 +49,11 @@ main() {
 
   if lsmod 2>/dev/null | grep -q '^amdgpu'; then
     amdgpu_state="loaded"
+  elif printf '%s\n' "$gpu_text" | grep -Eiq 'Kernel driver in use:[[:space:]]*amdgpu'; then
+    # Some captured environments expose the bound PCI driver even when lsmod
+    # output is unavailable or incomplete. Treat an amdgpu-bound Radeon device
+    # as loaded so reports stay consistent with the captured hardware state.
+    amdgpu_state="loaded"
   fi
 
   if printf '%s\n' "$gpu_text" | grep -Eiq '890M|gfx1150|Strix'; then

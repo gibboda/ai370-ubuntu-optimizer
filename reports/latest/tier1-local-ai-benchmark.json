@@ -1,0 +1,7 @@
+{
+  "tier": 1,
+  "phase": "benchmark-local-ai",
+  "offline": false,
+  "onnxruntime_providers": "AzureExecutionProvider,CPUExecutionProvider",
+  "venv": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/venv"
+}

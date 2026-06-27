@@ -1,0 +1,10 @@
+{
+  "tier": 1,
+  "phase": "validate-gpu-stack",
+  "amdgpu": "loaded",
+  "gpu_arch": "gfx1150",
+  "vulkan": "visible",
+  "opencl": "visible",
+  "rocm": "visible",
+  "target_gpu_arch": "gfx1150"
+}

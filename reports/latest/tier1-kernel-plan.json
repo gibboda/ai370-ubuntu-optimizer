@@ -1,9 +1,28 @@
 {
   "tier": 1,
-  "phase": "optimize-kernel",
-  "plan_status": "safe",
+  "phase": "validate-kernel",
+  "timestamp": "2026-06-27T14:21:37.421174Z",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
   "dry_run": false,
-  "packages": ["pciutils","usbutils","dmidecode","lshw","inxi","jq","lm-sensors","linux-firmware","fwupd","mesa-utils","vulkan-tools","clinfo","nvme-cli","smartmontools","python3","python3-venv","python3-pip","curl","wget","git","build-essential","ca-certificates","gnupg","software-properties-common","apt-transport-https"],
-  "blocked": ["rocm", "xrt", "ryzen_ai_runtime"],
-  "notes": "Conservative Ubuntu baseline only. AMD acceleration stacks are installed via amd-accel-install or tier3/tier5 paths with explicit risk acknowledgement."
+  "status": "PASS",
+  "kernel": {
+    "version": "7.0.0-27-generic",
+    "target_minimum": "6.11",
+    "acceptable": true
+  },
+  "os": {
+    "description": "Ubuntu 26.04 LTS",
+    "version_id": "26.04",
+    "codename": "resolute"
+  },
+  "modules": {
+    "amdgpu_loaded": true,
+    "amdxdna_seen": true
+  },
+  "firmware": {
+    "amdgpu_directory": "present"
+  },
+  "recommendations": []
 }

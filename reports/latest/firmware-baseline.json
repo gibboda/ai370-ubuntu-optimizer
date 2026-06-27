@@ -1,7 +1,7 @@
 {
   "tier": 1,
   "phase": "check-bios",
-  "timestamp": "2026-06-12T19:46:08-05:00",
+  "timestamp": "2026-06-27T09:21:37-05:00",
   "profile": "ai370",
   "bios_version": "unknown",
   "bios_date": "unknown",
