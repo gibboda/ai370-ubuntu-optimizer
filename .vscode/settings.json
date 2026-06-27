@@ -6,11 +6,10 @@
         "main"
     ],
     "git.branchProtectionPrompt": "alwaysCommitToNewBranch",
-    "githubPullRequests.createOnPublishBranch": "prompt",
+    "githubPullRequests.createOnPublishBranch": "ask",
     "githubPullRequests.pullBranch": "never",
     "githubPullRequests.defaultMergeMethod": "squash",
     "githubPullRequests.fileListLayout": "tree",
-    "githubPullRequests.showInSCM": true,
     "github-actions.workflows.pinned.workflows": [
         ".github/workflows/shellcheck.yml",
         ".github/workflows/validate.yml"
