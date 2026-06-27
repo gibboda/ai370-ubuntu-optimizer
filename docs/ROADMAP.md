@@ -192,8 +192,10 @@ Validate BIOS 2.01 target, firmware, Secure Boot, and microcode.
 ```text
 scripts/20-check-bios.sh
 scripts/25-check-firmware.sh
-reports/latest/firmware-baseline.json
-reports/latest/firmware-baseline.md
+reports/latest/tier1-firmware.json
+reports/latest/tier1-firmware.md
+reports/latest/tier1-firmware-validation.json
+reports/latest/tier1-firmware-validation.md
 ```
 
 #### Acceptance Criteria
@@ -268,9 +270,10 @@ Plan CPU, memory, zram, storage, filesystem, and I/O scheduler optimizations wit
 scripts/40-optimize-cpu.sh
 scripts/50-optimize-memory.sh
 scripts/60-optimize-storage.sh
-reports/latest/system-tuning-plan.json
-reports/latest/system-tuning-plan.md
-reports/latest/runtime-tuning-commands.sh
+reports/latest/tier1-cpu-plan.md
+reports/latest/tier1-cpu-runtime-commands.sh
+reports/latest/tier1-memory.md
+reports/latest/tier1-storage.md
 ```
 
 #### Acceptance Criteria
@@ -306,8 +309,8 @@ Benchmark CPU/GPU/local AI readiness and produce Stage 1 validation summaries.
 ```text
 scripts/80-benchmark-local-ai.sh
 scripts/90-validate.sh
-reports/latest/ai-runtime-benchmark.json
-reports/latest/ai-runtime-benchmark.md
+reports/latest/tier1-local-ai-benchmark.json
+reports/latest/tier1-local-ai-benchmark.md
 reports/latest/tier1-validation.json
 reports/latest/tier1-summary.md
 ```
@@ -1360,12 +1363,12 @@ reports/latest/ai370-health.md
 
 | ID | Name | Status | Reasoning |
 | --- | --- | --- | --- |
-| S1 | Hardware Detection & System Optimization | Implemented | Tier 1 scripts and reports are present. |
+| S1 | Hardware Detection & System Optimization | Implemented | Current Tier 1 scripts and generated report names are present. |
 | S1-M1 | Hardware Detection | Implemented | Detection script and reports are present. |
-| S1-M2 | BIOS & Firmware Validation | Implemented | BIOS and firmware scripts are present. |
+| S1-M2 | BIOS & Firmware Validation | Implemented | BIOS and firmware scripts emit current `tier1-firmware*` reports. |
 | S1-M3 | Kernel & Driver Validation | Implemented | Kernel, GPU, and NPU validation scripts are present. |
-| S1-M4 | System Optimization | Implemented | CPU, memory, and storage scripts are present. |
-| S1-M5 | Validation & Benchmarking | Implemented | Benchmark and validation scripts are present. |
+| S1-M4 | System Optimization | Implemented | CPU, memory, and storage scripts emit current `tier1-*` optimization reports. |
+| S1-M5 | Validation & Benchmarking | Implemented | Benchmark and validation scripts emit current `tier1-local-ai-benchmark.*` and summary reports. |
 | S2 | Local AI Runtime & AI Optimization Software | Ongoing | Runtime/RAG work exists; AMD AI stack and model storage remain incomplete. |
 | S2-M1 | AI Runtime | Implemented | Required runtime scripts are present. |
 | S2-M2 | AMD AI Stack | Ongoing | Ryzen AI check exists; ONNX Runtime, Vitis AI EP, NPU benchmark, and docs are missing. |
