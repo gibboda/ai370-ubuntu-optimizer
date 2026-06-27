@@ -15,11 +15,19 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 
 ### Current Repository Alignment
 
-* Stage 1 is the active foundation stage and must remain the first implementation priority.
-* Existing Tier 1 scripts cover most Stage 1 activities, but `scripts/25-check-firmware.sh` is still listed as required and is not currently present in the repository.
-* Stage 2 is partially implemented for local AI runtime work, while the AMD AI Stack scripts listed in Milestone 2.2 still need to be added or the roadmap must be adjusted to the implemented Tier 3 structure.
-* Stage 3 has ComfyUI benchmark and workflow artifacts, but the install/model scripts and required workflow subdirectories listed below are not yet fully aligned with the repository layout.
+* Stage 1 is the active foundation stage and must remain the first implementation priority. The implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
+* Stage 1 now includes the dedicated firmware validation script listed below: `scripts/25-check-firmware.sh`.
+* Stage 2 runtime work is partially implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, and `scripts/140-benchmark-llm.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` also exist.
+* Milestone 2.2 is not fully aligned with the implemented Tier 3 structure. `scripts/210-check-ryzen-ai-software.sh` exists, but `scripts/200-install-onnxruntime.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, and `docs/npu-status.md` are not present.
+* Stage 3 has ComfyUI workflow and benchmark artifacts, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. The listed install/model scripts (`scripts/400-install-comfyui.sh`, `scripts/410-install-comfyui-models.sh`) and required workflow subdirectories (`flux/`, `sdxl/`, `controlnet/`) are not currently present.
 * Stages 4 and 5 remain forward-looking roadmap sections and should not be started until earlier stage validation gates pass.
+
+### Review Findings
+
+* The roadmap still uses Stage terminology, while `README.md` and `ai370-optimize.sh` expose the primary user workflow as Tier 1 through Tier 5. Future updates should either add a clear Stage-to-Tier mapping here or rename roadmap sections to match the implemented Tier architecture.
+* Several required files listed in milestones are planned rather than implemented. Required-file lists should distinguish between `Implemented`, `Planned`, and `Deprecated/merged` deliverables so contributors do not mistake roadmap intent for current command availability.
+* Stage 4 milestones list outcomes but omit required deliverables for several sections. Add script/config/report paths before implementation begins so acceptance criteria remain validation-backed.
+* Stage 5 maintenance milestones do not yet define concrete validation reports or command entry points. Add those before release-management work starts.
 
 ### Review Guidance
 
