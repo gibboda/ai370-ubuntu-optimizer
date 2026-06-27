@@ -4,6 +4,27 @@
 
 **Document:** `docs/ROADMAP.md`
 
+
+---
+
+## Roadmap Review Status
+
+**Last reviewed:** 2026-06-27
+
+This repository contains `docs/ROADMAP.md` as the canonical roadmap file. References to `Roadmap.md`, `ROADMAP.md`, or `roadmap.md` should resolve to this document unless a future repository-level roadmap is intentionally added.
+
+### Current Repository Alignment
+
+* Stage 1 is the active foundation stage and must remain the first implementation priority.
+* Existing Tier 1 scripts cover most Stage 1 activities, but `scripts/25-check-firmware.sh` is still listed as required and is not currently present in the repository.
+* Stage 2 is partially implemented for local AI runtime work, while the AMD AI Stack scripts listed in Milestone 2.2 still need to be added or the roadmap must be adjusted to the implemented Tier 3 structure.
+* Stage 3 has ComfyUI benchmark and workflow artifacts, but the install/model scripts and required workflow subdirectories listed below are not yet fully aligned with the repository layout.
+* Stages 4 and 5 remain forward-looking roadmap sections and should not be started until earlier stage validation gates pass.
+
+### Review Guidance
+
+When updating this roadmap, prefer small, validation-backed changes that keep the document synchronized with the implemented command surface in `README.md` and `ai370-optimize.sh`. Any new required file listed in a milestone should either exist in the same change or be clearly marked as planned work.
+
 ---
 
 ## Purpose
