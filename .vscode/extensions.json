@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "GitHub.vscode-pull-request-github",
+        "GitHub.vscode-github-actions",
+        "eamodio.gitlens",
+        "timonwong.shellcheck",
+        "EditorConfig.EditorConfig",
+        "DavidAnson.vscode-markdownlint"
+    ]
+}
