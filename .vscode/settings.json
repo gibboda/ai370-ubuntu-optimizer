@@ -26,5 +26,6 @@
     },
     "shellcheck.enable": true,
     "snyk.advanced.autoSelectOrganization": true,
-    "snyk.advanced.organization": "c226f5d0-204b-4f37-a1dc-38cd9e73f017"
+    "snyk.advanced.organization": "c226f5d0-204b-4f37-a1dc-38cd9e73f017",
+    "snyk.advanced.additionalParameters": "--all-projects"
 }
