@@ -6,7 +6,7 @@
 
 ---
 
-# Purpose
+## Purpose
 
 This roadmap is the authoritative implementation guide for the AI370 Ubuntu Optimizer project.
 
@@ -24,7 +24,7 @@ Every implementation should follow this roadmap.
 
 ---
 
-# Project Goals
+## Project Goals
 
 The optimizer shall:
 
@@ -46,7 +46,7 @@ Offline operation is the default.
 
 ---
 
-# AI Agent Operating Rules
+## AI Agent Operating Rules
 
 Every AI assistant working on this repository shall follow these rules.
 
@@ -140,9 +140,9 @@ Benchmark before declaring success.
 
 ---
 
-# Stage 1 — Hardware Detection & System Optimization
+## Stage 1 — Hardware Detection & System Optimization
 
-## Objective
+## Objective (Stage 1)
 
 Prepare Ubuntu and the AI370 hardware for local AI workloads.
 
@@ -150,7 +150,7 @@ Prepare Ubuntu and the AI370 hardware for local AI workloads.
 
 ## Milestone 1.1 — Hardware Detection
 
-### Issues
+### Hardware Issues
 
 * Detect CPU
 * Detect GPU
@@ -160,7 +160,7 @@ Prepare Ubuntu and the AI370 hardware for local AI workloads.
 * Detect Motherboard
 * Generate hardware report
 
-### Required Files
+### Required Files (Hardware)
 
 ```text
 scripts/10-detect-hardware.sh
@@ -170,14 +170,14 @@ scripts/10-detect-hardware.sh
 
 ## Milestone 1.2 — BIOS & Firmware Validation
 
-### Issues
+### BIOS & Firmware Issues
 
 * Validate BIOS 2.01
 * Validate firmware
 * Validate Secure Boot
 * Validate microcode
 
-### Required Files
+### Required Files (BIOS & Firmware)
 
 ```text
 scripts/20-check-bios.sh
@@ -188,7 +188,7 @@ scripts/25-check-firmware.sh
 
 ## Milestone 1.3 — Kernel & Driver Validation
 
-### Issues
+### Kernel & Driver Issues
 
 * Validate kernel
 * Validate Mesa
@@ -197,7 +197,7 @@ scripts/25-check-firmware.sh
 * Validate ROCm
 * Validate AMDXDNA
 
-### Required Files
+### Required Files (Kernel & Driver)
 
 ```text
 scripts/30-validate-kernel.sh
@@ -209,7 +209,7 @@ scripts/75-detect-npu.sh
 
 ## Milestone 1.4 — System Optimization
 
-### Issues
+### System Optimization Issues
 
 * CPU optimization
 * Memory optimization
@@ -218,7 +218,7 @@ scripts/75-detect-npu.sh
 * Filesystem tuning
 * I/O scheduler tuning
 
-### Required Files
+### Required Files (System Optimization)
 
 ```text
 scripts/40-optimize-cpu.sh
@@ -230,7 +230,7 @@ scripts/60-optimize-storage.sh
 
 ## Milestone 1.5 — Validation & Benchmarking
 
-### Issues
+### Validation & Benchmarking Issues
 
 * CPU benchmark
 * GPU benchmark
@@ -238,7 +238,7 @@ scripts/60-optimize-storage.sh
 * Validation summary
 * HTML report
 
-### Required Files
+### Required Files (Validation & Benchmarking)
 
 ```text
 scripts/80-benchmark-local-ai.sh
@@ -246,7 +246,7 @@ scripts/90-validate.sh
 reports/
 ```
 
-### Acceptance Criteria
+### Acceptance Criteria (Stage 1)
 
 * BIOS validated
 * Radeon 890M detected
@@ -258,9 +258,9 @@ reports/
 
 ---
 
-# Stage 2 — Local AI Runtime & AI Optimization Software
+## Stage 2 — Local AI Runtime & AI Optimization Software
 
-## Objective
+## Objective (Stage 2)
 
 Install all local AI infrastructure.
 
@@ -268,14 +268,14 @@ Install all local AI infrastructure.
 
 ## Milestone 2.1 — AI Runtime
 
-### Issues
+### AI Runtime Issues
 
 * Install PyTorch ROCm
 * Install llama.cpp
 * Install Ollama
 * Install Open WebUI
 
-### Required Files
+### Required Files (AI Runtime)
 
 ```text
 scripts/100-install-pytorch-rocm.sh
@@ -288,14 +288,14 @@ scripts/130-install-open-webui.sh
 
 ## Milestone 2.2 — AMD AI Stack
 
-### Issues
+### AMD AI Stack Issues
 
 * Install ONNX Runtime
 * Detect Ryzen AI Software
 * Detect Vitis AI Execution Provider
 * Benchmark NPU
 
-### Required Files
+### Required Files (AMD AI Stack)
 
 ```text
 scripts/200-install-onnxruntime.sh
@@ -309,14 +309,14 @@ docs/npu-status.md
 
 ## Milestone 2.3 — Offline RAG
 
-### Issues
+### Offline RAG Issues
 
 * Install AnythingLLM
 * Install embedding models
 * Configure local document storage
 * Validate offline RAG
 
-### Required Files
+### Required Files (Offline RAG)
 
 ```text
 scripts/300-install-anythingllm.sh
@@ -328,21 +328,21 @@ scripts/320-validate-rag.sh
 
 ## Milestone 2.4 — AI Runtime Benchmark
 
-### Issues
+### AI Runtime Benchmark Issues
 
 * LLM benchmark
 * Embedding benchmark
 * Inference benchmark
 * Benchmark report
 
-### Required Files
+### Required Files (AI Runtime Benchmark)
 
 ```text
 scripts/140-benchmark-llm.sh
 reports/
 ```
 
-### Acceptance Criteria
+### Acceptance Criteria (Stage 2)
 
 * Ollama operational
 * Open WebUI operational
@@ -354,9 +354,9 @@ reports/
 
 ---
 
-# Stage 3 — Offline Image Generation
+## Stage 3 — Offline Image Generation
 
-## Objective
+## Objective (Stage 3)
 
 Install a complete offline image-generation environment.
 
@@ -364,12 +364,12 @@ Install a complete offline image-generation environment.
 
 ## Milestone 3.1 — ComfyUI
 
-### Issues
+### ComfyUI Issues
 
 * Install ComfyUI
 * Validate installation
 
-### Required Files
+### Required Files (ComfyUI)
 
 ```text
 scripts/400-install-comfyui.sh
@@ -379,14 +379,14 @@ scripts/400-install-comfyui.sh
 
 ## Milestone 3.2 — Model Installation
 
-### Issues
+### Model Installation Issues
 
 * Install FLUX
 * Install SDXL
 * Install ControlNet
 * Install IPAdapter
 
-### Required Files
+### Required Files (Model Installation)
 
 ```text
 scripts/410-install-comfyui-models.sh
@@ -408,21 +408,21 @@ workflows/comfyui/controlnet/
 
 ## Milestone 3.4 — Benchmark
 
-### Issues
+### ComfyUI Benchmark Issues
 
 * Benchmark FLUX
 * Benchmark SDXL
 * Measure VRAM
 * Generate report
 
-### Required Files
+### Required Files (ComfyUI Benchmark)
 
 ```text
 scripts/420-benchmark-comfyui.sh
 docs/offline-image-generation.md
 ```
 
-### Acceptance Criteria
+### Acceptance Criteria (Stage 3)
 
 * ComfyUI operational
 * FLUX operational
@@ -431,9 +431,9 @@ docs/offline-image-generation.md
 
 ---
 
-# Stage 4 — Offline VS Code & Code Assistant
+## Stage 4 — Offline VS Code & Code Assistant
 
-## Objective
+## Objective (Stage 4)
 
 Build a completely offline software engineering environment.
 
@@ -441,13 +441,13 @@ Build a completely offline software engineering environment.
 
 ## Milestone 4.1 — VS Code Installation
 
-### Issues
+### VS Code Installation Issues
 
 * Install VS Code
 * Configure settings
 * Install required extensions
 
-### Required Files
+### Required Files (VS Code Installation)
 
 ```text
 scripts/500-install-vscode.sh
@@ -458,13 +458,13 @@ configs/vscode/settings.json
 
 ## Milestone 4.2 — Local AI Extension
 
-### Issues
+### Local AI Extension Issues
 
 * Install Continue
 * Configure Ollama
 * Configure local inference
 
-### Required Files
+### Required Files (Local AI Extension)
 
 ```text
 scripts/510-install-vscode-ai-tools.sh
@@ -475,14 +475,14 @@ configs/continue/config.yaml
 
 ## Milestone 4.3 — Coding Models
 
-### Issues
+### Coding Models Issues
 
 * Install Qwen Coder
 * Install DeepSeek Coder
 * Install StarCoder2
 * Install Code Llama
 
-### Required Files
+### Required Files (Coding Models)
 
 ```text
 scripts/520-install-code-models.sh
@@ -492,7 +492,7 @@ scripts/520-install-code-models.sh
 
 ## Milestone 4.4 — Repository Intelligence
 
-### Issues
+### Repository Intelligence Issues
 
 * Repository indexing
 * Local embeddings
@@ -503,7 +503,7 @@ scripts/520-install-code-models.sh
 
 ## Milestone 4.5 — Offline Code Generation
 
-### Issues
+### Offline Code Generation Issues
 
 * Code completion
 * Code generation
@@ -515,7 +515,7 @@ scripts/520-install-code-models.sh
 
 ## Milestone 4.6 — Offline Code Review
 
-### Issues
+### Offline Code Review Issues
 
 * Shell review
 * Python review
@@ -526,21 +526,21 @@ scripts/520-install-code-models.sh
 
 ## Milestone 4.7 — Benchmark
 
-### Issues
+### Code Assistant Benchmark Issues
 
 * Completion speed
 * Latency
 * Context retrieval
 * Benchmark report
 
-### Required Files
+### Required Files (Code Assistant Benchmark)
 
 ```text
 scripts/530-benchmark-code-assistant.sh
 docs/vscode-offline-code-assistant.md
 ```
 
-### Acceptance Criteria
+### Acceptance Criteria (Stage 4)
 
 * Offline coding operational
 * Offline code review operational
@@ -549,9 +549,9 @@ docs/vscode-offline-code-assistant.md
 
 ---
 
-# Stage 5 — Maintenance & Lifecycle Management
+## Stage 5 — Maintenance & Lifecycle Management
 
-## Objective
+## Objective (Stage 5)
 
 Ensure the optimizer remains maintainable, reproducible, and current over time.
 
@@ -619,7 +619,7 @@ Ensure the optimizer remains maintainable, reproducible, and current over time.
 * Update roadmap
 * Update architecture documentation
 
-### Acceptance Criteria
+### Acceptance Criteria (Stage 5)
 
 * System remains reproducible
 * Performance remains stable
@@ -629,7 +629,7 @@ Ensure the optimizer remains maintainable, reproducible, and current over time.
 
 ---
 
-# Development Workflow
+## Development Workflow
 
 Every contribution follows this sequence:
 
