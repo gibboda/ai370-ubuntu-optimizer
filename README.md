@@ -85,6 +85,14 @@ Planned / Not present in repo:
 
 For the authoritative, up-to-date status and contributor guidance consult `docs/ROADMAP.md`.
 
+- `scripts/410-install-comfyui-models.sh`
+- `workflows/comfyui/flux/`, `workflows/comfyui/sdxl/`, `workflows/comfyui/controlnet/`
+
+For the authoritative, up-to-date status and contributor guidance consult `docs/ROADMAP.md`
+=======
+>>>>>>>
+>>>>>>> 625548f (docs: reference canonical roadmap and status in README)
+
 **Deliverables (Tier 1 scripts):**
 
 ```
