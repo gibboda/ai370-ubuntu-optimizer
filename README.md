@@ -60,12 +60,32 @@ The repository is organized around five AI tiers. Tier 1 is the required foundat
 This repository uses `docs/ROADMAP.md` as the canonical roadmap and implementation status. `README.md` documents usage and tier structure; consult `docs/ROADMAP.md` for the authoritative list of implemented vs planned files, current stage alignment, and contributor guidance.
 
 Current high-level status (see `docs/ROADMAP.md` for details):
+
 - Stage 1 / Tier 1: Implemented and active (hardware detection, BIOS/firmware validation, kernel/driver validation, system optimization, and benchmarking).
 - Stage 2 / Tier 2: Partially implemented (runtime scripts present for PyTorch/llama.cpp/Ollama/Open WebUI; some AMD NPU files are planned).
 - Stage 3 / Tier 5: Partially implemented (benchmarks and workflows exist; some install/model scripts and workflow subdirectories are planned).
 
 If you want, I can open a PR that adds an explicit "Implemented / Planned" checklist for the higher-tier deliverables in this file to reduce confusion.
 
+### Implemented / Planned (high level)
+
+Implemented:
+
+- `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`
+- `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`
+- `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, `scripts/90-validate.sh`
+
+Planned / Not present in repo:
+
+- `scripts/200-install-onnxruntime.sh`
+- `scripts/220-check-vitis-ai-ep.sh`
+- `scripts/230-benchmark-npu.sh`
+- `docs/npu-status.md`
+- `scripts/400-install-comfyui.sh`
+- `scripts/410-install-comfyui-models.sh`
+- `workflows/comfyui/flux/`, `workflows/comfyui/sdxl/`, `workflows/comfyui/controlnet/`
+
+For the authoritative, up-to-date status and contributor guidance consult `docs/ROADMAP.md`.
 
 **Deliverables (Tier 1 scripts):**
 
