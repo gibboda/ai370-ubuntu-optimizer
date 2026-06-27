@@ -65,8 +65,6 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 - Stage 2 / Tier 2: Partially implemented (runtime scripts present for PyTorch/llama.cpp/Ollama/Open WebUI; some AMD NPU files are planned).
 - Stage 3 / Tier 5: Partially implemented (benchmarks and workflows exist; some install/model scripts and workflow subdirectories are planned).
 
-If you want, I can open a PR that adds an explicit "Implemented / Planned" checklist for the higher-tier deliverables in this file to reduce confusion.
-
 ### Implemented / Planned (high level)
 
 Implemented:
@@ -86,6 +84,14 @@ Planned / Not present in repo:
 - `workflows/comfyui/flux/`, `workflows/comfyui/sdxl/`, `workflows/comfyui/controlnet/`
 
 For the authoritative, up-to-date status and contributor guidance consult `docs/ROADMAP.md`.
+
+- `scripts/410-install-comfyui-models.sh`
+- `workflows/comfyui/flux/`, `workflows/comfyui/sdxl/`, `workflows/comfyui/controlnet/`
+
+For the authoritative, up-to-date status and contributor guidance consult `docs/ROADMAP.md`
+=======
+>>>>>>>
+>>>>>>> 625548f (docs: reference canonical roadmap and status in README)
 
 **Deliverables (Tier 1 scripts):**
 
