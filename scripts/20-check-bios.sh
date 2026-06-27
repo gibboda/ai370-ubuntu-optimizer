@@ -28,7 +28,7 @@ main() {
   FWUPD_DEVICES="$(detect_fwupd_devices)"
 
   EXPECTED_BIOS=""
-  PROFILE_ENV="$PROJECT_ROOT/config/profiles/$PROFILE.env"
+  PROFILE_ENV="$PROJECT_ROOT/configs/profiles/$PROFILE.env"
   if [[ -f "$PROFILE_ENV" ]]; then
     # shellcheck source=/dev/null
     source "$PROFILE_ENV"

@@ -19,7 +19,7 @@ COMMANDS_FILE="$LATEST_DIR/guided-acceleration-commands.sh"
 READINESS_MD="$LATEST_DIR/offline-hardware-readiness.md"
 READINESS_JSON="$LATEST_DIR/offline-hardware-readiness.json"
 ARTIFACTS_MD="$LATEST_DIR/offline-required-artifacts.md"
-OFFLINE_CONFIG="$PROJECT_ROOT/config/offline/ai-runtime.env"
+OFFLINE_CONFIG="$PROJECT_ROOT/configs/offline/ai-runtime.env"
 
 require_runtime_persistence() {
   if [[ "$PERSISTENCE" == "system" ]]; then
@@ -41,7 +41,7 @@ load_offline_config() {
   OFFLINE_WHEELHOUSE="$PROJECT_ROOT/.ai370-ai/wheelhouse"
   OFFLINE_MODEL_ROOT="$PROJECT_ROOT/.ai370-ai/models"
   OFFLINE_TOOL_ROOT="$PROJECT_ROOT/.ai370-ai/tools"
-  OFFLINE_REQUIREMENTS="$PROJECT_ROOT/config/ai-runtime/requirements-offline.txt"
+  OFFLINE_REQUIREMENTS="$PROJECT_ROOT/configs/ai-runtime/requirements-offline.txt"
   if [[ -f "$OFFLINE_CONFIG" ]]; then
     # shellcheck source=/dev/null
     source "$OFFLINE_CONFIG"

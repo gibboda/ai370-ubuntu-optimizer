@@ -27,7 +27,7 @@ STATUS_JSON="$LATEST_DIR/ai-stack-status.json"
 RECOMMENDATIONS_FILE="$LATEST_DIR/ai-stack-recommendations.md"
 BENCHMARK_JSON="$LATEST_DIR/ai-runtime-benchmark.json"
 BENCHMARK_MD="$LATEST_DIR/ai-runtime-benchmark.md"
-OFFLINE_CONFIG="$PROJECT_ROOT/config/offline/ai-runtime.env"
+OFFLINE_CONFIG="$PROJECT_ROOT/configs/offline/ai-runtime.env"
 
 PYTHON_PACKAGES=(
   pip
@@ -78,7 +78,7 @@ load_offline_config() {
   OFFLINE_WHEELHOUSE="$AI_DIR/wheelhouse"
   OFFLINE_MODEL_ROOT="$AI_DIR/models"
   OFFLINE_TOOL_ROOT="$AI_DIR/tools"
-  OFFLINE_REQUIREMENTS="$PROJECT_ROOT/config/ai-runtime/requirements-offline.txt"
+  OFFLINE_REQUIREMENTS="$PROJECT_ROOT/configs/ai-runtime/requirements-offline.txt"
 
   if [[ -f "$OFFLINE_CONFIG" ]]; then
     # shellcheck source=/dev/null

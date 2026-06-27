@@ -214,12 +214,12 @@ The phases communicate through `reports/latest/`:
 
 ## Offline AI Hardware Optimization Before ComfyUI
 
-Phases 5-7 can be run with `--offline` to focus on local CPU/iGPU/NPU/LLM readiness before any ComfyUI setup. Offline mode does not fetch packages, clone repositories, download models, or install ROCm/XRT/Ryzen AI runtime stacks. It expects local artifacts to already be staged. For Phase 6 specifically, if the configured wheelhouse is missing, the run can continue only when the existing virtual environment already satisfies `config/ai-runtime/requirements-offline.txt`.
+Phases 5-7 can be run with `--offline` to focus on local CPU/iGPU/NPU/LLM readiness before any ComfyUI setup. Offline mode does not fetch packages, clone repositories, download models, or install ROCm/XRT/Ryzen AI runtime stacks. It expects local artifacts to already be staged. For Phase 6 specifically, if the configured wheelhouse is missing, the run can continue only when the existing virtual environment already satisfies `configs/ai-runtime/requirements-offline.txt`.
 
-Default offline artifact paths are configured in `config/offline/ai-runtime.env`:
+Default offline artifact paths are configured in `configs/offline/ai-runtime.env`:
 
 - `.ai370-ai/wheelhouse/` for Python wheels used by Phase 6.
-- `config/ai-runtime/requirements-offline.txt` for the offline Python package list.
+- `configs/ai-runtime/requirements-offline.txt` for the offline Python package list.
 - `.ai370-ai/models/` for local smoke-test, representative AI, and GGUF models.
 - `.ai370-ai/tools/` for local benchmark/helper binaries such as approved llama.cpp builds.
 
@@ -259,7 +259,7 @@ For an end-to-end safe-readiness + AMD-acceleration + ComfyUI flow:
 
 Important constraints:
 
-- ROCm repository version, repository codename, package list, artifact paths, and ComfyUI acceleration mode are configured in `config/amd-acceleration.env`.
+- ROCm repository version, repository codename, package list, artifact paths, and ComfyUI acceleration mode are configured in `configs/amd-acceleration.env`.
 - The default ROCm repository codename is `resolute`, matching Ubuntu 26.04 LTS (Resolute Raccoon), so the AMD acceleration phase remains aligned with the toolkit target release.
 - Ryzen AI / XRT NPU packages are not fetched automatically from AMD account-gated download pages. Stage the required Ubuntu 26.04 `.deb` files and `ryzen_ai-*.tgz` under `.ai370-ai/amd-artifacts/`, or run with `AMD_ARTIFACT_ROOT=/absolute/path/to/amd-artifacts` when the files live outside the checkout.
 - For Ubuntu 26.04 Ryzen AI Linux driver bundles, the staged NPU driver files should include names like `xrt_<version>_26.04-amd64-base.deb`, `xrt_<version>_26.04-amd64-base-dev.deb`, `xrt_<version>_26.04-amd64-npu.deb`, and `xrt_plugin.<version>_26.04-amd64-amdxdna.deb`; extract any compressed AMD driver bundle under the artifact root before running `amd-accel-install`. Source-built XDNA packages such as `xrt_<version>_26.04-amd64-xrt.deb` and `xrt_plugin.<version>_ubuntu26.04-x86_64-amdxdna.deb` are also recognized.
