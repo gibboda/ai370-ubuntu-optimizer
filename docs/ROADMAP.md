@@ -4,7 +4,6 @@
 
 **Document:** `docs/ROADMAP.md`
 
-
 ---
 
 ## Roadmap Review Status
@@ -390,6 +389,13 @@ scripts/230-benchmark-npu.sh
 docs/npu-status.md
 ```
 
+Implemented / Planned:
+
+* Implemented: `scripts/210-check-ryzen-ai-software.sh`
+* Planned / Not present: `scripts/200-install-onnxruntime.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `docs/npu-status.md`
+
+```
+
 ---
 
 ## Milestone 2.3 — Offline RAG
@@ -460,6 +466,10 @@ Install a complete offline image-generation environment.
 scripts/400-install-comfyui.sh
 ```
 
+Implemented / Planned:
+
+* Planned / Not present: `scripts/400-install-comfyui.sh`
+
 ---
 
 ## Milestone 3.2 — Model Installation
@@ -477,6 +487,10 @@ scripts/400-install-comfyui.sh
 scripts/410-install-comfyui-models.sh
 ```
 
+Implemented / Planned:
+
+* Planned / Not present: `scripts/410-install-comfyui-models.sh`
+
 ---
 
 ## Milestone 3.3 — Workflow Library
@@ -488,6 +502,10 @@ workflows/comfyui/flux/
 workflows/comfyui/sdxl/
 workflows/comfyui/controlnet/
 ```
+
+Implemented / Planned:
+
+* Planned / Not present: `workflows/comfyui/flux/`, `workflows/comfyui/sdxl/`, `workflows/comfyui/controlnet/`
 
 ---
 
