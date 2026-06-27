@@ -1,7 +1,7 @@
 # Tier 1 GPU Stack Validation
 
 - Radeon 890M / gfx1150 detected: YES
-- amdgpu loaded: NO
+- amdgpu loaded: YES
 - Vulkan visible: visible
 - ROCm (rocminfo) visible: visible
 

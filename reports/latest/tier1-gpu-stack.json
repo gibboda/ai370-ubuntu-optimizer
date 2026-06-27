@@ -1,7 +1,7 @@
 {
   "tier": 1,
   "phase": "validate-gpu-stack",
-  "amdgpu": "missing",
+  "amdgpu": "loaded",
   "gpu_arch": "gfx1150",
   "vulkan": "visible",
   "opencl": "visible",
