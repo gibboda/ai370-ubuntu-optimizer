@@ -154,7 +154,7 @@ PY
     status="PASS"
   fi
 
-  if [[ ! -f "$STATUS_JSON" ]]; then
+  if [[ ! -x "$VENV_DIR/bin/python" || ! -f "$STATUS_JSON" ]]; then
     STATUS="WARN" PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
     VENV_DIR="$VENV_DIR" WHEELHOUSE="$WHEELHOUSE" INSTALL_ACTION="$install_action" DETAIL="$detail" \
     python3 - "$STATUS_JSON" "$SUMMARY_MD" <<'PY'

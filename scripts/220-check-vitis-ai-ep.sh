@@ -55,9 +55,9 @@ recommendations = []
 if importlib.util.find_spec("onnxruntime") is None:
     recommendations.append("Run scripts/200-install-onnxruntime.sh or stage ONNX Runtime in .ai370-ai/venv.")
 else:
-    import onnxruntime as ort
-
     try:
+        import onnxruntime as ort
+
         ort_state = "available"
         providers = list(ort.get_available_providers())
         matching = [p for p in providers if any(token in p.lower() for token in provider_tokens)]
