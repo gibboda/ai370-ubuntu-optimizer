@@ -131,7 +131,7 @@ warns = [x for x in os.environ.get("WARNINGS", "").splitlines() if x.strip()]
 data = {
   "tier": 1,
   "status": st,
-  "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+  "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),
   "profile": os.environ.get("PROFILE", "ai370"),
   "acceptance": {
     "radeon_890m_gfx1150": gpu_arch == "gfx1150",
