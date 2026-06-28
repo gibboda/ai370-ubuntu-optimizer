@@ -60,6 +60,10 @@ Tier 2 scripts (deliverables):
   scripts/120-install-ollama.sh
   scripts/130-install-open-webui.sh
   scripts/140-benchmark-llm.sh
+  scripts/200-install-onnxruntime.sh
+  scripts/210-check-ryzen-ai-software.sh
+  scripts/220-check-vitis-ai-ep.sh
+  scripts/230-benchmark-npu.sh
 
 Backward-compatible aliases:
   inventory, audit        -> hardware (Tier 1)
@@ -273,18 +277,17 @@ case "$CMD" in
 
   tier3)
     echo "[INFO] Running Tier 3 – AMD NPU Enablement"
-    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
-    if [[ -f "$PROJECT_ROOT/scripts/110-tier3-npu-enable.sh" ]]; then
-      run_script "scripts/110-tier3-npu-enable.sh" "$OFFLINE"
-    fi
+    run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
+    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
+    run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
+    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
     ;;
 
   tier3-validate)
     echo "[INFO] Tier 3 NPU validation (experimental)"
-    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
-    if [[ -f "$PROJECT_ROOT/scripts/110-tier3-npu-enable.sh" ]]; then
-      run_script "scripts/110-tier3-npu-enable.sh" "$OFFLINE"
-    fi
+    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
+    run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
+    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
     ;;
 
   tier4)
@@ -326,12 +329,17 @@ case "$CMD" in
     run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     # Tier 3 (NPU visibility + note on explicit accel)
-    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
-    # Explicit AMD accel (risk already accepted)
-    run_script "scripts/65-amd-acceleration-install.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
+    run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
+    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
+    run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
+    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    # Explicit AMD accel (risk already accepted, legacy optional script)
+    if [[ -f "$PROJECT_ROOT/scripts/65-amd-acceleration-install.sh" ]]; then
+      run_script "scripts/65-amd-acceleration-install.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
+    fi
     # Re-validate GPU/NPU after accel
     run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
-    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
+    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     # Tier 5 (gate will be satisfied by above)
     run_script "scripts/70-comfyui-workflows.sh"
     run_script "scripts/comfyui-benchmark.sh"
@@ -412,7 +420,9 @@ case "$CMD" in
     ;;
 
   npu)
-    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
+    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
+    run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
+    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
     ;;
 
   guide)

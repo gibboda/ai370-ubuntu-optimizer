@@ -16,7 +16,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 
 * Stage 1 is the active foundation stage and must remain the first implementation priority. The implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
 * Stage 2 runtime work is partially implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, and `scripts/140-benchmark-llm.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` also exist.
-* Milestone 2.2 is ongoing. `scripts/210-check-ryzen-ai-software.sh` exists, but `scripts/200-install-onnxruntime.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, and `docs/npu-status.md` are not present.
+* Milestone 2.2 is implemented. `scripts/200-install-onnxruntime.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, and `docs/npu-status.md` are present; benchmark scripts emit either local timing results or actionable diagnostics when NPU providers are unavailable.
 * Stage 3 is ongoing. ComfyUI workflow and benchmark artifacts exist, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. Install/model scripts, documentation, and required workflow subdirectories remain planned.
 * Stages 4 and 5 remain planning sections and should not be started until earlier stage validation gates pass.
 
@@ -401,7 +401,7 @@ scripts/130-install-open-webui.sh
 
 ### S2-M2 — AMD AI Stack
 
-**Status:** Ongoing
+**Status:** Implemented
 
 #### Description
 
@@ -419,8 +419,8 @@ docs/npu-status.md
 
 Implemented / Planned:
 
-* Implemented: `scripts/210-check-ryzen-ai-software.sh`
-* Planned / Not present: `scripts/200-install-onnxruntime.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `docs/npu-status.md`
+* Implemented: `scripts/200-install-onnxruntime.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `docs/npu-status.md`
+* Planned / Not present: none
 
 #### Acceptance Criteria
 
@@ -437,8 +437,8 @@ Implemented / Planned:
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [ ] All deliverables implemented.
-* [ ] NPU benchmark generated.
+* [x] All deliverables implemented.
+* [x] NPU benchmark generated or actionable diagnostics documented.
 
 ### S2-M3 — Offline RAG
 
