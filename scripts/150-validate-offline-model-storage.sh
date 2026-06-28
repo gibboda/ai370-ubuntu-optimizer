@@ -53,6 +53,11 @@ def rel_or_abs(path_value):
     return path if path.is_absolute() else root / path
 
 
+def normalize_path(path):
+    # Resolve lexical segments like ".." without requiring the artifact to exist.
+    return path.expanduser().resolve(strict=False)
+
+
 def sha256_file(path):
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -76,7 +81,7 @@ else:
 if not policy_file.exists():
     add("FAIL", f"Missing storage policy: {policy_file.relative_to(root)}")
 
-model_root = rel_or_abs(manifest.get("model_root", ".ai370-ai/models"))
+model_root = normalize_path(rel_or_abs(manifest.get("model_root", ".ai370-ai/models")))
 try:
     model_root.mkdir(parents=True, exist_ok=True)
 except Exception as exc:  # noqa: BLE001
@@ -95,13 +100,28 @@ minimum_free_gb = float(manifest.get("minimum_free_gb", 0) or 0)
 if free_gb < minimum_free_gb:
     add("FAIL", f"Model root has {free_gb:.1f} GiB free; manifest requires {minimum_free_gb:.1f} GiB")
 
-# Best-effort NVMe signal: warn if the resolved model root path does not mention
-# an NVMe device in mount metadata. This remains a warning because bind mounts,
-# LVM, encryption, and CI filesystems can obscure the physical backing device.
+# Best-effort NVMe signal: inspect the mount entry that actually backs the
+# normalized model root. This remains a warning because bind mounts, LVM,
+# encryption, and CI filesystems can obscure the physical backing device.
 nvme_signal = False
 try:
-    mountinfo = Path("/proc/self/mountinfo").read_text(errors="ignore")
-    nvme_signal = "nvme" in mountinfo.lower() and any(part in str(model_root) for part in (".ai370-ai", "models", str(model_root)))
+    best_mount = None
+    best_line = ""
+    for line in Path("/proc/self/mountinfo").read_text(errors="ignore").splitlines():
+        fields = line.split()
+        if len(fields) < 5:
+            continue
+        mount_point = normalize_path(Path(fields[4].replace("\\040", " ")))
+        try:
+            model_root.relative_to(mount_point)
+        except ValueError:
+            continue
+        if best_mount is None or len(str(mount_point)) > len(str(best_mount)):
+            best_mount = mount_point
+            best_line = line
+    if best_mount is not None:
+        mount_source = best_line.split(" - ", 1)[1] if " - " in best_line else best_line
+        nvme_signal = "nvme" in mount_source.lower()
 except Exception:
     nvme_signal = False
 if not nvme_signal:
@@ -163,7 +183,7 @@ for entry in models:
     exists = False
     resolved_path = None
     if path_value:
-        resolved_path = rel_or_abs(path_value)
+        resolved_path = normalize_path(rel_or_abs(path_value))
         try:
             resolved_path.relative_to(model_root)
         except ValueError:

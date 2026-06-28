@@ -142,6 +142,7 @@ require_tier123_pass() {
   local LATEST_DIR="$PROJECT_ROOT/reports/latest"
   local tier1_status="$LATEST_DIR/tier1-validation.json"
   local tier2_status="$LATEST_DIR/tier2-validation.json"
+  local offline_model_status="$LATEST_DIR/offline-model-storage.json"
   local tier3_status="$LATEST_DIR/tier3-validation.json"
   local legacy_final="$LATEST_DIR/final-validation.txt"
   local gpu_status="$LATEST_DIR/gpu-acceleration-status.txt"
@@ -170,7 +171,7 @@ then
     pass="false"
   fi
 
-  # Tier 2: prefer dedicated json (from 100-tier2), fall back to legacy llm/ai status
+  # Tier 2: require both runtime validation and S2-M5 offline model storage validation.
   if [[ -f "$tier2_status" ]]; then
     if ! python3 - "$tier2_status" <<'PY' >/dev/null 2>&1
 import json, sys
@@ -183,6 +184,21 @@ then
       pass="false"
     fi
   elif [[ ! -f "$llm_status" && ! -f "$ai_status" ]]; then
+    pass="false"
+  fi
+
+  if [[ -f "$offline_model_status" ]]; then
+    if ! python3 - "$offline_model_status" <<'PY' >/dev/null 2>&1
+import json, sys
+data=json.load(open(sys.argv[1]))
+status = data.get("status") or "UNKNOWN"
+if status.upper() not in ("PASS", "WARN"):
+    sys.exit(1)
+PY
+then
+      pass="false"
+    fi
+  else
     pass="false"
   fi
 
