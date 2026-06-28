@@ -15,7 +15,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 ### Current Repository Alignment
 
 * Stage 1 is the active foundation stage and must remain the first implementation priority. The implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
-* Stage 2 runtime work is partially implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, and `scripts/140-benchmark-llm.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` also exist.
+* Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, and `scripts/150-validate-offline-model-storage.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` also exist.
 * Milestone 2.2 is implemented. `scripts/200-install-onnxruntime.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, and `docs/npu-status.md` are present; benchmark scripts emit either local timing results or actionable diagnostics when NPU providers are unavailable.
 * Stage 3 is ongoing. ComfyUI workflow and benchmark artifacts exist, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. Install/model scripts, documentation, and required workflow subdirectories remain planned.
 * Stages 4 and 5 remain planning sections and should not be started until earlier stage validation gates pass.
@@ -54,7 +54,7 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 
 ### Gap Analysis
 
-* Missing S2 work: ONNX Runtime installation, Vitis AI Execution Provider validation, NPU benchmark, offline model manifest/storage validation, chat/coding/embedding model classification.
+* Missing S2 work: none currently identified; S2-M5 now provides offline model manifest/storage validation and chat/coding/embedding model classification.
 * Missing S3 work: ComfyUI installer, model installer, VAEs, LoRAs, ControlNet, upscalers, workflow subdirectories, startup/shutdown/status/health automation.
 * Missing S4 work: VS Code installer, Continue config, Aider installation, Git/GitHub CLI validation, ShellCheck/Ruff/Black/Pyright setup, offline code-generation and code-review validation.
 * Missing S5 work: update, health-check, backup, restore, regression, release, status, startup/shutdown, workflow-launching, and documentation-maintenance automation.
@@ -62,7 +62,7 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 ### New GitHub Issues To Create
 
 1. Implement S2-M2 ONNX Runtime, Vitis AI EP, NPU benchmark, and NPU status documentation.
-2. Add S2-M5 offline model storage and model manifest validation.
+2. Keep S2-M5 model manifest entries current as required offline models are selected.
 3. Implement S3-M1 ComfyUI installer with validation.
 4. Implement S3-M2 ComfyUI model installer for FLUX, SDXL, VAEs, LoRAs, ControlNet, and upscalers.
 5. Add S3-M3 workflow library subdirectories and launchable workflow definitions.
@@ -512,7 +512,7 @@ reports/latest/llm-validation.md
 
 ### S2-M5 — Offline Model Storage & Model Management
 
-**Status:** Missing
+**Status:** Implemented
 
 #### Description
 
@@ -525,6 +525,7 @@ configs/models/manifest.yaml
 configs/models/storage-policy.md
 scripts/150-validate-offline-model-storage.sh
 reports/latest/offline-model-storage.md
+reports/latest/offline-model-storage.json
 ```
 
 #### Acceptance Criteria
@@ -532,6 +533,11 @@ reports/latest/offline-model-storage.md
 * Chat, coding, and embedding models have manifest entries and local storage paths.
 * Model integrity checks work without internet access.
 * Storage capacity and NVMe placement are validated before model download/import.
+
+Implemented / Planned:
+
+* Implemented: `configs/models/manifest.yaml`, `configs/models/storage-policy.md`, `scripts/150-validate-offline-model-storage.sh`, `reports/latest/offline-model-storage.md`, `reports/latest/offline-model-storage.json`
+* Planned / Not present: none
 
 #### Validation Steps
 
@@ -543,8 +549,8 @@ reports/latest/offline-model-storage.md
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [ ] Deliverables implemented.
-* [ ] Offline model storage validated.
+* [x] Deliverables implemented.
+* [x] Offline model storage validated.
 
 ---
 

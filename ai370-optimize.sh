@@ -60,6 +60,7 @@ Tier 2 scripts (deliverables):
   scripts/120-install-ollama.sh
   scripts/130-install-open-webui.sh
   scripts/140-benchmark-llm.sh
+  scripts/150-validate-offline-model-storage.sh
   scripts/200-install-onnxruntime.sh
   scripts/210-check-ryzen-ai-software.sh
   scripts/220-check-vitis-ai-ep.sh
@@ -268,11 +269,13 @@ case "$CMD" in
     run_script "scripts/120-install-ollama.sh" "$OFFLINE"
     run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+    run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
     ;;
 
   tier2-validate)
     echo "[INFO] Tier 2 validation (writes/validates tier2-validation.json)"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+    run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
     ;;
 
   tier3)
@@ -328,6 +331,7 @@ case "$CMD" in
     run_script "scripts/120-install-ollama.sh" "$OFFLINE"
     run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+    run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
     # Tier 3 (NPU visibility + note on explicit accel)
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"

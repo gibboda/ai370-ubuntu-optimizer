@@ -1,0 +1,83 @@
+{
+  "stage": "S2-M5",
+  "status": "WARN",
+  "timestamp": "2026-06-28T15:19:02.786983+00:00",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": true,
+  "manifest": "configs/models/manifest.yaml",
+  "policy": "configs/models/storage-policy.md",
+  "model_root": ".ai370-ai/models",
+  "storage": {
+    "total_gb": 62.44,
+    "free_gb": 28.37,
+    "minimum_free_gb": 20.0,
+    "nvme_confirmed": false
+  },
+  "models": [
+    {
+      "id": "chat-gguf-local",
+      "name": "Local chat GGUF model",
+      "category": "chat",
+      "runtime": "llama.cpp",
+      "format": "gguf",
+      "path": ".ai370-ai/models/chat/local-chat.gguf",
+      "ollama_tag": null,
+      "required": false,
+      "exists": false,
+      "status": "WARN",
+      "messages": [
+        "model artifact is not present locally"
+      ]
+    },
+    {
+      "id": "coding-ollama-local",
+      "name": "Local coding assistant model",
+      "category": "coding",
+      "runtime": "ollama",
+      "format": "ollama",
+      "path": ".ai370-ai/models/coding/qwen2.5-coder-7b",
+      "ollama_tag": "qwen2.5-coder:7b",
+      "required": false,
+      "exists": false,
+      "status": "WARN",
+      "messages": [
+        "model artifact is not present locally"
+      ]
+    },
+    {
+      "id": "embedding-local",
+      "name": "Local embedding model",
+      "category": "embedding",
+      "runtime": "sentence-transformers",
+      "format": "directory",
+      "path": ".ai370-ai/models/embedding/local-embedding-model",
+      "ollama_tag": null,
+      "required": false,
+      "exists": false,
+      "status": "WARN",
+      "messages": [
+        "model artifact is not present locally"
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "level": "WARN",
+      "message": "NVMe backing could not be confirmed for the model root; verify placement before importing large models"
+    },
+    {
+      "level": "WARN",
+      "message": "chat-gguf-local: model artifact is not present locally"
+    },
+    {
+      "level": "WARN",
+      "message": "coding-ollama-local: model artifact is not present locally"
+    },
+    {
+      "level": "WARN",
+      "message": "embedding-local: model artifact is not present locally"
+    }
+  ]
+}

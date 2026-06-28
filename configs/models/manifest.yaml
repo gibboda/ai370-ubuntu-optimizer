@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "model_root": ".ai370-ai/models",
+  "minimum_free_gb": 20,
+  "models": [
+    {
+      "id": "chat-gguf-local",
+      "name": "Local chat GGUF model",
+      "category": "chat",
+      "runtime": "llama.cpp",
+      "format": "gguf",
+      "path": ".ai370-ai/models/chat/local-chat.gguf",
+      "required": false,
+      "checksum": {"algorithm": "sha256", "value": null},
+      "min_free_gb": 8,
+      "notes": "Replace with the preferred offline chat model GGUF file. Optional by default so fresh installs produce actionable WARN diagnostics instead of failing."
+    },
+    {
+      "id": "coding-ollama-local",
+      "name": "Local coding assistant model",
+      "category": "coding",
+      "runtime": "ollama",
+      "format": "ollama",
+      "ollama_tag": "qwen2.5-coder:7b",
+      "path": ".ai370-ai/models/coding/qwen2.5-coder-7b",
+      "required": false,
+      "checksum": {"algorithm": "none", "value": null},
+      "min_free_gb": 8,
+      "notes": "Import or pull before offline use, then keep runtime artifacts or an export under the listed local path."
+    },
+    {
+      "id": "embedding-local",
+      "name": "Local embedding model",
+      "category": "embedding",
+      "runtime": "sentence-transformers",
+      "format": "directory",
+      "path": ".ai370-ai/models/embedding/local-embedding-model",
+      "required": false,
+      "checksum": {"algorithm": "none", "value": null},
+      "min_free_gb": 2,
+      "notes": "Stage a local embedding model directory here for offline RAG validation."
+    }
+  ]
+}
