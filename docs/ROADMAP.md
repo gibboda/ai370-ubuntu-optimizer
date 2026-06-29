@@ -15,7 +15,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 ### Current Repository Alignment
 
 * Stage 1 is the active foundation stage and must remain the first implementation priority. The implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
-* Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, and `scripts/150-validate-offline-model-storage.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` also exist.
+* Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, and `scripts/150-validate-offline-model-storage.sh`. Offline RAG placeholder scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` also exist, but Tier 4 is not yet a full implementation.
 * Milestone 2.2 is implemented. `scripts/200-install-onnxruntime.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, and `docs/npu-status.md` are present; benchmark scripts emit either local timing results or actionable diagnostics when NPU providers are unavailable.
 * Stage 3 is ongoing. ComfyUI workflow and benchmark artifacts exist, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. Install/model scripts, documentation, and required workflow subdirectories remain planned.
 * Stages 4 and 5 remain planning sections and should not be started until earlier stage validation gates pass.
@@ -25,7 +25,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 | Roadmap stage | User-facing tier | Status | Command gate |
 | --- | --- | --- | --- |
 | S1 — Hardware Detection & System Optimization | Tier 1 — Required Core Platform | Implemented | `./ai370-optimize.sh tier1` followed by `./ai370-optimize.sh tier1-validate` |
-| S2 — Local AI Runtime & AI Optimization Software | Tier 2 / Tier 3 / Tier 4 | Ongoing | `tier2`, `tier2-validate`, `tier3`, `tier3-validate`, `tier4` |
+| S2 — Local AI Runtime & AI Optimization Software | Tier 2 / Tier 3; Tier 4 staged | Ongoing | `tier2`, `tier2-validate`, `tier3`, `tier3-validate`; `tier4` placeholder |
 | S3 — Offline Image Generation | Tier 5 — Generative AI | Ongoing | `tier5`, `comfyui-install`, `comfyui-bench` |
 | S4 — Offline VS Code & Code Assistant | Future tier or extension | Planning | Not yet available |
 | S5 — Maintenance & Lifecycle Management | Future maintenance workflow | Planning | Not yet available |
@@ -442,7 +442,7 @@ Implemented / Planned:
 
 ### S2-M3 — Offline RAG
 
-**Status:** Implemented
+**Status:** Staged / Placeholder
 
 #### Description
 
@@ -458,8 +458,9 @@ scripts/320-validate-rag.sh
 
 #### Acceptance Criteria
 
-* Offline embedding model installation is supported.
+* Offline embedding model installation is supported by a complete installer.
 * RAG validation does not require internet access after installation.
+* `./ai370-optimize.sh tier4` invokes the Tier 4 installer/model/validation sequence instead of printing placeholder guidance.
 
 #### Validation Steps
 
@@ -473,8 +474,8 @@ scripts/320-validate-rag.sh
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [x] Deliverables implemented.
-* [x] Validation documented.
+* [ ] Deliverables implemented beyond placeholder echo scripts.
+* [ ] Validation documented with actionable pass/fail results.
 
 ### S2-M4 — AI Runtime Benchmark
 
@@ -1378,7 +1379,7 @@ reports/latest/ai370-health.md
 | S2 | Local AI Runtime & AI Optimization Software | Ongoing | Runtime/RAG work exists; AMD AI stack and model storage remain incomplete. |
 | S2-M1 | AI Runtime | Implemented | Required runtime scripts are present. |
 | S2-M2 | AMD AI Stack | Ongoing | Ryzen AI check exists; ONNX Runtime, Vitis AI EP, NPU benchmark, and docs are missing. |
-| S2-M3 | Offline RAG | Implemented | Required RAG scripts are present. |
+| S2-M3 | Offline RAG | Staged / Placeholder | RAG script filenames are present, but the scripts and `tier4` command are placeholders rather than complete installers/validators. |
 | S2-M4 | AI Runtime Benchmark | Implemented | LLM benchmark script and reports are present. |
 | S2-M5 | Offline Model Storage & Model Management | Missing | Required by target architecture but not represented before this review. |
 | S3 | Offline Image Generation | Ongoing | Benchmark/workflow artifacts exist; installer, models, docs, and automation remain incomplete. |

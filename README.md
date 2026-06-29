@@ -62,7 +62,7 @@ This repository uses `docs/ROADMAP.md` as the canonical roadmap and implementati
 Current high-level status (see `docs/ROADMAP.md` for details):
 
 - Stage 1 / Tier 1: Implemented and active (hardware detection, BIOS/firmware validation, kernel/driver validation, system optimization, and benchmarking).
-- Stage 2 / Tiers 2, 3, and 4: Implemented for the current roadmap scope (Tier 2 runtime scripts, Tier 3 ONNX/Ryzen AI/Vitis AI/NPU validation, and Tier 4 offline RAG/model-storage validation are present).
+- Stage 2 / Tiers 2 and 3: Implemented for the current roadmap scope (Tier 2 runtime scripts and Tier 3 ONNX/Ryzen AI/Vitis AI/NPU validation are present). Tier 4 offline RAG remains staged/planned because the current `tier4` command and `scripts/300-*` through `scripts/320-*` files are placeholders.
 - Stage 3 / Tier 5: Ongoing (benchmarks and workflows exist; ComfyUI install/model scripts and workflow subdirectories remain planned).
 
 ### Implemented / Planned (high level)
@@ -74,6 +74,9 @@ Implemented:
 - `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, `scripts/90-validate.sh`
 - `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, `scripts/150-validate-offline-model-storage.sh`
 - `scripts/200-install-onnxruntime.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `docs/npu-status.md`
+
+Staged placeholders (present, not full Tier 4 implementation):
+
 - `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, `scripts/320-validate-rag.sh`
 
 Planned / Not present in repo:
@@ -194,6 +197,8 @@ scripts/
 ```bash
 ./ai370-optimize.sh tier4
 ```
+
+**Current status:** Staged placeholder only. The `tier4` command currently prints guidance and exits without invoking the RAG scripts, and `scripts/300-*` through `scripts/320-*` are placeholder echo scripts rather than complete installers/validators.
 
 **Acceptance Criteria:**
 
