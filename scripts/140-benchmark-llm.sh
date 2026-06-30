@@ -13,6 +13,7 @@ OFFLINE="${4:-false}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
 AI_ROOT="$PROJECT_ROOT/.ai370-ai"
+OPEN_WEBUI_VENV_DIR="${OPEN_WEBUI_VENV_DIR:-$AI_ROOT/open-webui-venv}"
 MODEL_ROOT="$AI_ROOT/models"
 TOOL_ROOT="$AI_ROOT/tools"
 STATUS_TXT="$LATEST_DIR/llm-validation-status.txt"
@@ -67,7 +68,7 @@ main() {
   mkdir -p "$LATEST_DIR" "$MODEL_ROOT" "$TOOL_ROOT"
 
   local ollama_state ollama_version ollama_list llama_binary llama_state llama_version gguf_files status
-  local pytorch_state pytorch_rocm open_webui_state local_inference_smoke first_gguf
+  local pytorch_state pytorch_rocm open_webui_state open_webui_source local_inference_smoke first_gguf
 
   ollama_version="$(capture_command ollama --version)"
   ollama_list="$(capture_command ollama list)"
@@ -93,17 +94,24 @@ main() {
   if [[ -x "$AI_ROOT/venv/bin/python" ]]; then
     if "$AI_ROOT/venv/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("torch") else 1)' >/dev/null 2>&1; then
       pytorch_state="available"
-      pytorch_rocm="$($AI_ROOT/venv/bin/python -c 'import torch; print("true" if getattr(torch.version, "hip", None) else "false")' 2>/dev/null || echo false)"
+      pytorch_rocm="$("$AI_ROOT/venv/bin/python" -c 'import torch; print("true" if getattr(torch.version, "hip", None) else "false")' 2>/dev/null || echo false)"
     fi
   fi
 
   open_webui_state="missing"
+  open_webui_source="not-found"
   if command -v open-webui >/dev/null 2>&1; then
     open_webui_state="available"
+    open_webui_source="cli:$(command -v open-webui)"
+  elif [[ -x "$OPEN_WEBUI_VENV_DIR/bin/python" ]] && "$OPEN_WEBUI_VENV_DIR/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("open_webui") else 1)' >/dev/null 2>&1; then
+    open_webui_state="available"
+    open_webui_source="venv:$OPEN_WEBUI_VENV_DIR"
   elif [[ -x "$AI_ROOT/venv/bin/python" ]] && "$AI_ROOT/venv/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("open_webui") else 1)' >/dev/null 2>&1; then
     open_webui_state="available"
+    open_webui_source="legacy-venv:$AI_ROOT/venv"
   elif command -v docker >/dev/null 2>&1 && docker image ls 2>/dev/null | grep -qi open-webui; then
     open_webui_state="available"
+    open_webui_source="docker-image"
   fi
 
   local_inference_smoke="skipped"
@@ -151,13 +159,14 @@ main() {
     echo "pytorch: $pytorch_state"
     echo "pytorch_rocm: $pytorch_rocm"
     echo "open_webui: $open_webui_state"
+    echo "open_webui_source: $open_webui_source"
     echo "local_inference_smoke: $local_inference_smoke"
   } > "$STATUS_TXT"
 
   PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" STATUS="$status" \
   OLLAMA_STATE="$ollama_state" OLLAMA_VERSION="$ollama_version" OLLAMA_LIST="$ollama_list" \
   LLAMA_STATE="$llama_state" LLAMA_BINARY="${llama_binary:-}" LLAMA_VERSION="$llama_version" GGUF_FILES="$gguf_files" \
-  PYTORCH_STATE="$pytorch_state" PYTORCH_ROCM="$pytorch_rocm" OPEN_WEBUI_STATE="$open_webui_state" LOCAL_INFERENCE_SMOKE="$local_inference_smoke" \
+  PYTORCH_STATE="$pytorch_state" PYTORCH_ROCM="$pytorch_rocm" OPEN_WEBUI_STATE="$open_webui_state" OPEN_WEBUI_SOURCE="$open_webui_source" LOCAL_INFERENCE_SMOKE="$local_inference_smoke" \
   python3 - "$STATUS_JSON" "$BENCHMARK_JSON" "$TIER2_JSON" <<'PY'
 import json
 import os
@@ -188,7 +197,7 @@ llm_data = {
         "state": os.environ["PYTORCH_STATE"],
         "rocm": os.environ["PYTORCH_ROCM"] == "true",
     },
-    "open_webui": {"state": os.environ["OPEN_WEBUI_STATE"]},
+    "open_webui": {"state": os.environ["OPEN_WEBUI_STATE"], "source": os.environ["OPEN_WEBUI_SOURCE"]},
     "gguf_models": gguf_models,
     "local_inference_smoke": os.environ["LOCAL_INFERENCE_SMOKE"],
     "policy": "local validation only; model downloads are not attempted by the benchmark phase",
@@ -206,6 +215,7 @@ benchmark_data = {
     "pytorch_state": os.environ["PYTORCH_STATE"],
     "pytorch_rocm": os.environ["PYTORCH_ROCM"] == "true",
     "gguf_models": gguf_models,
+    "open_webui_source": os.environ["OPEN_WEBUI_SOURCE"],
 }
 Path(benchmark_path).write_text(json.dumps(benchmark_data, indent=2) + "\n")
 
@@ -252,27 +262,27 @@ PY
     echo
     echo "- State: $ollama_state"
     echo
-    printf '```text\n%s\n```\n' "$ollama_version"
+    printf '%s\n%s\n%s\n' '```text' "$ollama_version" '```'
     echo
     echo "## Ollama local models"
     echo
-    printf '```text\n%s\n```\n' "$ollama_list"
+    printf '%s\n%s\n%s\n' '```text' "$ollama_list" '```'
     echo
     echo "## llama.cpp"
     echo
     echo "- State: $llama_state"
     echo "- Binary: ${llama_binary:-not-found}"
     echo
-    printf '```text\n%s\n```\n' "$llama_version"
+    printf '%s\n%s\n%s\n' '```text' "$llama_version" '```'
     echo
     echo "## Local GGUF models"
     echo
-    printf '```text\n%s\n```\n' "${gguf_files:-none}"
+    printf '%s\n%s\n%s\n' '```text' "${gguf_files:-none}" '```'
     echo
     echo "## Tier 2 Runtime"
     echo
     echo "- PyTorch: $pytorch_state (ROCm: $pytorch_rocm)"
-    echo "- Open WebUI: $open_webui_state"
+    echo "- Open WebUI: $open_webui_state ($open_webui_source)"
     echo "- Local inference smoke: $local_inference_smoke"
     echo
     echo "## Policy"
