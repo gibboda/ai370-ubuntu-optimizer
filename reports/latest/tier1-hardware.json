@@ -1,7 +1,7 @@
 {
   "tier": 1,
   "phase": "detect-hardware",
-  "timestamp": "2026-06-27T14:21:37.095947Z",
+  "timestamp": "2026-06-30T02:08:59.804529Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
@@ -31,7 +31,7 @@
     "total": "28Gi"
   },
   "storage": {
-    "summary": "loop0                     4K loop\nloop1                  13.4M loop\nloop2                  13.5M loop\nloop3                  63.8M loop\nloop4                  66.8M loop\nloop5                  66.8M loop\nloop6                 425.9M loop\nloop7                  19.6M loop\nloop8                    20M loop\nloop9                    74M loop\nloop11                248.6M loop\nloop12                 16.5M loop\nloop13                606.1M loop\nloop14                 91.7M loop\nloop15                 18.8M loop\nloop16                  395M loop\nloop17                 18.8M loop\nloop18                 15.7M loop\nloop19                 49.3M loop\nloop20                  580K loop\nloop21                  402M loop\nloop22                  828K loop\nloop23                252.6M loop\nnvme0n1 CT1000P3PSSD8 931.5G disk",
+    "summary": "loop0                     4K loop\nloop1                  13.4M loop\nloop2                  13.5M loop\nloop3                  63.8M loop\nloop4                 425.9M loop\nloop5                  66.8M loop\nloop6                  66.8M loop\nloop7                    74M loop\nloop8                    20M loop\nloop9                  19.6M loop\nloop10                248.6M loop\nloop11                252.6M loop\nloop12                 16.5M loop\nloop13                606.1M loop\nloop14                 91.7M loop\nloop15                  395M loop\nloop16                  402M loop\nloop17                 18.8M loop\nloop18                 18.8M loop\nloop19                 15.7M loop\nloop20                  580K loop\nloop21                 49.3M loop\nloop22                  828K loop\nnvme0n1 CT1000P3PSSD8 931.5G disk",
     "nvme": "nvme0n1 CT1000P3PSSD8 931.5G disk"
   },
   "tools": {
