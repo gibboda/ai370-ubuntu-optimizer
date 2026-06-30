@@ -39,6 +39,21 @@ raise SystemExit(0 if sys.version_info >= (3, 14) else 1)
 PY
 }
 
+purge_pytorch_pip_cache() {
+  local package_name
+  local removed_any="false"
+
+  for package_name in "$PYTORCH_CORE_PACKAGE" "${PYTORCH_OPTIONAL_PACKAGES[@]}"; do
+    if "$VENV_DIR/bin/python" -m pip cache remove "$package_name" >/dev/null 2>&1; then
+      removed_any="true"
+    else
+      return 1
+    fi
+  done
+
+  [[ "$removed_any" == "true" ]]
+}
+
 pip_install_pytorch_stack() {
   local index_url="$1" install_label="$2"
   local optional_package detail="" pre_flag="" cache_detail=""
@@ -56,10 +71,10 @@ pip_install_pytorch_stack() {
   fi
 
   if [[ "$PYTORCH_PURGE_CACHE" == "true" ]]; then
-    if "$VENV_DIR/bin/python" -m pip cache purge >/dev/null 2>&1; then
-      cache_detail="Purged pip cache before PyTorch install to avoid stale companion wheels. "
+    if purge_pytorch_pip_cache; then
+      cache_detail="Removed cached PyTorch package wheels before install to avoid stale companion wheels. "
     else
-      cache_detail="pip cache purge failed or is unsupported; continuing with no-cache install. "
+      cache_detail="PyTorch pip cache removal failed or is unsupported; continuing with no-cache install. "
     fi
     detail+="$cache_detail"
   fi
