@@ -16,8 +16,42 @@ AI_ROOT="$PROJECT_ROOT/.ai370-ai"
 VENV_DIR="$AI_ROOT/venv"
 STATUS_JSON="$LATEST_DIR/tier2-open-webui.json"
 SUMMARY_MD="$LATEST_DIR/tier2-open-webui.md"
+OPEN_WEBUI_MIN_PYTHON="3.11"
+OPEN_WEBUI_MAX_PYTHON_EXCLUSIVE="3.13"
 
 json_escape() { python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
+
+python_version() {
+  "$1" - <<'PY'
+import sys
+print(f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+PY
+}
+
+python_supports_open_webui() {
+  "$1" - <<'PY'
+import sys
+version = sys.version_info
+sys.exit(0 if (3, 11) <= (version.major, version.minor) < (3, 13) else 1)
+PY
+}
+
+select_open_webui_python() {
+  local candidates=()
+  if [[ -n "${OPEN_WEBUI_PYTHON:-}" ]]; then
+    candidates+=("$OPEN_WEBUI_PYTHON")
+  fi
+  candidates+=(python3.12 python3.11 python3)
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if command -v "$candidate" >/dev/null 2>&1 && python_supports_open_webui "$candidate"; then
+      command -v "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
 
 main() {
   mkdir -p "$LATEST_DIR" "$AI_ROOT"
@@ -27,7 +61,7 @@ main() {
     exit 2
   fi
 
-  local action="none" status="WARN" state="missing" detail="" version="not-run"
+  local action="none" status="WARN" state="missing" detail="" version="not-run" python_runtime="not-selected"
   if command -v open-webui >/dev/null 2>&1; then
     state="available"
     action="validated-existing-cli"
@@ -39,16 +73,29 @@ main() {
     detail="Open WebUI is optional for Milestone 2. Offline mode does not install it; stage a wheel or container image before rerunning."
   else
     action="pip-install-attempted"
+    local selected_python=""
     if [[ ! -x "$VENV_DIR/bin/python" ]]; then
-      if ! python3 -m venv "$VENV_DIR" || ! "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel; then
+      if selected_python="$(select_open_webui_python)"; then
+        python_runtime="$selected_python ($(python_version "$selected_python"))"
+      else
+        action="skipped-python-version"
+        detail="Open WebUI currently publishes wheels for Python >=$OPEN_WEBUI_MIN_PYTHON,<${OPEN_WEBUI_MAX_PYTHON_EXCLUSIVE}. No compatible interpreter was found. Install Python 3.11 or 3.12, set OPEN_WEBUI_PYTHON to that interpreter, or stage an Open WebUI container image."
+      fi
+      if [[ -n "$selected_python" ]] && { ! "$selected_python" -m venv "$VENV_DIR" || ! "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel; }; then
         action="venv-create-failed"
         detail="Failed to create or bootstrap Python venv at $VENV_DIR. Ensure python3-venv and pip are installed."
       fi
     fi
     if [[ -x "$VENV_DIR/bin/python" ]]; then
-      "$VENV_DIR/bin/python" -m pip install --upgrade open-webui || detail="Open WebUI pip install failed; see console output."
-      if "$VENV_DIR/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("open_webui") else 1)' >/dev/null 2>&1; then
-        state="available"
+      python_runtime="$VENV_DIR/bin/python ($(python_version "$VENV_DIR/bin/python"))"
+      if python_supports_open_webui "$VENV_DIR/bin/python"; then
+        "$VENV_DIR/bin/python" -m pip install --upgrade open-webui || detail="Open WebUI pip install failed; see console output."
+        if "$VENV_DIR/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("open_webui") else 1)' >/dev/null 2>&1; then
+          state="available"
+        fi
+      elif [[ -z "$detail" ]]; then
+        action="skipped-python-version"
+        detail="Open WebUI currently publishes wheels for Python >=$OPEN_WEBUI_MIN_PYTHON,<${OPEN_WEBUI_MAX_PYTHON_EXCLUSIVE}, but the runtime venv uses $(python_version "$VENV_DIR/bin/python"). Recreate $VENV_DIR with Python 3.11 or 3.12, set OPEN_WEBUI_PYTHON to a compatible interpreter, or use a staged container image."
       fi
     fi
   fi
@@ -65,9 +112,10 @@ main() {
     detail="Open WebUI validation completed. This component is optional and is reported cleanly when missing."
   fi
 
-  local version_json detail_json
+  local version_json detail_json python_runtime_json
   version_json="$(printf '%s' "$version" | json_escape)"
   detail_json="$(printf '%s' "$detail" | json_escape)"
+  python_runtime_json="$(printf '%s' "$python_runtime" | json_escape)"
   cat > "$STATUS_JSON" <<EOF_JSON
 {
   "tier": 2,
@@ -80,6 +128,8 @@ main() {
   "state": "$state",
   "optional": true,
   "install_action": "$action",
+  "python_runtime": $python_runtime_json,
+  "requires_python": ">=$OPEN_WEBUI_MIN_PYTHON,<$OPEN_WEBUI_MAX_PYTHON_EXCLUSIVE",
   "version": $version_json,
   "detail": $detail_json
 }
@@ -93,8 +143,10 @@ EOF_JSON
     echo "- State: $state"
     echo "- Optional: true"
     echo "- Install action: $action"
+    echo "- Python runtime: $python_runtime"
+    echo "- Requires-Python: >=$OPEN_WEBUI_MIN_PYTHON,<$OPEN_WEBUI_MAX_PYTHON_EXCLUSIVE"
     echo
-    printf '```text\n%s\n```\n' "$version"
+    printf '%s\n%s\n%s\n' '```text' "$version" '```'
     echo
     printf '%s\n' "$detail"
   } > "$SUMMARY_MD"
