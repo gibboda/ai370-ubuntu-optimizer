@@ -16,16 +16,25 @@ ACCEPT_AMD_ACCELERATION_RISK="false"
 
 usage() {
   cat <<'USAGE'
-Usage (AI Stack Tiers - recommended):
-  ./ai370-optimize.sh tier1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh tier1-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh tier2 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh tier2-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh tier3 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh tier3-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh tier4 [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh tier5 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+Usage (Roadmap stages - recommended):
+  ./ai370-optimize.sh stage1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh stage1-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh stage2 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh stage2-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh stage2-runtime [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh stage2-runtime-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh stage2-npu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh stage2-npu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh stage2-rag [--profile=ai370] [--mode=safe] [--persistence=runtime]
+  ./ai370-optimize.sh stage3-image [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh full-stack [--profile=ai370] [--mode=safe] [--persistence=runtime] --accept-amd-acceleration-risk
+
+Legacy tier aliases (still supported):
+  ./ai370-optimize.sh tier1 | tier1-validate
+  ./ai370-optimize.sh tier2 | tier2-validate
+  ./ai370-optimize.sh tier3 | tier3-validate
+  ./ai370-optimize.sh tier4
+  ./ai370-optimize.sh tier5
 
 Legacy / detailed phase commands (still supported):
   ./ai370-optimize.sh hardware [--profile=ai370] [--mode=safe] [--persistence=runtime]
@@ -41,7 +50,7 @@ Legacy / detailed phase commands (still supported):
   ./ai370-optimize.sh final-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh all [--profile=ai370] [--mode=safe] [--persistence=runtime]
 
-Milestone scripts (deliverables):
+Stage 1 scripts (S1 deliverables):
   scripts/10-detect-hardware.sh
   scripts/20-check-bios.sh
   scripts/25-check-firmware.sh
@@ -54,7 +63,7 @@ Milestone scripts (deliverables):
   scripts/80-benchmark-local-ai.sh
   scripts/90-validate.sh
 
-Tier 2 scripts (deliverables):
+Stage 2 scripts (S2 deliverables across runtime + NPU):
   scripts/100-install-pytorch-rocm.sh
   scripts/110-install-llama-cpp.sh
   scripts/120-install-ollama.sh
@@ -67,7 +76,7 @@ Tier 2 scripts (deliverables):
   scripts/230-benchmark-npu.sh
 
 Backward-compatible aliases:
-  inventory, audit        -> hardware (Tier 1)
+  inventory, audit        -> hardware (Stage 1 / legacy Tier 1)
   baseline-plan, plan     -> legacy baseline planning
   baseline-apply          -> legacy baseline apply
   baseline-validate       -> legacy baseline validation
@@ -76,7 +85,7 @@ Backward-compatible aliases:
   npu                     -> NPU half of accel-validate
   guide                   -> guided acceleration readiness plan
   execute                 -> generated acceleration checklists
-  comfyui                 -> comfyui-install (Tier 5, gated)
+  comfyui                 -> comfyui-install (Stage 3 image / legacy Tier 5, gated)
   validate                -> final-validate
   install                 -> kernel-amd + ai-bench
   full-ai-install         -> multi-tier (requires --accept-amd-acceleration-risk)
@@ -88,9 +97,9 @@ Defaults:
 
 Notes:
   Use --profile=generic-ryzen-ai only when intentionally broadening beyond strict AI370 validation.
-  --offline affects Tier 1 (parts), Tier 2, Tier 3, and amd-accel-install.
+  --offline affects Stage 1 (parts), Stage 2 runtime/NPU, and amd-accel-install.
   --accept-amd-acceleration-risk is required for amd-accel-install, full-ai-install, and full-stack.
-  Tier 5 (comfyui / tier5) installation is blocked until Tier 1 + Tier 2 + Tier 3 validation passes.
+  Stage 3 image generation (stage3-image / tier5 / comfyui) is blocked until Stage 1 + Stage 2 runtime + Stage 2 NPU validation passes.
   system persistence is reserved for future persistent tuning and is blocked by current scripts.
 USAGE
 }
@@ -135,8 +144,8 @@ run_script() {
   bash "$PROJECT_ROOT/$script" "$PROFILE" "$MODE" "$PERSISTENCE" "$@"
 }
 
-# Tier gate: Tier 5 (and full generative flows) must not proceed until
-# Tier 1 + Tier 2 + Tier 3 have produced passing validation artifacts.
+# Stage gate: Stage 3 image generation (and full generative flows) must not proceed until
+# Stage 1 + Stage 2 runtime + Stage 2 NPU have produced passing validation artifacts.
 # Prefers dedicated tierN-validation.json (M2/M3). Falls back to legacy for transition.
 require_tier123_pass() {
   local LATEST_DIR="$PROJECT_ROOT/reports/latest"
@@ -171,7 +180,7 @@ then
     pass="false"
   fi
 
-  # Tier 2: require both runtime validation and S2-M5 offline model storage validation.
+  # Stage 2 runtime: require both runtime validation and S2-M5 offline model storage validation.
   if [[ -f "$tier2_status" ]]; then
     if ! python3 - "$tier2_status" <<'PY' >/dev/null 2>&1
 import json, sys
@@ -202,7 +211,7 @@ then
     pass="false"
   fi
 
-  # Tier 3: prefer dedicated (future), else legacy npu evidence
+  # Stage 2 NPU: prefer dedicated validation, else legacy npu evidence
   if [[ -f "$tier3_status" ]]; then
     if ! python3 - "$tier3_status" <<'PY' >/dev/null 2>&1
 import json, sys
@@ -219,8 +228,8 @@ then
   fi
 
   if [[ "$pass" != "true" ]]; then
-    echo "[ERROR] Tier 1 + Tier 2 + Tier 3 validation has not passed."
-    echo "[ERROR] Run: ./ai370-optimize.sh tier1 && ./ai370-optimize.sh tier2 && ./ai370-optimize.sh tier2-validate && ./ai370-optimize.sh tier3-validate"
+    echo "[ERROR] Stage 1 + Stage 2 runtime + Stage 2 NPU validation has not passed."
+    echo "[ERROR] Run: ./ai370-optimize.sh stage1 && ./ai370-optimize.sh stage2-runtime && ./ai370-optimize.sh stage2-runtime-validate && ./ai370-optimize.sh stage2-npu-validate"
     echo "[ERROR] Then re-run this command."
     exit 3
   fi
@@ -258,9 +267,9 @@ load_runtime_config
 print_context
 
 case "$CMD" in
-  # === New AI Stack Tier commands (primary recommended interface) ===
-  tier1)
-    echo "[INFO] Running Tier 1 – Required Core Platform (full sequence)"
+  # === Roadmap stage commands (primary recommended interface) ===
+  stage1|tier1)
+    echo "[INFO] Running Stage 1 – Hardware Detection & System Optimization (formerly Tier 1)"
     run_script "scripts/10-detect-hardware.sh"
     run_script "scripts/20-check-bios.sh"
     run_script "scripts/25-check-firmware.sh"
@@ -274,12 +283,38 @@ case "$CMD" in
     run_script "scripts/90-validate.sh"
     ;;
 
-  tier1-validate)
+  stage1-validate|tier1-validate)
     run_script "scripts/90-validate.sh"
     ;;
 
-  tier2)
-    echo "[INFO] Running Tier 2 – Recommended AI Runtime Layer"
+
+  stage2)
+    echo "[INFO] Running Stage 2 – Local AI Runtime & AI Optimization Software"
+    echo "[INFO] Stage 2 includes runtime, model storage, NPU checks, and a staged RAG placeholder."
+    run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
+    run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
+    run_script "scripts/120-install-ollama.sh" "$OFFLINE"
+    run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
+    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+    run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+    run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
+    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
+    run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
+    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    echo "[INFO] Stage 2 RAG remains staged; run stage2-rag for current placeholder guidance."
+    ;;
+
+  stage2-validate)
+    echo "[INFO] Validating Stage 2 – runtime/model storage plus NPU checks"
+    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+    run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
+    run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
+    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    ;;
+
+  stage2-runtime|tier2)
+    echo "[INFO] Running Stage 2 Runtime – Local AI Runtime & Model Storage (formerly Tier 2)"
     run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
     run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
     run_script "scripts/120-install-ollama.sh" "$OFFLINE"
@@ -288,35 +323,35 @@ case "$CMD" in
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
     ;;
 
-  tier2-validate)
-    echo "[INFO] Tier 2 validation (writes/validates tier2-validation.json)"
+  stage2-runtime-validate|tier2-validate)
+    echo "[INFO] Stage 2 runtime validation (writes/validates tier2-validation.json)"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
     ;;
 
-  tier3)
-    echo "[INFO] Running Tier 3 – AMD NPU Enablement"
+  stage2-npu|tier3)
+    echo "[INFO] Running Stage 2 NPU – AMD AI Stack Enablement (formerly Tier 3)"
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
     ;;
 
-  tier3-validate)
-    echo "[INFO] Tier 3 NPU validation (experimental)"
+  stage2-npu-validate|tier3-validate)
+    echo "[INFO] Stage 2 NPU validation (experimental; writes/validates tier3-validation.json)"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
     ;;
 
-  tier4)
-    echo "[INFO] Tier 4 – Local Knowledge Systems (AnythingLLM / RAG) not yet implemented as a full script."
+  stage2-rag|tier4)
+    echo "[INFO] Stage 2 RAG – Local Knowledge Systems (AnythingLLM / RAG) not yet implemented as a full script."
     echo "[INFO] See docs and workflows/ for current local document patterns. This is a placeholder."
     ;;
 
-  tier5)
+  stage3-image|tier5)
     require_tier123_pass
-    echo "[INFO] Tier 5 gate passed. Proceeding with Generative AI (ComfyUI + workflows)."
+    echo "[INFO] Stage 3 gate passed. Proceeding with Offline Image Generation (ComfyUI + workflows)."
     run_script "scripts/70-comfyui-workflows.sh"
     ;;
 
@@ -329,7 +364,7 @@ case "$CMD" in
       echo "[ERROR] full-stack requires --accept-amd-acceleration-risk."
       exit 2
     fi
-    # Tier 1 (core)
+    # Stage 1 (core)
     run_script "scripts/10-detect-hardware.sh"
     run_script "scripts/20-check-bios.sh"
     run_script "scripts/25-check-firmware.sh"
@@ -341,14 +376,14 @@ case "$CMD" in
     run_script "scripts/75-detect-npu.sh" "$OFFLINE"
     run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
     run_script "scripts/90-validate.sh"
-    # Tier 2
+    # Stage 2 runtime
     run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
     run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
     run_script "scripts/120-install-ollama.sh" "$OFFLINE"
     run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
-    # Tier 3 (NPU visibility + note on explicit accel)
+    # Stage 2 NPU (visibility + note on explicit accel)
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
@@ -360,7 +395,7 @@ case "$CMD" in
     # Re-validate GPU/NPU after accel
     run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
-    # Tier 5 (gate will be satisfied by above)
+    # Stage 3 image generation (gate will be satisfied by above)
     run_script "scripts/70-comfyui-workflows.sh"
     run_script "scripts/comfyui-benchmark.sh"
     run_script "scripts/90-validate.sh"
@@ -428,7 +463,7 @@ case "$CMD" in
     ;;
 
   install)
-    # Legacy install = core baseline + AI runtime (Tier 1 + Tier 2 overlap). No Tier 5.
+    # Legacy install = core baseline + AI runtime (Stage 1 + Stage 2 runtime overlap). No Stage 3 image generation.
     run_script "scripts/02-generate-report.sh"
     run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
     run_script "scripts/03-baseline-validate.sh"
@@ -462,7 +497,7 @@ case "$CMD" in
       echo "[ERROR] Command 'full-ai-install' requires --accept-amd-acceleration-risk."
       exit 2
     fi
-    # Delegate to the new tier-aware full-stack implementation for consistency with gates
+    # Delegate to the roadmap-stage full-stack implementation for consistency with gates
     # (kept for backward compat; prefer ./ai370-optimize.sh full-stack)
     "$0" full-stack --profile="$PROFILE" --mode="$MODE" --persistence="$PERSISTENCE" --accept-amd-acceleration-risk
     ;;
@@ -472,7 +507,7 @@ case "$CMD" in
       echo "[ERROR] Command 'all' does not support --offline. Run phases 5-7 individually with --offline."
       exit 2
     fi
-    # Run a safe subset (Tier 1 + 2 + ComfyUI without forcing the risky AMD accel stack)
+    # Run a safe subset (Stage 1 + Stage 2 runtime + ComfyUI without forcing the risky AMD accel stack)
     run_script "scripts/01-hardware-audit.sh"
     run_script "scripts/05-firmware-baseline.sh"
     run_script "scripts/02-generate-report.sh"
