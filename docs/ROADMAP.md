@@ -20,15 +20,17 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 * Stage 3 is ongoing. ComfyUI workflow and benchmark artifacts exist, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. Install/model scripts, documentation, and required workflow subdirectories remain planned.
 * Stages 4 and 5 remain planning sections and should not be started until earlier stage validation gates pass.
 
-### Stage-to-Tier Mapping
+### Roadmap-Aligned Command Mapping
 
-| Roadmap stage | User-facing tier | Status | Command gate |
-| --- | --- | --- | --- |
-| S1 — Hardware Detection & System Optimization | Tier 1 — Required Core Platform | Implemented | `./ai370-optimize.sh tier1` followed by `./ai370-optimize.sh tier1-validate` |
-| S2 — Local AI Runtime & AI Optimization Software | Tier 2 / Tier 3; Tier 4 staged | Ongoing | `tier2`, `tier2-validate`, `tier3`, `tier3-validate`; `tier4` placeholder |
-| S3 — Offline Image Generation | Tier 5 — Generative AI | Ongoing | `tier5`, `comfyui-install`, `comfyui-bench` |
-| S4 — Offline VS Code & Code Assistant | Future tier or extension | Planning | Not yet available |
-| S5 — Maintenance & Lifecycle Management | Future maintenance workflow | Planning | Not yet available |
+Roadmap stages are the preferred user-facing names. Legacy `tierN` commands remain supported as aliases so existing automation does not break.
+
+| Roadmap stage | Preferred command group | Legacy tier alias | Status | Command gate |
+| --- | --- | --- | --- | --- |
+| S1 — Hardware Detection & System Optimization | Stage 1 — Core Platform | Tier 1 | Implemented | `./ai370-optimize.sh stage1` followed by `./ai370-optimize.sh stage1-validate` |
+| S2 — Local AI Runtime & AI Optimization Software | Stage 2 Runtime / Stage 2 NPU / Stage 2 RAG | Tier 2 / Tier 3 / Tier 4 staged | Ongoing | `stage2`, `stage2-validate`, `stage2-runtime`, `stage2-runtime-validate`, `stage2-npu`, `stage2-npu-validate`; `stage2-rag` placeholder |
+| S3 — Offline Image Generation | Stage 3 Image Generation | Tier 5 | Ongoing | `stage3-image`, `comfyui-install`, `comfyui-bench` |
+| S4 — Offline VS Code & Code Assistant | Stage 4 Development Assistant | Future extension | Planning | Not yet available |
+| S5 — Maintenance & Lifecycle Management | Stage 5 Lifecycle Operations | Future maintenance workflow | Planning | Not yet available |
 
 ---
 
@@ -126,7 +128,7 @@ Prepare Ubuntu 26.04 LTS and the AI370 hardware for local AI workloads.
 ### Deliverables
 
 * Hardware, BIOS, firmware, kernel, driver, Vulkan, ROCm, AMDXDNA/NPU, CPU, memory, storage, and AI benchmark reports.
-* Tier 1 command orchestration through `ai370-optimize.sh`.
+* Stage 1 command orchestration through `ai370-optimize.sh` (`stage1`; legacy alias `tier1`).
 
 ### Dependencies
 
@@ -135,13 +137,13 @@ Prepare Ubuntu 26.04 LTS and the AI370 hardware for local AI workloads.
 
 ### Validation
 
-* Run Tier 1 installation/planning sequence.
-* Run Tier 1 validation sequence.
+* Run Stage 1 installation/planning sequence.
+* Run Stage 1 validation sequence.
 * Confirm CPU, RAM, NVMe, GPU, Vulkan, ROCm, AMDXDNA/NPU, Python, and Git baseline status is captured before later stages.
 
 ### Exit Criteria
 
-* `./ai370-optimize.sh tier1` and `./ai370-optimize.sh tier1-validate` complete or report actionable diagnostics.
+* `./ai370-optimize.sh stage1` and `./ai370-optimize.sh stage1-validate` complete or report actionable diagnostics.
 * No user data is overwritten.
 * Reports are written under `reports/latest/`.
 
@@ -460,7 +462,7 @@ scripts/320-validate-rag.sh
 
 * Offline embedding model installation is supported by a complete installer.
 * RAG validation does not require internet access after installation.
-* `./ai370-optimize.sh tier4` invokes the Tier 4 installer/model/validation sequence instead of printing placeholder guidance.
+* `./ai370-optimize.sh stage2-rag` invokes the Stage 2 RAG installer/model/validation sequence instead of printing placeholder guidance (`tier4` remains a legacy alias).
 
 #### Validation Steps
 
@@ -1370,7 +1372,7 @@ reports/latest/ai370-health.md
 
 | ID | Name | Status | Reasoning |
 | --- | --- | --- | --- |
-| S1 | Hardware Detection & System Optimization | Implemented | Current Tier 1 scripts and generated report names are present. |
+| S1 | Hardware Detection & System Optimization | Implemented | Current Stage 1 scripts and generated report names are present (`tier1-*` report filenames retained for compatibility). |
 | S1-M1 | Hardware Detection | Implemented | Detection script and reports are present. |
 | S1-M2 | BIOS & Firmware Validation | Implemented | BIOS and firmware scripts emit current `tier1-firmware*` reports. |
 | S1-M3 | Kernel & Driver Validation | Implemented | Kernel, GPU, and NPU validation scripts are present. |
@@ -1379,7 +1381,7 @@ reports/latest/ai370-health.md
 | S2 | Local AI Runtime & AI Optimization Software | Ongoing | Runtime/RAG work exists; AMD AI stack and model storage remain incomplete. |
 | S2-M1 | AI Runtime | Implemented | Required runtime scripts are present. |
 | S2-M2 | AMD AI Stack | Ongoing | Ryzen AI check exists; ONNX Runtime, Vitis AI EP, NPU benchmark, and docs are missing. |
-| S2-M3 | Offline RAG | Staged / Placeholder | RAG script filenames are present, but the scripts and `tier4` command are placeholders rather than complete installers/validators. |
+| S2-M3 | Offline RAG | Staged / Placeholder | RAG script filenames are present, but the scripts and `stage2-rag` / `tier4` command are placeholders rather than complete installers/validators. |
 | S2-M4 | AI Runtime Benchmark | Implemented | LLM benchmark script and reports are present. |
 | S2-M5 | Offline Model Storage & Model Management | Missing | Required by target architecture but not represented before this review. |
 | S3 | Offline Image Generation | Ongoing | Benchmark/workflow artifacts exist; installer, models, docs, and automation remain incomplete. |
