@@ -13,7 +13,7 @@ OFFLINE="${4:-false}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
 AI_ROOT="$PROJECT_ROOT/.ai370-ai"
-VENV_DIR="$AI_ROOT/venv"
+VENV_DIR="${OPEN_WEBUI_VENV_DIR:-$AI_ROOT/open-webui-venv}"
 STATUS_JSON="$LATEST_DIR/tier2-open-webui.json"
 SUMMARY_MD="$LATEST_DIR/tier2-open-webui.md"
 OPEN_WEBUI_MIN_PYTHON="3.11"
@@ -73,7 +73,7 @@ main() {
     detail="Open WebUI is optional for Milestone 2. Offline mode does not install it; stage a wheel or container image before rerunning."
   else
     action="pip-install-attempted"
-    local selected_python=""
+    local selected_python="" venv_ready="true"
     if [[ ! -x "$VENV_DIR/bin/python" ]]; then
       if selected_python="$(select_open_webui_python)"; then
         python_runtime="$selected_python ($(python_version "$selected_python"))"
@@ -83,10 +83,11 @@ main() {
       fi
       if [[ -n "$selected_python" ]] && { ! "$selected_python" -m venv "$VENV_DIR" || ! "$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel; }; then
         action="venv-create-failed"
+        venv_ready="false"
         detail="Failed to create or bootstrap Python venv at $VENV_DIR. Ensure python3-venv and pip are installed."
       fi
     fi
-    if [[ -x "$VENV_DIR/bin/python" ]]; then
+    if [[ "$venv_ready" == "true" && -x "$VENV_DIR/bin/python" ]]; then
       python_runtime="$VENV_DIR/bin/python ($(python_version "$VENV_DIR/bin/python"))"
       if python_supports_open_webui "$VENV_DIR/bin/python"; then
         "$VENV_DIR/bin/python" -m pip install --upgrade open-webui || detail="Open WebUI pip install failed; see console output."
@@ -95,7 +96,7 @@ main() {
         fi
       elif [[ -z "$detail" ]]; then
         action="skipped-python-version"
-        detail="Open WebUI currently publishes wheels for Python >=$OPEN_WEBUI_MIN_PYTHON,<${OPEN_WEBUI_MAX_PYTHON_EXCLUSIVE}, but the runtime venv uses $(python_version "$VENV_DIR/bin/python"). Recreate $VENV_DIR with Python 3.11 or 3.12, set OPEN_WEBUI_PYTHON to a compatible interpreter, or use a staged container image."
+        detail="Open WebUI currently publishes wheels for Python >=$OPEN_WEBUI_MIN_PYTHON,<${OPEN_WEBUI_MAX_PYTHON_EXCLUSIVE}, but the selected venv uses $(python_version "$VENV_DIR/bin/python"). Remove $VENV_DIR and rerun with Python 3.11 or 3.12, set OPEN_WEBUI_PYTHON to a compatible interpreter, or use a staged container image."
       fi
     fi
   fi

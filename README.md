@@ -172,7 +172,7 @@ scripts/
 - PyTorch detects ROCm when available, or records CPU-only / missing ROCm cleanly.
 - llama.cpp validates an existing binary or builds from source in online mode when build tools are available.
 - Ollama is installed/validated and local models are reported without pulling cloud manifests during validation.
-- Open WebUI is installed/validated as an optional local UI and cleanly reported missing when offline.
+- Open WebUI is installed/validated as an optional local UI and cleanly reported missing when offline. Its installer uses a dedicated `.ai370-ai/open-webui-venv` by default so Python version constraints do not conflict with the shared AI runtime venv.
 - Benchmark and Stage 2 runtime gate reports are collected in `reports/latest/` (`tier2-runtime-benchmark.*`, `llm-validation.*`, and `tier2-validation.*`).
 
 ### Stage 2 NPU – AMD AI Stack Enablement
