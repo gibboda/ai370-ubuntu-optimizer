@@ -35,25 +35,25 @@ gpu_sched              69632  2 amdxdna,amdgpu
 loop1                  13.4M loop
 loop2                  13.5M loop
 loop3                  63.8M loop
-loop4                  66.8M loop
+loop4                 425.9M loop
 loop5                  66.8M loop
-loop6                 425.9M loop
-loop7                  19.6M loop
+loop6                  66.8M loop
+loop7                    74M loop
 loop8                    20M loop
-loop9                    74M loop
-loop11                248.6M loop
+loop9                  19.6M loop
+loop10                248.6M loop
+loop11                252.6M loop
 loop12                 16.5M loop
 loop13                606.1M loop
 loop14                 91.7M loop
-loop15                 18.8M loop
-loop16                  395M loop
+loop15                  395M loop
+loop16                  402M loop
 loop17                 18.8M loop
-loop18                 15.7M loop
-loop19                 49.3M loop
+loop18                 18.8M loop
+loop19                 15.7M loop
 loop20                  580K loop
-loop21                  402M loop
+loop21                 49.3M loop
 loop22                  828K loop
-loop23                252.6M loop
 nvme0n1 CT1000P3PSSD8 931.5G disk
 - NVMe: present
 
