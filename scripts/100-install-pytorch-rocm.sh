@@ -20,9 +20,31 @@ WHEELHOUSE="$AI_ROOT/wheelhouse"
 STATUS_JSON="$LATEST_DIR/tier2-pytorch-rocm.json"
 SUMMARY_MD="$LATEST_DIR/tier2-pytorch-rocm.md"
 PYTORCH_ROCM_INDEX="${PYTORCH_ROCM_INDEX:-https://download.pytorch.org/whl/rocm6.2}"
+PYTORCH_CPU_INDEX="${PYTORCH_CPU_INDEX:-https://download.pytorch.org/whl/cpu}"
+PYTORCH_CORE_PACKAGE="${PYTORCH_CORE_PACKAGE:-torch}"
+PYTORCH_OPTIONAL_PACKAGES=(torchvision torchaudio)
 
 json_escape() {
   python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
+}
+
+pip_install_pytorch_stack() {
+  local index_url="$1" install_label="$2"
+  local optional_package detail=""
+
+  if ! "$VENV_DIR/bin/python" -m pip install --upgrade "$PYTORCH_CORE_PACKAGE" --index-url "$index_url"; then
+    detail="PyTorch $install_label pip install failed while installing $PYTORCH_CORE_PACKAGE; see console output."
+    printf '%s' "$detail"
+    return 1
+  fi
+
+  for optional_package in "${PYTORCH_OPTIONAL_PACKAGES[@]}"; do
+    if ! "$VENV_DIR/bin/python" -m pip install --upgrade "$optional_package" --index-url "$index_url"; then
+      detail+="Optional PyTorch companion package $optional_package could not be installed from $index_url; continuing because torch installed successfully. "
+    fi
+  done
+
+  printf '%s' "$detail"
 }
 
 write_report() {
@@ -59,7 +81,7 @@ EOF_JSON
     echo "- torch.version.hip: $hip_state"
     echo "- Install action: $install_action"
     echo
-    printf '```text\n%s\n```\n' "$detail"
+    printf '%s\n%s\n%s\n' '```text' "$detail" '```'
   } > "$SUMMARY_MD"
 }
 
@@ -93,10 +115,10 @@ main() {
   if [[ -x "$VENV_DIR/bin/python" && "$OFFLINE" != "true" ]]; then
     if [[ "$rocm_state" == "visible" ]]; then
       install_action="pip-install-rocm"
-      "$VENV_DIR/bin/python" -m pip install --upgrade torch torchvision torchaudio --index-url "$PYTORCH_ROCM_INDEX" || detail="PyTorch ROCm pip install failed; see console output."
+      detail="$(pip_install_pytorch_stack "$PYTORCH_ROCM_INDEX" ROCm || true)"
     else
       install_action="pip-install-cpu-fallback"
-      "$VENV_DIR/bin/python" -m pip install --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu || detail="PyTorch CPU fallback pip install failed; see console output."
+      detail="$(pip_install_pytorch_stack "$PYTORCH_CPU_INDEX" CPU || true)"
     fi
   elif [[ -x "$VENV_DIR/bin/python" && "$OFFLINE" == "true" && -d "$WHEELHOUSE" ]]; then
     install_action="offline-wheelhouse-available"
@@ -106,7 +128,7 @@ main() {
   if [[ -x "$VENV_DIR/bin/python" ]]; then
     if "$VENV_DIR/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("torch") else 1)' >/dev/null 2>&1; then
       torch_state="available"
-      hip_state="$($VENV_DIR/bin/python -c 'import torch; print("true" if getattr(torch.version, "hip", None) else "false")' 2>/dev/null || echo false)"
+      hip_state="$("$VENV_DIR/bin/python" -c 'import torch; print("true" if getattr(torch.version, "hip", None) else "false")' 2>/dev/null || echo false)"
       status="PASS"
       if [[ "$rocm_state" == "visible" && "$hip_state" != "true" ]]; then
         status="WARN"
