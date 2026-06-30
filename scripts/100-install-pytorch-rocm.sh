@@ -21,6 +21,10 @@ STATUS_JSON="$LATEST_DIR/tier2-pytorch-rocm.json"
 SUMMARY_MD="$LATEST_DIR/tier2-pytorch-rocm.md"
 PYTORCH_ROCM_INDEX="${PYTORCH_ROCM_INDEX:-https://download.pytorch.org/whl/rocm6.2}"
 PYTORCH_CPU_INDEX="${PYTORCH_CPU_INDEX:-https://download.pytorch.org/whl/cpu}"
+PYTORCH_NIGHTLY_ROCM_INDEX="${PYTORCH_NIGHTLY_ROCM_INDEX:-https://download.pytorch.org/whl/nightly/rocm6.2}"
+PYTORCH_NIGHTLY_CPU_INDEX="${PYTORCH_NIGHTLY_CPU_INDEX:-https://download.pytorch.org/whl/nightly/cpu}"
+PYTORCH_ENABLE_PRE="${PYTORCH_ENABLE_PRE:-auto}"
+PYTORCH_PURGE_CACHE="${PYTORCH_PURGE_CACHE:-true}"
 PYTORCH_CORE_PACKAGE="${PYTORCH_CORE_PACKAGE:-torch}"
 PYTORCH_OPTIONAL_PACKAGES=(torchvision torchaudio)
 
@@ -28,19 +32,53 @@ json_escape() {
   python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'
 }
 
+python_needs_pre_wheels() {
+  "$VENV_DIR/bin/python" - <<'PY'
+import sys
+raise SystemExit(0 if sys.version_info >= (3, 14) else 1)
+PY
+}
+
 pip_install_pytorch_stack() {
   local index_url="$1" install_label="$2"
-  local optional_package detail=""
+  local optional_package detail="" pre_flag="" cache_detail=""
+  local selected_index="$index_url"
+  local packages=("$PYTORCH_CORE_PACKAGE" "${PYTORCH_OPTIONAL_PACKAGES[@]}")
 
-  if ! "$VENV_DIR/bin/python" -m pip install --upgrade "$PYTORCH_CORE_PACKAGE" --index-url "$index_url"; then
-    detail="PyTorch $install_label pip install failed while installing $PYTORCH_CORE_PACKAGE; see console output."
+  if [[ "$PYTORCH_ENABLE_PRE" == "true" ]] || { [[ "$PYTORCH_ENABLE_PRE" == "auto" ]] && python_needs_pre_wheels; }; then
+    pre_flag="--pre"
+    if [[ "$install_label" == "ROCm" ]]; then
+      selected_index="$PYTORCH_NIGHTLY_ROCM_INDEX"
+    else
+      selected_index="$PYTORCH_NIGHTLY_CPU_INDEX"
+    fi
+    detail+="Using pre-release PyTorch wheels from $selected_index because PYTORCH_ENABLE_PRE=$PYTORCH_ENABLE_PRE. "
+  fi
+
+  if [[ "$PYTORCH_PURGE_CACHE" == "true" ]]; then
+    if "$VENV_DIR/bin/python" -m pip cache purge >/dev/null 2>&1; then
+      cache_detail="Purged pip cache before PyTorch install to avoid stale companion wheels. "
+    else
+      cache_detail="pip cache purge failed or is unsupported; continuing with no-cache install. "
+    fi
+    detail+="$cache_detail"
+  fi
+
+  if "$VENV_DIR/bin/python" -m pip install --upgrade --no-cache-dir $pre_flag "${packages[@]}" --index-url "$selected_index"; then
+    printf '%s' "$detail"
+    return 0
+  fi
+
+  detail+="Combined PyTorch $install_label stack install failed from $selected_index; retrying core package and optional companions separately. "
+  if ! "$VENV_DIR/bin/python" -m pip install --upgrade --no-cache-dir $pre_flag "$PYTORCH_CORE_PACKAGE" --index-url "$selected_index"; then
+    detail+="PyTorch $install_label pip install failed while installing $PYTORCH_CORE_PACKAGE; see console output."
     printf '%s' "$detail"
     return 1
   fi
 
   for optional_package in "${PYTORCH_OPTIONAL_PACKAGES[@]}"; do
-    if ! "$VENV_DIR/bin/python" -m pip install --upgrade "$optional_package" --index-url "$index_url"; then
-      detail+="Optional PyTorch companion package $optional_package could not be installed from $index_url; continuing because torch installed successfully. "
+    if ! "$VENV_DIR/bin/python" -m pip install --upgrade --no-cache-dir $pre_flag "$optional_package" --index-url "$selected_index"; then
+      detail+="Optional PyTorch companion package $optional_package could not be installed from $selected_index; continuing because torch installed successfully. "
     fi
   done
 

@@ -304,6 +304,7 @@ All phases continue to communicate through `reports/latest/` (JSON + Markdown + 
 - `gpu-capabilities.json`, `gpu-smoke-benchmark.md`, `npu-capabilities.json`, `npu-smoke-benchmark.md`, and `xrt-status.txt` record Phase 5 local ROCm/Vulkan/OpenCL/XDNA visibility.
 - `ai-runtime-benchmark.json` and `ai-runtime-benchmark.md` record Phase 6 CPU/ONNX Runtime smoke benchmarks.
 - `tier2-pytorch-rocm.json`, `tier2-llama-cpp.json`, `tier2-ollama.json`, `tier2-open-webui.json`, `tier2-runtime-benchmark.json`, `llm-validation.json`, and `tier2-validation.json` record Milestone 2 / Stage 2 runtime installation, local model visibility, and gate status.
+  Tier 2 PyTorch installation purges stale pip cache entries, installs `torch`, `torchvision`, and `torchaudio` together from the selected PyTorch index, and automatically uses the configured nightly/pre-release index for Python runtimes that need newer wheels, such as Python 3.14+.
 - `amd-acceleration-install.json`, `amd-acceleration-install.md`, and `amd-acceleration-env.sh` record the explicit opt-in AMD acceleration installation state when Phase 7.5 is run.
 - `comfyui-status.txt` and `comfyui-workflow-guide.md` record Phase 8 installation paths and launch guidance.
 - `comfyui-benchmark.csv` and `comfyui-benchmark-summary.md` record Phase 9 workflow benchmark output.
