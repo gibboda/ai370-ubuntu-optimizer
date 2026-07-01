@@ -193,7 +193,7 @@ write_reports() {
     echo "Profile: $PROFILE"
     echo "Mode: $MODE"
     echo "Persistence: $PERSISTENCE"
-    echo "Timestamp: $(date -Is)"
+    echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     echo
     echo "ComfyUI root: $COMFY_ROOT"
     echo "ComfyUI venv: $COMFY_VENV"

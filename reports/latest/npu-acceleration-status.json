@@ -6,5 +6,5 @@
   "kernel_module": "missing",
   "device_node": "missing",
   "runtime_tools": "not-installed",
-  "onnxruntime_providers": "unknown"
+  "onnxruntime_providers": "CoreMLExecutionProvider,AzureExecutionProvider,CPUExecutionProvider"
 }

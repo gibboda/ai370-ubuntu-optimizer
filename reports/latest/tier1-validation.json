@@ -1,11 +1,11 @@
 {
   "tier": 1,
-  "status": "PASS",
-  "timestamp": "2026-07-01T03:30:34.304907Z",
+  "status": "WARN",
+  "timestamp": "2026-07-01T23:18:11.600808Z",
   "profile": "ai370",
   "acceptance": {
-    "radeon_890m_gfx1150": true,
-    "amdxdna_npu": true,
+    "radeon_890m_gfx1150": false,
+    "amdxdna_npu": false,
     "vulkan_validated": true,
     "bios_version_acceptable": "true",
     "rocm_note": "ROCm is validated for visibility only in Tier 1. Full stack install is opt-in."
@@ -20,5 +20,8 @@
     "local_ai": "reports/latest/tier1-local-ai-benchmark.json"
   },
   "failures": [],
-  "warnings": []
+  "warnings": [
+    "Radeon 890M / gfx1150 not detected (saw: unknown). Check amdgpu firmware/kernel.",
+    "AMDXDNA / XDNA2 NPU not detected. Kernel module or device node missing. (Tier 3 is experimental.)"
+  ]
 }

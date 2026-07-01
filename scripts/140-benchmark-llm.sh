@@ -150,7 +150,7 @@ main() {
     echo "Persistence: $PERSISTENCE"
     echo "Offline: $OFFLINE"
     echo "Status: $status"
-    echo "Timestamp: $(date -Is)"
+    echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     echo
     echo "ollama: $ollama_state"
     echo "llama_cpp: $llama_state"

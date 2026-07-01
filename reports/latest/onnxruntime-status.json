@@ -1,0 +1,27 @@
+{
+  "tier": 2,
+  "milestone": "S2-M2",
+  "phase": "install-onnxruntime",
+  "status": "PASS",
+  "timestamp": "2026-07-01T23:18:02.528307Z",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "venv": "/Users/gibboda/Documents/Microsoft/Visual Studio Code Projects/ai370-ubuntu-optimizer/.ai370-ai/venv",
+  "wheelhouse": "/Users/gibboda/Documents/Microsoft/Visual Studio Code Projects/ai370-ubuntu-optimizer/.ai370-ai/wheelhouse",
+  "install_action": "pip-install",
+  "onnxruntime": {
+    "state": "available",
+    "version": "1.27.0",
+    "providers": [
+      "CoreMLExecutionProvider",
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "cpu_smoke": "pass",
+    "amd_related_providers": []
+  },
+  "detail": "",
+  "error": ""
+}

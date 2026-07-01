@@ -10,7 +10,7 @@ Offline: false
 - kernel module: missing
 - device node: missing
 - runtime tools: not-installed
-- ONNX Runtime providers: unknown
+- ONNX Runtime providers: CoreMLExecutionProvider,AzureExecutionProvider,CPUExecutionProvider
 
 ## Policy
 
