@@ -1,0 +1,19 @@
+{
+  "tier": 2,
+  "milestone": "S2-M2",
+  "phase": "benchmark-npu",
+  "status": "WARN",
+  "timestamp": "2026-07-01T02:19:28.399356Z",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "providers": [],
+  "amd_provider_candidates": [],
+  "benchmarks": [],
+  "limitations": [
+    "ONNX Runtime is not installed; run scripts/200-install-onnxruntime.sh first."
+  ],
+  "error": "",
+  "model": "not-generated"
+}

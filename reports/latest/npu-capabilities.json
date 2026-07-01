@@ -4,10 +4,10 @@
   "persistence": "runtime",
   "offline": false,
   "kernel_module": "missing",
-  "device_node": "present",
+  "device_node": "missing",
   "runtime_tools": "not-installed",
-  "onnxruntime_providers": "AzureExecutionProvider,CPUExecutionProvider",
-  "device_nodes": "/dev/accel\n/dev/accel/accel0",
+  "onnxruntime_providers": "unknown",
+  "device_nodes": "",
   "xrt_smi_examine": "not-run",
   "xrt_smi_validate": "not-run"
 }

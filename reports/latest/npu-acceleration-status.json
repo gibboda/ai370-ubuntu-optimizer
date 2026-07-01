@@ -4,7 +4,7 @@
   "persistence": "runtime",
   "offline": false,
   "kernel_module": "missing",
-  "device_node": "present",
+  "device_node": "missing",
   "runtime_tools": "not-installed",
-  "onnxruntime_providers": "AzureExecutionProvider,CPUExecutionProvider"
+  "onnxruntime_providers": "unknown"
 }

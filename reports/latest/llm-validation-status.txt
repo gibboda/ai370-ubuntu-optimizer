@@ -4,9 +4,14 @@ Mode: safe
 Persistence: runtime
 Offline: false
 Status: WARN
-Timestamp: 2026-06-12T19:50:56-05:00
+Timestamp: 2026-07-01T02:19:24+00:00
 
 ollama: missing
 llama_cpp: missing
 llama_binary: not-found
 gguf_models: missing
+pytorch: missing
+pytorch_rocm: false
+open_webui: missing
+open_webui_source: not-found
+local_inference_smoke: skipped
