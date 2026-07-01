@@ -1,40 +1,40 @@
 {
   "tier": 1,
   "phase": "detect-hardware",
-  "timestamp": "2026-07-01T03:24:57.882419Z",
+  "timestamp": "2026-07-01T23:18:11.850647Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
   "system": {
-    "vendor": "Micro Computer (HK) Tech Limited",
-    "product": "EliteMini Series",
-    "bios_version": "2.01",
-    "os": "Ubuntu 26.04 LTS",
-    "kernel": "7.0.0-27-generic"
+    "vendor": "unknown",
+    "product": "unknown",
+    "bios_version": "unknown",
+    "os": "unknown",
+    "kernel": "25.5.0"
   },
   "cpu": {
-    "model": "AMD Ryzen AI 9 HX 370 w/ Radeon 890M",
-    "vendor": "AuthenticAMD",
-    "logical_cores": 24
+    "model": "",
+    "vendor": "",
+    "logical_cores": 0
   },
   "gpu": {
-    "text": "65:00.0 Display controller [0380]: Advanced Micro Devices, Inc. [AMD/ATI] Strix [Radeon 880M / 890M] [1002:150e] (rev c1)\n\tSubsystem: Advanced Micro Devices, Inc. [AMD/ATI] Strix [Radeon 880M / 890M] [1002:150e]\n65:00.1 Audio device [0403]: Advanced Micro Devices, Inc. [AMD/ATI] Radeon High Definition Audio Controller [1002:1640]\n\tSubsystem: Advanced Micro Devices, Inc. [AMD/ATI] Radeon High Definition Audio Controller [1002:1640]",
-    "arch": "gfx1150",
-    "amdgpu_module": "loaded"
+    "text": "",
+    "arch": "unknown",
+    "amdgpu_module": ""
   },
   "npu": {
-    "present": true,
-    "module_text": "amdxdna               172032  0\namd_pmf               131072  1 amdxdna\ngpu_sched              69632  2 amdxdna,amdgpu",
-    "device_text": "/dev/accel\n/dev/accel/accel0"
+    "present": false,
+    "module_text": "",
+    "device_text": ""
   },
   "memory": {
-    "total": "28Gi"
+    "total": ""
   },
   "storage": {
-    "summary": "loop0                     4K loop\nloop1                  13.5M loop\nloop2                  13.4M loop\nloop3                  63.8M loop\nloop4                 425.9M loop\nloop5                  66.8M loop\nloop6                  66.8M loop\nloop7                    74M loop\nloop8                    20M loop\nloop9                  19.6M loop\nloop10                252.6M loop\nloop11                252.7M loop\nloop12                 16.5M loop\nloop13                606.1M loop\nloop14                614.5M loop\nloop15                 91.7M loop\nloop16                  402M loop\nloop17                  395M loop\nloop18                 18.8M loop\nloop19                 18.8M loop\nloop20                 15.7M loop\nloop21                  580K loop\nloop22                 49.3M loop\nloop23                  828K loop\nnvme0n1 CT1000P3PSSD8 931.5G disk",
-    "nvme": "nvme0n1 CT1000P3PSSD8 931.5G disk"
+    "summary": "",
+    "nvme": ""
   },
   "tools": {
-    "missing": ""
+    "missing": "lsb_release,lscpu,free,lspci,lsblk,lsmod,fwupdmgr,dmidecode,powerprofilesctl,sensors,vulkaninfo,clinfo,nvme,smartctl"
   }
 }

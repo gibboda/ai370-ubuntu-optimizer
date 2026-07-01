@@ -1,16 +1,16 @@
 {
   "tier": 1,
   "phase": "check-bios",
-  "timestamp": "2026-06-30T22:24:57-05:00",
+  "timestamp": "2026-07-01T23:18:11Z",
   "profile": "ai370",
-  "bios_version": "2.01",
-  "bios_date": "04/08/2025",
-  "bios_vendor": "American Megatrends International, LLC.",
+  "bios_version": "unknown",
+  "bios_date": "unknown",
+  "bios_vendor": "unknown",
   "bios_expected": "2.01",
-  "bios_acceptable": "true",
+  "bios_acceptable": "unknown",
   "system": {
-    "vendor": "Micro Computer (HK) Tech Limited",
-    "product": "EliteMini Series"
+    "vendor": "unknown",
+    "product": "unknown"
   },
-  "fwupd": { "devices_present": true }
+  "fwupd": { "devices_present": false }
 }

@@ -40,7 +40,7 @@ main() {
   {
     echo "# ComfyUI Benchmark Summary"
     echo
-    echo "Generated: $(date -Is)"
+    echo "Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     echo
     echo "| Workflow | Avg Seconds | Avg Images/min |"
     echo "|---|---:|---:|"

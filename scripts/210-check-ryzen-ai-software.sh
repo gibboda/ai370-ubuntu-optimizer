@@ -52,7 +52,7 @@ detect_npu_stack() {
   fi
 
   if [[ -x "$VENV_PYTHON" ]]; then
-    if ! ort_providers="$($VENV_PYTHON - <<'PY'
+    if ! ort_providers="$("$VENV_PYTHON" - <<'PY'
 try:
     import onnxruntime as ort
 except ModuleNotFoundError:
@@ -71,7 +71,7 @@ PY
     echo "Mode: $MODE"
     echo "Persistence: $PERSISTENCE"
     echo "Offline: $OFFLINE"
-    echo "Timestamp: $(date -Is)"
+    echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     echo
     echo "kernel_module: $module_state"
     echo "device_node: $device_state"

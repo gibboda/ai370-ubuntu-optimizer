@@ -3,17 +3,31 @@
   "milestone": "S2-M2",
   "phase": "benchmark-npu",
   "status": "WARN",
-  "timestamp": "2026-07-01T02:19:28.399356Z",
+  "timestamp": "2026-07-01T23:18:03.127008Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
   "offline": false,
-  "providers": [],
+  "providers": [
+    "CoreMLExecutionProvider",
+    "AzureExecutionProvider",
+    "CPUExecutionProvider"
+  ],
   "amd_provider_candidates": [],
-  "benchmarks": [],
+  "benchmarks": [
+    {
+      "requested_provider": "CPUExecutionProvider",
+      "actual_provider": "CPUExecutionProvider",
+      "runs": 25,
+      "mean_ms": 0.01354496052954346,
+      "median_ms": 0.01274999522138387,
+      "min_ms": 0.005584006430581212,
+      "max_ms": 0.03562499477993697
+    }
+  ],
   "limitations": [
-    "ONNX Runtime is not installed; run scripts/200-install-onnxruntime.sh first."
+    "No AMD/Vitis/Ryzen AI ONNX Runtime provider was detected; NPU benchmark was not run."
   ],
   "error": "",
-  "model": "not-generated"
+  "model": "generated local MatMul+Add smoke model"
 }

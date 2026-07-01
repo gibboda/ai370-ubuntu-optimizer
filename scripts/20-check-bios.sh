@@ -49,7 +49,7 @@ main() {
 {
   "tier": 1,
   "phase": "check-bios",
-  "timestamp": "$(date -Is)",
+  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "profile": "$PROFILE",
   "bios_version": "${BIOS_VERSION:-unknown}",
   "bios_date": "${BIOS_DATE:-unknown}",

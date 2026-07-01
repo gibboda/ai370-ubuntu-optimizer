@@ -3,60 +3,43 @@
 **Profile:** ai370 | **Mode:** safe | **Persistence:** runtime
 
 ## System
-- Product: Micro Computer (HK) Tech Limited EliteMini Series
-- BIOS: 2.01
-- OS: Ubuntu 26.04 LTS (26.04 / resolute)
-- Kernel: 7.0.0-27-generic
+- Product: unknown unknown
+- BIOS: unknown
+- OS: unknown (unknown / unknown)
+- Kernel: 25.5.0
 
 ## CPU
-- Model: AMD Ryzen AI 9 HX 370 w/ Radeon 890M
-- Vendor: AuthenticAMD
-- Logical cores: 24
+- Model: 
+- Vendor: 
+- Logical cores: unknown
 
 ## GPU (iGPU)
-- Detected: 65:00.0 Display controller [0380]: Advanced Micro Devices, Inc. [AMD/ATI] Strix [Radeon 880M / 890M] [1002:150e] (rev c1)
-	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Strix [Radeon 880M / 890M] [1002:150e]
-65:00.1 Audio device [0403]: Advanced Micro Devices, Inc. [AMD/ATI] Radeon High Definition Audio Controller [1002:1640]
-	Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Radeon High Definition Audio Controller [1002:1640]
-- Architecture: gfx1150
-- amdgpu module: loaded (ok)
+- Detected: 
+- Architecture: unknown
+- amdgpu module: 
 
 ## NPU (XDNA2)
-- Present: true
-- Module: amdxdna               172032  0
-amd_pmf               131072  1 amdxdna
-gpu_sched              69632  2 amdxdna,amdgpu
-- Devices: /dev/accel
-/dev/accel/accel0
+- Present: false
+- Module: none detected
+- Devices: none detected
 
 ## Memory / Storage
-- Memory: 28Gi
-- Storage: loop0                     4K loop
-loop1                  13.5M loop
-loop2                  13.4M loop
-loop3                  63.8M loop
-loop4                 425.9M loop
-loop5                  66.8M loop
-loop6                  66.8M loop
-loop7                    74M loop
-loop8                    20M loop
-loop9                  19.6M loop
-loop10                252.6M loop
-loop11                252.7M loop
-loop12                 16.5M loop
-loop13                606.1M loop
-loop14                614.5M loop
-loop15                 91.7M loop
-loop16                  402M loop
-loop17                  395M loop
-loop18                 18.8M loop
-loop19                 18.8M loop
-loop20                 15.7M loop
-loop21                  580K loop
-loop22                 49.3M loop
-loop23                  828K loop
-nvme0n1 CT1000P3PSSD8 931.5G disk
-- NVMe: present
+- Memory: 
+- Storage: unknown
+- NVMe: 
 
 ## Missing tools (best-effort detection)
-none
+lsb_release
+lscpu
+free
+lspci
+lsblk
+lsmod
+fwupdmgr
+dmidecode
+powerprofilesctl
+sensors
+vulkaninfo
+clinfo
+nvme
+smartctl
