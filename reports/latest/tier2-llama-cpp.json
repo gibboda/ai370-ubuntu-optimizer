@@ -1,0 +1,13 @@
+{
+  "tier": 2,
+  "phase": "install-llama-cpp",
+  "status": "PASS",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "binary": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/build/bin/llama-cli",
+  "install_action": "validated-existing-binary",
+  "version": "version: 1 (86b9470)\nbuilt with GNU 15.2.0 for Linux x86_64",
+  "detail": "llama.cpp validation completed."
+}
