@@ -8,8 +8,8 @@ Offline: false
 ## Results
 
 - kernel module: missing
-- device node: present
+- device node: missing
 - XRT tools: not-installed
-- ONNX Runtime providers: AzureExecutionProvider,CPUExecutionProvider
+- ONNX Runtime providers: unknown
 
 No downloads or installs were attempted. NPU inference should only be attempted when a local NPU execution provider is visible.

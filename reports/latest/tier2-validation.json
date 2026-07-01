@@ -1,21 +1,27 @@
 {
   "tier": 2,
   "status": "WARN",
-  "timestamp": "2026-06-12T19:51:00-05:00",
   "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
   "acceptance": {
-    "ollama_available": false,
-    "llama_cpp_available": false,
-    "gguf_models_present": false,
-    "pytorch_available": true,
+    "pytorch_available": false,
     "pytorch_rocm": false,
-    "hf_cache_ok": true,
+    "llama_cpp_available": false,
+    "ollama_available": false,
     "open_webui_available": false,
-    "local_inference_smoke": "pass"
+    "local_model_available": false,
+    "local_inference_smoke": "skipped",
+    "benchmark_report_generated": true
   },
   "artifacts": {
-    "llm_validation": "reports/latest/llm-validation.json",
-    "tier2_validation": "reports/latest/tier2-validation.json"
+    "pytorch": "reports/latest/tier2-pytorch-rocm.json",
+    "llama_cpp": "reports/latest/tier2-llama-cpp.json",
+    "ollama": "reports/latest/tier2-ollama.json",
+    "open_webui": "reports/latest/tier2-open-webui.json",
+    "benchmark": "reports/latest/tier2-runtime-benchmark.json",
+    "llm_validation": "reports/latest/llm-validation.json"
   },
-  "notes": "ROCm PyTorch and full acceleration require explicit amd-accel-install --accept-amd-acceleration-risk and re-validation. NPU via Tier 3 (experimental)."
+  "notes": "ROCm is accepted when torch.version.hip is visible; otherwise it is cleanly reported missing or CPU-only."
 }

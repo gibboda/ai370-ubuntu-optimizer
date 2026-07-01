@@ -14,6 +14,15 @@
     "binary": "",
     "version": "not-run"
   },
+  "pytorch": {
+    "state": "missing",
+    "rocm": false
+  },
+  "open_webui": {
+    "state": "missing",
+    "source": "not-found"
+  },
   "gguf_models": [],
-  "policy": "local validation only; no model downloads or runtime installs are attempted"
+  "local_inference_smoke": "skipped",
+  "policy": "local validation only; model downloads are not attempted by the benchmark phase"
 }

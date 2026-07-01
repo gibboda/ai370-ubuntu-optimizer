@@ -35,6 +35,12 @@ not-run
 none
 ```
 
+## Tier 2 Runtime
+
+- PyTorch: missing (ROCm: false)
+- Open WebUI: missing (not-found)
+- Local inference smoke: skipped
+
 ## Policy
 
-This phase validates locally available Ollama and llama.cpp assets only. It does not download models, pull Ollama manifests, clone llama.cpp, or install runtime packages.
+This phase validates locally available Ollama, llama.cpp, PyTorch, and Open WebUI assets. It does not download models or pull Ollama manifests.

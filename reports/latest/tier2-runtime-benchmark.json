@@ -1,0 +1,13 @@
+{
+  "tier": 2,
+  "phase": "benchmark-llm",
+  "status": "WARN",
+  "offline": false,
+  "local_inference_smoke": "skipped",
+  "ollama_state": "missing",
+  "llama_cpp_state": "missing",
+  "pytorch_state": "missing",
+  "pytorch_rocm": false,
+  "gguf_models": [],
+  "open_webui_source": "not-found"
+}

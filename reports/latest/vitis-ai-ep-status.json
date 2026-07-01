@@ -1,0 +1,20 @@
+{
+  "tier": 2,
+  "milestone": "S2-M2",
+  "phase": "check-vitis-ai-ep",
+  "status": "WARN",
+  "timestamp": "2026-07-01T02:19:27.623346Z",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "venv_python": "/workspace/ai370-ubuntu-optimizer/.ai370-ai/venv/bin/python",
+  "onnxruntime_state": "missing-venv",
+  "providers": [],
+  "amd_provider_candidates": [],
+  "provider_smoke": "not-run",
+  "error": "Virtualenv Python is missing.",
+  "recommendations": [
+    "Run scripts/200-install-onnxruntime.sh first or stage .ai370-ai/venv for offline validation."
+  ]
+}

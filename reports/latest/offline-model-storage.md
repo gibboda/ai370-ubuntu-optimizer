@@ -4,7 +4,7 @@ Status: WARN
 Profile: ai370
 Mode: safe
 Persistence: runtime
-Offline: true
+Offline: false
 Manifest: `configs/models/manifest.yaml`
 Policy: `configs/models/storage-policy.md`
 Model root: `.ai370-ai/models`
