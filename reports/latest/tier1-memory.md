@@ -4,7 +4,7 @@
 - zram0 active: inactive
 inactive
 - Current swap:
-/swap.img file 8G 0B -1
+/swap.img file 8G 904K -1
 
 Recommendations (runtime-only):
 - Consider enabling zram for better interactive behavior on 32/64 GB LPDDR5X systems.
