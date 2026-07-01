@@ -3,8 +3,8 @@
 **Profile:** ai370 | **Mode:** safe | **Persistence:** runtime
 
 ## System
-- Product: unknown unknown
-- BIOS: unknown
+- Product: Micro Computer (HK) Tech Limited EliteMini Series
+- BIOS: 2.01
 - OS: Ubuntu 26.04 LTS (26.04 / resolute)
 - Kernel: 7.0.0-27-generic
 
