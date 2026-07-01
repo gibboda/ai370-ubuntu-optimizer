@@ -9,7 +9,7 @@
   "state": "available",
   "install_action": "validated-existing",
   "version": "ollama version is 0.30.11",
-  "models": "NAME                       ID              SIZE      MODIFIED       \nllama3.1:8b                46e0c10c039e    4.9 GB    35 minutes ago    \nnomic-embed-text:latest    0a109f422b47    274 MB    41 minutes ago    \nqwen2.5-coder:1.5b-base    02e0f2817a89    986 MB    44 minutes ago    \nqwen2.5-coder:latest       dae161e27b0e    4.7 GB    47 minutes ago    \nqwen2.5-coder:14b          9ec8897f747e    9.0 GB    3 days ago        \nqwen2.5-coder:7b           dae161e27b0e    4.7 GB    3 days ago        \nqwen2.5-coder:1.5b         d7372fd82851    986 MB    3 days ago        ",
+  "models": "NAME                       ID              SIZE      MODIFIED          \nllama3.1:8b                46e0c10c039e    4.9 GB    About an hour ago    \nnomic-embed-text:latest    0a109f422b47    274 MB    2 hours ago          \nqwen2.5-coder:1.5b-base    02e0f2817a89    986 MB    2 hours ago          \nqwen2.5-coder:latest       dae161e27b0e    4.7 GB    2 hours ago          \nqwen2.5-coder:14b          9ec8897f747e    9.0 GB    3 days ago           \nqwen2.5-coder:7b           dae161e27b0e    4.7 GB    3 days ago           \nqwen2.5-coder:1.5b         d7372fd82851    986 MB    3 days ago           ",
   "model_root": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/models/ollama",
   "detail": "Ollama validation completed. Local model execution is validated by scripts/140-benchmark-llm.sh when a model is present."
 }
