@@ -1,10 +1,10 @@
 # Tier 1 Firmware / BIOS Baseline
 
-- System: unknown unknown
-- BIOS version: unknown
-- BIOS release date: unknown
-- BIOS vendor: unknown
-- Target BIOS for ai370: 2.01 (acceptable: unknown)
+- System: Micro Computer (HK) Tech Limited EliteMini Series
+- BIOS version: 2.01
+- BIOS release date: 04/08/2025
+- BIOS vendor: American Megatrends International, LLC.
+- Target BIOS for ai370: 2.01 (acceptable: true)
 - fwupd devices visible: yes
 
 Note: This phase only records baseline state. No firmware updates are applied.

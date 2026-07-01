@@ -1,13 +1,13 @@
 {
   "tier": 1,
   "status": "PASS",
-  "timestamp": "2026-07-01T02:39:38.323271Z",
+  "timestamp": "2026-07-01T03:24:59.903147Z",
   "profile": "ai370",
   "acceptance": {
     "radeon_890m_gfx1150": true,
     "amdxdna_npu": true,
     "vulkan_validated": true,
-    "bios_version_acceptable": "unknown",
+    "bios_version_acceptable": "true",
     "rocm_note": "ROCm is validated for visibility only in Tier 1. Full stack install is opt-in."
   },
   "artifacts": {

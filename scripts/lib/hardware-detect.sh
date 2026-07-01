@@ -103,11 +103,41 @@ detect_memory_total_kib() { run_or_empty free -k | awk '/^Mem:/ {print $2; exit}
 detect_storage_text() { run_or_empty lsblk -dn -o NAME,MODEL,SIZE,TYPE; }
 detect_nvme_text() { run_or_empty lsblk -dn -o NAME,MODEL,SIZE,TYPE | awk '$1 ~ /^nvme/ || $0 ~ /nvme|NVMe/ {print}'; }
 
-detect_bios_version() { run_sudo_or_empty dmidecode -s bios-version; }
-detect_bios_release_date() { run_sudo_or_empty dmidecode -s bios-release-date; }
-detect_bios_vendor() { run_sudo_or_empty dmidecode -s bios-vendor; }
-detect_system_product() { run_sudo_or_empty dmidecode -s system-product-name; }
-detect_system_vendor() { run_sudo_or_empty dmidecode -s system-manufacturer; }
+detect_bios_version() {
+  if [[ -r /sys/class/dmi/id/bios_version ]]; then
+    cat /sys/class/dmi/id/bios_version
+  else
+    run_sudo_or_empty dmidecode -s bios-version
+  fi
+}
+detect_bios_release_date() {
+  if [[ -r /sys/class/dmi/id/bios_date ]]; then
+    cat /sys/class/dmi/id/bios_date
+  else
+    run_sudo_or_empty dmidecode -s bios-release-date
+  fi
+}
+detect_bios_vendor() {
+  if [[ -r /sys/class/dmi/id/bios_vendor ]]; then
+    cat /sys/class/dmi/id/bios_vendor
+  else
+    run_sudo_or_empty dmidecode -s bios-vendor
+  fi
+}
+detect_system_product() {
+  if [[ -r /sys/class/dmi/id/product_name ]]; then
+    cat /sys/class/dmi/id/product_name
+  else
+    run_sudo_or_empty dmidecode -s system-product-name
+  fi
+}
+detect_system_vendor() {
+  if [[ -r /sys/class/dmi/id/sys_vendor ]]; then
+    cat /sys/class/dmi/id/sys_vendor
+  else
+    run_sudo_or_empty dmidecode -s system-manufacturer
+  fi
+}
 detect_fwupd_devices() { run_or_empty fwupdmgr get-devices; }
 
 detect_powerprofiles() {

@@ -1,14 +1,14 @@
 {
   "tier": 1,
   "phase": "detect-hardware",
-  "timestamp": "2026-07-01T02:38:43.697444Z",
+  "timestamp": "2026-07-01T03:24:57.882419Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
   "system": {
-    "vendor": "unknown",
-    "product": "unknown",
-    "bios_version": "unknown",
+    "vendor": "Micro Computer (HK) Tech Limited",
+    "product": "EliteMini Series",
+    "bios_version": "2.01",
     "os": "Ubuntu 26.04 LTS",
     "kernel": "7.0.0-27-generic"
   },
