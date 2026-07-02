@@ -1,7 +1,7 @@
 {
   "tier": 1,
   "phase": "check-firmware",
-  "timestamp": "2026-07-02T00:52:16.890073Z",
+  "timestamp": "2026-07-02T09:46:27.127333Z",
   "profile": "ai370",
   "status": "PASS",
   "checks": {
