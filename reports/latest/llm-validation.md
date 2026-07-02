@@ -4,42 +4,68 @@ Profile: ai370
 Mode: safe
 Persistence: runtime
 Offline: false
-Status: WARN
+Status: PASS
 
 ## Ollama
 
-- State: missing
+- State: available
 
 ```text
-command-not-found: ollama
+ollama version is 0.30.11
 ```
 
 ## Ollama local models
 
 ```text
-command-not-found: ollama
+NAME                       ID              SIZE      MODIFIED     
+llama3.1:8b                46e0c10c039e    4.9 GB    24 hours ago    
+nomic-embed-text:latest    0a109f422b47    274 MB    24 hours ago    
+qwen2.5-coder:1.5b-base    02e0f2817a89    986 MB    25 hours ago    
+qwen2.5-coder:latest       dae161e27b0e    4.7 GB    25 hours ago    
+qwen2.5-coder:14b          9ec8897f747e    9.0 GB    4 days ago      
+qwen2.5-coder:7b           dae161e27b0e    4.7 GB    4 days ago      
+qwen2.5-coder:1.5b         d7372fd82851    986 MB    4 days ago      
 ```
 
 ## llama.cpp
 
-- State: missing
-- Binary: not-found
+- State: available
+- Binary: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/build/bin/llama-cli
 
 ```text
-not-run
+version: 1 (86b9470)
+built with GNU 15.2.0 for Linux x86_64
 ```
 
 ## Local GGUF models
 
 ```text
-none
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-refact.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-qwen2.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-baichuan.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-qwen35.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-nomic-bert-moe.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-falcon.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-deepseek-coder.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-starcoder.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-gemma-4.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-aquila.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-bert-bge.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-command-r.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-gpt-2.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-llama-bpe.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-gpt-neox.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-phi-3.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-llama-spm.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-mpt.gguf
+/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-deepseek-llm.gguf
 ```
 
 ## Tier 2 Runtime
 
-- PyTorch: missing (ROCm: false)
+- PyTorch: available (ROCm: true)
 - Open WebUI: missing (not-found)
-- Local inference smoke: skipped
+- Local inference smoke: warn
 
 ## Policy
 

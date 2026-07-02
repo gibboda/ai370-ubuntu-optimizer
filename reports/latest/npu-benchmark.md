@@ -4,7 +4,7 @@ Profile: ai370 | Mode: safe | Offline: False
 
 Status: WARN
 
-- Providers: CoreMLExecutionProvider, AzureExecutionProvider, CPUExecutionProvider
+- Providers: AzureExecutionProvider, CPUExecutionProvider
 - AMD/Vitis candidates: none detected
 
 ## Results
@@ -13,10 +13,10 @@ Status: WARN
 
 - Actual provider: CPUExecutionProvider
 - Runs: 25
-- Mean: 0.0135 ms
-- Median: 0.0127 ms
-- Min: 0.0056 ms
-- Max: 0.0356 ms
+- Mean: 0.0029 ms
+- Median: 0.0028 ms
+- Min: 0.0024 ms
+- Max: 0.0049 ms
 
 ## Limitations / Diagnostics
 

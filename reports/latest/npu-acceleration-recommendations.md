@@ -8,9 +8,9 @@ Offline: false
 ## Detected state
 
 - kernel module: missing
-- device node: missing
+- device node: present
 - runtime tools: not-installed
-- ONNX Runtime providers: CoreMLExecutionProvider,AzureExecutionProvider,CPUExecutionProvider
+- ONNX Runtime providers: AzureExecutionProvider,CPUExecutionProvider
 
 ## Policy
 
@@ -19,6 +19,5 @@ This track detects AMD XDNA2 NPU presence and locally installed runtime/provider
 ## Recommendations
 
 - Kernel module not loaded; ensure your kernel supports AMD XDNA.
-- No NPU device nodes detected; firmware or kernel support may be missing.
 - Stage AMD Ryzen AI runtime tools in your approved offline artifacts before attempting NPU workloads.
 - Keep SAFE mode until NPU inference is validated.

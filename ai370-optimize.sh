@@ -345,8 +345,10 @@ case "$CMD" in
     ;;
 
   stage2-rag|tier4)
-    echo "[INFO] Stage 2 RAG – Local Knowledge Systems (AnythingLLM / RAG) not yet implemented as a full script."
-    echo "[INFO] See docs and workflows/ for current local document patterns. This is a placeholder."
+    echo "[INFO] Running Stage 2 RAG – Local Knowledge Systems (AnythingLLM / RAG)"
+    run_script "scripts/300-install-anythingllm.sh" "$OFFLINE"
+    run_script "scripts/310-install-embedding-models.sh" "$OFFLINE"
+    run_script "scripts/320-validate-rag.sh" "$OFFLINE"
     ;;
 
   stage3-image|tier5)
