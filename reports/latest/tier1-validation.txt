@@ -1,1 +1,1 @@
-WARN
+PASS
