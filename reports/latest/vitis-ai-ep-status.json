@@ -3,15 +3,14 @@
   "milestone": "S2-M2",
   "phase": "check-vitis-ai-ep",
   "status": "WARN",
-  "timestamp": "2026-07-01T23:18:02.838970Z",
+  "timestamp": "2026-07-02T02:28:28.205550Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
   "offline": false,
-  "venv_python": "/Users/gibboda/Documents/Microsoft/Visual Studio Code Projects/ai370-ubuntu-optimizer/.ai370-ai/venv/bin/python",
+  "venv_python": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/venv/bin/python",
   "onnxruntime_state": "available",
   "providers": [
-    "CoreMLExecutionProvider",
     "AzureExecutionProvider",
     "CPUExecutionProvider"
   ],

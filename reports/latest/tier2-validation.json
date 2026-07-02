@@ -1,18 +1,18 @@
 {
   "tier": 2,
-  "status": "WARN",
+  "status": "PASS",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
   "offline": false,
   "acceptance": {
-    "pytorch_available": false,
-    "pytorch_rocm": false,
-    "llama_cpp_available": false,
-    "ollama_available": false,
+    "pytorch_available": true,
+    "pytorch_rocm": true,
+    "llama_cpp_available": true,
+    "ollama_available": true,
     "open_webui_available": false,
-    "local_model_available": false,
-    "local_inference_smoke": "skipped",
+    "local_model_available": true,
+    "local_inference_smoke": "warn",
     "benchmark_report_generated": true
   },
   "artifacts": {

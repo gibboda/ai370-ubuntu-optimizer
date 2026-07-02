@@ -5,7 +5,7 @@ Profile: ai370 | Mode: safe | Offline: False
 Status: WARN
 
 - ONNX Runtime: available
-- Providers: CoreMLExecutionProvider, AzureExecutionProvider, CPUExecutionProvider
+- Providers: AzureExecutionProvider, CPUExecutionProvider
 - AMD/Vitis candidates: none detected
 - Provider smoke: missing
 

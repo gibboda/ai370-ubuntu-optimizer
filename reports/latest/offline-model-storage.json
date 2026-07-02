@@ -1,7 +1,7 @@
 {
   "stage": "S2-M5",
   "status": "WARN",
-  "timestamp": "2026-07-01T02:19:26.091069+00:00",
+  "timestamp": "2026-07-02T02:28:27.965540+00:00",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
@@ -10,10 +10,10 @@
   "policy": "configs/models/storage-policy.md",
   "model_root": ".ai370-ai/models",
   "storage": {
-    "total_gb": 62.44,
-    "free_gb": 28.37,
+    "total_gb": 914.78,
+    "free_gb": 776.39,
     "minimum_free_gb": 20.0,
-    "nvme_confirmed": false
+    "nvme_confirmed": true
   },
   "models": [
     {
@@ -63,10 +63,6 @@
     }
   ],
   "messages": [
-    {
-      "level": "WARN",
-      "message": "NVMe backing could not be confirmed for the model root; verify placement before importing large models"
-    },
     {
       "level": "WARN",
       "message": "chat-gguf-local: model artifact is not present locally"

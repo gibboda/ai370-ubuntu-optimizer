@@ -11,10 +11,10 @@ Model root: `.ai370-ai/models`
 
 ## Storage
 
-- Total: 62.4 GiB
-- Free: 28.4 GiB
+- Total: 914.8 GiB
+- Free: 776.4 GiB
 - Minimum required: 20.0 GiB
-- NVMe confirmed: no
+- NVMe confirmed: yes
 
 ## Model inventory
 
@@ -26,7 +26,6 @@ Model root: `.ai370-ai/models`
 
 ## Diagnostics
 
-- WARN: NVMe backing could not be confirmed for the model root; verify placement before importing large models
 - WARN: chat-gguf-local: model artifact is not present locally
 - WARN: coding-ollama-local: model artifact is not present locally
 - WARN: embedding-local: model artifact is not present locally

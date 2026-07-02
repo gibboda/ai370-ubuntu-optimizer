@@ -117,7 +117,7 @@ main() {
   local_inference_smoke="skipped"
   if [[ "$llama_state" == "available" && -n "$gguf_files" ]]; then
     first_gguf="$(printf '%s\n' "$gguf_files" | head -n 1)"
-    if timeout 8s "$llama_binary" -m "$first_gguf" -p "Hi" -n 4 --no-display-prompt >/dev/null 2>&1; then
+    if timeout 8s "$llama_binary" -m "$first_gguf" -p "Hi" -n 4 --no-display-prompt </dev/null >/dev/null 2>&1; then
       local_inference_smoke="pass"
     else
       local_inference_smoke="warn"

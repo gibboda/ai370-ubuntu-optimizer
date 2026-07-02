@@ -90,7 +90,10 @@ with tempfile.TemporaryDirectory() as tmpdir:
     for opset in model.opset_import:
         opset.version = 13
     onnx.save(model, model_path)
-    session = ort.InferenceSession(str(model_path), providers=['CPUExecutionProvider'])
+    available_providers = ort.get_available_providers()
+    npu_providers = [p for p in available_providers if any(t in p.lower() for t in ("vitis", "vai", "ryzen", "xilinx", "amd", "xdna"))]
+    ort_providers = npu_providers + ["CPUExecutionProvider"]
+    session = ort.InferenceSession(str(model_path), providers=ort_providers)
     sample = np.ones((1, 4), dtype=np.float32)
     timings = []
     for _ in range(10):

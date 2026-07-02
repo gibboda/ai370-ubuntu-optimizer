@@ -3,9 +3,9 @@ Profile: ai370
 Mode: safe
 Persistence: runtime
 Offline: false
-Timestamp: 2026-07-01T23:18:02Z
+Timestamp: 2026-07-02T02:28:28Z
 
 kernel_module: missing
-device_node: missing
+device_node: present
 runtime_tools: not-installed
-onnxruntime_providers: CoreMLExecutionProvider,AzureExecutionProvider,CPUExecutionProvider
+onnxruntime_providers: AzureExecutionProvider,CPUExecutionProvider

@@ -1,0 +1,14 @@
+{
+  "tier": 4,
+  "phase": "install-anythingllm",
+  "status": "WARN",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "state": "missing",
+  "docker_available": false,
+  "image_pulled": false,
+  "install_action": "guided-manual-install",
+  "detail": "Docker is not installed. For a local installation, run AnythingLLM via desktop AppImage or setup Docker on Ubuntu."
+}

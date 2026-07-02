@@ -1,0 +1,14 @@
+{
+  "tier": 4,
+  "phase": "install-embedding-models",
+  "status": "PASS",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "state": "available",
+  "model_downloaded": false,
+  "model_path": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/models/embedding/local-embedding-model",
+  "install_action": "validated-existing-model",
+  "detail": "Local embedding model validation completed."
+}

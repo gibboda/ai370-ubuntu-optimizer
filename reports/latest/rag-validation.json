@@ -1,0 +1,14 @@
+{
+  "tier": 4,
+  "phase": "validate-rag",
+  "status": "PASS",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "state": "available",
+  "validation_smoke": "pass",
+  "retrieved_chunk": "The XDNA2 NPU delivers up to 50 NPU TOPS for local AI acceleration.",
+  "similarity_score": "0.5088571906089783",
+  "detail": "Offline RAG validation successful. Semantic query returned correct context chunk with cosine similarity score: 0.5088571906089783"
+}
