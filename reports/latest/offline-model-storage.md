@@ -12,7 +12,7 @@ Model root: `.ai370-ai/models`
 ## Storage
 
 - Total: 914.8 GiB
-- Free: 776.4 GiB
+- Free: 774.6 GiB
 - Minimum required: 20.0 GiB
 - NVMe confirmed: yes
 
@@ -22,13 +22,12 @@ Model root: `.ai370-ai/models`
 | --- | --- | --- | --- | --- | --- |
 | chat-gguf-local | chat | llama.cpp | false | false | WARN |
 | coding-ollama-local | coding | ollama | false | false | WARN |
-| embedding-local | embedding | sentence-transformers | false | false | WARN |
+| embedding-local | embedding | sentence-transformers | false | true | PASS |
 
 ## Diagnostics
 
 - WARN: chat-gguf-local: model artifact is not present locally
 - WARN: coding-ollama-local: model artifact is not present locally
-- WARN: embedding-local: model artifact is not present locally
 
 ## Offline behavior
 
