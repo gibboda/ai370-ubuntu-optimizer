@@ -37,6 +37,28 @@ main() {
     "$VENV_DIR/bin/python" -m pip install huggingface-hub transformers safetensors >/dev/null 2>&1 || true
   fi
 
+  # Record installed packages for reproducibility (pin the venv after installs)
+  if [[ -x "$VENV_DIR/bin/python" ]]; then
+    echo "[INFO] Recording installed Python packages (pip freeze)..."
+    "$VENV_DIR/bin/python" -m pip freeze | tee "$VENV_DIR/requirements.txt" > /dev/null || true
+
+    PACKAGES_FILE="$LATEST_DIR/tier4-embedding-models-packages.txt"
+    cp "$VENV_DIR/requirements.txt" "$PACKAGES_FILE" || true
+
+    installed_packages_json="$($VENV_DIR/bin/python - <<PY
+import json
+try:
+    reqs = [l.strip() for l in open(r"$VENV_DIR/requirements.txt","r").read().splitlines() if l.strip()]
+except Exception:
+    reqs = []
+print(json.dumps(reqs))
+PY
+)"
+  else
+    installed_packages_json="[]"
+    PACKAGES_FILE=""
+  fi
+
   # Check if model config.json and vocabulary files are present locally
   if [[ -f "$MODEL_DIR/config.json" ]] && { [[ -f "$MODEL_DIR/model.safetensors" ]] || [[ -f "$MODEL_DIR/pytorch_model.bin" ]]; }; then
     state="available"
@@ -95,7 +117,9 @@ PY
   "model_downloaded": $model_downloaded,
   "model_path": "$MODEL_DIR",
   "install_action": "$action",
-  "detail": $detail_json
+  "detail": $detail_json,
+  "installed_packages_file": "$PACKAGES_FILE",
+  "installed_packages": $installed_packages_json
 }
 EOF_JSON
 
