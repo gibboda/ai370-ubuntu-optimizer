@@ -3,7 +3,7 @@
 Profile: ai370 | Mode: safe | Offline: false
 Status: PASS
 
-- Local inference smoke: warn
+- Local inference smoke: available-not-run
 - Ollama: available
 - llama.cpp: available
 - PyTorch: available (ROCm: true)

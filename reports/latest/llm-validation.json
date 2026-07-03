@@ -22,27 +22,7 @@
     "state": "missing",
     "source": "not-found"
   },
-  "gguf_models": [
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-refact.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-qwen2.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-baichuan.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-qwen35.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-nomic-bert-moe.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-falcon.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-deepseek-coder.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-starcoder.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-gemma-4.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-aquila.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-bert-bge.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-command-r.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-gpt-2.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-llama-bpe.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-gpt-neox.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-phi-3.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-llama-spm.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-mpt.gguf",
-    "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/models/ggml-vocab-deepseek-llm.gguf"
-  ],
-  "local_inference_smoke": "warn",
+  "gguf_models": [],
+  "local_inference_smoke": "available-not-run",
   "policy": "local validation only; model downloads are not attempted by the benchmark phase"
 }

@@ -4,14 +4,14 @@ Mode: safe
 Persistence: runtime
 Offline: false
 Status: PASS
-Timestamp: 2026-07-03T02:52:02Z
+Timestamp: 2026-07-03T03:06:26Z
 
 ollama: available
 llama_cpp: available
 llama_binary: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/build/bin/llama-cli
-gguf_models: present
+gguf_models: missing
 pytorch: available
 pytorch_rocm: true
 open_webui: missing
 open_webui_source: not-found
-local_inference_smoke: warn
+local_inference_smoke: available-not-run

@@ -87,7 +87,7 @@ main() {
     llama_version="not-run"
   fi
 
-  gguf_files="$(find "$MODEL_ROOT" "$TOOL_ROOT" -maxdepth 5 -type f -iname '*.gguf' 2>/dev/null || true)"
+  gguf_files="$(find "$MODEL_ROOT" -maxdepth 5 -type f -iname '*.gguf' 2>/dev/null || true)"
 
   pytorch_state="missing"
   pytorch_rocm="false"

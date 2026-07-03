@@ -7,7 +7,7 @@ Status: PASS
 - Install action: pip-install
 - ONNX Runtime: available
 - Version: 1.27.0
-- Providers: CoreMLExecutionProvider, AzureExecutionProvider, CPUExecutionProvider
+- Providers: AzureExecutionProvider, CPUExecutionProvider
 - AMD-related providers: none detected
 - CPU provider smoke: pass
 
