@@ -10,7 +10,7 @@
     "pytorch_rocm": true,
     "llama_cpp_available": true,
     "ollama_available": true,
-    "open_webui_available": false,
+    "open_webui_available": true,
     "local_model_available": true,
     "local_inference_smoke": "available-not-run",
     "benchmark_report_generated": true

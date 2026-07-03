@@ -1,7 +1,7 @@
 {
   "tier": 1,
   "phase": "detect-hardware",
-  "timestamp": "2026-07-03T03:05:49.165238Z",
+  "timestamp": "2026-07-03T23:54:47.787499Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
@@ -31,7 +31,7 @@
     "total": "28Gi"
   },
   "storage": {
-    "summary": "loop0                     4K loop\nloop1                  63.8M loop\nloop2                 425.9M loop\nloop3                  13.4M loop\nloop4                  66.8M loop\nloop5                    74M loop\nloop7                  19.6M loop\nloop8                    20M loop\nloop9                 252.7M loop\nloop10                 16.5M loop\nloop11                 66.8M loop\nloop12                 13.5M loop\nloop13                606.1M loop\nloop14                  395M loop\nloop15                 91.7M loop\nloop16                614.5M loop\nloop17                  402M loop\nloop18                 18.8M loop\nloop19                 18.8M loop\nloop20                 15.7M loop\nloop21                 49.3M loop\nloop22                  580K loop\nloop23                  828K loop\nloop24                252.7M loop\nloop25                  442M loop\nnvme0n1 CT1000P3PSSD8 931.5G disk",
+    "summary": "loop0                     4K loop\nloop1                  13.4M loop\nloop2                   442M loop\nloop3                 425.9M loop\nloop4                  13.5M loop\nloop5                    74M loop\nloop6                  66.8M loop\nloop7                  66.8M loop\nloop8                  63.8M loop\nloop9                  19.6M loop\nloop10                   20M loop\nloop11                252.7M loop\nloop12                606.1M loop\nloop13                 16.5M loop\nloop14                252.7M loop\nloop15                614.5M loop\nloop16                 91.7M loop\nloop17                  402M loop\nloop18                  395M loop\nloop19                 18.8M loop\nloop20                 18.8M loop\nloop21                 49.3M loop\nloop22                 15.7M loop\nloop23                  580K loop\nloop24                  828K loop\nnvme0n1 CT1000P3PSSD8 931.5G disk",
     "nvme": "nvme0n1 CT1000P3PSSD8 931.5G disk"
   },
   "tools": {

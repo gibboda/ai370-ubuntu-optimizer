@@ -1,16 +1,16 @@
 {
   "tier": 2,
   "phase": "install-open-webui",
-  "status": "WARN",
+  "status": "PASS",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
   "offline": false,
-  "state": "missing",
+  "state": "available",
   "optional": true,
-  "install_action": "skipped-python-version",
-  "python_runtime": "not-selected",
+  "install_action": "pip-install-attempted",
+  "python_runtime": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/open-webui-venv/bin/python (3.12.13)",
   "requires_python": ">=3.11,<3.13",
-  "version": "not-run",
-  "detail": "Open WebUI currently publishes wheels for Python >=3.11,<3.13. No compatible interpreter was found. Install Python 3.11 or 3.12, set OPEN_WEBUI_PYTHON to that interpreter, or stage an Open WebUI container image."
+  "version": "available",
+  "detail": "Open WebUI validation completed. This component is optional and is reported cleanly when missing."
 }

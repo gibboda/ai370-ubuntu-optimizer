@@ -42,6 +42,7 @@ env/
 .env.*
 !.env.example
 *.local
+open-webui-venv
 
 # AI/ML model caches and generated artifacts
 .ai370-ai/cache/

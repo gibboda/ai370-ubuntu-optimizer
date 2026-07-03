@@ -9,5 +9,5 @@
   "pytorch_state": "available",
   "pytorch_rocm": true,
   "gguf_models": [],
-  "open_webui_source": "not-found"
+  "open_webui_source": "venv:/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/open-webui-venv"
 }

@@ -1,16 +1,16 @@
 # Tier 2 Open WebUI Status
 
 Profile: ai370 | Mode: safe | Offline: false
-Status: WARN
+Status: PASS
 
-- State: missing
+- State: available
 - Optional: true
-- Install action: skipped-python-version
-- Python runtime: not-selected
+- Install action: pip-install-attempted
+- Python runtime: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/open-webui-venv/bin/python (3.12.13)
 - Requires-Python: >=3.11,<3.13
 
 ```text
-not-run
+available
 ```
 
-Open WebUI currently publishes wheels for Python >=3.11,<3.13. No compatible interpreter was found. Install Python 3.11 or 3.12, set OPEN_WEBUI_PYTHON to that interpreter, or stage an Open WebUI container image.
+Open WebUI validation completed. This component is optional and is reported cleanly when missing.
