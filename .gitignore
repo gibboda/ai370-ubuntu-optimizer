@@ -1,0 +1,61 @@
+# Operating system metadata
+.DS_Store
+Thumbs.db
+
+# Editor and IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and runtime output
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# Node.js dependencies and generated assets
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+dist/
+build/
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Local environment and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# AI/ML model caches and generated artifacts
+.ai370-ai/cache/
+.ai370-ai/tmp/
+.ai370-ai/downloads/
+*.onnx
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.bin
+
+# Generated benchmark and validation scratch output
+reports/tmp/
+reports/archive/
+*.prof
+*.trace
