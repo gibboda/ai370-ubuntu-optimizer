@@ -32,22 +32,21 @@ gpu_sched              69632  2 amdxdna,amdgpu
 ## Memory / Storage
 - Memory: 28Gi
 - Storage: loop0                     4K loop
-loop1                  13.5M loop
-loop2                  13.4M loop
-loop3                  63.8M loop
-loop4                 425.9M loop
+loop1                  63.8M loop
+loop2                 425.9M loop
+loop3                  13.4M loop
+loop4                  66.8M loop
 loop5                    74M loop
-loop6                  66.8M loop
-loop7                    20M loop
-loop8                  66.8M loop
-loop9                  19.6M loop
-loop10                252.6M loop
-loop11                252.7M loop
-loop12                 16.5M loop
+loop7                  19.6M loop
+loop8                    20M loop
+loop9                 252.7M loop
+loop10                 16.5M loop
+loop11                 66.8M loop
+loop12                 13.5M loop
 loop13                606.1M loop
-loop14                614.5M loop
-loop15                  395M loop
-loop16                 91.7M loop
+loop14                  395M loop
+loop15                 91.7M loop
+loop16                614.5M loop
 loop17                  402M loop
 loop18                 18.8M loop
 loop19                 18.8M loop
@@ -55,6 +54,8 @@ loop20                 15.7M loop
 loop21                 49.3M loop
 loop22                  580K loop
 loop23                  828K loop
+loop24                252.7M loop
+loop25                  442M loop
 nvme0n1 CT1000P3PSSD8 931.5G disk
 - NVMe: present
 
