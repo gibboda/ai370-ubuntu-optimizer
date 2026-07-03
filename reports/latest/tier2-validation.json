@@ -12,7 +12,7 @@
     "ollama_available": true,
     "open_webui_available": false,
     "local_model_available": true,
-    "local_inference_smoke": "warn",
+    "local_inference_smoke": "available-not-run",
     "benchmark_report_generated": true
   },
   "artifacts": {

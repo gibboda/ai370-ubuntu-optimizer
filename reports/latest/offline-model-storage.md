@@ -12,7 +12,7 @@ Model root: `.ai370-ai/models`
 ## Storage
 
 - Total: 914.8 GiB
-- Free: 772.7 GiB
+- Free: 772.5 GiB
 - Minimum required: 20.0 GiB
 - NVMe confirmed: yes
 
