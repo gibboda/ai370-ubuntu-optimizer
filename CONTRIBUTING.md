@@ -65,21 +65,19 @@ refactor(ai-stack): Extract acceleration detection into helper function
 feat!: Drop Ubuntu 24.04 support in favour of 26.04
 ```
 
-## PR labels
+## Release Versioning
 
-Apply exactly **one** bump label to every PR so the release workflow knows which
-part of the version number to increment:
+Releases are fully automated based on Conventional Commits:
 
-| Label | Meaning | Example |
-| --- | --- | --- |
-| `bump:patch` | Backwards-compatible fix (default) | Bug fix, doc update |
-| `bump:minor` | New backwards-compatible feature | New script or workflow |
-| `bump:major` | Breaking change | Removed flag, incompatible profile change |
+- **Patch Bump**: Triggered by `fix` commits (e.g.,
+  `fix: Correct iGPU device path detection`).
+- **Minor Bump**: Triggered by `feat` commits (e.g.,
+  `feat(comfyui): Add SDXL LoRA workflow template`).
+- **Major Bump**: Triggered by adding a `!` after the type/scope for breaking
+  changes (e.g., `feat!: Drop Ubuntu 24.04 support in favour of 26.04`).
 
-If no bump label is applied the release defaults to `patch`.
-
-Add `skip-changelog` to exclude a PR from the changelog entirely (e.g. internal
-CI noise).
+Commits with types like `chore`, `docs`, `ci`, `refactor`, or `test` do not
+trigger a new release by default but are documented in the release notes.
 
 ## Shell script standards
 
@@ -99,10 +97,10 @@ All scripts in this repository follow these conventions:
 1. Fork and create a feature branch.
 2. Make your changes following the shell script standards above.
 3. Open a PR with a title that follows the Conventional Commits format.
-4. Apply the appropriate `bump:*` label.
-5. CI will validate the PR title automatically and reject commit subjects that
+4. CI will validate the PR title automatically and reject commit subjects that
    do not follow the same convention on multi-commit PRs.
-6. Once merged, release-drafter updates the draft release notes.
-7. When a GitHub Release is published, the `release.yml` workflow bumps
-   `VERSION`
-   and finalises `CHANGELOG.md` automatically.
+5. Once merged into `main`, the `release-please` workflow automatically updates
+   (or creates) a Release PR. This Release PR handles bumping the version in
+   `VERSION` and `.release-please-manifest.json`, and updating `CHANGELOG.md`.
+6. When the Release PR is merged, the release is finalized, and the new Git
+   tag and GitHub Release are created automatically.
