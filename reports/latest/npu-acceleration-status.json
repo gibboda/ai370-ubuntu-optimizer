@@ -5,6 +5,6 @@
   "offline": false,
   "kernel_module": "loaded",
   "device_node": "present",
-  "runtime_tools": "available",
+  "runtime_tools": "not-installed",
   "onnxruntime_providers": "AzureExecutionProvider,CPUExecutionProvider"
 }

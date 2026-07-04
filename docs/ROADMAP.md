@@ -405,7 +405,7 @@ scripts/130-install-open-webui.sh
 
 ### S2-M2 — Ryzen AI NPU Runtime Stack
 
-**Status:** Ongoing
+**Status:** Implemented
 
 #### Description
 
@@ -424,8 +424,8 @@ docs/npu-status.md
 
 Implemented / Planned:
 
-* Implemented: `scripts/200-install-onnxruntime.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `docs/npu-status.md`
-* Planned / Not present: `scripts/205-install-xrt-ryzen-ai.sh` for explicit XRT and Ryzen AI package installation automation
+* Implemented: `scripts/200-install-onnxruntime.sh`, `scripts/205-install-xrt-ryzen-ai.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `docs/npu-status.md`
+* Planned / Not present: none
 
 #### Acceptance Criteria
 
@@ -444,7 +444,7 @@ Implemented / Planned:
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [ ] Explicit XRT/Ryzen AI package installer implemented.
+* [x] Explicit XRT/Ryzen AI package installer implemented.
 * [x] NPU benchmark generated or actionable diagnostics documented.
 
 ### S2-M3 — Offline RAG

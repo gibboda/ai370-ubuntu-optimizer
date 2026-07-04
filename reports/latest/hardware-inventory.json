@@ -1,7 +1,7 @@
 {
   "tier": 1,
   "phase": "detect-hardware",
-  "timestamp": "2026-07-03T23:54:47.787499Z",
+  "timestamp": "2026-07-04T11:29:49.291412Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",

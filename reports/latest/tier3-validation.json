@@ -1,7 +1,7 @@
 {
   "tier": 3,
   "status": "EXPERIMENTAL-PASS",
-  "timestamp": "2026-07-04T01:46:18.201411Z",
+  "timestamp": "2026-07-04T11:33:19.681835Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
@@ -9,7 +9,7 @@
   "acceptance": {
     "npu_module_loaded": true,
     "device_nodes_present": true,
-    "xrt_available": true,
+    "xrt_available": false,
     "onnx_runtime_present": true,
     "npu_ep_visible": false,
     "npu_smoke_executed": true
