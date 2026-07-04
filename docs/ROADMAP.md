@@ -8,7 +8,7 @@
 
 ## Roadmap Review Status
 
-**Last reviewed:** 2026-06-27
+**Last reviewed:** 2026-07-04
 
 This repository contains `docs/ROADMAP.md` as the canonical roadmap file. References to `Roadmap.md`, `ROADMAP.md`, or `roadmap.md` should resolve to this document unless a future repository-level roadmap is intentionally added.
 
@@ -27,16 +27,16 @@ Roadmap stages are the preferred user-facing names. Legacy `tierN` commands rema
 | Roadmap stage | Preferred command group | Legacy tier alias | Status | Command gate |
 | --- | --- | --- | --- | --- |
 | S1 — Hardware Detection & System Optimization | Stage 1 — Core Platform | Tier 1 | Implemented | `./ai370-optimize.sh stage1` followed by `./ai370-optimize.sh stage1-validate` |
-| S2 — Local AI Runtime & AI Optimization Software | Stage 2 Runtime / Stage 2 NPU / Stage 2 RAG | Tier 2 / Tier 3 / Tier 4 staged | Ongoing | `stage2`, `stage2-validate`, `stage2-runtime`, `stage2-runtime-validate`, `stage2-npu`, `stage2-npu-validate`; `stage2-rag` placeholder |
-| S3 — Offline Image Generation | Stage 3 Image Generation | Tier 5 | Ongoing | `stage3-image`, `comfyui-install`, `comfyui-bench` |
-| S4 — Offline VS Code & Code Assistant | Stage 4 Development Assistant | Future extension | Planning | Not yet available |
+| S2 — AI Runtime Foundation | Stage 2 Runtime / Stage 2 NPU / Stage 2 RAG | Tier 2 / Tier 3 / Tier 4 staged | Ongoing | `stage2`, `stage2-validate`, `stage2-runtime`, `stage2-runtime-validate`, `stage2-npu`, `stage2-npu-validate`; `stage2-rag` placeholder |
+| S3 — Offline AI Frameworks & Applications | Stage 3 Offline Applications / Image Generation | Tier 5 plus future app workflows | Ongoing | `stage3-image`, `comfyui-install`, `comfyui-bench`; future `stage3-whisper`, `stage3-code`, and `stage3-apps-validate` |
+| S4 — Offline Development Environment | Stage 4 Development Assistant | Future extension | Planning | Not yet available |
 | S5 — Maintenance & Lifecycle Management | Stage 5 Lifecycle Operations | Future maintenance workflow | Planning | Not yet available |
 
 ---
 
 ## Alignment Report
 
-The roadmap aligns with the target offline AI workstation architecture after this review. Ubuntu 26.04 LTS, hardware detection, hardware optimization, CPU, memory, storage, AMD GPU, ROCm, Vulkan, AMDXDNA/NPU, and driver validation are represented in Stage 1. Ollama, local LLM management, offline model storage, coding/chat/embedding models, and RAG are represented in Stage 2 and Stage 4. VS Code, Continue, Aider, Git, GitHub CLI, ShellCheck, Ruff, Black, and Pyright are represented in Stage 4. ComfyUI, FLUX, SDXL, VAEs, LoRAs, ControlNet, and upscalers are represented in Stage 3. Installation, validation, startup, shutdown, status, benchmarking, health checks, backup, restore, updating, and workflow launching are represented across Stages 1 through 5.
+The roadmap aligns with the target offline AI workstation architecture after this review and now preserves a four-layer implementation boundary: Stage 1 for hardware optimization, Stage 2 for AI runtime enablement, Stage 3 for offline AI applications/frameworks, and Stage 4 for the offline development environment. Ubuntu 26.04 LTS, hardware detection, hardware optimization, CPU, memory, storage, AMD GPU, ROCm, Vulkan, AMDXDNA/NPU, and driver validation are represented in Stage 1. Ollama, local LLM management, offline model storage, coding/chat/embedding models, and RAG are represented in Stage 2 and Stage 4. VS Code, Continue, Aider, Git, GitHub CLI, ShellCheck, Ruff, Black, and Pyright are represented in Stage 4. ComfyUI, FLUX, SDXL, VAEs, LoRAs, ControlNet, and upscalers are represented in Stage 3. Installation, validation, startup, shutdown, status, benchmarking, health checks, backup, restore, updating, and workflow launching are represented across Stages 1 through 5.
 
 ### Rename Table
 
@@ -47,38 +47,40 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 
 ### Dependency Review
 
-* Stage order is correct: foundation first, AI runtimes second, image generation third, offline development fourth, lifecycle management fifth.
-* S2 depends on S1 validation because ROCm, Vulkan, AMDXDNA/NPU, Python, Git, and storage readiness must be known before installing AI runtimes.
-* S3 depends on S2 because ComfyUI requires the local Python/GPU runtime baseline and model storage conventions.
+* Stage order is correct: hardware foundation first, AI runtime foundation second, offline AI applications/frameworks third, offline development environment fourth, lifecycle management fifth.
+* S2 depends on S1 validation because ROCm, Vulkan, AMDXDNA/NPU, Python, Git, and storage readiness must be known before installing AI runtimes, XRT/Ryzen AI packages, ONNX Runtime, and provider diagnostics.
+* S3 depends on S2 because Ollama application workloads, embeddings/RAG, Whisper, ComfyUI, and local model workflows require the runtime baseline, provider diagnostics, and model storage conventions.
 * S4 depends on S2 because Continue, Aider, and local coding models require Ollama, Git, Python, and offline model storage.
 * S5 depends on S1 through S4 because backup, restore, update, regression, and release workflows must cover all installed components.
 * Missing dependencies corrected in-place: VS Code tooling now depends on Git/GitHub CLI/Python validation; image-generation models now depend on ComfyUI installation and offline model storage; backup/restore now depends on model manifests and configuration inventories.
 
 ### Gap Analysis
 
-* Missing S2 work: none currently identified; S2-M5 now provides offline model manifest/storage validation and chat/coding/embedding model classification.
-* Missing S3 work: ComfyUI installer, model installer, VAEs, LoRAs, ControlNet, upscalers, workflow subdirectories, startup/shutdown/status/health automation.
+* Missing S2 work: explicit XRT/Ryzen AI package installer and CPU/GPU/NPU comparison benchmark automation remain planned; S2-M5 provides offline model manifest/storage validation and chat/coding/embedding model classification.
+* Missing S3 work: ComfyUI installer, model installer, VAEs, LoRAs, ControlNet, upscalers, workflow subdirectories, startup/shutdown/status/health automation, Whisper installation/validation, local text-generation validation, embedding validation, and model-management validation.
 * Missing S4 work: VS Code installer, Continue config, Aider installation, Git/GitHub CLI validation, ShellCheck/Ruff/Black/Pyright setup, offline code-generation and code-review validation.
 * Missing S5 work: update, health-check, backup, restore, regression, release, status, startup/shutdown, workflow-launching, and documentation-maintenance automation.
 
 ### New GitHub Issues To Create
 
-1. Implement S2-M2 ONNX Runtime, Vitis AI EP, NPU benchmark, and NPU status documentation.
+1. Implement S2-M2 explicit XRT/Ryzen AI package installation automation.
 2. Keep S2-M5 model manifest entries current as required offline models are selected.
 3. Implement S3-M1 ComfyUI installer with validation.
 4. Implement S3-M2 ComfyUI model installer for FLUX, SDXL, VAEs, LoRAs, ControlNet, and upscalers.
 5. Add S3-M3 workflow library subdirectories and launchable workflow definitions.
 6. Add S3-M5 ComfyUI startup, shutdown, status, and health-check automation.
-7. Implement S4-M1 VS Code, Git, GitHub CLI, and Python development tool validation.
-8. Implement S4-M2 Continue and Aider offline configuration.
-9. Implement S4-M3 offline coding model installation and manifest entries.
-10. Implement S4-M6 ShellCheck, Ruff, Black, Pyright, and offline review reports.
-11. Implement S5 maintenance commands for update, health, backup, restore, regression, status, workflow launch, and release validation.
+7. Implement S3-M6 offline text-generation, embedding, RAG, Whisper, and model-management validators.
+8. Implement S4-M1 VS Code, Git, GitHub CLI, and Python development tool validation.
+9. Implement S4-M2 Continue and Aider offline configuration.
+10. Implement S4-M3 offline coding model installation and manifest entries.
+11. Implement S4-M6 ShellCheck, Ruff, Black, Pyright, and offline review reports.
+12. Implement S5 maintenance commands for update, health, backup, restore, regression, status, workflow launch, and release validation.
 
 ### Additional Milestones Added
 
 * S2-M5 — Offline Model Storage & Model Management
 * S3-M5 — Image Generation Automation
+* S3-M6 — Offline Text, Embedding, RAG, and Whisper Workloads
 * S4-M8 — Offline Development Toolchain Validation
 * S5-M8 — Runtime Operations Automation
 
@@ -338,17 +340,17 @@ reports/latest/tier1-summary.md
 
 ---
 
-## S2 — Local AI Runtime & AI Optimization Software
+## S2 — AI Runtime Foundation
 
 **Status:** Ongoing
 
 ### Objective
 
-Install all local AI infrastructure for offline LLM, chat, embedding, RAG, and acceleration workloads.
+Prepare and validate the Ryzen AI software stack and local acceleration runtimes before application-level offline AI workloads are installed. This stage is limited to runtime enablement, diagnostics, provider validation, and hardware-backed inference benchmarks so CPU, GPU, and NPU paths can be validated independently from applications.
 
 ### Deliverables
 
-* PyTorch ROCm, llama.cpp, Ollama, Open WebUI, ONNX Runtime, Ryzen AI/Vitis AI validation, AnythingLLM, embedding models, local model manifests, and benchmark reports.
+* PyTorch ROCm, llama.cpp, Ollama service runtime, Open WebUI runtime dependency checks, XRT, Ryzen AI Software package validation, ONNX Runtime, Vitis AI Execution Provider, XDNA2 runtime validation, CPU/GPU/NPU benchmark comparisons, diagnostics, runtime verification scripts, offline model storage policy, and benchmark reports.
 
 ### Dependencies
 
@@ -357,19 +359,19 @@ Install all local AI infrastructure for offline LLM, chat, embedding, RAG, and a
 
 ### Validation
 
-* Validate Ollama, chat models, coding models, embedding models, local model storage, Python, Git, ROCm, and AMDXDNA/NPU before and after installation.
+* Validate Python, Git, ROCm, Vulkan context, Ollama runtime availability, ONNX Runtime providers, Vitis AI Execution Provider, XRT/Ryzen AI package state, XDNA2/NPU visibility, local model storage, and CPU/GPU/NPU benchmark paths before application workloads depend on them.
 
 ### Exit Criteria
 
-* Ollama, llama.cpp, PyTorch ROCm, offline model storage, offline chat models, offline coding models, offline embedding models, and RAG validation complete or produce actionable diagnostics.
+* PyTorch ROCm, llama.cpp, Ollama runtime service, ONNX Runtime, Vitis AI EP detection, XRT/Ryzen AI package checks, XDNA2/NPU diagnostics, offline model storage, runtime documentation, and CPU/GPU/NPU comparison benchmarks complete or produce actionable diagnostics.
 
-### S2-M1 — AI Runtime
+### S2-M1 — Base AI Runtime
 
 **Status:** Implemented
 
 #### Description
 
-Install PyTorch ROCm, llama.cpp, Ollama, and Open WebUI.
+Install PyTorch ROCm, llama.cpp, Ollama, and Open WebUI runtime prerequisites. Application-specific chat, coding, RAG, and image workflows are validated in Stage 3 and Stage 4; this milestone only establishes reusable local inference services and GPU-capable Python/runtime foundations.
 
 #### Deliverables
 
@@ -401,18 +403,19 @@ scripts/130-install-open-webui.sh
 * [x] Deliverables implemented.
 * [x] Acceptance criteria documented.
 
-### S2-M2 — AMD AI Stack
+### S2-M2 — Ryzen AI NPU Runtime Stack
 
-**Status:** Implemented
+**Status:** Ongoing
 
 #### Description
 
-Install ONNX Runtime, detect Ryzen AI Software, detect Vitis AI Execution Provider, document NPU status, and benchmark NPU acceleration.
+Install or validate XRT, Ryzen AI Software packages, ONNX Runtime, Vitis AI Execution Provider availability, XDNA2 runtime visibility, NPU diagnostics, NPU benchmark testing, and runtime documentation.
 
 #### Deliverables
 
 ```text
 scripts/200-install-onnxruntime.sh
+scripts/205-install-xrt-ryzen-ai.sh
 scripts/210-check-ryzen-ai-software.sh
 scripts/220-check-vitis-ai-ep.sh
 scripts/230-benchmark-npu.sh
@@ -422,16 +425,18 @@ docs/npu-status.md
 Implemented / Planned:
 
 * Implemented: `scripts/200-install-onnxruntime.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `docs/npu-status.md`
-* Planned / Not present: none
+* Planned / Not present: `scripts/205-install-xrt-ryzen-ai.sh` for explicit XRT and Ryzen AI package installation automation
 
 #### Acceptance Criteria
 
-* ONNX Runtime and Vitis AI EP status are validated.
-* AMDXDNA/NPU benchmark report is generated or hardware/software limitations are documented.
+* XRT, Ryzen AI Software package state, ONNX Runtime, and Vitis AI EP status are validated.
+* XDNA2/AMDXDNA NPU benchmark report is generated or hardware/software limitations are documented.
+* Runtime diagnostics explain whether failures are caused by firmware, kernel driver, XRT/Ryzen AI packages, ONNX Runtime providers, or model compatibility.
 
 #### Validation Steps
 
 ```text
+./scripts/205-install-xrt-ryzen-ai.sh
 ./scripts/210-check-ryzen-ai-software.sh
 ```
 
@@ -439,7 +444,7 @@ Implemented / Planned:
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [x] All deliverables implemented.
+* [ ] Explicit XRT/Ryzen AI package installer implemented.
 * [x] NPU benchmark generated or actionable diagnostics documented.
 
 ### S2-M3 — Offline RAG
@@ -479,18 +484,19 @@ scripts/320-validate-rag.sh
 * [ ] Deliverables implemented beyond placeholder echo scripts.
 * [ ] Validation documented with actionable pass/fail results.
 
-### S2-M4 — AI Runtime Benchmark
+### S2-M4 — AI Runtime Benchmark & Diagnostics
 
-**Status:** Implemented
+**Status:** Ongoing
 
 #### Description
 
-Benchmark LLM, embedding, and inference performance and generate reports.
+Benchmark LLM, embedding, ONNX Runtime, ROCm/GPU, CPU, and NPU inference paths where available, then generate runtime diagnostics and comparison reports.
 
 #### Deliverables
 
 ```text
 scripts/140-benchmark-llm.sh
+scripts/240-compare-cpu-gpu-npu.sh
 reports/latest/llm-validation.json
 reports/latest/llm-validation.md
 ```
@@ -498,20 +504,23 @@ reports/latest/llm-validation.md
 #### Acceptance Criteria
 
 * Ollama and local LLM benchmark paths are validated.
-* Benchmark report is generated.
+* CPU vs GPU vs NPU comparison benchmarks are captured when providers are available.
+* Benchmark report is generated with actionable diagnostics for unavailable providers.
 
 #### Validation Steps
 
 ```text
 ./scripts/140-benchmark-llm.sh
+./scripts/240-compare-cpu-gpu-npu.sh
 ```
 
 #### Completion Checklist
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [x] Deliverables implemented.
-* [x] Benchmark report generated.
+* [ ] All benchmark deliverables implemented.
+* [ ] CPU/GPU/NPU comparison script implemented.
+* [x] Existing LLM benchmark report generated.
 
 ### S2-M5 — Offline Model Storage & Model Management
 
@@ -557,30 +566,30 @@ Implemented / Planned:
 
 ---
 
-## S3 — Offline Image Generation
+## S3 — Offline AI Frameworks & Applications
 
 **Status:** Ongoing
 
 ### Objective
 
-Install a complete offline image-generation environment.
+Install and validate complete offline AI applications and frameworks without cloud dependency, including local chat/text generation, embeddings, RAG, Whisper transcription, image generation, code models used by applications, model management, and workflow validation.
 
 ### Deliverables
 
-* ComfyUI, FLUX, Stable Diffusion XL, VAEs, LoRAs, ControlNet, upscalers, workflow library, benchmark reports, and service automation.
+* Ollama application workloads, local text-generation inference, local embedding models, model management, Whisper, ComfyUI, FLUX, Stable Diffusion XL, VAEs, LoRAs, ControlNet, upscalers, offline code models, workflow library, benchmark reports, and service automation.
 
 ### Dependencies
 
-* S2-M1 AI runtime completed or equivalent Python/GPU baseline available.
+* S2 runtime foundation exit criteria complete, including Python/GPU/NPU provider diagnostics.
 * S2-M5 offline model storage conventions available before large model installation.
 
 ### Validation
 
-* Validate GPU, Vulkan, ROCm, Python, ComfyUI, model paths, workflows, and benchmark output before and after installation.
+* Validate Ollama application workloads, local text-generation inference, embeddings, RAG, Whisper, GPU, Vulkan, ROCm, Python, ComfyUI, image/code model paths, workflows, and benchmark output before and after installation.
 
 ### Exit Criteria
 
-* ComfyUI starts offline, required image models are available locally, workflows launch, and benchmark/report artifacts are generated.
+* Offline chat/text-generation, embeddings/RAG, Whisper, image generation, code model application workflows, and model-management validation complete with no cloud dependency.
 
 ### S3-M1 — ComfyUI
 
@@ -764,19 +773,62 @@ reports/latest/comfyui-health.md
 * [ ] Deliverables implemented.
 * [ ] Automation validated.
 
+### S3-M6 — Offline Text, Embedding, RAG, and Whisper Workloads
+
+**Status:** Planned
+
+#### Description
+
+Validate application-level offline AI workloads that sit above the Stage 2 runtime foundation, including Ollama chat/text generation, local text-generation inference, local embedding models, document/RAG workflows, Whisper speech transcription, and model-management behavior.
+
+#### Deliverables
+
+```text
+scripts/440-validate-offline-text-generation.sh
+scripts/441-validate-offline-embeddings.sh
+scripts/442-install-whisper.sh
+scripts/443-validate-whisper.sh
+scripts/444-validate-model-management.sh
+reports/latest/offline-ai-applications.md
+```
+
+#### Acceptance Criteria
+
+* Local text-generation inference runs without cloud services.
+* Local embedding and RAG workflows use offline model storage only.
+* Whisper installs and validates with local models.
+* Model-management checks cover chat, embedding, image, audio, and code model categories.
+* Performance benchmarking and workflow validation produce actionable reports.
+
+#### Validation Steps
+
+```text
+./scripts/440-validate-offline-text-generation.sh
+./scripts/441-validate-offline-embeddings.sh
+./scripts/443-validate-whisper.sh
+./scripts/444-validate-model-management.sh
+```
+
+#### Completion Checklist
+
+* [x] Stable ID assigned.
+* [x] Unique descriptive name assigned.
+* [ ] Deliverables implemented.
+* [ ] Offline application workflow validation generated.
+
 ---
 
-## S4 — Offline VS Code & Code Assistant
+## S4 — Offline Development Environment
 
 **Status:** Planning
 
 ### Objective
 
-Build a completely offline software engineering environment.
+Build a completely offline software engineering environment, including editor installation, local AI coding assistance, repository automation, testing, linting, formatting, documentation generation, release automation, and developer validation.
 
 ### Deliverables
 
-* Visual Studio Code, Continue, Aider, Git, GitHub CLI, ShellCheck, Ruff, Black, Pyright, offline coding models, repository indexing, code generation, code review, and benchmark reports.
+* Visual Studio Code, Continue, Aider, local code completion, local code chat, local documentation indexing, Git, GitHub CLI, repository automation, testing tools, ShellCheck, Ruff, Black, Pyright, documentation generation, release automation hooks, offline coding models, repository indexing, code generation, code review, and benchmark reports.
 
 ### Dependencies
 
@@ -909,7 +961,7 @@ reports/latest/repository-intelligence.md
 
 #### Acceptance Criteria
 
-* Repository indexing runs offline.
+* Repository indexing and local documentation indexing run offline.
 * Semantic search uses local embedding models.
 
 #### Validation Steps
@@ -931,18 +983,19 @@ reports/latest/repository-intelligence.md
 
 #### Description
 
-Validate code completion, code generation, refactoring, documentation, and unit-test generation using local models.
+Validate local code completion, local code chat, code generation, refactoring, documentation generation, and unit-test generation using local models.
 
 #### Deliverables
 
 ```text
 scripts/550-validate-code-generation.sh
+scripts/551-generate-offline-docs.sh
 reports/latest/offline-code-generation.md
 ```
 
 #### Acceptance Criteria
 
-* Code-generation tests run offline.
+* Code-completion, code-chat, code-generation, documentation-generation, and unit-test generation tests run offline.
 * Results include latency and quality notes for local coding models.
 
 #### Validation Steps
@@ -1029,7 +1082,7 @@ docs/vscode-offline-code-assistant.md
 
 #### Description
 
-Install and validate Git, GitHub CLI, ShellCheck, Ruff, Black, and Pyright for offline development workflows.
+Install and validate Git, GitHub CLI, testing tools, ShellCheck, Ruff, Black, Pyright, formatting hooks, linting profiles, documentation generation, repository automation, and release automation prerequisites for offline development workflows.
 
 #### Deliverables
 
@@ -1042,7 +1095,7 @@ reports/latest/dev-toolchain-validation.md
 
 #### Acceptance Criteria
 
-* Git, GitHub CLI, ShellCheck, Ruff, Black, and Pyright are installed or documented as offline prerequisites.
+* Git, GitHub CLI, testing tools, ShellCheck, Ruff, Black, Pyright, documentation generation tools, and release automation prerequisites are installed or documented as offline prerequisites.
 * Tool versions and offline usability are captured in a report.
 
 #### Validation Steps
@@ -1378,19 +1431,20 @@ reports/latest/ai370-health.md
 | S1-M3 | Kernel & Driver Validation | Implemented | Kernel, GPU, and NPU validation scripts are present. |
 | S1-M4 | System Optimization | Implemented | CPU, memory, and storage scripts emit current `tier1-*` optimization reports. |
 | S1-M5 | Validation & Benchmarking | Implemented | Benchmark and validation scripts emit current `tier1-local-ai-benchmark.*` and summary reports. |
-| S2 | Local AI Runtime & AI Optimization Software | Ongoing | Runtime/RAG work exists; AMD AI stack and model storage remain incomplete. |
-| S2-M1 | AI Runtime | Implemented | Required runtime scripts are present. |
-| S2-M2 | AMD AI Stack | Ongoing | Ryzen AI check exists; ONNX Runtime, Vitis AI EP, NPU benchmark, and docs are missing. |
+| S2 | AI Runtime Foundation | Ongoing | Base runtimes, ONNX Runtime checks, Vitis AI EP detection, NPU benchmark, and model storage exist; explicit XRT/Ryzen AI package installer and CPU/GPU/NPU comparison benchmark remain planned. |
+| S2-M1 | Base AI Runtime | Implemented | Required runtime scripts are present. |
+| S2-M2 | Ryzen AI NPU Runtime Stack | Ongoing | ONNX Runtime, Ryzen AI checks, Vitis AI EP detection, NPU benchmark, and docs are present; explicit XRT/Ryzen AI package installer remains planned. |
 | S2-M3 | Offline RAG | Staged / Placeholder | RAG script filenames are present, but the scripts and `stage2-rag` / `tier4` command are placeholders rather than complete installers/validators. |
-| S2-M4 | AI Runtime Benchmark | Implemented | LLM benchmark script and reports are present. |
-| S2-M5 | Offline Model Storage & Model Management | Missing | Required by target architecture but not represented before this review. |
-| S3 | Offline Image Generation | Ongoing | Benchmark/workflow artifacts exist; installer, models, docs, and automation remain incomplete. |
+| S2-M4 | AI Runtime Benchmark & Diagnostics | Ongoing | LLM benchmark script and reports are present; CPU/GPU/NPU comparison benchmark remains planned. |
+| S2-M5 | Offline Model Storage & Model Management | Implemented | Manifest, storage policy, validation script, and reports are present. |
+| S3 | Offline AI Frameworks & Applications | Ongoing | Benchmark/workflow artifacts exist; text-generation, embedding/RAG, Whisper, installer, models, docs, and automation remain incomplete. |
 | S3-M1 | ComfyUI | Planning | Required installer is represented but not present. |
 | S3-M2 | Model Installation | Planning | Required model installer is represented but not present. |
 | S3-M3 | Workflow Library | Ongoing | Some workflow files exist; required directories remain missing. |
 | S3-M4 | Image Generation Benchmark | Ongoing | Benchmark script exists; documentation remains missing. |
 | S3-M5 | Image Generation Automation | Missing | Required startup/shutdown/status/health/workflow automation was not represented before this review. |
-| S4 | Offline VS Code & Code Assistant | Planning | Work is planned; implementation files are not present. |
+| S3-M6 | Offline Text, Embedding, RAG, and Whisper Workloads | Planned | Required offline application workload validators are represented, but implementation files are not present. |
+| S4 | Offline Development Environment | Planning | Work is planned; implementation files are not present. |
 | S4-M1 | VS Code Installation | Planning | Planned installer/config are not present. |
 | S4-M2 | Local AI Extension | Planning | Continue/Aider configs are not present. |
 | S4-M3 | Coding Models | Planning | Coding model installer/manifest are not present. |
