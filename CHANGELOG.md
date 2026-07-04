@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.2.0...v0.3.0) (2026-07-04)
+
+
+### Features
+
+* add LICENSE file with full text of GNU General Public License v3 ([#84](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/84)) ([c619d51](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/c619d5127efb1827cf97817308859f71c14f347b))
+
 ## [0.2.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.1.0...v0.2.0) (2026-07-04)
 
 
