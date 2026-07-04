@@ -46,8 +46,9 @@ Scope narrows the area of change:
 | `npu` | `scripts/40-ryzen-ai-npu.sh` |
 | `acceleration` | `scripts/50-60-*` |
 | `comfyui` | `scripts/70-comfyui-workflows.sh` |
-| `configs` | `configs/` |
+| `config` | `configs/` |
 | `workflows` | `workflows/` |
+| `vscode` | VS Code workspace settings |
 | `release` | Release tooling and CI |
 | `tier` | Tier 1 hardware/firmware detection and validation scripts |
 | `tier1` | Tier 1 hardware/firmware detection and validation scripts |
