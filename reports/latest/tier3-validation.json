@@ -1,20 +1,29 @@
 {
   "tier": 3,
   "status": "EXPERIMENTAL-PASS",
-  "timestamp": "2026-06-12T19:53:38-05:00",
+  "timestamp": "2026-07-04T01:46:18.201411Z",
   "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
   "acceptance": {
-    "npu_module_loaded": false,
+    "npu_module_loaded": true,
     "device_nodes_present": true,
-    "xrt_available": false,
+    "xrt_available": true,
     "onnx_runtime_present": true,
     "npu_ep_visible": false,
     "npu_smoke_executed": true
   },
   "artifacts": {
-    "npu_status": "reports/latest/npu-acceleration-status.txt",
+    "npu_status": "reports/latest/npu-acceleration-status.json",
+    "vitis_ai_ep_status": "reports/latest/vitis-ai-ep-status.json",
+    "npu_benchmark": "reports/latest/npu-benchmark.json",
     "xrt_status": "reports/latest/xrt-status.txt",
     "tier3_validation": "reports/latest/tier3-validation.json"
   },
-  "note": "Tier 3 (NPU / Vitis AI EP / Ryzen AI) is EXPERIMENTAL. Requires staged .deb artifacts under .ai370-ai/amd-artifacts for full driver install. See README and 40-ryzen-ai-npu.sh."
+  "source_reports": {
+    "vitis_ai_ep_status": "WARN",
+    "npu_benchmark_status": "WARN"
+  },
+  "note": "Stage 2 NPU validation is experimental until Vitis AI / Ryzen AI execution providers and NPU benchmarks pass. Stage AMD artifacts under .ai370-ai/amd-artifacts before running amd-accel-install."
 }

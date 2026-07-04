@@ -74,6 +74,7 @@ Stage 2 scripts (S2 deliverables across runtime + NPU):
   scripts/210-check-ryzen-ai-software.sh
   scripts/220-check-vitis-ai-ep.sh
   scripts/230-benchmark-npu.sh
+  scripts/240-write-tier3-validation.sh
 
 Backward-compatible aliases:
   inventory, audit        -> hardware (Stage 1 / legacy Tier 1)
@@ -311,6 +312,7 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     ;;
 
   stage2-runtime|tier2)
@@ -335,6 +337,7 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     ;;
 
   stage2-npu-validate|tier3-validate)
@@ -342,6 +345,7 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     ;;
 
   stage2-rag|tier4)

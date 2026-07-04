@@ -25,6 +25,17 @@ require_runtime_persistence() {
   fi
 }
 
+npu_kernel_module_loaded() {
+  # Prefer /proc/modules: lsmod | grep -Eiq is unreliable on some hosts (grep -qi + pipe).
+  if [[ -r /proc/modules ]] && grep -Eq '^(amdxdna|xrt|xdna)[[:space:]]' /proc/modules 2>/dev/null; then
+    return 0
+  fi
+  if lsmod 2>/dev/null | grep -Eq '^(amdxdna|xrt|xdna)[[:space:]]'; then
+    return 0
+  fi
+  return 1
+}
+
 detect_npu_stack() {
   mkdir -p "$LATEST_DIR"
 
@@ -36,7 +47,7 @@ detect_npu_stack() {
   local device_nodes=""
   local ort_providers="unknown"
 
-  if lsmod 2>/dev/null | grep -Eiq 'amdxdna|xrt|xdna'; then
+  if npu_kernel_module_loaded; then
     module_state="loaded"
   fi
 
