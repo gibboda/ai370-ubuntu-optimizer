@@ -85,6 +85,7 @@ jobs:
             workflows
             vscode
             release
+            main
             tier
             tier1
             tier2
@@ -104,7 +105,7 @@ jobs:
         with:
           script: |
             const allowedTypes = ['feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci', 'perf'];
-            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'workflows', 'vscode', 'release', 'tier', 'tier1', 'tier2'];
+            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'workflows', 'vscode', 'release', 'main', 'tier', 'tier1', 'tier2'];
             const commitSubjectPattern = new RegExp(
               `^(?:${allowedTypes.join('|')})(?:\\((?:${allowedScopes.join('|')})\\))?!?: [A-Za-z].+$`
             );
