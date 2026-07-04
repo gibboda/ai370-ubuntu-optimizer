@@ -6,6 +6,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.1.0...v0.2.0) (2026-07-04)
+
+
+### Features
+
+* **acceleration:** Add offline AI hardware roadmap ([#14](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/14)) ([1d6b41b](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/1d6b41b22d66ef508b2242cc5250b935cee47106))
+* add additional parameters for Snyk organization configuration ([#38](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/38)) ([8ebd8cc](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/8ebd8ccc7cb5a2f2de2f2f210cbb9b344f75e1df))
+* add amd-acceleration-env.sh script and tracked files backup ([#74](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/74)) ([60f267b](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/60f267b675a888eded106bae21d9e6f6e5735204))
+* Add comprehensive roadmap for AI370 Ubuntu Optimizer project ([#34](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/34)) ([e776c52](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/e776c52e78b9599b6b96ae747c3747a69d273a5e))
+* add Grok Agent tasks for commit + push + PR automation ([#21](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/21)) ([828d96b](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/828d96bf2505f29f7b159e883ccf67be172f8b84))
+* Add opt-in AMD acceleration install phase and ComfyUI GPU-launch integration ([#17](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/17)) ([fc41794](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/fc417942a62e34a3eb564138f3ed8f2769f28152))
+* add stage 1 firmware validation ([#39](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/39)) ([cceb5bc](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/cceb5bc51a450fef083cd1d9efc20e8136b7c92a))
+* Add status reports for AnythingLLM, RAG validation, and embedding models ([#68](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/68)) ([bd4450d](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/bd4450ddba87abe94b8e5d083bb7cc6a9745ac5a))
+* Add Tier 1 hardware and firmware detection scripts and reports ([#22](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/22)) ([2f94b77](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/2f94b7743d64bfdfe410cca65ee69d2c2fc86100))
+* add tier 2 status reports for llama.cpp, ollama, Open WebUI, and PyTorch ROCm installations ([#61](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/61)) ([860df1d](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/860df1dbb51d861fb977b9ed44a6f4c4e4a8ad4c))
+* **baseline:** Add hardware-driven baseline phases ([#13](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/13)) ([81cf604](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/81cf604c60c1334e3224eab21a2847429a69833e))
+* **comfyui:** Add production ComfyUI workflows and benchmarking harness ([#8](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/8)) ([994119f](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/994119f733779df3f0ba04a66265391d4438f3ca))
+* **config:** Add TASK_PROPOSALS.md with actionable typo/bug/docs/test tasks ([#7](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/7)) ([33c0186](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/33c01869beb9eec8ceddfb020d74cb574f7031f5))
+* disable automatic organization selection in Snyk settings ([#37](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/37)) ([96e4578](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/96e4578e19196e0ae25e91e55d464602b6a170c0))
+* Grok Build Plan Mode (Architecture and Planning) ([#24](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/24)) ([27c83d1](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/27c83d1811349cde3b7bb6e0bcdd746714249bee))
+* Introduce roadmap 'stage' commands with legacy 'tier' aliases and update docs ([#54](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/54)) ([f7d705a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/f7d705ad2d9a2621848b18596d3beff4cd443930))
+* Open WebUI - use dedicated venv and fail-safe venv bootstrap ([#60](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/60)) ([d7edf0a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/d7edf0a6ca4c837231b3a2e0b30852919f9e97f9))
+* Reorganize optimizer into nine-phase audit-first flow; add firmware, tuning, LLM, and ComfyUI benchmark phases ([#15](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/15)) ([4538cd6](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/4538cd6777fe9453e18c9bbbf1b7a7d669951048))
+* short description ([#31](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/31)) ([9f77258](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/9f772585ec177a8cf7e6d70ac5065acbb566bbe0))
+* **tier2:** Implement AMD AI Stack S2-M2 ([#51](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/51)) ([9dea789](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/9dea7892a580e27d5384b0fa2551a2955cbb6813))
+* **tier2:** S2-M5 Add offline model manifest, storage policy, validator script and integrate into Tier 2 ([#52](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/52)) ([4d7ccf2](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/4d7ccf209f0dcb95fd862713d6c37f579840876f))
+* **tier:** Add Tier 1 validation and benchmarking scripts for AI370 ([#26](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/26)) ([efd9226](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/efd92268fbb310f9fbe36e3e0ec10898829ebc47))
+* **tier:** Add Tier 2 AI runtime installers/validators and integrate into ai370-optimize flow ([#30](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/30)) ([799b852](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/799b8524057eef5557e110e6e95489edbb51aeee))
+* **tier:** Add Tier‑1 kernel/NPU validation and hardware detection library; integrate into workflow ([#27](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/27)) ([b4c0126](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/b4c0126b113b6c1578da4f0036951ccf6d261ff9))
+* update configuration paths and add new environment files for improved structure ([#33](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/33)) ([28b5c32](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/28b5c329c1df8e04a245c8c53c472e0a14ff41b2))
+* update firmware and hardware reports with accurate BIOS, system information, and timestamps; enhance validation summary ([#67](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/67)) ([3367811](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/3367811bbe84a7a07584b8fda8db9180e666dc28))
+* update firmware and hardware reports with accurate timestamps and system information; add ONNX Runtime status ([#66](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/66)) ([f63a666](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/f63a666b829cc62618f8cc895d2db4206fcda1cb))
+* update hardware and firmware detection scripts and reports with accurate BIOS and system information ([#64](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/64)) ([35791db](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/35791db23c13f2c2e5d3dd45113a559448eb98a0))
+* update timestamps and model information across various reports for consistency ([#70](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/70)) ([c41be1f](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/c41be1fb23939d0df630223c7c4d983e625b48a2))
+* update timestamps and model information for reports ([#71](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/71)) ([55ccc5f](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/55ccc5fa7c3779c5519cd2b3c7c8fd910aaf6911))
+* **vscode:** add settings and extensions recommendations for improved development experience ([#32](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/32)) ([687af53](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/687af536ad356fda7b65b1a8835d6da7e7b185de))
+* **workflows:** Add ShellCheck workflow for shell script linting ([#29](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/29)) ([e69e521](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/e69e521224adb5e59c6d7ad47b197e36fb3883ab))
+
+
+### Bug Fixes
+
+* Add final validation script for project checks ([#4](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/4)) ([0614acb](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/0614acbaa4453d17943dbb641a07e5220fd1534d))
+* Allow offline AI benchmark to reuse a prepared venv ([#18](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/18)) ([076cf21](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/076cf21df7d8e548dbf5146917d4d07e495862ba))
+* **comfyui:** Fix all command to include ComfyUI workflow stage ([#9](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/9)) ([d4a8bac](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/d4a8bacf831f40ae900c5119d07b537f3b739e89))
+* disable auto-select organization in Snyk settings and update README for test conventions ([#42](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/42)) ([865059c](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/865059c1c48936d6ad426b39ae2bb179d0b933a3))
+* Normalize machine gate JSON timestamp to ISO 8601 Z format ([eab3cc6](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/eab3cc65852170ebed020256c6d677a2fa2761ae))
+* remove the file ([6e89b22](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/6e89b22b889a96e1a904fc1636d0833c275e2249))
+* **tier2:** Tier2 PyTorch installer purge pip cache and use nightly wheels for Python 3.14+ ([#56](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/56)) ([859be68](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/859be68d82f1e8fb9c5b3d5bcc5f4a9f7205a2a7))
+* tolerate missing onnxruntime in npu validation ([#16](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/16)) ([1e0745e](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/1e0745e8aea87147ab071b200cc1a12cb059e757))
+* tolerate missing optional PyTorch companion wheels ([#55](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/55)) ([2ef5301](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/2ef5301c8c49671cd26ade9254f8551c8e6498eb))
+* Update firmware and hardware reports with new timestamps and validation statuses ([#72](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/72)) ([26bdace](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/26bdace19840fe25c120679a2e98267022b5c15f))
+* Update README with canonical roadmap and sync changes ([#47](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/47)) ([c1cec90](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/c1cec90342f82c1b89cb8cbb8f26f69e2c30bba6))
+* update timestamps and correct storage summary in reports ([#63](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/63)) ([b9fcd6e](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/b9fcd6e6c6a370b95437fab19904992931174de1))
+* update timestamps and model modification times in tier 1 and tier 2 reports ([#65](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/65)) ([95df504](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/95df50460794d8ab6572bdf141514cfdbbd17877))
+* update timestamps in firmware and hardware reports to reflect latest data ([#58](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/58)) ([147e21b](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/147e21b2b20b7346cf74a419c271cf1dd1b4515b))
+
 ## [Unreleased]
 
 ### Added
