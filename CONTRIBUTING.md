@@ -2,20 +2,24 @@
 
 ## Commit message format
 
-This project uses **[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)**.
-Every PR title (which becomes the squash-merge commit message, with GitHub appending ` (#PR)` on merge) **must** follow this format:
+This project uses
+**[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)**.
+Every PR title (which becomes the squash-merge commit message, with GitHub
+appending `(#PR)` on merge) **must** follow this format:
 
-```
+```text
 type(scope): Subject
 ```
 
 The subject must begin with a letter and describe the change concisely.
-Commit subjects pushed to a PR should follow the same convention so the branch history and final squash-merge commit stay consistent. CI enforces this for multi-commit PRs; single-commit PRs rely on title lint.
+Commit subjects pushed to a PR should follow the same convention so the branch
+history and final squash-merge commit stay consistent. CI enforces this for
+multi-commit PRs; single-commit PRs rely on title lint.
 
 ### Types
 
 | Type | When to use |
-|---|---|
+| --- | --- |
 | `feat` | A new feature or capability |
 | `fix` | A bug fix |
 | `chore` | Maintenance, dependency updates, tooling |
@@ -25,14 +29,15 @@ Commit subjects pushed to a PR should follow the same convention so the branch h
 | `ci` | CI/CD workflow changes |
 | `perf` | Performance improvement |
 
-Breaking changes must append `!` after the type/scope, e.g. `feat!: Remove legacy profile`.
+Breaking changes must append `!` after the type/scope, e.g. `feat!: Remove
+legacy profile`.
 
 ### Scopes (optional)
 
 Scope narrows the area of change:
 
 | Scope | Area |
-|---|---|
+| --- | --- |
 | `audit` | `scripts/01-hardware-audit.sh` |
 | `baseline` | Baseline inventory/plan/validate flow |
 | `amd` | `scripts/10-amd-baseline.sh` |
@@ -50,7 +55,7 @@ Scope narrows the area of change:
 
 ### Examples
 
-```
+```text
 feat(comfyui): Add SDXL LoRA workflow template
 fix(rocm): Correct iGPU device path detection
 chore: Bump stefanzweifel/git-auto-commit-action to v5.1
@@ -66,7 +71,7 @@ Apply exactly **one** bump label to every PR so the release workflow knows which
 part of the version number to increment:
 
 | Label | Meaning | Example |
-|---|---|---|
+| --- | --- | --- |
 | `bump:patch` | Backwards-compatible fix (default) | Bug fix, doc update |
 | `bump:minor` | New backwards-compatible feature | New script or workflow |
 | `bump:major` | Breaking change | Removed flag, incompatible profile change |
@@ -83,8 +88,10 @@ All scripts in this repository follow these conventions:
 - Shebang: `#!/usr/bin/env bash`
 - License header: `# SPDX-License-Identifier: GPL-3.0-only`
 - Safety flags: `set -euo pipefail`
-- Log format: `echo "[INFO] ..."` / `echo "[ERROR] ..."` (no bare echo for user messages)
-- Accept positional arguments: `PROFILE="${1:-ai370}"`, `MODE="${2:-safe}"`, `PERSISTENCE="${3:-runtime}"`
+- Log format: `echo "[INFO] ..."` / `echo "[ERROR] ..."` (no bare echo for user
+  messages)
+- Accept positional arguments: `PROFILE="${1:-ai370}"`, `MODE="${2:-safe}"`,
+  `PERSISTENCE="${3:-runtime}"`
 - Wrap main logic in a `main()` function and call `main "$@"` at the end
 
 ## Workflow
@@ -93,7 +100,9 @@ All scripts in this repository follow these conventions:
 2. Make your changes following the shell script standards above.
 3. Open a PR with a title that follows the Conventional Commits format.
 4. Apply the appropriate `bump:*` label.
-5. CI will validate the PR title automatically and reject commit subjects that do not follow the same convention on multi-commit PRs.
+5. CI will validate the PR title automatically and reject commit subjects that
+   do not follow the same convention on multi-commit PRs.
 6. Once merged, release-drafter updates the draft release notes.
-7. When a GitHub Release is published, the `release.yml` workflow bumps `VERSION`
+7. When a GitHub Release is published, the `release.yml` workflow bumps
+   `VERSION`
    and finalises `CHANGELOG.md` automatically.
