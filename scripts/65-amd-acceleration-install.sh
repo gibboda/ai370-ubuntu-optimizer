@@ -43,6 +43,8 @@ load_config() {
   local env_rocm_install_mode="${ROCM_INSTALL_MODE:-}"
   local env_ryzen_ai_artifact_glob="${RYZEN_AI_ARTIFACT_GLOB:-}"
   local env_xrt_deb_globs="${XRT_DEB_GLOBS:-}"
+  local env_xrt_ubuntu_versions="${XRT_UBUNTU_VERSIONS:-}"
+  local env_xrt_deb_globs_mode="${XRT_DEB_GLOBS_MODE:-}"
 
   # shellcheck source=/dev/null
   source "$CONFIG_FILE"
@@ -55,6 +57,8 @@ load_config() {
   [[ -n "$env_rocm_install_mode" ]] && ROCM_INSTALL_MODE="$env_rocm_install_mode"
   [[ -n "$env_ryzen_ai_artifact_glob" ]] && RYZEN_AI_ARTIFACT_GLOB="$env_ryzen_ai_artifact_glob"
   [[ -n "$env_xrt_deb_globs" ]] && XRT_DEB_GLOBS="$env_xrt_deb_globs"
+  [[ -n "$env_xrt_ubuntu_versions" ]] && XRT_UBUNTU_VERSIONS="$env_xrt_ubuntu_versions"
+  [[ -n "$env_xrt_deb_globs_mode" ]] && XRT_DEB_GLOBS_MODE="$env_xrt_deb_globs_mode"
 
   AMD_ARTIFACT_ROOT="$(resolve_project_path "${AMD_ARTIFACT_ROOT:-.ai370-ai/amd-artifacts}")"
   RYZEN_AI_INSTALL_ROOT="$(resolve_project_path "${RYZEN_AI_INSTALL_ROOT:-.ai370-ai/ryzen-ai}")"
@@ -63,7 +67,21 @@ load_config() {
   : "${ROCM_PACKAGES:=rocm rocm-hip-runtime rocm-hip-sdk rocm-ml-sdk rocm-opencl-sdk amdgpu-lib}"
   : "${ROCM_INSTALL_MODE:=online}"
   : "${RYZEN_AI_ARTIFACT_GLOB:=ryzen_ai-*.tgz}"
-  : "${XRT_DEB_GLOBS:=xrt_*_26.04-amd64-base.deb xrt_*_26.04-amd64-base-dev.deb xrt_*_26.04-amd64-npu.deb xrt_*_26.04-amd64-xrt.deb xrt_plugin.*_26.04-amd64-amdxdna.deb xrt_plugin.*_ubuntu26.04-x86_64-amdxdna.deb}"
+  # Empty means auto (host + previous LTS + staged-deb discovery).
+  : "${XRT_UBUNTU_VERSIONS:=}"
+  : "${XRT_DEB_GLOBS_MODE:=auto}"
+  XRT_DEB_GLOBS_OVERRIDE="${XRT_DEB_GLOBS:-}"
+  XRT_DEB_GLOBS=""
+  XRT_DEB_MATCH_SOURCE="none"
+  XRT_DEB_MATCH_UBUNTU_VERSION=""
+  XRT_UBUNTU_VERSIONS_SOURCE="auto"
+  XRT_HOST_UBUNTU_VERSION=""
+  if [[ -r /etc/os-release ]]; then
+    # shellcheck source=/dev/null
+    . /etc/os-release
+    XRT_HOST_UBUNTU_VERSION="${VERSION_ID:-}"
+  fi
+  resolve_xrt_deb_globs || true
 }
 
 require_acknowledgement() {
@@ -155,6 +173,171 @@ find_first_match() {
   find "$root" -maxdepth 5 -type f -name "$pattern" 2>/dev/null | sort | head -n 1
 }
 
+previous_ubuntu_lts() {
+  local ver="${1:-}"
+  local major
+  if [[ "$ver" =~ ^([0-9]+)\.04$ ]] && [[ "${BASH_REMATCH[1]}" -ge 4 ]]; then
+    major="${BASH_REMATCH[1]}"
+    printf '%s.04\n' "$((major - 2))"
+  fi
+}
+
+discover_ubuntu_versions_from_artifacts() {
+  local root="${1:-$AMD_ARTIFACT_ROOT}"
+  local base
+  [[ -d "$root" ]] || return 0
+  while IFS= read -r -d '' base; do
+    base="$(basename "$base")"
+    if [[ "$base" =~ _([0-9]+\.[0-9]+)-amd64 ]]; then
+      printf '%s\n' "${BASH_REMATCH[1]}"
+    elif [[ "$base" =~ _ubuntu([0-9]+\.[0-9]+)- ]]; then
+      printf '%s\n' "${BASH_REMATCH[1]}"
+    fi
+  done < <(find "$root" -maxdepth 5 -type f \( -name 'xrt_*.deb' -o -name 'xrt_plugin*.deb' \) -print0 2>/dev/null) \
+    | sort -u
+}
+
+build_xrt_ubuntu_version_preference() {
+  local host="${XRT_HOST_UBUNTU_VERSION:-}"
+  local v prev
+  local -a ordered=() seen=()
+
+  append_unique() {
+    local candidate="$1" existing
+    [[ -n "$candidate" ]] || return 0
+    for existing in "${seen[@]+"${seen[@]}"}"; do
+      [[ "$existing" == "$candidate" ]] && return 0
+    done
+    seen+=("$candidate")
+    ordered+=("$candidate")
+  }
+
+  # Caller owns XRT_UBUNTU_VERSIONS_SOURCE (this may run in a subshell).
+  if [[ -n "${XRT_UBUNTU_VERSIONS// /}" ]]; then
+    # shellcheck disable=SC2206
+    for v in ${XRT_UBUNTU_VERSIONS}; do
+      append_unique "$v"
+    done
+  else
+    append_unique "$host"
+    prev="$(previous_ubuntu_lts "$host" || true)"
+    append_unique "$prev"
+    while IFS= read -r v; do
+      append_unique "$v"
+    done < <(discover_ubuntu_versions_from_artifacts "$AMD_ARTIFACT_ROOT" | sort -V -r)
+  fi
+
+  if [[ ${#ordered[@]} -eq 0 ]]; then
+    return 1
+  fi
+  printf '%s\n' "${ordered[*]}"
+  return 0
+}
+
+xrt_globs_for_ubuntu_version() {
+  local v="$1"
+  printf '%s' \
+    "xrt_*_${v}-amd64-base.deb " \
+    "xrt_*_${v}-amd64-base-dev.deb " \
+    "xrt_*_${v}-amd64-npu.deb " \
+    "xrt_*_${v}-amd64-xrt.deb " \
+    "xrt_plugin.*_${v}-amd64-amdxdna.deb " \
+    "xrt_plugin.*_ubuntu${v}-x86_64-amdxdna.deb"
+}
+
+list_matching_debs_for_globs() {
+  local globs="$1"
+  local glob deb
+  local -a found=()
+  [[ -n "$globs" ]] || return 0
+  for glob in $globs; do
+    deb="$(find_first_match "$AMD_ARTIFACT_ROOT" "$glob")"
+    if [[ -n "$deb" ]]; then
+      found+=("$deb")
+    fi
+  done
+  if [[ ${#found[@]} -gt 0 ]]; then
+    printf '%s\n' "${found[@]}"
+  fi
+}
+
+# Prefer host/auto-discovered Ubuntu tags (or explicit pin), then override.
+resolve_xrt_deb_globs() {
+  local mode="${XRT_DEB_GLOBS_MODE:-auto}"
+  local override="${XRT_DEB_GLOBS_OVERRIDE:-}"
+  local ver globs matches preference
+  local -a versions=()
+
+  XRT_DEB_MATCH_SOURCE="none"
+  XRT_DEB_MATCH_UBUNTU_VERSION=""
+  XRT_DEB_GLOBS=""
+  XRT_UBUNTU_VERSIONS_SOURCE="${XRT_UBUNTU_VERSIONS_SOURCE:-auto}"
+
+  if [[ "$mode" == "override" ]]; then
+    if [[ -z "$override" ]]; then
+      echo "[ERROR] XRT_DEB_GLOBS_MODE=override requires XRT_DEB_GLOBS to be set."
+      return 1
+    fi
+    XRT_DEB_GLOBS="$override"
+    matches="$(list_matching_debs_for_globs "$XRT_DEB_GLOBS" || true)"
+    if [[ -n "$matches" ]]; then
+      XRT_DEB_MATCH_SOURCE="override"
+      echo "[INFO] Using XRT_DEB_GLOBS override (mode=override)."
+      return 0
+    fi
+    return 1
+  fi
+
+  if [[ -n "${XRT_UBUNTU_VERSIONS// /}" ]]; then
+    XRT_UBUNTU_VERSIONS_SOURCE="explicit"
+  else
+    XRT_UBUNTU_VERSIONS_SOURCE="auto"
+  fi
+  preference="$(build_xrt_ubuntu_version_preference || true)"
+  # shellcheck disable=SC2206
+  versions=(${preference:-})
+  XRT_UBUNTU_VERSIONS="${versions[*]}"
+
+  if [[ ${#versions[@]} -eq 0 ]]; then
+    echo "[INFO] No Ubuntu version preference available (empty host id and no staged version-tagged XRT debs)."
+  else
+    echo "[INFO] XRT deb version preference (${XRT_UBUNTU_VERSIONS_SOURCE}): ${versions[*]} (host Ubuntu: ${XRT_HOST_UBUNTU_VERSION:-unknown})"
+  fi
+
+  for ver in "${versions[@]+"${versions[@]}"}"; do
+    [[ -n "$ver" ]] || continue
+    globs="$(xrt_globs_for_ubuntu_version "$ver")"
+    matches="$(list_matching_debs_for_globs "$globs" || true)"
+    if [[ -n "$matches" ]]; then
+      XRT_DEB_GLOBS="$globs"
+      XRT_DEB_MATCH_SOURCE="ubuntu-${ver}"
+      XRT_DEB_MATCH_UBUNTU_VERSION="$ver"
+      if [[ -n "${XRT_HOST_UBUNTU_VERSION:-}" && "$ver" != "$XRT_HOST_UBUNTU_VERSION" ]]; then
+        echo "[WARN] Host is Ubuntu ${XRT_HOST_UBUNTU_VERSION}; using staged XRT debs tagged for Ubuntu ${ver} (version fallback)."
+      else
+        echo "[INFO] Matched staged XRT debs for Ubuntu ${ver}."
+      fi
+      return 0
+    fi
+    echo "[INFO] No staged XRT debs matched Ubuntu ${ver} filename patterns."
+  done
+
+  if [[ -n "$override" ]]; then
+    echo "[INFO] No version-tagged XRT debs matched; trying XRT_DEB_GLOBS override."
+    XRT_DEB_GLOBS="$override"
+    matches="$(list_matching_debs_for_globs "$XRT_DEB_GLOBS" || true)"
+    if [[ -n "$matches" ]]; then
+      XRT_DEB_MATCH_SOURCE="override"
+      echo "[INFO] Matched staged XRT debs via XRT_DEB_GLOBS override."
+      return 0
+    fi
+  fi
+
+  XRT_DEB_GLOBS=""
+  XRT_DEB_MATCH_SOURCE="none"
+  return 1
+}
+
 print_artifact_inventory() {
   echo "[INFO] AMD artifact root: $AMD_ARTIFACT_ROOT"
   if [[ ! -d "$AMD_ARTIFACT_ROOT" ]]; then
@@ -175,13 +358,17 @@ print_artifact_inventory() {
 print_xrt_staging_help() {
   cat <<EOF_XRT_HELP
 [ERROR] Stage the Ryzen AI Linux NPU driver .deb files before rerunning this phase.
-[ERROR] Expected Ubuntu 26.04 package names resemble:
-[ERROR]   xrt_<version>_26.04-amd64-base.deb
-[ERROR]   xrt_<version>_26.04-amd64-base-dev.deb
-[ERROR]   xrt_<version>_26.04-amd64-npu.deb
-[ERROR]   xrt_plugin.<version>_26.04-amd64-amdxdna.deb
-[ERROR] Source-built XDNA driver package names such as xrt_<version>_26.04-amd64-xrt.deb
-[ERROR] and xrt_plugin.<version>_ubuntu26.04-x86_64-amdxdna.deb are also accepted.
+[ERROR] Selection order (auto mode): host Ubuntu VERSION_ID, previous LTS,
+[ERROR] version tags discovered in staged deb names (newest first), then optional
+[ERROR] XRT_DEB_GLOBS override; otherwise fail. Pin with XRT_UBUNTU_VERSIONS if needed.
+[ERROR] Preferred package names resemble:
+[ERROR]   xrt_<version>_<ubuntu>-amd64-base.deb
+[ERROR]   xrt_<version>_<ubuntu>-amd64-base-dev.deb
+[ERROR]   xrt_<version>_<ubuntu>-amd64-npu.deb
+[ERROR]   xrt_plugin.<version>_<ubuntu>-amd64-amdxdna.deb
+[ERROR] Source-built XDNA names such as xrt_<version>_<ubuntu>-amd64-xrt.deb and
+[ERROR] xrt_plugin.<version>_ubuntu<ubuntu>-x86_64-amdxdna.deb are also accepted.
+[ERROR] Override: export XRT_DEB_GLOBS='custom*.deb' or XRT_DEB_GLOBS_MODE=override.
 [ERROR] If your files are elsewhere, rerun with AMD_ARTIFACT_ROOT=/absolute/path/to/amd-artifacts.
 [ERROR] If AMD supplied a compressed driver bundle, extract it under AMD_ARTIFACT_ROOT first.
 EOF_XRT_HELP
@@ -191,6 +378,18 @@ install_xrt_debs() {
   local glob deb found missing
   found="false"
   missing="false"
+
+  if [[ -z "${XRT_DEB_GLOBS:-}" ]]; then
+    resolve_xrt_deb_globs || true
+  fi
+
+  if [[ -z "${XRT_DEB_GLOBS:-}" ]]; then
+    echo "[ERROR] No XRT/NPU deb packages were found under: $AMD_ARTIFACT_ROOT"
+    print_artifact_inventory
+    print_xrt_staging_help
+    return 1
+  fi
+
   for glob in $XRT_DEB_GLOBS; do
     deb="$(find_first_match "$AMD_ARTIFACT_ROOT" "$glob")"
     if [[ -n "$deb" ]]; then

@@ -41,6 +41,8 @@ load_config() {
   local env_ryzen_ai_install_root="${RYZEN_AI_INSTALL_ROOT:-}"
   local env_ryzen_ai_artifact_glob="${RYZEN_AI_ARTIFACT_GLOB:-}"
   local env_xrt_deb_globs="${XRT_DEB_GLOBS:-}"
+  local env_xrt_ubuntu_versions="${XRT_UBUNTU_VERSIONS:-}"
+  local env_xrt_deb_globs_mode="${XRT_DEB_GLOBS_MODE:-}"
 
   # shellcheck source=/dev/null
   source "$CONFIG_FILE"
@@ -49,11 +51,109 @@ load_config() {
   [[ -n "$env_ryzen_ai_install_root" ]] && RYZEN_AI_INSTALL_ROOT="$env_ryzen_ai_install_root"
   [[ -n "$env_ryzen_ai_artifact_glob" ]] && RYZEN_AI_ARTIFACT_GLOB="$env_ryzen_ai_artifact_glob"
   [[ -n "$env_xrt_deb_globs" ]] && XRT_DEB_GLOBS="$env_xrt_deb_globs"
+  [[ -n "$env_xrt_ubuntu_versions" ]] && XRT_UBUNTU_VERSIONS="$env_xrt_ubuntu_versions"
+  [[ -n "$env_xrt_deb_globs_mode" ]] && XRT_DEB_GLOBS_MODE="$env_xrt_deb_globs_mode"
 
   AMD_ARTIFACT_ROOT="$(resolve_project_path "${AMD_ARTIFACT_ROOT:-.ai370-ai/amd-artifacts}")"
   RYZEN_AI_INSTALL_ROOT="$(resolve_project_path "${RYZEN_AI_INSTALL_ROOT:-.ai370-ai/ryzen-ai}")"
   : "${RYZEN_AI_ARTIFACT_GLOB:=ryzen_ai-*.tgz}"
-  : "${XRT_DEB_GLOBS:=xrt_*_26.04-amd64-base.deb xrt_*_26.04-amd64-base-dev.deb xrt_*_26.04-amd64-npu.deb xrt_*_26.04-amd64-xrt.deb xrt_plugin.*_26.04-amd64-amdxdna.deb xrt_plugin.*_ubuntu26.04-x86_64-amdxdna.deb}"
+  # Empty XRT_UBUNTU_VERSIONS means auto (host + previous LTS + staged-deb discovery).
+  : "${XRT_UBUNTU_VERSIONS:=}"
+  : "${XRT_DEB_GLOBS_MODE:=auto}"
+  # Keep any config/env globs as the post-version override; resolve_xrt_deb_globs
+  # picks the active set (version match, then override, else empty).
+  XRT_DEB_GLOBS_OVERRIDE="${XRT_DEB_GLOBS:-}"
+  XRT_DEB_GLOBS=""
+  XRT_DEB_MATCH_SOURCE="none"
+  XRT_DEB_MATCH_UBUNTU_VERSION=""
+  XRT_UBUNTU_VERSIONS_SOURCE="auto"
+  XRT_HOST_UBUNTU_VERSION="$(detect_host_ubuntu_version || true)"
+  resolve_xrt_deb_globs || true
+}
+
+detect_host_ubuntu_version() {
+  if [[ -r /etc/os-release ]]; then
+    # shellcheck source=/dev/null
+    . /etc/os-release
+    printf '%s\n' "${VERSION_ID:-}"
+  fi
+}
+
+# Ubuntu LTS is YY.04 every two years (26.04 -> 24.04 -> 22.04). No fixed list.
+previous_ubuntu_lts() {
+  local ver="${1:-}"
+  local major
+  if [[ "$ver" =~ ^([0-9]+)\.04$ ]] && [[ "${BASH_REMATCH[1]}" -ge 4 ]]; then
+    major="${BASH_REMATCH[1]}"
+    printf '%s.04\n' "$((major - 2))"
+  fi
+}
+
+# Parse Ubuntu VERSION_ID-style tags from staged XRT/NPU deb basenames.
+discover_ubuntu_versions_from_artifacts() {
+  local root="${1:-$AMD_ARTIFACT_ROOT}"
+  local base
+  [[ -d "$root" ]] || return 0
+  while IFS= read -r -d '' base; do
+    base="$(basename "$base")"
+    if [[ "$base" =~ _([0-9]+\.[0-9]+)-amd64 ]]; then
+      printf '%s\n' "${BASH_REMATCH[1]}"
+    elif [[ "$base" =~ _ubuntu([0-9]+\.[0-9]+)- ]]; then
+      printf '%s\n' "${BASH_REMATCH[1]}"
+    fi
+  done < <(find "$root" -maxdepth 5 -type f \( -name 'xrt_*.deb' -o -name 'xrt_plugin*.deb' \) -print0 2>/dev/null) \
+    | sort -u
+}
+
+# Build try-order: explicit pin, else host -> previous LTS -> discovered newest-first.
+build_xrt_ubuntu_version_preference() {
+  local host="${XRT_HOST_UBUNTU_VERSION:-}"
+  local v prev
+  local -a ordered=() seen=()
+
+  append_unique() {
+    local candidate="$1" existing
+    [[ -n "$candidate" ]] || return 0
+    for existing in "${seen[@]+"${seen[@]}"}"; do
+      [[ "$existing" == "$candidate" ]] && return 0
+    done
+    seen+=("$candidate")
+    ordered+=("$candidate")
+  }
+
+  # Note: this function may run in a command-substitution subshell; the caller
+  # owns XRT_UBUNTU_VERSIONS_SOURCE. Branch only on whether a pin is set.
+  if [[ -n "${XRT_UBUNTU_VERSIONS// /}" ]]; then
+    # shellcheck disable=SC2206
+    for v in ${XRT_UBUNTU_VERSIONS}; do
+      append_unique "$v"
+    done
+  else
+    append_unique "$host"
+    prev="$(previous_ubuntu_lts "$host" || true)"
+    append_unique "$prev"
+    while IFS= read -r v; do
+      append_unique "$v"
+    done < <(discover_ubuntu_versions_from_artifacts "$AMD_ARTIFACT_ROOT" | sort -V -r)
+  fi
+
+  if [[ ${#ordered[@]} -eq 0 ]]; then
+    return 1
+  fi
+  printf '%s\n' "${ordered[*]}"
+  return 0
+}
+
+# Canonical AMD XRT/NPU filename patterns for a given Ubuntu VERSION_ID tag.
+xrt_globs_for_ubuntu_version() {
+  local v="$1"
+  printf '%s' \
+    "xrt_*_${v}-amd64-base.deb " \
+    "xrt_*_${v}-amd64-base-dev.deb " \
+    "xrt_*_${v}-amd64-npu.deb " \
+    "xrt_*_${v}-amd64-xrt.deb " \
+    "xrt_plugin.*_${v}-amd64-amdxdna.deb " \
+    "xrt_plugin.*_ubuntu${v}-x86_64-amdxdna.deb"
 }
 
 find_first_match() {
@@ -63,10 +163,12 @@ find_first_match() {
   find "$root" -maxdepth 5 -type f -name "$pattern" 2>/dev/null | sort | head -n 1
 }
 
-list_matching_debs() {
+list_matching_debs_for_globs() {
+  local globs="$1"
   local glob deb
   local -a found=()
-  for glob in $XRT_DEB_GLOBS; do
+  [[ -n "$globs" ]] || return 0
+  for glob in $globs; do
     deb="$(find_first_match "$AMD_ARTIFACT_ROOT" "$glob")"
     if [[ -n "$deb" ]]; then
       found+=("$deb")
@@ -77,16 +179,101 @@ list_matching_debs() {
   fi
 }
 
-# Report staged XRT-like debs that did not match configured globs (e.g. 24.04 on a 26.04 host).
+list_matching_debs() {
+  list_matching_debs_for_globs "${XRT_DEB_GLOBS:-}"
+}
+
+# Prefer host/auto-discovered Ubuntu tags (or explicit XRT_UBUNTU_VERSIONS), then
+# XRT_DEB_GLOBS override. Sets XRT_DEB_GLOBS / XRT_DEB_MATCH_* on success.
+resolve_xrt_deb_globs() {
+  local mode="${XRT_DEB_GLOBS_MODE:-auto}"
+  local override="${XRT_DEB_GLOBS_OVERRIDE:-}"
+  local ver globs matches preference
+  local -a versions=()
+
+  XRT_DEB_MATCH_SOURCE="none"
+  XRT_DEB_MATCH_UBUNTU_VERSION=""
+  XRT_DEB_GLOBS=""
+  XRT_UBUNTU_VERSIONS_SOURCE="${XRT_UBUNTU_VERSIONS_SOURCE:-auto}"
+
+  if [[ "$mode" == "override" ]]; then
+    if [[ -z "$override" ]]; then
+      echo "[ERROR] XRT_DEB_GLOBS_MODE=override requires XRT_DEB_GLOBS to be set."
+      return 1
+    fi
+    XRT_DEB_GLOBS="$override"
+    matches="$(list_matching_debs_for_globs "$XRT_DEB_GLOBS" || true)"
+    if [[ -n "$matches" ]]; then
+      XRT_DEB_MATCH_SOURCE="override"
+      echo "[INFO] Using XRT_DEB_GLOBS override (mode=override); matched $(printf '%s\n' "$matches" | grep -c . || true) package(s)."
+      return 0
+    fi
+    echo "[ERROR] XRT_DEB_GLOBS override matched no packages under $AMD_ARTIFACT_ROOT."
+    return 1
+  fi
+
+  if [[ -n "${XRT_UBUNTU_VERSIONS// /}" ]]; then
+    XRT_UBUNTU_VERSIONS_SOURCE="explicit"
+  else
+    XRT_UBUNTU_VERSIONS_SOURCE="auto"
+  fi
+  preference="$(build_xrt_ubuntu_version_preference || true)"
+  # shellcheck disable=SC2206
+  versions=(${preference:-})
+  # Reflect resolved preference for reports (auto may expand beyond config).
+  XRT_UBUNTU_VERSIONS="${versions[*]}"
+
+  if [[ ${#versions[@]} -eq 0 ]]; then
+    echo "[INFO] No Ubuntu version preference available (empty host id and no staged version-tagged XRT debs)."
+  else
+    echo "[INFO] XRT deb version preference (${XRT_UBUNTU_VERSIONS_SOURCE}): ${versions[*]} (host Ubuntu: ${XRT_HOST_UBUNTU_VERSION:-unknown})"
+  fi
+
+  for ver in "${versions[@]+"${versions[@]}"}"; do
+    [[ -n "$ver" ]] || continue
+    globs="$(xrt_globs_for_ubuntu_version "$ver")"
+    matches="$(list_matching_debs_for_globs "$globs" || true)"
+    if [[ -n "$matches" ]]; then
+      XRT_DEB_GLOBS="$globs"
+      XRT_DEB_MATCH_SOURCE="ubuntu-${ver}"
+      XRT_DEB_MATCH_UBUNTU_VERSION="$ver"
+      if [[ -n "${XRT_HOST_UBUNTU_VERSION:-}" && "$ver" != "$XRT_HOST_UBUNTU_VERSION" ]]; then
+        echo "[WARN] Host is Ubuntu ${XRT_HOST_UBUNTU_VERSION}; using staged XRT debs tagged for Ubuntu ${ver} (version fallback)."
+      else
+        echo "[INFO] Matched staged XRT debs for Ubuntu ${ver}."
+      fi
+      return 0
+    fi
+    echo "[INFO] No staged XRT debs matched Ubuntu ${ver} filename patterns."
+  done
+
+  if [[ -n "$override" ]]; then
+    echo "[INFO] No version-tagged XRT debs matched; trying XRT_DEB_GLOBS override."
+    XRT_DEB_GLOBS="$override"
+    matches="$(list_matching_debs_for_globs "$XRT_DEB_GLOBS" || true)"
+    if [[ -n "$matches" ]]; then
+      XRT_DEB_MATCH_SOURCE="override"
+      echo "[INFO] Matched staged XRT debs via XRT_DEB_GLOBS override."
+      return 0
+    fi
+    echo "[WARN] XRT_DEB_GLOBS override set but matched no files under $AMD_ARTIFACT_ROOT."
+  fi
+
+  XRT_DEB_GLOBS=""
+  XRT_DEB_MATCH_SOURCE="none"
+  return 1
+}
+
+# Report staged XRT-like debs that did not match the active resolved globs.
 list_unmatched_xrt_debs() {
-  local deb base matched=false glob
+  local deb matched=false configured_path
   local -a configured=()
   [[ -d "$AMD_ARTIFACT_ROOT" ]] || return 0
   mapfile -t configured < <(list_matching_debs || true)
   while IFS= read -r -d '' deb; do
     matched=false
-    for glob in "${configured[@]}"; do
-      if [[ "$deb" == "$glob" ]]; then
+    for configured_path in "${configured[@]+"${configured[@]}"}"; do
+      if [[ "$deb" == "$configured_path" ]]; then
         matched=true
         break
       fi
@@ -300,6 +487,13 @@ write_reports() {
   XRT_STATE="$XRT_STATE" RYZEN_AI_STATE="$RYZEN_AI_STATE" MODULE_STATE="$MODULE_STATE" \
   DEVICE_STATE="$DEVICE_STATE" STAGED_DEBS="$staged_debs" STAGED_RYZEN="$staged_ryzen" \
   ENV_SNIPPET="$ENV_SNIPPET" \
+  XRT_DEB_MATCH_SOURCE="${XRT_DEB_MATCH_SOURCE:-none}" \
+  XRT_DEB_MATCH_UBUNTU_VERSION="${XRT_DEB_MATCH_UBUNTU_VERSION:-}" \
+  XRT_HOST_UBUNTU_VERSION="${XRT_HOST_UBUNTU_VERSION:-}" \
+  XRT_UBUNTU_VERSIONS="${XRT_UBUNTU_VERSIONS:-}" \
+  XRT_UBUNTU_VERSIONS_SOURCE="${XRT_UBUNTU_VERSIONS_SOURCE:-auto}" \
+  XRT_DEB_GLOBS_MODE="${XRT_DEB_GLOBS_MODE:-auto}" \
+  XRT_DEB_GLOBS="${XRT_DEB_GLOBS:-}" \
   python3 - "$STATUS_JSON" "$SUMMARY_MD" <<'PY'
 import json
 import os
@@ -312,6 +506,10 @@ staged_debs = [line for line in os.environ.get("STAGED_DEBS", "").splitlines() i
 staged_ryzen = os.environ.get("STAGED_RYZEN", "") or None
 status = os.environ["STATUS"]
 detail = os.environ.get("DETAIL", "")
+match_source = os.environ.get("XRT_DEB_MATCH_SOURCE", "none")
+match_ubuntu = os.environ.get("XRT_DEB_MATCH_UBUNTU_VERSION") or None
+host_ubuntu = os.environ.get("XRT_HOST_UBUNTU_VERSION") or None
+ubuntu_versions = [v for v in os.environ.get("XRT_UBUNTU_VERSIONS", "").split() if v]
 
 data = {
     "tier": 2,
@@ -330,6 +528,15 @@ data = {
     "ryzen_ai_install_root": os.environ["RYZEN_AI_INSTALL_ROOT"],
     "staged_xrt_debs": staged_debs,
     "staged_ryzen_ai_archive": staged_ryzen,
+    "xrt_deb_selection": {
+        "mode": os.environ.get("XRT_DEB_GLOBS_MODE", "auto"),
+        "host_ubuntu_version": host_ubuntu,
+        "ubuntu_versions_source": os.environ.get("XRT_UBUNTU_VERSIONS_SOURCE", "auto"),
+        "ubuntu_versions_preference": ubuntu_versions,
+        "match_source": match_source,
+        "matched_ubuntu_version": match_ubuntu,
+        "active_globs": os.environ.get("XRT_DEB_GLOBS", ""),
+    },
     "runtime": {
         "xrt": os.environ["XRT_STATE"],
         "ryzen_ai": os.environ["RYZEN_AI_STATE"],
@@ -340,7 +547,8 @@ data = {
     "detail": detail,
     "policy": (
         "Installation requires --accept-amd-acceleration-risk. Without risk acceptance this "
-        "script only inventories staged AMD artifacts and existing XRT/Ryzen AI runtime state."
+        "script only inventories staged AMD artifacts and existing XRT/Ryzen AI runtime state. "
+        "XRT debs are selected by Ubuntu version preference (latest first), then XRT_DEB_GLOBS override."
     ),
 }
 status_path.write_text(json.dumps(data, indent=2) + "\n")
@@ -360,6 +568,15 @@ lines = [
     f"- Kernel module: {os.environ['MODULE_STATE']}",
     f"- Device node: {os.environ['DEVICE_STATE']}",
     "",
+    "## XRT deb selection",
+    "",
+    f"- Mode: {os.environ.get('XRT_DEB_GLOBS_MODE', 'auto')}",
+    f"- Host Ubuntu: {host_ubuntu or 'unknown'}",
+    f"- Version preference source: {os.environ.get('XRT_UBUNTU_VERSIONS_SOURCE', 'auto')}",
+    f"- Version preference: {', '.join(ubuntu_versions) or '(none)'}",
+    f"- Match source: {match_source}",
+    f"- Matched package Ubuntu tag: {match_ubuntu or 'none'}",
+    "",
     "## Artifacts",
     "",
     f"- Root: `{os.environ['AMD_ARTIFACT_ROOT']}`",
@@ -372,7 +589,11 @@ lines.extend([
     "",
     "## Next steps",
     "",
-    "- Stage Ubuntu 26.04 XRT/NPU `.deb` files under the artifact root (see `configs/amd-acceleration.env`).",
+    "- Stage XRT/NPU `.deb` files under the artifact root. Auto mode prefers the "
+    "host Ubuntu version, then the previous LTS, then tags discovered in staged "
+    f"filenames (resolved order: {', '.join(ubuntu_versions) or 'n/a'}).",
+    "- Optionally pin with `XRT_UBUNTU_VERSIONS`, set `XRT_DEB_GLOBS` as a last-resort "
+    "override, or use `XRT_DEB_GLOBS_MODE=override` for custom globs only.",
     "- Optionally stage `ryzen_ai-*.tgz` for the Ryzen AI software installer.",
     "- Re-run with `--accept-amd-acceleration-risk` to install staged packages:",
     "  `./ai370-optimize.sh stage2-npu --accept-amd-acceleration-risk`",
@@ -432,15 +653,20 @@ main() {
     unmatched_debs="$(list_unmatched_xrt_debs || true)"
     if install_xrt_debs; then
       xrt_ok="true"
+      echo "[INFO] XRT deb install used match source: ${XRT_DEB_MATCH_SOURCE} (Ubuntu tag: ${XRT_DEB_MATCH_UBUNTU_VERSION:-n/a})"
     else
       echo "[WARN] No matching XRT/NPU debs found under $AMD_ARTIFACT_ROOT"
-      echo "[WARN] Configured globs (Ubuntu 26.04): $XRT_DEB_GLOBS"
+      echo "[WARN] Tried Ubuntu versions: ${XRT_UBUNTU_VERSIONS} (mode=${XRT_DEB_GLOBS_MODE})"
+      if [[ -n "${XRT_DEB_GLOBS_OVERRIDE:-}" ]]; then
+        echo "[WARN] XRT_DEB_GLOBS override was also tried and did not match."
+      else
+        echo "[WARN] Set XRT_DEB_GLOBS to a custom pattern list as a last-resort override, or stage packages for: ${XRT_UBUNTU_VERSIONS}"
+      fi
       if [[ -n "$unmatched_debs" ]]; then
-        echo "[WARN] Found XRT-like debs that did not match globs (wrong Ubuntu codename in filename?):"
+        echo "[WARN] Found XRT-like debs that still did not match any preference/override:"
         printf '%s\n' "$unmatched_debs" | while IFS= read -r line; do
           [[ -n "$line" ]] && echo "[WARN]   $line"
         done
-        echo "[WARN] Either stage *_26.04-* packages or override XRT_DEB_GLOBS if intentionally using another release."
       fi
     fi
     # Capture status explicitly: when this function is used in `if`, bash
@@ -473,7 +699,7 @@ main() {
     elif [[ "$deb_count" -eq 0 ]]; then
       status="FAIL"
       action="install-failed-no-artifacts"
-      detail="Risk accepted but no XRT/NPU .deb packages matched under $AMD_ARTIFACT_ROOT (globs target Ubuntu 26.04). Stage packages per configs/amd-acceleration.env and docs/npu-status.md."
+      detail="Risk accepted but no XRT/NPU .deb packages matched under $AMD_ARTIFACT_ROOT after trying Ubuntu versions [${XRT_UBUNTU_VERSIONS}] and any XRT_DEB_GLOBS override. Stage packages per configs/amd-acceleration.env and docs/npu-status.md."
     else
       status="FAIL"
       action="install-failed"
