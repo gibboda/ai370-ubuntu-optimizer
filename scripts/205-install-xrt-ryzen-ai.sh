@@ -77,6 +77,59 @@ list_matching_debs() {
   fi
 }
 
+# Report staged XRT-like debs that did not match configured globs (e.g. 24.04 on a 26.04 host).
+list_unmatched_xrt_debs() {
+  local deb base matched=false glob
+  local -a configured=()
+  [[ -d "$AMD_ARTIFACT_ROOT" ]] || return 0
+  mapfile -t configured < <(list_matching_debs || true)
+  while IFS= read -r -d '' deb; do
+    matched=false
+    for glob in "${configured[@]}"; do
+      if [[ "$deb" == "$glob" ]]; then
+        matched=true
+        break
+      fi
+    done
+    if [[ "$matched" == "false" ]]; then
+      printf '%s\n' "$deb"
+    fi
+  done < <(find "$AMD_ARTIFACT_ROOT" -maxdepth 5 -type f \( -name 'xrt_*.deb' -o -name 'xrt_plugin*.deb' \) -print0 2>/dev/null | sort -z)
+}
+
+# True when the Ryzen AI venv looks fully installed (not a partial ensurepip failure).
+ryzen_ai_venv_usable() {
+  local root="${1:-$RYZEN_AI_INSTALL_ROOT/venv}"
+  local py="$root/bin/python"
+  [[ -x "$py" ]] || return 1
+  # Prefer the AMD package; fall back to onnxruntime_vitisai which the installer also drops.
+  if "$py" -c 'import ryzen_ai' >/dev/null 2>&1; then
+    return 0
+  fi
+  if "$py" -c 'import onnxruntime_vitisai' >/dev/null 2>&1; then
+    return 0
+  fi
+  # Last resort: site-packages tree present after a successful wheel install.
+  if compgen -G "$root/lib/python*/site-packages/ryzen_ai" >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
+# Prefer the real interpreter over uv/pyenv shims so AMD's `venv --copies` works.
+resolve_python312_bin_dir() {
+  local resolved
+  if ! command -v python3.12 >/dev/null 2>&1; then
+    return 1
+  fi
+  resolved="$(python3.12 -c 'import pathlib, sys; print(pathlib.Path(sys.executable).resolve().parent)' 2>/dev/null || true)"
+  if [[ -n "$resolved" && -x "$resolved/python3.12" ]]; then
+    printf '%s\n' "$resolved"
+    return 0
+  fi
+  printf '%s\n' "$(dirname "$(command -v python3.12)")"
+}
+
 detect_runtime_state() {
   XRT_STATE="missing"
   if command -v xrt-smi >/dev/null 2>&1; then
@@ -86,7 +139,7 @@ detect_runtime_state() {
   fi
 
   RYZEN_AI_STATE="missing"
-  if [[ -d "$RYZEN_AI_INSTALL_ROOT/venv" ]]; then
+  if ryzen_ai_venv_usable "$RYZEN_AI_INSTALL_ROOT/venv"; then
     RYZEN_AI_STATE="available"
   fi
 
@@ -148,27 +201,89 @@ install_xrt_debs() {
 }
 
 install_ryzen_ai_package() {
-  local archive workdir installer
+  local archive workdir installer installer_dir venv_path wheel_count rc py312_bin_dir
   archive="$(find_first_match "$AMD_ARTIFACT_ROOT" "$RYZEN_AI_ARTIFACT_GLOB")"
   if [[ -z "$archive" ]]; then
     echo "[WARN] No Ryzen AI archive matched '$RYZEN_AI_ARTIFACT_GLOB' under $AMD_ARTIFACT_ROOT."
     return 1
   fi
 
+  if ! command -v python3.12 >/dev/null 2>&1; then
+    echo "[ERROR] Ryzen AI 1.7.x requires python3.12 on PATH (system default may be newer)."
+    echo "[ERROR] Install Python 3.12 (e.g. deadsnakes, uv python install 3.12) and re-run."
+    return 1
+  fi
+
+  # AMD's installer runs `python3.12 -m venv --copies`. uv/pyenv shims often break
+  # under --copies; put the resolved real interpreter directory first on PATH.
+  py312_bin_dir="$(resolve_python312_bin_dir || true)"
+  if [[ -z "$py312_bin_dir" ]]; then
+    echo "[ERROR] Could not resolve a usable python3.12 binary."
+    return 1
+  fi
+
   mkdir -p "$RYZEN_AI_INSTALL_ROOT"
   workdir="$RYZEN_AI_INSTALL_ROOT/source"
+  venv_path="$RYZEN_AI_INSTALL_ROOT/venv"
+
+  # AMD installer refuses to overwrite an existing venv path; also drop partials.
+  if [[ -d "$venv_path" ]]; then
+    echo "[INFO] Removing previous Ryzen AI venv at $venv_path before reinstall."
+    rm -rf "$venv_path"
+  fi
+
   rm -rf "$workdir"
   mkdir -p "$workdir"
   echo "[INFO] Extracting Ryzen AI package: $archive"
-  tar -xzf "$archive" -C "$workdir" --strip-components=1 2>/dev/null || tar -xzf "$archive" -C "$workdir"
+  # Flat archives (./install_ryzen_ai.sh) extract without strip; nested vendor
+  # trees may need --strip-components=1.
+  if ! tar -xzf "$archive" -C "$workdir" 2>/dev/null; then
+    rm -rf "$workdir"
+    mkdir -p "$workdir"
+    tar -xzf "$archive" -C "$workdir" --strip-components=1
+  fi
   installer="$(find "$workdir" -maxdepth 3 -type f -name 'install_ryzen_ai.sh' | sort | head -n 1)"
   if [[ -z "$installer" ]]; then
     echo "[WARN] Ryzen AI installer was not found after extraction; leaving files at $workdir."
     return 1
   fi
   chmod +x "$installer"
-  echo "[INFO] Installing Ryzen AI software into: $RYZEN_AI_INSTALL_ROOT/venv"
-  "$installer" -a yes -p "$RYZEN_AI_INSTALL_ROOT/venv"
+  installer_dir="$(cd "$(dirname "$installer")" && pwd)"
+
+  # AMD's install_ryzen_ai.sh runs `ls *.whl` in the process CWD, not next to the
+  # script. Always invoke it from the directory that contains the wheels.
+  wheel_count="$(find "$installer_dir" -maxdepth 1 -type f -name '*.whl' 2>/dev/null | wc -l | tr -d ' ')"
+  if [[ "${wheel_count:-0}" -eq 0 ]]; then
+    echo "[ERROR] No .whl files next to install_ryzen_ai.sh in $installer_dir."
+    echo "[ERROR] Re-stage a complete ryzen_ai-*.tgz under $AMD_ARTIFACT_ROOT."
+    return 1
+  fi
+  echo "[INFO] Found $wheel_count wheel(s) beside installer in $installer_dir"
+  echo "[INFO] Installing Ryzen AI software into: $venv_path"
+  echo "[INFO] Using python3.12: $py312_bin_dir/python3.12 ($("$py312_bin_dir/python3.12" --version 2>&1))"
+
+  rc=0
+  (
+    export PATH="$py312_bin_dir:$PATH"
+    cd "$installer_dir"
+    ./install_ryzen_ai.sh -a yes -p "$venv_path"
+  ) || rc=$?
+  if [[ "$rc" -ne 0 ]]; then
+    echo "[ERROR] Ryzen AI installer exited with status $rc."
+    # Always remove incomplete venvs so status detection and re-runs stay honest.
+    if [[ -d "$venv_path" ]] && ! ryzen_ai_venv_usable "$venv_path"; then
+      echo "[INFO] Removing incomplete Ryzen AI venv at $venv_path."
+      rm -rf "$venv_path"
+    fi
+    return 1
+  fi
+  if ! ryzen_ai_venv_usable "$venv_path"; then
+    echo "[ERROR] Ryzen AI installer finished but venv is missing or incomplete at $venv_path."
+    if [[ -d "$venv_path" ]]; then
+      rm -rf "$venv_path"
+    fi
+    return 1
+  fi
   return 0
 }
 
@@ -313,14 +428,28 @@ main() {
     fi
   else
     action="install-attempted"
-    local xrt_ok="false" ryzen_ok="false"
+    local xrt_ok="false" ryzen_ok="false" unmatched_debs=""
+    unmatched_debs="$(list_unmatched_xrt_debs || true)"
     if install_xrt_debs; then
       xrt_ok="true"
     else
       echo "[WARN] No matching XRT/NPU debs found under $AMD_ARTIFACT_ROOT"
+      echo "[WARN] Configured globs (Ubuntu 26.04): $XRT_DEB_GLOBS"
+      if [[ -n "$unmatched_debs" ]]; then
+        echo "[WARN] Found XRT-like debs that did not match globs (wrong Ubuntu codename in filename?):"
+        printf '%s\n' "$unmatched_debs" | while IFS= read -r line; do
+          [[ -n "$line" ]] && echo "[WARN]   $line"
+        done
+        echo "[WARN] Either stage *_26.04-* packages or override XRT_DEB_GLOBS if intentionally using another release."
+      fi
     fi
+    # Capture status explicitly: when this function is used in `if`, bash
+    # suppresses set -e inside the function body, so we must not rely on a
+    # trailing unconditional return 0.
     if install_ryzen_ai_package; then
       ryzen_ok="true"
+    else
+      ryzen_ok="false"
     fi
     detect_runtime_state
     write_env_snippet
@@ -328,19 +457,23 @@ main() {
     staged_ryzen="$(find_first_match "$AMD_ARTIFACT_ROOT" "$RYZEN_AI_ARTIFACT_GLOB" || true)"
 
     if [[ "$xrt_ok" == "true" || "$XRT_STATE" == "available" ]]; then
-      if [[ "$ryzen_ok" == "true" || "$RYZEN_AI_STATE" == "available" ]]; then
+      if [[ "$RYZEN_AI_STATE" == "available" ]]; then
         status="PASS"
         action="installed-or-validated"
-        detail="XRT and/or Ryzen AI stack installed or already available after risk-accepted install path."
+        if [[ "$ryzen_ok" == "true" ]]; then
+          detail="XRT available and Ryzen AI software installed into $RYZEN_AI_INSTALL_ROOT/venv."
+        else
+          detail="XRT available and an existing usable Ryzen AI venv was validated at $RYZEN_AI_INSTALL_ROOT/venv."
+        fi
       else
         status="WARN"
         action="xrt-installed-ryzen-missing"
-        detail="XRT path succeeded or was already available, but Ryzen AI archive/installer was not completed. Stage ryzen_ai-*.tgz if needed."
+        detail="XRT path succeeded or was already available, but Ryzen AI install did not produce a usable venv at $RYZEN_AI_INSTALL_ROOT/venv. Ensure ryzen_ai-*.tgz is complete, a non-shim python3.12 is available (uv python install 3.12 works if PATH resolves the real binary), and re-run with --accept-amd-acceleration-risk."
       fi
     elif [[ "$deb_count" -eq 0 ]]; then
       status="FAIL"
       action="install-failed-no-artifacts"
-      detail="Risk accepted but no XRT/NPU .deb packages matched under $AMD_ARTIFACT_ROOT. Stage packages per configs/amd-acceleration.env and docs/npu-status.md."
+      detail="Risk accepted but no XRT/NPU .deb packages matched under $AMD_ARTIFACT_ROOT (globs target Ubuntu 26.04). Stage packages per configs/amd-acceleration.env and docs/npu-status.md."
     else
       status="FAIL"
       action="install-failed"

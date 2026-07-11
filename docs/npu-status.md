@@ -73,9 +73,13 @@ A fully enabled NPU stack should show these signals:
 | --- | --- | --- |
 | No AMDXDNA/XDNA kernel module | Kernel, firmware, or driver support missing | Re-run Tier 1 kernel/NPU detection and confirm platform firmware support. |
 | No NPU device node | Firmware, kernel driver, or permissions issue | Check `reports/latest/tier1-npu.md` and `reports/latest/npu-capabilities.json`. |
-| `xrt-smi` missing | Ryzen AI/XRT runtime tools are not installed or not in `PATH` | Stage/install the approved AMD Ryzen AI runtime tools, then rerun `scripts/210-check-ryzen-ai-software.sh`. |
+| `xrt-smi` missing | Ryzen AI/XRT runtime tools are not installed or not in `PATH` | Stage Ubuntu 26.04 XRT/NPU `.deb` files under `.ai370-ai/amd-artifacts/` (see `configs/amd-acceleration.env`), re-run with `--accept-amd-acceleration-risk`, then rerun `scripts/210-check-ryzen-ai-software.sh`. |
+| No matching XRT/NPU debs / staged `*_24.04-*` ignored | Configured globs expect `*_26.04-*` package names | Stage Ubuntu 26.04 debs, or override `XRT_DEB_GLOBS` if you intentionally use another release’s packages. |
+| `ERROR: No wheels found in the current directory` | AMD `install_ryzen_ai.sh` expects `.whl` files in the process CWD | Use current `scripts/205-install-xrt-ryzen-ai.sh` (runs the installer from the extract directory). Ensure `ryzen_ai-*.tgz` fully extracted under `.ai370-ai/ryzen-ai/source`. |
+| Ryzen AI install needs Python 3.12 | Ryzen AI 1.7.x wheels and installer hard-require `python3.12` | Install Python 3.12 on `PATH` (host default may be 3.13/3.14). `uv python install 3.12` is fine; the toolkit resolves the real binary so AMD’s `venv --copies` works. |
+| `ensurepip` / `venv --copies` fails | uv/pyenv **shim** copied into the venv breaks stdlib paths | Re-run with current `scripts/205-install-xrt-ryzen-ai.sh`, or put the real `.../cpython-3.12.*/bin` ahead of shims on `PATH`. |
 | ONNX Runtime missing | Python environment has not been prepared | Run `scripts/200-install-onnxruntime.sh`; in offline mode, stage wheels in `.ai370-ai/wheelhouse`. |
-| ONNX Runtime has only CPU provider | AMD execution-provider package is not installed or not compatible | Stage/install the matching Ryzen AI / Vitis AI ONNX Runtime provider package. |
+| ONNX Runtime has only CPU provider | AMD execution-provider package is not installed or not compatible | Stage/install the matching Ryzen AI / Vitis AI ONNX Runtime provider package (produced by the Ryzen AI software install into `.ai370-ai/ryzen-ai/venv`). |
 | AMD provider visible but benchmark fails | Provider/runtime/model compatibility issue | Inspect `reports/latest/vitis-ai-ep-status.md`, `reports/latest/npu-benchmark.md`, and `reports/latest/xrt-status.txt`. |
 
 ## Completion criteria

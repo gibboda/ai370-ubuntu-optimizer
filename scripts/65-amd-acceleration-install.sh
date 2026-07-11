@@ -219,28 +219,75 @@ install_xrt_debs() {
 }
 
 install_ryzen_ai_package() {
-  local archive workdir installer
+  local archive workdir installer installer_dir venv_path wheel_count rc py312_bin_dir
   archive="$(find_first_match "$AMD_ARTIFACT_ROOT" "$RYZEN_AI_ARTIFACT_GLOB")"
   if [[ -z "$archive" ]]; then
     echo "[WARN] No Ryzen AI software archive matched '$RYZEN_AI_ARTIFACT_GLOB' under $AMD_ARTIFACT_ROOT."
     echo "[WARN] NPU driver packages may still be installed, but Ryzen AI examples/providers will remain incomplete until staged."
-    return
+    return 1
   fi
+
+  if ! command -v python3.12 >/dev/null 2>&1; then
+    echo "[ERROR] Ryzen AI 1.7.x requires python3.12 on PATH."
+    echo "[ERROR] Install Python 3.12 and re-run."
+    return 1
+  fi
+
+  # Prefer real interpreter over uv/pyenv shims (AMD uses `venv --copies`).
+  py312_bin_dir="$(python3.12 -c 'import pathlib, sys; print(pathlib.Path(sys.executable).resolve().parent)' 2>/dev/null || dirname "$(command -v python3.12)")"
 
   mkdir -p "$RYZEN_AI_INSTALL_ROOT"
   workdir="$RYZEN_AI_INSTALL_ROOT/source"
+  venv_path="$RYZEN_AI_INSTALL_ROOT/venv"
+
+  if [[ -d "$venv_path" ]]; then
+    echo "[INFO] Removing previous Ryzen AI venv at $venv_path before reinstall."
+    rm -rf "$venv_path"
+  fi
+
   rm -rf "$workdir"
   mkdir -p "$workdir"
   echo "[INFO] Extracting Ryzen AI package: $archive"
-  tar -xzf "$archive" -C "$workdir" --strip-components=1 2>/dev/null || tar -xzf "$archive" -C "$workdir"
+  if ! tar -xzf "$archive" -C "$workdir" 2>/dev/null; then
+    rm -rf "$workdir"
+    mkdir -p "$workdir"
+    tar -xzf "$archive" -C "$workdir" --strip-components=1
+  fi
   installer="$(find "$workdir" -maxdepth 3 -type f -name 'install_ryzen_ai.sh' | sort | head -n 1)"
   if [[ -z "$installer" ]]; then
     echo "[WARN] Ryzen AI installer was not found after extraction; leaving extracted files at $workdir."
-    return
+    return 1
   fi
   chmod +x "$installer"
-  echo "[INFO] Installing Ryzen AI software into: $RYZEN_AI_INSTALL_ROOT/venv"
-  "$installer" -a yes -p "$RYZEN_AI_INSTALL_ROOT/venv"
+  installer_dir="$(cd "$(dirname "$installer")" && pwd)"
+
+  wheel_count="$(find "$installer_dir" -maxdepth 1 -type f -name '*.whl' 2>/dev/null | wc -l | tr -d ' ')"
+  if [[ "${wheel_count:-0}" -eq 0 ]]; then
+    echo "[ERROR] No .whl files next to install_ryzen_ai.sh in $installer_dir."
+    return 1
+  fi
+  echo "[INFO] Found $wheel_count wheel(s) beside installer in $installer_dir"
+  echo "[INFO] Installing Ryzen AI software into: $venv_path"
+
+  rc=0
+  (
+    export PATH="$py312_bin_dir:$PATH"
+    cd "$installer_dir"
+    ./install_ryzen_ai.sh -a yes -p "$venv_path"
+  ) || rc=$?
+  if [[ "$rc" -ne 0 ]]; then
+    echo "[ERROR] Ryzen AI installer exited with status $rc."
+    if [[ -d "$venv_path" ]] && [[ ! -x "$venv_path/bin/pip" ]]; then
+      rm -rf "$venv_path"
+    fi
+    return 1
+  fi
+  if [[ ! -x "$venv_path/bin/python" ]] || [[ ! -x "$venv_path/bin/pip" ]]; then
+    echo "[ERROR] Ryzen AI installer finished but venv is missing or incomplete at $venv_path."
+    [[ -d "$venv_path" ]] && rm -rf "$venv_path"
+    return 1
+  fi
+  return 0
 }
 
 install_npu_stack() {
