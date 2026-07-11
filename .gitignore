@@ -49,6 +49,8 @@ open-webui-venv
 .ai370-ai/cache/
 .ai370-ai/tmp/
 .ai370-ai/downloads/
+# Downloaded / staged models (install scripts populate this tree)
+.ai370-ai/models/
 *.onnx
 *.safetensors
 *.gguf
@@ -63,7 +65,9 @@ open-webui-venv
 *.debug
 *.tar.gz
 
-# Generated benchmark and validation scratch output
+# Generated benchmark and validation output (machine-local; scripts recreate these)
+# reports/README.md documents the layout and stays tracked.
+reports/latest/
 reports/tmp/
 reports/archive/
 *.prof
