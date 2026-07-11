@@ -15,7 +15,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 ### Current Repository Alignment
 
 * Stage 1 is the active foundation stage and must remain the first implementation priority. The implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
-* Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, and `scripts/150-validate-offline-model-storage.sh`. Offline RAG placeholder scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` also exist, but Tier 4 is not yet a full implementation.
+* Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, and `scripts/150-validate-offline-model-storage.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` exist and are wired through `stage2-rag` / `tier4`, but remain a partial implementation (Docker/network-oriented install paths and incomplete offline lifecycle).
 * Milestone 2.2 is implemented. `scripts/200-install-onnxruntime.sh`, `scripts/205-install-xrt-ryzen-ai.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, and `docs/npu-status.md` are present; benchmark scripts emit either local timing results or actionable diagnostics when NPU providers are unavailable. `205` installs staged XRT/Ryzen AI packages only when `--accept-amd-acceleration-risk` is set.
 * Stage 3 is ongoing. ComfyUI workflow and benchmark artifacts exist, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. Install/model scripts, documentation, and required workflow subdirectories remain planned.
 * Stages 4 and 5 remain planning sections and should not be started until earlier stage validation gates pass.
@@ -27,7 +27,7 @@ Roadmap stages are the preferred user-facing names. Legacy `tierN` commands rema
 | Roadmap stage | Preferred command group | Legacy tier alias | Status | Command gate |
 | --- | --- | --- | --- | --- |
 | S1 — Hardware Detection & System Optimization | Stage 1 — Core Platform | Tier 1 | Implemented | `./ai370-optimize.sh stage1` followed by `./ai370-optimize.sh stage1-validate` |
-| S2 — AI Runtime Foundation | Stage 2 Runtime / Stage 2 NPU / Stage 2 RAG | Tier 2 / Tier 3 / Tier 4 staged | Ongoing | `stage2`, `stage2-validate`, `stage2-runtime`, `stage2-runtime-validate`, `stage2-npu`, `stage2-npu-validate`; `stage2-rag` placeholder |
+| S2 — AI Runtime Foundation | Stage 2 Runtime / Stage 2 NPU / Stage 2 RAG | Tier 2 / Tier 3 / Tier 4 staged | Ongoing | `stage2`, `stage2-validate`, `stage2-runtime`, `stage2-runtime-validate`, `stage2-npu`, `stage2-npu-validate`; `stage2-rag` partial (optional, not a Stage 3 gate) |
 | S3 — Offline AI Frameworks & Applications | Stage 3 Offline Applications / Image Generation | Tier 5 plus future app workflows | Ongoing | `stage3-image`, `comfyui-install`, `comfyui-bench`; future `stage3-whisper`, `stage3-code`, and `stage3-apps-validate` |
 | S4 — Offline Development Environment | Stage 4 Development Assistant | Future extension | Planning | Not yet available |
 | S5 — Maintenance & Lifecycle Management | Stage 5 Lifecycle Operations | Future maintenance workflow | Planning | Not yet available |
@@ -484,7 +484,7 @@ Implemented / Planned:
 
 ### S2-M3 — Offline RAG
 
-**Status:** Staged / Placeholder
+**Status:** Staged / Partial
 
 #### Description
 
@@ -516,8 +516,9 @@ scripts/320-validate-rag.sh
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [ ] Deliverables implemented beyond placeholder echo scripts.
-* [ ] Validation documented with actionable pass/fail results.
+* [x] Scripts present and invoked by `stage2-rag` / `tier4` (partial: detect/pull/download + smoke validation).
+* [ ] Full offline installers and lifecycle (no network dependency after staging).
+* [ ] Validation documented with complete actionable pass/fail results for production RAG.
 
 ### S2-M4 — AI Runtime Benchmark & Diagnostics
 
@@ -1478,11 +1479,11 @@ reports/latest/ai370-health.md
 | S1-M3 | Kernel & Driver Validation | Implemented | Kernel, GPU, and NPU validation scripts are present. |
 | S1-M4 | System Optimization | Implemented | CPU, memory, and storage scripts emit current `tier1-*` optimization reports. |
 | S1-M5 | Validation & Benchmarking | Implemented | Benchmark and validation scripts emit current `tier1-local-ai-benchmark.*` and summary reports. |
-| S2 | AI Runtime Foundation | Ongoing | Base runtimes, ONNX Runtime checks, Vitis AI EP detection, NPU benchmark, and model storage exist; explicit XRT/Ryzen AI package installer and CPU/GPU/NPU comparison benchmark remain planned. |
+| S2 | AI Runtime Foundation | Ongoing | Base runtimes, XRT/Ryzen AI install path (`205`), ONNX Runtime checks, Vitis AI EP detection, NPU benchmark, and model storage exist; remaining S2 gaps are CPU/GPU/NPU comparison benchmark (`245`) and completing Offline RAG. |
 | S2-M1 | Base AI Runtime | Implemented | Required runtime scripts are present. |
-| S2-M2 | Ryzen AI NPU Runtime Stack | Ongoing | ONNX Runtime, Ryzen AI checks, Vitis AI EP detection, NPU benchmark, and docs are present; explicit XRT/Ryzen AI package installer remains planned. |
-| S2-M3 | Offline RAG | Staged / Placeholder | RAG script filenames are present, but the scripts and `stage2-rag` / `tier4` command are placeholders rather than complete installers/validators. |
-| S2-M4 | AI Runtime Benchmark & Diagnostics | Ongoing | LLM benchmark script and reports are present; CPU/GPU/NPU comparison benchmark remains planned. |
+| S2-M2 | Ryzen AI NPU Runtime Stack | Implemented | ONNX Runtime, `scripts/205-install-xrt-ryzen-ai.sh` (inventory by default; install with `--accept-amd-acceleration-risk`), Ryzen AI checks, Vitis AI EP detection, NPU benchmark, and `docs/npu-status.md` are present. |
+| S2-M3 | Offline RAG | Staged / Partial | `stage2-rag` invokes `300`–`320`; scripts perform detect/pull/download and optional offline smoke validation, but full offline installers and lifecycle remain incomplete. |
+| S2-M4 | AI Runtime Benchmark & Diagnostics | Ongoing | Measured LLM smoke in `scripts/140-benchmark-llm.sh` and reports are present; CPU/GPU/NPU comparison benchmark remains planned (`245`; id `240` is used by the tier3 validation writer). |
 | S2-M5 | Offline Model Storage & Model Management | Implemented | Manifest, storage policy, validation script, and reports are present. |
 | S3 | Offline AI Frameworks & Applications | Ongoing | Benchmark/workflow artifacts exist; text-generation, embedding/RAG, Whisper, installer, models, docs, and automation remain incomplete. |
 | S3-M1 | ComfyUI | Planning | Required installer is represented but not present. |

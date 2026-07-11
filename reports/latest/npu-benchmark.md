@@ -13,10 +13,10 @@ Status: WARN
 
 - Actual provider: CPUExecutionProvider
 - Runs: 25
-- Mean: 0.0040 ms
-- Median: 0.0039 ms
-- Min: 0.0036 ms
-- Max: 0.0062 ms
+- Mean: 0.0035 ms
+- Median: 0.0034 ms
+- Min: 0.0032 ms
+- Max: 0.0042 ms
 
 ## Limitations / Diagnostics
 

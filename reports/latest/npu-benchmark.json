@@ -3,7 +3,7 @@
   "milestone": "S2-M2",
   "phase": "benchmark-npu",
   "status": "WARN",
-  "timestamp": "2026-07-04T11:33:19.617242Z",
+  "timestamp": "2026-07-11T20:20:33.639848Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
@@ -18,10 +18,10 @@
       "requested_provider": "CPUExecutionProvider",
       "actual_provider": "CPUExecutionProvider",
       "runs": 25,
-      "mean_ms": 0.004023479414172471,
-      "median_ms": 0.003869994543492794,
-      "min_ms": 0.0036299970815889537,
-      "max_ms": 0.006189999112393707
+      "mean_ms": 0.0035211199428886175,
+      "median_ms": 0.0034300001061637886,
+      "min_ms": 0.0032299994927598163,
+      "max_ms": 0.004219999937049579
     }
   ],
   "limitations": [

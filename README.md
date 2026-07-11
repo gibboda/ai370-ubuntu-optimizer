@@ -89,9 +89,9 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   kernel/driver validation, system optimization, and benchmarking).
 - Stage 2: Aggregate, runtime, and NPU command groups are implemented for the
   current roadmap scope (`stage2`, `stage2-runtime`, and `stage2-npu`; legacy
-  aliases `tier2` and `tier3`). Stage 2 RAG remains staged/planned because the
-  current `stage2-rag` / `tier4` command and `scripts/300-*` through
-  `scripts/320-*` files are placeholders.
+  aliases `tier2` and `tier3`). Stage 2 RAG remains partial/staged: `stage2-rag`
+  / `tier4` invoke `scripts/300-*` through `scripts/320-*`, but offline
+  installers and lifecycle are incomplete.
 - Stage 3 Image Generation: Ongoing (benchmarks and workflows exist; ComfyUI
   install/model scripts and workflow subdirectories remain planned).
 
@@ -110,10 +110,12 @@ Implemented:
   `scripts/140-benchmark-llm.sh`,
   `scripts/150-validate-offline-model-storage.sh`
 - `scripts/200-install-onnxruntime.sh`,
+  `scripts/205-install-xrt-ryzen-ai.sh`,
   `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`,
-  `scripts/230-benchmark-npu.sh`, `docs/npu-status.md`
+  `scripts/230-benchmark-npu.sh`, `scripts/240-write-tier3-validation.sh`,
+  `docs/npu-status.md`
 
-Staged placeholders (present, not full Tier 4 implementation):
+Staged / partial (present, not full Stage 2 RAG / Tier 4 implementation):
 
 - `scripts/300-install-anythingllm.sh`,
   `scripts/310-install-embedding-models.sh`, `scripts/320-validate-rag.sh`
@@ -280,17 +282,19 @@ generation installation.
 - Local embeddings models
 - Offline document indexing + retrieval
 
-**Commands (future / staged):**
+**Commands (staged / partial):**
 
 ```bash
 ./ai370-optimize.sh stage2-rag
 ./ai370-optimize.sh tier4          # Legacy alias
 ```
 
-**Current status:** Staged placeholder only. The `stage2-rag` / `tier4` command
-currently prints guidance and exits without invoking the RAG scripts, and
-`scripts/300-*` through `scripts/320-*` are placeholder echo scripts rather than
-complete installers/validators.
+**Current status:** Partial implementation. `stage2-rag` / `tier4` invoke
+`scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`,
+and `scripts/320-validate-rag.sh` (Docker image detect/pull, embedding model
+download or local check, optional offline retrieval smoke). Full offline
+installers, staged-artifact workflows, and production lifecycle automation
+remain incomplete. Stage 2 RAG is optional and is not part of the Stage 3 gate.
 
 **Acceptance Criteria:**
 

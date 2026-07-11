@@ -23,8 +23,8 @@ llama3.1:8b                46e0c10c039e    4.9 GB    10 days ago
 nomic-embed-text:latest    0a109f422b47    274 MB    10 days ago    
 qwen2.5-coder:1.5b-base    02e0f2817a89    986 MB    10 days ago    
 qwen2.5-coder:latest       dae161e27b0e    4.7 GB    10 days ago    
-qwen2.5-coder:14b          9ec8897f747e    9.0 GB    13 days ago    
-qwen2.5-coder:7b           dae161e27b0e    4.7 GB    13 days ago    
+qwen2.5-coder:14b          9ec8897f747e    9.0 GB    2 weeks ago    
+qwen2.5-coder:7b           dae161e27b0e    4.7 GB    2 weeks ago    
 qwen2.5-coder:1.5b         d7372fd82851    986 MB    2 weeks ago    
 ```
 
@@ -49,11 +49,11 @@ none
 - Result: pass
 - Backend: ollama
 - Model: deepseek-coder:6.7b
-- load_time_ms: 11871.531
+- load_time_ms: 43.201
 - tokens_generated: 16
-- tokens_per_sec: 20.184
-- wall_time_ms: 13417.581
-- eval_time_ms: 792.705
+- tokens_per_sec: 21.132
+- wall_time_ms: 910.044
+- eval_time_ms: 757.13
 - Detail: ollama /api/generate smoke completed with metrics
 
 ## Tier 2 Runtime

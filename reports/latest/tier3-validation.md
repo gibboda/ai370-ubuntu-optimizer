@@ -1,7 +1,7 @@
 # Tier 3 NPU (Experimental) Validation
 
 Status: EXPERIMENTAL-PASS | Profile: ai370 | Offline: False
-Timestamp: 2026-07-04T11:33:19.681835Z
+Timestamp: 2026-07-11T20:20:33.711370Z
 
 - NPU module: loaded
 - Device nodes: present
