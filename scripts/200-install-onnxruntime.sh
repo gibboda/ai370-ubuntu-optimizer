@@ -108,7 +108,12 @@ if importlib.util.find_spec("onnxruntime") is not None:
         ort_state = "error"
         error = f"{type(exc).__name__}: {exc}"
 
-status = "PASS" if ort_state == "available" and cpu_smoke == "pass" else "WARN"
+if install_action == "venv-create-failed":
+    status = "FAIL"
+elif ort_state == "available" and cpu_smoke == "pass":
+    status = "PASS"
+else:
+    status = "WARN"
 provider_matches = [p for p in providers if any(token in p.lower() for token in ("vitis", "vai", "dml", "rocm", "amd"))]
 
 data = {
@@ -148,24 +153,34 @@ summary_path.write_text(
     "## Detail\n\n"
     f"```text\n{detail or error or 'ONNX Runtime validation completed.'}\n```\n"
 )
-sys.exit(0 if status == "PASS" else 1)
+# Always exit 0 from the reporter process; bash maps FAIL → exit 1 below.
 PY
   then
-    status="PASS"
+    :
+  fi
+
+  if [[ -f "$STATUS_JSON" ]]; then
+    status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status","WARN"))' "$STATUS_JSON" 2>/dev/null || echo WARN)"
   fi
 
   if [[ ! -x "$VENV_DIR/bin/python" || ! -f "$STATUS_JSON" ]]; then
-    STATUS="WARN" PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
+    if [[ "$install_action" == "venv-create-failed" ]]; then
+      status="FAIL"
+    else
+      status="WARN"
+    fi
+    STATUS="$status" PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
     VENV_DIR="$VENV_DIR" WHEELHOUSE="$WHEELHOUSE" INSTALL_ACTION="$install_action" DETAIL="$detail" \
     python3 - "$STATUS_JSON" "$SUMMARY_MD" <<'PY'
 import datetime, json, os, sys
 from pathlib import Path
 status_path, summary_path = map(Path, sys.argv[1:])
+status = os.environ["STATUS"]
 data = {
   "tier": 2,
   "milestone": "S2-M2",
   "phase": "install-onnxruntime",
-  "status": "WARN",
+  "status": status,
   "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),
   "profile": os.environ["PROFILE"],
   "mode": os.environ["MODE"],
@@ -178,13 +193,15 @@ data = {
   "detail": os.environ["DETAIL"],
 }
 status_path.write_text(json.dumps(data, indent=2) + "\n")
-summary_path.write_text("# ONNX Runtime Status\n\nStatus: WARN\n\n" + os.environ["DETAIL"] + "\n")
+summary_path.write_text(f"# ONNX Runtime Status\n\nStatus: {status}\n\n" + os.environ["DETAIL"] + "\n")
 PY
   fi
 
   echo "[INFO] Wrote $STATUS_JSON"
   echo "[INFO] Wrote $SUMMARY_MD"
-  [[ "$status" == "PASS" ]] || exit 0
+  if [[ "$status" == "FAIL" ]]; then
+    exit 1
+  fi
 }
 
 export PROFILE MODE PERSISTENCE OFFLINE VENV_DIR WHEELHOUSE

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M2: Ryzen AI NPU Runtime Stack Installer (205-install-xrt-ryzen-ai.sh).
-# Automates the installation of AMD XRT driver packages and the Ryzen AI software stack
-# from staged local artifacts, ensuring offline readiness.
+# S2-M2: explicit XRT / Ryzen AI package install or offline staging validation.
+# Safe by default: without --accept-amd-acceleration-risk (5th arg true) this script
+# only inventories artifacts and records diagnostics (does not apt-install).
+# With risk accepted, installs staged XRT .deb packages and optional Ryzen AI tarball
+# from AMD_ARTIFACT_ROOT (see configs/amd-acceleration.env).
 
 set -euo pipefail
 
@@ -11,12 +13,14 @@ PROFILE="${1:-ai370}"
 MODE="${2:-safe}"
 PERSISTENCE="${3:-runtime}"
 OFFLINE="${4:-false}"
+ACCEPT_AMD_ACCELERATION_RISK="${5:-false}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
 CONFIG_FILE="$PROJECT_ROOT/configs/amd-acceleration.env"
-STATUS_JSON="$LATEST_DIR/xrt-install-status.json"
-SUMMARY_MD="$LATEST_DIR/xrt-install-status.md"
+STATUS_JSON="$LATEST_DIR/xrt-ryzen-ai-install.json"
+SUMMARY_MD="$LATEST_DIR/xrt-ryzen-ai-install.md"
+ENV_SNIPPET="$LATEST_DIR/xrt-ryzen-ai-env.sh"
 
 resolve_project_path() {
   local path="$1"
@@ -33,28 +37,23 @@ load_config() {
     exit 2
   fi
 
-  # Source defaults and load paths
-  # shellcheck source=configs/amd-acceleration.env
+  local env_amd_artifact_root="${AMD_ARTIFACT_ROOT:-}"
+  local env_ryzen_ai_install_root="${RYZEN_AI_INSTALL_ROOT:-}"
+  local env_ryzen_ai_artifact_glob="${RYZEN_AI_ARTIFACT_GLOB:-}"
+  local env_xrt_deb_globs="${XRT_DEB_GLOBS:-}"
+
+  # shellcheck source=/dev/null
   source "$CONFIG_FILE"
+
+  [[ -n "$env_amd_artifact_root" ]] && AMD_ARTIFACT_ROOT="$env_amd_artifact_root"
+  [[ -n "$env_ryzen_ai_install_root" ]] && RYZEN_AI_INSTALL_ROOT="$env_ryzen_ai_install_root"
+  [[ -n "$env_ryzen_ai_artifact_glob" ]] && RYZEN_AI_ARTIFACT_GLOB="$env_ryzen_ai_artifact_glob"
+  [[ -n "$env_xrt_deb_globs" ]] && XRT_DEB_GLOBS="$env_xrt_deb_globs"
 
   AMD_ARTIFACT_ROOT="$(resolve_project_path "${AMD_ARTIFACT_ROOT:-.ai370-ai/amd-artifacts}")"
   RYZEN_AI_INSTALL_ROOT="$(resolve_project_path "${RYZEN_AI_INSTALL_ROOT:-.ai370-ai/ryzen-ai}")"
   : "${RYZEN_AI_ARTIFACT_GLOB:=ryzen_ai-*.tgz}"
   : "${XRT_DEB_GLOBS:=xrt_*_26.04-amd64-base.deb xrt_*_26.04-amd64-base-dev.deb xrt_*_26.04-amd64-npu.deb xrt_*_26.04-amd64-xrt.deb xrt_plugin.*_26.04-amd64-amdxdna.deb xrt_plugin.*_ubuntu26.04-x86_64-amdxdna.deb}"
-}
-
-require_runtime_persistence() {
-  if [[ "$PERSISTENCE" == "system" ]]; then
-    echo "[ERROR] Persistent NPU configuration is not supported. Use --persistence=runtime."
-    exit 2
-  fi
-}
-
-require_root_privilege() {
-  if [[ "${EUID}" -ne 0 ]]; then
-    echo "[INFO] sudo privilege is required to install driver packages."
-    sudo -v
-  fi
 }
 
 find_first_match() {
@@ -64,156 +63,300 @@ find_first_match() {
   find "$root" -maxdepth 5 -type f -name "$pattern" 2>/dev/null | sort | head -n 1
 }
 
-print_staging_instructions() {
-  echo "[INFO] === Ryzen AI Staging Instructions ==="
-  echo "[INFO] AMD XRT and Ryzen AI packages are proprietary and must be staged manually."
-  echo "[INFO] 1. Download driver .deb files and the Ryzen AI software tarball (.tgz) from AMD."
-  echo "[INFO] 2. Place them under the artifact root: $AMD_ARTIFACT_ROOT/"
-  echo "[INFO] Expected file patterns:"
-  echo "[INFO]   - Driver packages: xrt_*_26.04-amd64-base.deb, xrt_plugin.*-amdxdna.deb, etc."
-  echo "[INFO]   - Software archive: ryzen_ai-*.tgz"
-  echo "[INFO] ====================================="
-}
-
-main() {
-  mkdir -p "$LATEST_DIR"
-  load_config
-  require_runtime_persistence
-
-  echo "[INFO] Starting Ryzen AI NPU Runtime Installer..."
-  echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE  Offline: $OFFLINE"
-
-  local xrt_staged="false"
-  local ryzen_staged="false"
-  local xrt_installed="false"
-  local ryzen_installed="false"
-  local status="WARN"
-  local detail=""
-
-  # 1. Check for staged XRT .debs
-  local glob deb found_debs=()
+list_matching_debs() {
+  local glob deb
+  local -a found=()
   for glob in $XRT_DEB_GLOBS; do
     deb="$(find_first_match "$AMD_ARTIFACT_ROOT" "$glob")"
     if [[ -n "$deb" ]]; then
-      found_debs+=("$deb")
+      found+=("$deb")
     fi
   done
-
-  if [[ ${#found_debs[@]} -gt 0 ]]; then
-    xrt_staged="true"
+  if [[ ${#found[@]} -gt 0 ]]; then
+    printf '%s\n' "${found[@]}"
   fi
-
-  # 2. Check for staged Ryzen AI software archive
-  local archive
-  archive="$(find_first_match "$AMD_ARTIFACT_ROOT" "$RYZEN_AI_ARTIFACT_GLOB")"
-  if [[ -n "$archive" ]]; then
-    ryzen_staged="true"
-  fi
-
-  # 3. Perform installation if staged
-  if [[ "$xrt_staged" == "true" ]]; then
-    require_root_privilege
-    echo "[INFO] Installing staged XRT driver packages..."
-    local install_err=0
-    for deb in "${found_debs[@]}"; do
-      echo "[INFO] Installing package: $deb"
-      if [[ "$OFFLINE" == "true" ]]; then
-        sudo apt-get install --fix-broken -y --no-download "$deb" || install_err=1
-      else
-        sudo apt-get install --fix-broken -y "$deb" || install_err=1
-      fi
-    done
-
-    if [[ $install_err -eq 0 ]]; then
-      xrt_installed="true"
-    else
-      detail="XRT package installation failed; see console logs."
-    fi
-  else
-    detail="XRT packages not staged under $AMD_ARTIFACT_ROOT. Skipping installation."
-  fi
-
-  if [[ "$ryzen_staged" == "true" ]]; then
-    echo "[INFO] Installing Ryzen AI Software package..."
-    local workdir="$RYZEN_AI_INSTALL_ROOT/source"
-    mkdir -p "$RYZEN_AI_INSTALL_ROOT"
-    rm -rf "$workdir"
-    mkdir -p "$workdir"
-
-    echo "[INFO] Extracting $archive..."
-    if tar -xzf "$archive" -C "$workdir" --strip-components=1 2>/dev/null || tar -xzf "$archive" -C "$workdir"; then
-      local installer
-      installer="$(find "$workdir" -maxdepth 3 -type f -name 'install_ryzen_ai.sh' | sort | head -n 1)"
-      if [[ -n "$installer" ]]; then
-        chmod +x "$installer"
-        echo "[INFO] Running Ryzen AI installer..."
-        if "$installer" -a yes -p "$RYZEN_AI_INSTALL_ROOT/venv"; then
-          ryzen_installed="true"
-        else
-          detail="${detail:+$detail; }Ryzen AI installer script failed."
-        fi
-      else
-        detail="${detail:+$detail; }install_ryzen_ai.sh not found in archive."
-      fi
-    else
-      detail="${detail:+$detail; }Failed to extract Ryzen AI archive."
-    fi
-  else
-    detail="${detail:+$detail; }Ryzen AI software archive not staged. Skipping installation."
-  fi
-
-  # Define final status
-  if [[ "$xrt_installed" == "true" && "$ryzen_installed" == "true" ]]; then
-    status="PASS"
-    detail="Ryzen AI NPU driver packages and software stack installed successfully."
-  elif [[ "$xrt_staged" == "false" && "$ryzen_staged" == "false" ]]; then
-    status="WARN"
-    detail="Staged installation files are missing. Skipped NPU runtime installation."
-    print_staging_instructions
-  else
-    status="WARN"
-    detail="Staged packages partially installed. Details: $detail"
-  fi
-
-  # Write JSON Status
-  cat > "$STATUS_JSON" <<EOF_JSON
-{
-  "tier": 2,
-  "milestone": "S2-M2",
-  "phase": "install-xrt-ryzen-ai",
-  "status": "$status",
-  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-  "profile": "$PROFILE",
-  "mode": "$MODE",
-  "persistence": "$PERSISTENCE",
-  "offline": $([[ "$OFFLINE" == "true" ]] && echo true || echo false),
-  "xrt_staged": $xrt_staged,
-  "ryzen_staged": $ryzen_staged,
-  "xrt_installed": $xrt_installed,
-  "ryzen_installed": $ryzen_installed,
-  "detail": "$detail"
 }
-EOF_JSON
 
-  # Write Markdown summary
-  {
-    echo "# XRT & Ryzen AI Software Install Status"
-    echo
-    echo "Profile: $PROFILE | Mode: $MODE | Persistence: $PERSISTENCE"
-    echo "Status: $status"
-    echo
-    echo "## Staging & Installation Metrics"
-    echo "- XRT driver packages staged: $xrt_staged"
-    echo "- XRT driver packages installed: $xrt_installed"
-    echo "- Ryzen AI software archive staged: $ryzen_staged"
-    echo "- Ryzen AI software installed: $ryzen_installed"
-    echo
-    echo "## Detail"
-    echo "$detail"
-  } > "$SUMMARY_MD"
+detect_runtime_state() {
+  XRT_STATE="missing"
+  if command -v xrt-smi >/dev/null 2>&1; then
+    XRT_STATE="available"
+  elif [[ -x /opt/xilinx/xrt/bin/xrt-smi ]]; then
+    XRT_STATE="available"
+  fi
 
+  RYZEN_AI_STATE="missing"
+  if [[ -d "$RYZEN_AI_INSTALL_ROOT/venv" ]]; then
+    RYZEN_AI_STATE="available"
+  fi
+
+  MODULE_STATE="missing"
+  if [[ -r /proc/modules ]] && grep -Eq '^(amdxdna|xrt|xdna)[[:space:]]' /proc/modules 2>/dev/null; then
+    MODULE_STATE="loaded"
+  fi
+
+  DEVICE_STATE="missing"
+  if find /dev -maxdepth 2 \( -name 'accel*' -o -name '*xdna*' -o -name '*xrt*' \) 2>/dev/null | grep -q .; then
+    DEVICE_STATE="present"
+  fi
+}
+
+write_env_snippet() {
+  cat > "$ENV_SNIPPET" <<EOF_ENV
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+# Generated by scripts/205-install-xrt-ryzen-ai.sh
+
+if [[ -f /opt/xilinx/xrt/setup.sh ]]; then
+  # shellcheck source=/dev/null
+  source /opt/xilinx/xrt/setup.sh
+fi
+if [[ -d /opt/xilinx/xrt/bin ]]; then
+  export PATH="/opt/xilinx/xrt/bin:\${PATH}"
+fi
+if [[ -d "$RYZEN_AI_INSTALL_ROOT/venv" ]]; then
+  export RYZEN_AI_INSTALLATION_PATH="$RYZEN_AI_INSTALL_ROOT/venv"
+fi
+EOF_ENV
+  chmod +x "$ENV_SNIPPET"
+}
+
+install_xrt_debs() {
+  local deb count=0
+  local -a debs=()
+  mapfile -t debs < <(list_matching_debs || true)
+  if [[ ${#debs[@]} -eq 0 ]]; then
+    return 1
+  fi
+
+  if [[ "${EUID}" -ne 0 ]]; then
+    echo "[INFO] sudo access is required to install XRT/NPU packages."
+    sudo -v
+  fi
+
+  for deb in "${debs[@]}"; do
+    echo "[INFO] Installing staged XRT/NPU package: $deb"
+    if [[ "$OFFLINE" == "true" ]]; then
+      sudo apt-get install --fix-broken -y --no-download "$deb"
+    else
+      sudo apt-get install --fix-broken -y "$deb"
+    fi
+    count=$((count + 1))
+  done
+  echo "[INFO] Installed $count XRT/NPU package(s)."
+  return 0
+}
+
+install_ryzen_ai_package() {
+  local archive workdir installer
+  archive="$(find_first_match "$AMD_ARTIFACT_ROOT" "$RYZEN_AI_ARTIFACT_GLOB")"
+  if [[ -z "$archive" ]]; then
+    echo "[WARN] No Ryzen AI archive matched '$RYZEN_AI_ARTIFACT_GLOB' under $AMD_ARTIFACT_ROOT."
+    return 1
+  fi
+
+  mkdir -p "$RYZEN_AI_INSTALL_ROOT"
+  workdir="$RYZEN_AI_INSTALL_ROOT/source"
+  rm -rf "$workdir"
+  mkdir -p "$workdir"
+  echo "[INFO] Extracting Ryzen AI package: $archive"
+  tar -xzf "$archive" -C "$workdir" --strip-components=1 2>/dev/null || tar -xzf "$archive" -C "$workdir"
+  installer="$(find "$workdir" -maxdepth 3 -type f -name 'install_ryzen_ai.sh' | sort | head -n 1)"
+  if [[ -z "$installer" ]]; then
+    echo "[WARN] Ryzen AI installer was not found after extraction; leaving files at $workdir."
+    return 1
+  fi
+  chmod +x "$installer"
+  echo "[INFO] Installing Ryzen AI software into: $RYZEN_AI_INSTALL_ROOT/venv"
+  "$installer" -a yes -p "$RYZEN_AI_INSTALL_ROOT/venv"
+  return 0
+}
+
+write_reports() {
+  local status="$1"
+  local action="$2"
+  local detail="$3"
+  local staged_debs="$4"
+  local staged_ryzen="$5"
+
+  PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
+  ACCEPT_RISK="$ACCEPT_AMD_ACCELERATION_RISK" STATUS="$status" ACTION="$action" DETAIL="$detail" \
+  AMD_ARTIFACT_ROOT="$AMD_ARTIFACT_ROOT" RYZEN_AI_INSTALL_ROOT="$RYZEN_AI_INSTALL_ROOT" \
+  XRT_STATE="$XRT_STATE" RYZEN_AI_STATE="$RYZEN_AI_STATE" MODULE_STATE="$MODULE_STATE" \
+  DEVICE_STATE="$DEVICE_STATE" STAGED_DEBS="$staged_debs" STAGED_RYZEN="$staged_ryzen" \
+  ENV_SNIPPET="$ENV_SNIPPET" \
+  python3 - "$STATUS_JSON" "$SUMMARY_MD" <<'PY'
+import json
+import os
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+status_path, summary_path = map(Path, sys.argv[1:])
+staged_debs = [line for line in os.environ.get("STAGED_DEBS", "").splitlines() if line.strip()]
+staged_ryzen = os.environ.get("STAGED_RYZEN", "") or None
+status = os.environ["STATUS"]
+detail = os.environ.get("DETAIL", "")
+
+data = {
+    "tier": 2,
+    "stage": 2,
+    "milestone": "S2-M2",
+    "phase": "install-xrt-ryzen-ai",
+    "status": status,
+    "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    "profile": os.environ["PROFILE"],
+    "mode": os.environ["MODE"],
+    "persistence": os.environ["PERSISTENCE"],
+    "offline": os.environ["OFFLINE"] == "true",
+    "accept_amd_acceleration_risk": os.environ["ACCEPT_RISK"] == "true",
+    "install_action": os.environ["ACTION"],
+    "artifact_root": os.environ["AMD_ARTIFACT_ROOT"],
+    "ryzen_ai_install_root": os.environ["RYZEN_AI_INSTALL_ROOT"],
+    "staged_xrt_debs": staged_debs,
+    "staged_ryzen_ai_archive": staged_ryzen,
+    "runtime": {
+        "xrt": os.environ["XRT_STATE"],
+        "ryzen_ai": os.environ["RYZEN_AI_STATE"],
+        "kernel_module": os.environ["MODULE_STATE"],
+        "device_node": os.environ["DEVICE_STATE"],
+    },
+    "environment_snippet": os.environ["ENV_SNIPPET"],
+    "detail": detail,
+    "policy": (
+        "Installation requires --accept-amd-acceleration-risk. Without risk acceptance this "
+        "script only inventories staged AMD artifacts and existing XRT/Ryzen AI runtime state."
+    ),
+}
+status_path.write_text(json.dumps(data, indent=2) + "\n")
+
+lines = [
+    "# XRT / Ryzen AI Install Status",
+    "",
+    f"Status: {status}",
+    f"Profile: {os.environ['PROFILE']} | Mode: {os.environ['MODE']} | Offline: {os.environ['OFFLINE']}",
+    f"Risk accepted: {os.environ['ACCEPT_RISK']}",
+    f"Install action: {os.environ['ACTION']}",
+    "",
+    "## Runtime",
+    "",
+    f"- XRT tools: {os.environ['XRT_STATE']}",
+    f"- Ryzen AI install: {os.environ['RYZEN_AI_STATE']}",
+    f"- Kernel module: {os.environ['MODULE_STATE']}",
+    f"- Device node: {os.environ['DEVICE_STATE']}",
+    "",
+    "## Artifacts",
+    "",
+    f"- Root: `{os.environ['AMD_ARTIFACT_ROOT']}`",
+    f"- Staged XRT debs: {len(staged_debs)}",
+]
+for deb in staged_debs:
+    lines.append(f"  - `{deb}`")
+lines.extend([
+    f"- Ryzen AI archive: `{staged_ryzen or 'none'}`",
+    "",
+    "## Next steps",
+    "",
+    "- Stage Ubuntu 26.04 XRT/NPU `.deb` files under the artifact root (see `configs/amd-acceleration.env`).",
+    "- Optionally stage `ryzen_ai-*.tgz` for the Ryzen AI software installer.",
+    "- Re-run with `--accept-amd-acceleration-risk` to install staged packages:",
+    "  `./ai370-optimize.sh stage2-npu --accept-amd-acceleration-risk`",
+    f"- Source `{os.environ['ENV_SNIPPET']}` after install for XRT PATH setup.",
+    "- Continue with `scripts/210-check-ryzen-ai-software.sh` and `scripts/230-benchmark-npu.sh`.",
+    "",
+    "## Detail",
+    "",
+    detail,
+    "",
+])
+summary_path.write_text("\n".join(lines))
+PY
+}
+
+main() {
+  echo "[INFO] S2-M2: XRT / Ryzen AI install or staging validation"
+  echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
+  echo "[INFO] Offline: $OFFLINE  Risk accepted: $ACCEPT_AMD_ACCELERATION_RISK"
+
+  if [[ "$PERSISTENCE" == "system" ]]; then
+    echo "[ERROR] Persistent XRT/Ryzen AI configuration is not implemented. Use --persistence=runtime."
+    exit 2
+  fi
+
+  mkdir -p "$LATEST_DIR"
+  load_config
+  detect_runtime_state
+  write_env_snippet
+
+  local staged_debs staged_ryzen
+  staged_debs="$(list_matching_debs || true)"
+  staged_ryzen="$(find_first_match "$AMD_ARTIFACT_ROOT" "$RYZEN_AI_ARTIFACT_GLOB" || true)"
+
+  local status="WARN" action="inventory-only" detail=""
+  local deb_count=0
+  if [[ -n "$staged_debs" ]]; then
+    deb_count="$(printf '%s\n' "$staged_debs" | grep -c . || true)"
+  fi
+
+  if [[ "$ACCEPT_AMD_ACCELERATION_RISK" != "true" ]]; then
+    action="skipped-no-risk-ack"
+    detail="Risk not accepted: no packages were installed. Stage artifacts under $AMD_ARTIFACT_ROOT and re-run with --accept-amd-acceleration-risk."
+    if [[ "$XRT_STATE" == "available" ]]; then
+      status="PASS"
+      detail="XRT tools already available. Risk not accepted so no package install was attempted. Staged debs: $deb_count."
+    elif [[ "$deb_count" -gt 0 ]]; then
+      status="WARN"
+      detail="Found $deb_count staged XRT deb(s) but did not install them (risk not accepted). Re-run stage2-npu with --accept-amd-acceleration-risk."
+    else
+      status="WARN"
+      detail="No staged XRT debs under $AMD_ARTIFACT_ROOT and xrt-smi not in PATH. Stage AMD packages then re-run with --accept-amd-acceleration-risk. See docs/npu-status.md."
+    fi
+  else
+    action="install-attempted"
+    local xrt_ok="false" ryzen_ok="false"
+    if install_xrt_debs; then
+      xrt_ok="true"
+    else
+      echo "[WARN] No matching XRT/NPU debs found under $AMD_ARTIFACT_ROOT"
+    fi
+    if install_ryzen_ai_package; then
+      ryzen_ok="true"
+    fi
+    detect_runtime_state
+    write_env_snippet
+    staged_debs="$(list_matching_debs || true)"
+    staged_ryzen="$(find_first_match "$AMD_ARTIFACT_ROOT" "$RYZEN_AI_ARTIFACT_GLOB" || true)"
+
+    if [[ "$xrt_ok" == "true" || "$XRT_STATE" == "available" ]]; then
+      if [[ "$ryzen_ok" == "true" || "$RYZEN_AI_STATE" == "available" ]]; then
+        status="PASS"
+        action="installed-or-validated"
+        detail="XRT and/or Ryzen AI stack installed or already available after risk-accepted install path."
+      else
+        status="WARN"
+        action="xrt-installed-ryzen-missing"
+        detail="XRT path succeeded or was already available, but Ryzen AI archive/installer was not completed. Stage ryzen_ai-*.tgz if needed."
+      fi
+    elif [[ "$deb_count" -eq 0 ]]; then
+      status="FAIL"
+      action="install-failed-no-artifacts"
+      detail="Risk accepted but no XRT/NPU .deb packages matched under $AMD_ARTIFACT_ROOT. Stage packages per configs/amd-acceleration.env and docs/npu-status.md."
+    else
+      status="FAIL"
+      action="install-failed"
+      detail="Risk accepted and staged debs were present, but XRT tools remain unavailable after install. Check apt output and reboot if drivers changed."
+    fi
+  fi
+
+  write_reports "$status" "$action" "$detail" "$staged_debs" "$staged_ryzen"
+  echo "[INFO] XRT/Ryzen AI status: $status ($action)"
   echo "[INFO] Wrote $STATUS_JSON"
   echo "[INFO] Wrote $SUMMARY_MD"
+  echo "[INFO] Wrote $ENV_SNIPPET"
+
+  if [[ "$status" == "FAIL" ]]; then
+    exit 1
+  fi
 }
 
 main "$@"

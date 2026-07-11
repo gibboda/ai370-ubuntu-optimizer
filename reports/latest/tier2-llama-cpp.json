@@ -1,13 +1,19 @@
 {
   "tier": 2,
+  "stage": 2,
   "phase": "install-llama-cpp",
-  "status": "PASS",
+  "status": "WARN",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
   "offline": false,
   "binary": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/tools/llama.cpp/build/bin/llama-cli",
   "install_action": "validated-existing-binary",
+  "backend_requested": "hip",
+  "backend_effective": "hip",
+  "built_backends": "cpu",
+  "amdgpu_targets": "gfx1150",
+  "force_rebuild": false,
   "version": "version: 1 (86b9470)\nbuilt with GNU 15.2.0 for Linux x86_64",
-  "detail": "llama.cpp validation completed."
+  "detail": "Existing llama.cpp binary appears to lack backend 'hip' (detected: cpu). Rebuild with LLAMA_CPP_FORCE_REBUILD=true LLAMA_CPP_BACKEND=hip for GPU acceleration on gfx1150."
 }

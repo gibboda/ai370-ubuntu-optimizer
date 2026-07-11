@@ -100,9 +100,11 @@ Defaults:
 Notes:
   Use --profile=generic-ryzen-ai only when intentionally broadening beyond strict AI370 validation.
   --offline affects Stage 1 (parts), Stage 2 runtime/NPU, and amd-accel-install.
-  --accept-amd-acceleration-risk is required for amd-accel-install, full-ai-install, and full-stack.
+  --accept-amd-acceleration-risk is required for amd-accel-install, full-ai-install, full-stack,
+    and for stage2-npu / stage2 to install staged XRT/Ryzen AI packages via scripts/205-*.sh.
   Stage 3 image generation (stage3-image / tier5 / comfyui) is blocked until Stage 1 + Stage 2 runtime + Stage 2 NPU validation passes.
   system persistence is reserved for future persistent tuning and is blocked by current scripts.
+  Stage 2 validators exit non-zero on status=FAIL (PASS/WARN remain exit 0).
 USAGE
 }
 
@@ -147,8 +149,16 @@ run_script() {
 }
 
 # Stage gate: Stage 3 image generation (and full generative flows) must not proceed until
-# Stage 1 + Stage 2 runtime + Stage 2 NPU have produced passing validation artifacts.
+# Stage 1 + Stage 2 runtime + Stage 2 NPU have produced acceptable validation artifacts.
 # Prefers dedicated tierN-validation.json (M2/M3). Falls back to legacy for transition.
+#
+# Gate policy (experimental default; see docs/ROADMAP.md "Stage gate policy"):
+#   Stage 1 (tier1-validation): PASS only
+#   Stage 2 runtime (tier2-validation): PASS or WARN
+#   Offline model storage: PASS or WARN (required file; optional models may WARN)
+#   Stage 2 NPU (tier3-validation): PASS, WARN, or EXPERIMENTAL-PASS
+# WARN / EXPERIMENTAL-PASS intentionally allow Stage 3 while hardware/models are still
+# incomplete; FAIL or missing required artifacts block the gate.
 require_tier123_pass() {
   local LATEST_DIR="$PROJECT_ROOT/reports/latest"
   local tier1_status="$LATEST_DIR/tier1-validation.json"
@@ -156,7 +166,6 @@ require_tier123_pass() {
   local offline_model_status="$LATEST_DIR/offline-model-storage.json"
   local tier3_status="$LATEST_DIR/tier3-validation.json"
   local legacy_final="$LATEST_DIR/final-validation.txt"
-  local gpu_status="$LATEST_DIR/gpu-acceleration-status.txt"
   local npu_status="$LATEST_DIR/npu-acceleration-status.txt"
   local ai_status="$LATEST_DIR/ai-stack-status.txt"
   local llm_status="$LATEST_DIR/llm-validation.json"
@@ -183,12 +192,13 @@ then
   fi
 
   # Stage 2 runtime: require both runtime validation and S2-M5 offline model storage validation.
+  # WARN is accepted so optional staged models / partial stacks do not block Stage 3.
   if [[ -f "$tier2_status" ]]; then
     if ! python3 - "$tier2_status" <<'PY' >/dev/null 2>&1
 import json, sys
 data=json.load(open(sys.argv[1]))
 status = data.get("status") or "UNKNOWN"
-if status.upper() not in ("PASS", "WARN"):  # WARN allowed for missing optional staged models
+if status.upper() not in ("PASS", "WARN"):
     sys.exit(1)
 PY
 then
@@ -213,7 +223,8 @@ then
     pass="false"
   fi
 
-  # Stage 2 NPU: prefer dedicated validation, else legacy npu evidence
+  # Stage 2 NPU: prefer dedicated validation, else legacy npu evidence.
+  # EXPERIMENTAL-PASS means hardware/XRT visible without a full AMD EP benchmark PASS.
   if [[ -f "$tier3_status" ]]; then
     if ! python3 - "$tier3_status" <<'PY' >/dev/null 2>&1
 import json, sys
@@ -231,8 +242,10 @@ then
 
   if [[ "$pass" != "true" ]]; then
     echo "[ERROR] Stage 1 + Stage 2 runtime + Stage 2 NPU validation has not passed."
-    echo "[ERROR] Run: ./ai370-optimize.sh stage1 && ./ai370-optimize.sh stage2-runtime && ./ai370-optimize.sh stage2-runtime-validate && ./ai370-optimize.sh stage2-npu-validate"
-    echo "[ERROR] Then re-run this command."
+    echo "[ERROR] Preferred: ./ai370-optimize.sh stage1 && ./ai370-optimize.sh stage2 && ./ai370-optimize.sh stage2-validate"
+    echo "[ERROR] Or: stage1 + stage2-runtime + stage2-runtime-validate + stage2-npu-validate"
+    echo "[ERROR] Gate policy: Stage1=PASS; Stage2 runtime/models=PASS|WARN; Stage2 NPU=PASS|WARN|EXPERIMENTAL-PASS."
+    echo "[ERROR] See docs/ROADMAP.md (Stage gate policy). Then re-run this command."
     exit 3
   fi
 }
@@ -292,25 +305,29 @@ case "$CMD" in
 
   stage2)
     echo "[INFO] Running Stage 2 – Local AI Runtime & AI Optimization Software"
-    echo "[INFO] Stage 2 includes runtime, model storage, NPU checks, and a staged RAG placeholder."
+    echo "[INFO] Stage 2 includes runtime, model storage, NPU checks, and writes tier3-validation.json."
     run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
     run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
     run_script "scripts/120-install-ollama.sh" "$OFFLINE"
     run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
-    echo "[INFO] Stage 2 RAG remains staged; run stage2-rag for current placeholder guidance."
+    # Always finalize the Stage 2 NPU gate artifact so stage2 alone refreshes require_tier123_pass inputs.
+    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
+    echo "[INFO] Stage 2 RAG is optional and not part of the Stage 3 gate; run stage2-rag when needed."
     ;;
 
   stage2-validate)
     echo "[INFO] Validating Stage 2 – runtime/model storage plus NPU checks"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
@@ -335,6 +352,7 @@ case "$CMD" in
 
   stage2-npu|tier3)
     echo "[INFO] Running Stage 2 NPU – AMD AI Stack Enablement (formerly Tier 3)"
+    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
@@ -345,6 +363,7 @@ case "$CMD" in
 
   stage2-npu-validate|tier3-validate)
     echo "[INFO] Stage 2 NPU validation (experimental; writes/validates tier3-validation.json)"
+    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
@@ -392,13 +411,14 @@ case "$CMD" in
     run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
-    # Stage 2 NPU (visibility + note on explicit accel)
+    # Stage 2 NPU (XRT/Ryzen staging install + visibility)
+    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
-    # Explicit AMD accel (risk already accepted, legacy optional script)
+    # Explicit full AMD accel (ROCm repos + XRT; risk already accepted)
     if [[ -f "$PROJECT_ROOT/scripts/65-amd-acceleration-install.sh" ]]; then
       run_script "scripts/65-amd-acceleration-install.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     fi

@@ -165,6 +165,14 @@ PY
 
   echo "[INFO] Wrote $VALIDATION_JSON"
   echo "[INFO] Wrote $VALIDATION_MD"
+  local status="WARN"
+  if [[ -f "$VALIDATION_JSON" ]]; then
+    status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status","WARN"))' "$VALIDATION_JSON" 2>/dev/null || echo WARN)"
+  fi
+  # EXPERIMENTAL-PASS / WARN / PASS are acceptable; only explicit FAIL is fatal.
+  if [[ "$status" == "FAIL" ]]; then
+    exit 1
+  fi
 }
 
 main "$@"

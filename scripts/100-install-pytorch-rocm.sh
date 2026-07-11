@@ -178,7 +178,9 @@ main() {
   fi
 
   local torch_state="missing" hip_state="false" status="WARN"
-  if [[ -x "$VENV_DIR/bin/python" ]]; then
+  if [[ "$install_action" == "venv-create-failed" ]]; then
+    status="FAIL"
+  elif [[ -x "$VENV_DIR/bin/python" ]]; then
     if "$VENV_DIR/bin/python" -c 'import importlib.util, sys; sys.exit(0 if importlib.util.find_spec("torch") else 1)' >/dev/null 2>&1; then
       torch_state="available"
       hip_state="$("$VENV_DIR/bin/python" -c 'import torch; print("true" if getattr(torch.version, "hip", None) else "false")' 2>/dev/null || echo false)"
@@ -197,6 +199,9 @@ main() {
   write_report "$status" "$torch_state" "$rocm_state" "$hip_state" "$install_action" "$detail"
   echo "[INFO] Wrote $STATUS_JSON"
   echo "[INFO] Wrote $SUMMARY_MD"
+  if [[ "$status" == "FAIL" ]]; then
+    exit 1
+  fi
 }
 
 main "$@"

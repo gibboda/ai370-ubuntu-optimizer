@@ -166,13 +166,18 @@ scripts/
 ### Stage 2 – Local AI Runtime & AI Optimization Software
 
 Use `stage2` for the roadmap-aligned aggregate command. It runs the implemented
-Stage 2 runtime/model-storage sequence and Stage 2 NPU checks, then reports that
-Stage 2 RAG remains staged.
+Stage 2 runtime/model-storage sequence, Stage 2 NPU checks, and always writes
+`reports/latest/tier3-validation.json` for the Stage 3 gate. Stage 2 RAG is
+optional (`stage2-rag`) and is not part of that gate.
 
 ```bash
 ./ai370-optimize.sh stage2 [--offline]
 ./ai370-optimize.sh stage2-validate [--offline]
 ```
+
+**Stage 3 gate policy (default):** Stage 1 must be `PASS`. Stage 2 runtime and
+offline model storage accept `PASS` or `WARN`. Stage 2 NPU accepts `PASS`,
+`WARN`, or `EXPERIMENTAL-PASS`. See `docs/ROADMAP.md` (Stage gate policy).
 
 ### Stage 2 Runtime – Local AI Runtime Layer
 
@@ -223,6 +228,15 @@ scripts/
   conflict with the shared AI runtime venv.
 - Benchmark and Stage 2 runtime gate reports are collected in `reports/latest/`
   (`tier2-runtime-benchmark.*`, `llm-validation.*`, and `tier2-validation.*`).
+- When a local GGUF or Ollama model is available, `140-benchmark-llm.sh` runs a
+  short measured smoke and records `load_time_ms` / `tokens_per_sec` (and wall
+  time) in those reports. Override with `SMOKE_N_PREDICT`, `SMOKE_PROMPT`,
+  `SMOKE_LLAMA_TIMEOUT_SEC`, `SMOKE_OLLAMA_TIMEOUT_SEC`, or `OLLAMA_HOST`.
+- `110-install-llama-cpp.sh` prefers HIP (`GGML_HIP`) when `hipcc` is available,
+  else Vulkan, else CPU. Existing CPU-only builds are left in place with a WARN
+  and rebuild guidance (`LLAMA_CPP_FORCE_REBUILD=true`).
+- Stage 2 scripts exit **non-zero only on `status=FAIL`**. `PASS` and `WARN`
+  remain exit 0 so experimental stacks can continue.
 
 ### Stage 2 NPU – AMD AI Stack Enablement
 
@@ -239,10 +253,15 @@ scripts/
 
 ```bash
 ./ai370-optimize.sh stage2-npu [--offline]
+./ai370-optimize.sh stage2-npu --accept-amd-acceleration-risk   # install staged XRT/Ryzen AI
 ./ai370-optimize.sh stage2-npu-validate
 ./ai370-optimize.sh tier3 [--offline]              # Legacy alias
 ./ai370-optimize.sh tier3-validate                 # Legacy alias
 ```
+
+`stage2-npu` runs `scripts/205-install-xrt-ryzen-ai.sh` first (inventory by default;
+install when `--accept-amd-acceleration-risk` is set and packages are staged under
+`.ai370-ai/amd-artifacts`).
 
 **Acceptance Criteria:**
 
@@ -296,8 +315,12 @@ complete installers/validators.
 
 **Important gate:** Stage 3 image generation installation and benchmarking are
 blocked (or emit clear error + guidance) until Stage 1, Stage 2 runtime, and
-Stage 2 NPU validation criteria have passed. ComfyUI will default to CPU-safe
-mode unless acceleration was explicitly installed and re-validated.
+Stage 2 NPU validation criteria are acceptable under the default gate policy
+(Stage 1 `PASS`; runtime/models `PASS|WARN`; NPU `PASS|WARN|EXPERIMENTAL-PASS`).
+Run `./ai370-optimize.sh stage2` (or the split runtime/NPU validate commands) so
+`tier2-validation.json`, `offline-model-storage.json`, and
+`tier3-validation.json` exist. ComfyUI will default to CPU-safe mode unless
+acceleration was explicitly installed and re-validated.
 
 **Acceptance Criteria:**
 
@@ -317,7 +340,7 @@ mode unless acceleration was explicitly installed and re-validated.
 ./ai370-optimize.sh stage2-runtime-validate [--offline]
 ./ai370-optimize.sh stage2-npu [--offline]
 ./ai370-optimize.sh stage2-npu-validate
-./ai370-optimize.sh stage2-rag             # Placeholder until S2-M3 is complete
+./ai370-optimize.sh stage2-rag             # Optional RAG path (not required for Stage 3 gate)
 ./ai370-optimize.sh stage3-image           # Requires Stage 1 + Stage 2 runtime/NPU validation gate
 ./ai370-optimize.sh full-stack             # Stage 1 → Stage 2 runtime → Stage 2 NPU → (risk) accel → Stage 3 with gates
 ```
