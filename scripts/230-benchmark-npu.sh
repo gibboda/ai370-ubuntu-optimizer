@@ -11,9 +11,14 @@ PERSISTENCE="${3:-runtime}"
 OFFLINE="${4:-false}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/npu-venv.sh
+source "$PROJECT_ROOT/scripts/lib/npu-venv.sh"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
-AI_ROOT="$PROJECT_ROOT/.ai370-ai"
-VENV_PYTHON="$AI_ROOT/venv/bin/python"
+# Prefer Ryzen AI venv so NPU benchmarks can see VitisAIExecutionProvider.
+# XRT + VOE/flexml LD_LIBRARY_PATH are required or EP silently falls back to CPU.
+prepare_npu_runtime_env "$PROJECT_ROOT"
+VENV_PYTHON="$(resolve_npu_python "$PROJECT_ROOT" || true)"
+VENV_SOURCE="$(npu_python_source_label "${VENV_PYTHON:-}")"
 BENCHMARK_JSON="$LATEST_DIR/npu-benchmark.json"
 BENCHMARK_MD="$LATEST_DIR/npu-benchmark.md"
 
@@ -26,11 +31,12 @@ main() {
   fi
 
   local python_bin="python3"
-  if [[ -x "$VENV_PYTHON" ]]; then
+  if [[ -n "${VENV_PYTHON:-}" && -x "$VENV_PYTHON" ]]; then
     python_bin="$VENV_PYTHON"
   fi
 
-  PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" VENV_PYTHON="$VENV_PYTHON" \
+  PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
+  VENV_PYTHON="${VENV_PYTHON:-$python_bin}" VENV_SOURCE="${VENV_SOURCE:-other}" \
   "$python_bin" - "$BENCHMARK_JSON" "$BENCHMARK_MD" <<'PY'
 import datetime
 import importlib.util
@@ -48,6 +54,8 @@ profile = os.environ["PROFILE"]
 mode = os.environ["MODE"]
 persistence = os.environ["PERSISTENCE"]
 offline = os.environ["OFFLINE"] == "true"
+venv_python = os.environ.get("VENV_PYTHON", "")
+venv_source = os.environ.get("VENV_SOURCE", "unknown")
 provider_tokens = ("vitis", "vai", "ryzen", "xilinx", "amd", "xdna")
 
 status = "WARN"
@@ -59,7 +67,11 @@ error = ""
 model_path = ""
 
 if importlib.util.find_spec("onnxruntime") is None:
-    limitations.append("ONNX Runtime is not installed; run scripts/200-install-onnxruntime.sh first.")
+    limitations.append(
+        "ONNX Runtime is not installed in the selected venv. "
+        "For NPU: scripts/205-install-xrt-ryzen-ai.sh --accept-amd-acceleration-risk. "
+        "For CPU baseline: scripts/200-install-onnxruntime.sh."
+    )
 elif importlib.util.find_spec("onnx") is None:
     limitations.append("Python package 'onnx' is not installed; it is required to generate the local benchmark model.")
 elif importlib.util.find_spec("numpy") is None:
@@ -122,18 +134,37 @@ else:
 
             for provider in amd_candidates[:1]:
                 try:
-                    benchmarks.append(run_provider(provider))
+                    result = run_provider(provider)
+                    benchmarks.append(result)
+                    # ORT may list VitisAI but fall back to CPU if native libs are missing.
+                    if result.get("actual_provider") != provider and result.get("actual_provider") == "CPUExecutionProvider":
+                        limitations.append(
+                            f"Requested {provider} but session used CPUExecutionProvider "
+                            "(native EP libs / XRT env likely missing). "
+                            "Source reports/latest/xrt-ryzen-ai-env.sh and ensure "
+                            "scripts/lib/npu-venv.sh prepare_npu_runtime_env paths are set."
+                        )
                 except Exception as exc:
                     limitations.append(f"AMD provider {provider} was visible but benchmark execution failed: {type(exc).__name__}: {exc}")
 
-        if amd_candidates and any(b["requested_provider"] in amd_candidates for b in benchmarks):
+        amd_ran_on_ep = any(
+            b.get("requested_provider") in amd_candidates
+            and b.get("actual_provider") == b.get("requested_provider")
+            for b in benchmarks
+        )
+        if amd_candidates and amd_ran_on_ep:
             status = "PASS"
         elif amd_candidates:
             status = "WARN"
-            limitations.append("AMD provider is visible, but no successful AMD-provider benchmark was completed.")
+            if not any(b.get("requested_provider") in amd_candidates for b in benchmarks):
+                limitations.append("AMD provider is visible, but no successful AMD-provider benchmark was completed.")
         else:
             status = "WARN"
             limitations.append("No AMD/Vitis/Ryzen AI ONNX Runtime provider was detected; NPU benchmark was not run.")
+            if venv_source != "ryzen-ai":
+                limitations.append(
+                    "Selected venv is not .ai370-ai/ryzen-ai/venv; stock CPU onnxruntime cannot expose VitisAI EP."
+                )
     except Exception as exc:
         error = f"{type(exc).__name__}: {exc}"
         limitations.append("Benchmark failed before completion; inspect the error and provider status reports.")
@@ -148,6 +179,8 @@ data = {
     "mode": mode,
     "persistence": persistence,
     "offline": offline,
+    "venv_python": venv_python,
+    "venv_source": venv_source,
     "providers": providers,
     "amd_provider_candidates": amd_candidates,
     "benchmarks": benchmarks,
@@ -164,6 +197,7 @@ lines = [
     "",
     f"Status: {status}",
     "",
+    f"- Venv: {venv_python} ({venv_source})",
     f"- Providers: {', '.join(providers) if providers else 'none'}",
     f"- AMD/Vitis candidates: {', '.join(amd_candidates) if amd_candidates else 'none detected'}",
     "",

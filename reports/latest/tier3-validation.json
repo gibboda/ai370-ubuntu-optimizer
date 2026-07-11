@@ -1,7 +1,7 @@
 {
   "tier": 3,
-  "status": "EXPERIMENTAL-PASS",
-  "timestamp": "2026-07-11T20:40:50.089500Z",
+  "status": "PASS",
+  "timestamp": "2026-07-11T21:25:17.564193Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
@@ -9,9 +9,9 @@
   "acceptance": {
     "npu_module_loaded": true,
     "device_nodes_present": true,
-    "xrt_available": false,
+    "xrt_available": true,
     "onnx_runtime_present": true,
-    "npu_ep_visible": false,
+    "npu_ep_visible": true,
     "npu_smoke_executed": true
   },
   "artifacts": {
@@ -22,8 +22,8 @@
     "tier3_validation": "reports/latest/tier3-validation.json"
   },
   "source_reports": {
-    "vitis_ai_ep_status": "WARN",
-    "npu_benchmark_status": "WARN"
+    "vitis_ai_ep_status": "PASS",
+    "npu_benchmark_status": "PASS"
   },
   "note": "Stage 2 NPU validation is experimental until Vitis AI / Ryzen AI execution providers and NPU benchmarks pass. Stage AMD artifacts under .ai370-ai/amd-artifacts before running amd-accel-install."
 }

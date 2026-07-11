@@ -9,6 +9,8 @@ PERSISTENCE="${3:-runtime}"
 OFFLINE="${4:-false}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/npu-venv.sh
+source "$PROJECT_ROOT/scripts/lib/npu-venv.sh"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
 STATUS_FILE="$LATEST_DIR/npu-acceleration-status.txt"
 STATUS_JSON="$LATEST_DIR/npu-acceleration-status.json"
@@ -16,7 +18,10 @@ RECOMMENDATIONS_FILE="$LATEST_DIR/npu-acceleration-recommendations.md"
 CAPABILITIES_JSON="$LATEST_DIR/npu-capabilities.json"
 SMOKE_FILE="$LATEST_DIR/npu-smoke-benchmark.md"
 XRT_STATUS="$LATEST_DIR/xrt-status.txt"
-VENV_PYTHON="$PROJECT_ROOT/.ai370-ai/venv/bin/python"
+# Prefer Ryzen AI venv (VitisAI EP) over stock CPU onnxruntime venv.
+prepare_npu_runtime_env "$PROJECT_ROOT"
+VENV_PYTHON="$(resolve_npu_python "$PROJECT_ROOT" || true)"
+VENV_SOURCE="$(npu_python_source_label "${VENV_PYTHON:-}")"
 
 require_runtime_persistence() {
   if [[ "$PERSISTENCE" == "system" ]]; then
@@ -56,13 +61,16 @@ detect_npu_stack() {
     device_state="present"
   fi
 
-  if command -v xrt-smi >/dev/null 2>&1; then
+  if command -v xrt-smi >/dev/null 2>&1 || [[ -x /opt/xilinx/xrt/bin/xrt-smi ]]; then
     runtime_state="available"
-    xrt_examine="$(xrt-smi examine 2>&1 || true)"
-    xrt_validate="$(xrt-smi validate 2>&1 || true)"
+    local xrt_smi_bin
+    xrt_smi_bin="$(command -v xrt-smi 2>/dev/null || true)"
+    [[ -z "$xrt_smi_bin" && -x /opt/xilinx/xrt/bin/xrt-smi ]] && xrt_smi_bin="/opt/xilinx/xrt/bin/xrt-smi"
+    xrt_examine="$("$xrt_smi_bin" examine 2>&1 || true)"
+    xrt_validate="$("$xrt_smi_bin" validate 2>&1 || true)"
   fi
 
-  if [[ -x "$VENV_PYTHON" ]]; then
+  if [[ -n "${VENV_PYTHON:-}" && -x "$VENV_PYTHON" ]]; then
     if ! ort_providers="$("$VENV_PYTHON" - <<'PY'
 try:
     import onnxruntime as ort
@@ -74,6 +82,8 @@ PY
 )"; then
       ort_providers="error: onnxruntime provider check failed"
     fi
+  else
+    ort_providers="missing: no NPU/stock venv python"
   fi
 
   {
@@ -87,6 +97,7 @@ PY
     echo "kernel_module: $module_state"
     echo "device_node: $device_state"
     echo "runtime_tools: $runtime_state"
+    echo "onnxruntime_venv: ${VENV_PYTHON:-none} (${VENV_SOURCE:-unknown})"
     echo "onnxruntime_providers: $ort_providers"
   } > "$STATUS_FILE"
 
@@ -107,6 +118,7 @@ PY
   PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
   MODULE_STATE="$module_state" DEVICE_STATE="$device_state" RUNTIME_STATE="$runtime_state" \
   DEVICE_NODES="$device_nodes" ORT_PROVIDERS="$ort_providers" XRT_EXAMINE="$xrt_examine" XRT_VALIDATE="$xrt_validate" \
+  VENV_PYTHON="${VENV_PYTHON:-}" VENV_SOURCE="${VENV_SOURCE:-unknown}" \
   python3 - "$STATUS_JSON" "$CAPABILITIES_JSON" <<'PY'
 import json
 import os
@@ -121,6 +133,8 @@ status = {
     "kernel_module": os.environ["MODULE_STATE"],
     "device_node": os.environ["DEVICE_STATE"],
     "runtime_tools": os.environ["RUNTIME_STATE"],
+    "onnxruntime_venv": os.environ.get("VENV_PYTHON", ""),
+    "onnxruntime_venv_source": os.environ.get("VENV_SOURCE", "unknown"),
     "onnxruntime_providers": os.environ["ORT_PROVIDERS"],
 }
 capabilities = dict(status)
@@ -146,6 +160,7 @@ PY
     echo "- kernel module: $module_state"
     echo "- device node: $device_state"
     echo "- XRT tools: $runtime_state"
+    echo "- ONNX Runtime venv: ${VENV_PYTHON:-none} (${VENV_SOURCE:-unknown})"
     echo "- ONNX Runtime providers: $ort_providers"
     echo
     echo "No downloads or installs were attempted. NPU inference should only be attempted when a local NPU execution provider is visible."
@@ -164,11 +179,13 @@ PY
     echo "- kernel module: $module_state"
     echo "- device node: $device_state"
     echo "- runtime tools: $runtime_state"
+    echo "- ONNX Runtime venv: ${VENV_PYTHON:-none} (${VENV_SOURCE:-unknown})"
     echo "- ONNX Runtime providers: $ort_providers"
     echo
     echo "## Policy"
     echo
     echo "This track detects AMD XDNA2 NPU presence and locally installed runtime/provider visibility without fetching proprietary runtimes."
+    echo "Provider checks prefer \`.ai370-ai/ryzen-ai/venv\` (AMD install) over stock \`.ai370-ai/venv\` (CPU onnxruntime)."
     echo
     echo "## Recommendations"
     echo
@@ -180,6 +197,9 @@ PY
     fi
     if [[ "$runtime_state" != "available" ]]; then
       echo "- Stage AMD Ryzen AI runtime tools in your approved offline artifacts before attempting NPU workloads."
+    fi
+    if [[ "${VENV_SOURCE:-}" != "ryzen-ai" ]]; then
+      echo "- Ryzen AI venv not selected; run scripts/205-install-xrt-ryzen-ai.sh with --accept-amd-acceleration-risk so NPU EP checks use .ai370-ai/ryzen-ai/venv."
     fi
     echo "- Keep SAFE mode until NPU inference is validated."
   } > "$RECOMMENDATIONS_FILE"

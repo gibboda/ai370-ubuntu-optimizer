@@ -1,18 +1,16 @@
 # Tier 3 NPU (Experimental) Validation
 
-Status: EXPERIMENTAL-PASS | Profile: ai370 | Offline: False
-Timestamp: 2026-07-11T20:40:50.089500Z
+Status: PASS | Profile: ai370 | Offline: False
+Timestamp: 2026-07-11T21:25:17.564193Z
 
 - NPU module: loaded
 - Device nodes: present
-- XRT: not-available
-- ONNX providers: AzureExecutionProvider, CPUExecutionProvider
-- NPU EP visible: false
+- XRT: available
+- ONNX providers: VitisAIExecutionProvider, CPUExecutionProvider
+- NPU EP visible: true
 - Smoke benchmark: executed
 
 ## Source reports
 
-- vitis-ai-ep-status: WARN
-- npu-benchmark: WARN
-
-WARNING: Full NPU enablement may require vendor Ryzen AI packages, a working XRT runtime, and Vitis AI ONNX Runtime execution providers.
+- vitis-ai-ep-status: PASS
+- npu-benchmark: PASS

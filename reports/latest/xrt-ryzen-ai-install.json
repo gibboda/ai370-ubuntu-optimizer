@@ -4,7 +4,7 @@
   "milestone": "S2-M2",
   "phase": "install-xrt-ryzen-ai",
   "status": "PASS",
-  "timestamp": "2026-07-11T21:11:33.495658Z",
+  "timestamp": "2026-07-11T21:25:16.269368Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
@@ -23,9 +23,9 @@
   "xrt_deb_selection": {
     "mode": "auto",
     "host_ubuntu_version": "26.04",
-    "ubuntu_versions_source": "explicit",
+    "ubuntu_versions_source": "auto",
     "ubuntu_versions_preference": [
-      "22.04",
+      "26.04",
       "24.04"
     ],
     "match_source": "ubuntu-24.04",

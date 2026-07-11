@@ -2,14 +2,14 @@
 
 Profile: ai370 | Mode: safe | Offline: False
 
-Status: WARN
+Status: PASS
 
+- Venv: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/ryzen-ai/venv/bin/python (ryzen-ai)
 - ONNX Runtime: available
-- Providers: AzureExecutionProvider, CPUExecutionProvider
-- AMD/Vitis candidates: none detected
-- Provider smoke: missing
+- Providers: VitisAIExecutionProvider, CPUExecutionProvider
+- AMD/Vitis candidates: VitisAIExecutionProvider
+- Provider smoke: visible
 
 ## Recommendations
 
-- Install/stage AMD Ryzen AI Software with the Vitis AI ONNX Runtime Execution Provider.
-- Confirm XRT/AMDXDNA device visibility with scripts/210-check-ryzen-ai-software.sh.
+- Run scripts/230-benchmark-npu.sh to prove model execution with the detected provider.
