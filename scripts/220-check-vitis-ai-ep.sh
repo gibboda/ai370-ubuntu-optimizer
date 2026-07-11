@@ -137,6 +137,13 @@ PY
 
   echo "[INFO] Wrote $STATUS_JSON"
   echo "[INFO] Wrote $SUMMARY_MD"
+  local status="WARN"
+  if [[ -f "$STATUS_JSON" ]]; then
+    status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status","WARN"))' "$STATUS_JSON" 2>/dev/null || echo WARN)"
+  fi
+  if [[ "$status" == "FAIL" ]]; then
+    exit 1
+  fi
 }
 
 main "$@"

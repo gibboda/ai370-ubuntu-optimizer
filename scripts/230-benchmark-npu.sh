@@ -197,6 +197,13 @@ PY
 
   echo "[INFO] Wrote $BENCHMARK_JSON"
   echo "[INFO] Wrote $BENCHMARK_MD"
+  local status="WARN"
+  if [[ -f "$BENCHMARK_JSON" ]]; then
+    status="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status","WARN"))' "$BENCHMARK_JSON" 2>/dev/null || echo WARN)"
+  fi
+  if [[ "$status" == "FAIL" ]]; then
+    exit 1
+  fi
 }
 
 main "$@"

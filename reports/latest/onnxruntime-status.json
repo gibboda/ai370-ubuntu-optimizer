@@ -3,7 +3,7 @@
   "milestone": "S2-M2",
   "phase": "install-onnxruntime",
   "status": "PASS",
-  "timestamp": "2026-07-03T23:55:31.114735Z",
+  "timestamp": "2026-07-11T19:41:26.283828Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",

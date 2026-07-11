@@ -1,0 +1,27 @@
+{
+  "tier": 2,
+  "stage": 2,
+  "milestone": "S2-M2",
+  "phase": "install-xrt-ryzen-ai",
+  "status": "PASS",
+  "timestamp": "2026-07-11T19:41:32.165506Z",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "accept_amd_acceleration_risk": true,
+  "install_action": "installed-or-validated",
+  "artifact_root": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/amd-artifacts",
+  "ryzen_ai_install_root": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/ryzen-ai",
+  "staged_xrt_debs": [],
+  "staged_ryzen_ai_archive": null,
+  "runtime": {
+    "xrt": "available",
+    "ryzen_ai": "available",
+    "kernel_module": "loaded",
+    "device_node": "present"
+  },
+  "environment_snippet": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/reports/latest/xrt-ryzen-ai-env.sh",
+  "detail": "XRT and/or Ryzen AI stack installed or already available after risk-accepted install path.",
+  "policy": "Installation requires --accept-amd-acceleration-risk. Without risk acceptance this script only inventories staged AMD artifacts and existing XRT/Ryzen AI runtime state."
+}

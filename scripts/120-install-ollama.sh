@@ -96,6 +96,9 @@ EOF_JSON
 
   echo "[INFO] Wrote $STATUS_JSON"
   echo "[INFO] Wrote $SUMMARY_MD"
+  if [[ "$status" == "FAIL" ]]; then
+    exit 1
+  fi
 }
 
 main "$@"

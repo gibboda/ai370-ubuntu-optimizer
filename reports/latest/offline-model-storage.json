@@ -1,7 +1,7 @@
 {
   "stage": "S2-M5",
   "status": "WARN",
-  "timestamp": "2026-07-03T23:54:58.813627+00:00",
+  "timestamp": "2026-07-11T19:35:10.568190+00:00",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
@@ -11,7 +11,7 @@
   "model_root": ".ai370-ai/models",
   "storage": {
     "total_gb": 914.78,
-    "free_gb": 699.06,
+    "free_gb": 704.19,
     "minimum_free_gb": 20.0,
     "nvme_confirmed": true
   },

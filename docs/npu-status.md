@@ -12,23 +12,39 @@ tools, ONNX Runtime, or NPU execution providers are missing.
 
 ## Validation flow
 
-Run the S2-M2 scripts in this order:
+Preferred launcher path (inventory-only for XRT unless risk is accepted):
 
 ```bash
+./ai370-optimize.sh stage2-npu
+# Install staged XRT/Ryzen AI packages (requires AMD artifacts):
+./ai370-optimize.sh stage2-npu --accept-amd-acceleration-risk
+```
+
+Script order for S2-M2:
+
+```bash
+./scripts/205-install-xrt-ryzen-ai.sh   # inventory, or install when 5th arg is true
 ./scripts/200-install-onnxruntime.sh
 ./scripts/210-check-ryzen-ai-software.sh
 ./scripts/220-check-vitis-ai-ep.sh
 ./scripts/230-benchmark-npu.sh
+./scripts/240-write-tier3-validation.sh
 ```
 
 Use `--offline` through the top-level launcher or pass `true` as the fourth
 script argument when validating pre-staged offline artifacts. Offline ONNX
-Runtime installation expects wheels under `.ai370-ai/wheelhouse`.
+Runtime installation expects wheels under `.ai370-ai/wheelhouse`. Stage XRT/NPU
+`.deb` files and optional `ryzen_ai-*.tgz` under `.ai370-ai/amd-artifacts`
+(see `configs/amd-acceleration.env`). Without `--accept-amd-acceleration-risk`,
+`205` only inventories artifacts and writes diagnostics (exit 0 on WARN).
 
 ## Generated reports
 
 | Report | Producer | Purpose |
 | --- | --- | --- |
+| `reports/latest/xrt-ryzen-ai-install.json` | `scripts/205-install-xrt-ryzen-ai.sh` | XRT/Ryzen AI staging inventory or risk-accepted install result. |
+| `reports/latest/xrt-ryzen-ai-install.md` | `scripts/205-install-xrt-ryzen-ai.sh` | Human-readable XRT/Ryzen AI install/staging summary. |
+| `reports/latest/xrt-ryzen-ai-env.sh` | `scripts/205-install-xrt-ryzen-ai.sh` | PATH/setup snippet for XRT and Ryzen AI install root. |
 | `reports/latest/onnxruntime-status.json` | `scripts/200-install-onnxruntime.sh` | ONNX Runtime version, provider list, CPU-provider smoke status, install action. |
 | `reports/latest/onnxruntime-status.md` | `scripts/200-install-onnxruntime.sh` | Human-readable ONNX Runtime status summary. |
 | `reports/latest/npu-acceleration-status.json` | `scripts/210-check-ryzen-ai-software.sh` | Kernel module, device node, runtime tool, and ONNX Runtime provider detection. |
