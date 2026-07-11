@@ -55,6 +55,9 @@ open-webui-venv
 *.pth
 *.bin
 
+# AMD Artifacts
+.ai370-ai/amd-artifacts/
+
 # Generated benchmark and validation scratch output
 reports/tmp/
 reports/archive/
