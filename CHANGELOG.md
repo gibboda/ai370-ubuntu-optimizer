@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.5.0...v0.5.1) (2026-07-11)
+
+
+### Bug Fixes
+
+* remove duplicate installation script calls for XRT and Ryzen AI ([#95](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/95)) ([026bd6a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/026bd6acff4e4f77c004bb03a65cd2659d13960e))
+
 ## [0.5.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.4.0...v0.5.0) (2026-07-11)
 
 
