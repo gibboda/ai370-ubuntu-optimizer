@@ -49,11 +49,11 @@ none
 - Result: pass
 - Backend: ollama
 - Model: deepseek-coder:6.7b
-- load_time_ms: 43.201
+- load_time_ms: 49.365
 - tokens_generated: 16
-- tokens_per_sec: 21.132
-- wall_time_ms: 910.044
-- eval_time_ms: 757.13
+- tokens_per_sec: 21.723
+- wall_time_ms: 912.389
+- eval_time_ms: 736.534
 - Detail: ollama /api/generate smoke completed with metrics
 
 ## Tier 2 Runtime

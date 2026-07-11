@@ -15,8 +15,8 @@
     "local_model_available": true,
     "local_inference_smoke": "pass",
     "measured_smoke": true,
-    "tokens_per_sec": 21.132,
-    "load_time_ms": 43.201,
+    "tokens_per_sec": 21.723,
+    "load_time_ms": 49.365,
     "benchmark_report_generated": true
   },
   "artifacts": {

@@ -1,7 +1,7 @@
 {
   "tier": 1,
   "phase": "detect-npu",
-  "timestamp": "2026-07-11T20:19:38.320422Z",
+  "timestamp": "2026-07-11T20:40:10.326657Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",

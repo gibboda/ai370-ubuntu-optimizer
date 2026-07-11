@@ -16,7 +16,7 @@ Install action: installed-or-validated
 
 - Root: `/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/amd-artifacts`
 - Staged XRT debs: 0
-- Ryzen AI archive: `none`
+- Ryzen AI archive: `/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/amd-artifacts/ryzen_ai-1.7.1.tgz`
 
 ## Next steps
 
@@ -29,4 +29,4 @@ Install action: installed-or-validated
 
 ## Detail
 
-XRT and/or Ryzen AI stack installed or already available after risk-accepted install path.
+XRT available and Ryzen AI software installed into /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/ryzen-ai/venv.

@@ -37,6 +37,7 @@ __pycache__/
 venv/
 env/
 
+
 # Local environment and machine-specific configuration
 .env
 .env.*
@@ -55,8 +56,12 @@ open-webui-venv
 *.pth
 *.bin
 
-# AMD Artifacts
+# Artifacts
 .ai370-ai/amd-artifacts/
+*.whl
+*.tgz
+*.debug
+*.tar.gz
 
 # Generated benchmark and validation scratch output
 reports/tmp/
