@@ -68,3 +68,7 @@ reports/tmp/
 reports/archive/
 *.prof
 *.trace
+
+# Vitis AI / Ryzen AI session cache hashes (written at repo root during NPU runs)
+original-info-signature.txt
+original-model-signature.txt
