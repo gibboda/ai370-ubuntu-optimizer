@@ -1,11 +1,11 @@
 # Tier 3 NPU (Experimental) Validation
 
 Status: EXPERIMENTAL-PASS | Profile: ai370 | Offline: False
-Timestamp: 2026-07-04T01:46:18.201411Z
+Timestamp: 2026-07-04T11:33:19.681835Z
 
 - NPU module: loaded
 - Device nodes: present
-- XRT: available
+- XRT: not-available
 - ONNX providers: AzureExecutionProvider, CPUExecutionProvider
 - NPU EP visible: false
 - Smoke benchmark: executed

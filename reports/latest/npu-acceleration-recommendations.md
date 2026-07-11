@@ -9,7 +9,7 @@ Offline: false
 
 - kernel module: loaded
 - device node: present
-- runtime tools: available
+- runtime tools: not-installed
 - ONNX Runtime providers: AzureExecutionProvider,CPUExecutionProvider
 
 ## Policy
@@ -18,4 +18,5 @@ This track detects AMD XDNA2 NPU presence and locally installed runtime/provider
 
 ## Recommendations
 
+- Stage AMD Ryzen AI runtime tools in your approved offline artifacts before attempting NPU workloads.
 - Keep SAFE mode until NPU inference is validated.
