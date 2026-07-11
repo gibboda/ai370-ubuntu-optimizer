@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.4.0...v0.5.0) (2026-07-11)
+
+
+### Features
+
+* add Ryzen AI NPU runtime installer and update related scripts and documentation ([#92](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/92)) ([b1b6e3c](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/b1b6e3c9a59baabbf272fd0546d6d7949e321c40))
+* Enhance installation scripts for XRT and Ryzen AI ([#93](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/93)) ([951d34d](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/951d34d9949912bca81317ef93652ead282b2f82))
+
 ## [0.4.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.3.1...v0.4.0) (2026-07-04)
 
 
