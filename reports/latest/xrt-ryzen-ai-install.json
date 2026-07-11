@@ -4,7 +4,7 @@
   "milestone": "S2-M2",
   "phase": "install-xrt-ryzen-ai",
   "status": "PASS",
-  "timestamp": "2026-07-11T19:41:32.165506Z",
+  "timestamp": "2026-07-11T20:20:32.370846Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",

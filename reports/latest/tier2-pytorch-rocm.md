@@ -21,7 +21,7 @@ Requirement already satisfied: networkx>=2.5.1 in ./.ai370-ai/venv/lib/python3.1
 Requirement already satisfied: jinja2 in ./.ai370-ai/venv/lib/python3.14/site-packages (from torch) (3.1.6)
 Requirement already satisfied: fsspec>=0.8.5 in ./.ai370-ai/venv/lib/python3.14/site-packages (from torch) (2026.4.0)
 Requirement already satisfied: pytorch-triton-rocm==3.5.0+git7416ffcb in ./.ai370-ai/venv/lib/python3.14/site-packages (from torch) (3.5.0+git7416ffcb)
-Requirement already satisfied: numpy in ./.ai370-ai/venv/lib/python3.14/site-packages (from torchvision) (2.5.0)
+Requirement already satisfied: numpy in ./.ai370-ai/venv/lib/python3.14/site-packages (from torchvision) (2.5.1)
 Requirement already satisfied: pillow!=8.3.*,>=5.3.0 in ./.ai370-ai/venv/lib/python3.14/site-packages (from torchvision) (12.2.0)
 Requirement already satisfied: mpmath<1.4,>=1.1.0 in ./.ai370-ai/venv/lib/python3.14/site-packages (from sympy>=1.13.3->torch) (1.3.0)
 Requirement already satisfied: MarkupSafe>=2.0 in ./.ai370-ai/venv/lib/python3.14/site-packages (from jinja2->torch) (3.0.3)

@@ -8,8 +8,8 @@ Status: PASS
 - llama.cpp available/build output: available
 - Ollama local models: present
 - Measured smoke: pass
-- tokens_per_sec: 20.184
-- load_time_ms: 11871.531
+- tokens_per_sec: 21.132
+- load_time_ms: 43.201
 - Benchmark report generated: yes
 
 Gate note: PASS and WARN both satisfy the default Stage 3 gate (see docs/ROADMAP.md).

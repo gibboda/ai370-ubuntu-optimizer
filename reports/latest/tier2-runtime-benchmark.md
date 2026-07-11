@@ -10,11 +10,11 @@ Status: PASS
 | Result | pass |
 | Backend | ollama |
 | Model | deepseek-coder:6.7b |
-| load_time_ms | 11871.531 |
+| load_time_ms | 43.201 |
 | tokens_generated | 16 |
-| tokens_per_sec | 20.184 |
-| wall_time_ms | 13417.581 |
-| eval_time_ms | 792.705 |
+| tokens_per_sec | 21.132 |
+| wall_time_ms | 910.044 |
+| eval_time_ms | 757.13 |
 
 - Ollama: available
 - llama.cpp: available
