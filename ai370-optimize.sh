@@ -314,6 +314,7 @@ case "$CMD" in
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
+    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
@@ -353,6 +354,7 @@ case "$CMD" in
     echo "[INFO] Running Stage 2 NPU – AMD AI Stack Enablement (formerly Tier 3)"
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
+    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
@@ -412,6 +414,7 @@ case "$CMD" in
     # Stage 2 NPU (XRT/Ryzen staging install + visibility)
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
+    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"

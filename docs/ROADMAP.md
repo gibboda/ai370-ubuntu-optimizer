@@ -436,7 +436,7 @@ scripts/130-install-open-webui.sh
 
 ### S2-M2 — Ryzen AI NPU Runtime Stack
 
-**Status:** Ongoing
+**Status:** Implemented
 
 #### Description
 

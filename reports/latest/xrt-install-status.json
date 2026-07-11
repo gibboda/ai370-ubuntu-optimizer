@@ -1,0 +1,16 @@
+{
+  "tier": 2,
+  "milestone": "S2-M2",
+  "phase": "install-xrt-ryzen-ai",
+  "status": "WARN",
+  "timestamp": "2026-07-04T11:33:19Z",
+  "profile": "ai370",
+  "mode": "safe",
+  "persistence": "runtime",
+  "offline": false,
+  "xrt_staged": false,
+  "ryzen_staged": false,
+  "xrt_installed": false,
+  "ryzen_installed": false,
+  "detail": "Staged installation files are missing. Skipped NPU runtime installation."
+}
