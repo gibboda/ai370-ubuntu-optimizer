@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.7.0...v0.8.0) (2026-07-11)
+
+
+### Features
+
+* prefer Ryzen AI venv and runtime env for Stage 2 NPU validation ([#103](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/103)) ([02d92ee](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/02d92eed16b0be5fad2ff5a8d9e7397df1390d94))
+
 ## [0.7.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.6.0...v0.7.0) (2026-07-11)
 
 
