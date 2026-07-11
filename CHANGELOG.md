@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.6.0...v0.7.0) (2026-07-11)
+
+
+### Features
+
+* Enhance XRT/NPU package selection logic and documentation ([#101](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/101)) ([c3fe160](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/c3fe1600b3f71832fceb5df690842d1aaf7d8f16))
+
 ## [0.6.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.5.1...v0.6.0) (2026-07-11)
 
 
