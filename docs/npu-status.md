@@ -35,8 +35,22 @@ Use `--offline` through the top-level launcher or pass `true` as the fourth
 script argument when validating pre-staged offline artifacts. Offline ONNX
 Runtime installation expects wheels under `.ai370-ai/wheelhouse`. Stage XRT/NPU
 `.deb` files and optional `ryzen_ai-*.tgz` under `.ai370-ai/amd-artifacts`
-(see `configs/amd-acceleration.env`). Without `--accept-amd-acceleration-risk`,
-`205` only inventories artifacts and writes diagnostics (exit 0 on WARN).
+(see `configs/amd-acceleration.env`).
+
+XRT `.deb` selection (auto mode, default — no hard-coded Ubuntu list):
+
+1. Prefer the host Ubuntu `VERSION_ID` from `/etc/os-release`.
+2. Fall back to the previous Ubuntu LTS (`YY.04` minus two years).
+3. Also try Ubuntu tags discovered in staged deb filenames under
+   `AMD_ARTIFACT_ROOT` (newest first).
+4. If still none, try an explicit `XRT_DEB_GLOBS` override (env or config).
+5. Otherwise treat staged XRT packages as missing (install path fails when risk
+   is accepted and XRT tools are not already available).
+
+Optional pin: set `XRT_UBUNTU_VERSIONS="26.04 24.04"` to force a fixed try-order.
+Set `XRT_DEB_GLOBS_MODE=override` to skip version fallback and require
+`XRT_DEB_GLOBS` only. Without `--accept-amd-acceleration-risk`, `205` only
+inventories artifacts and writes diagnostics (exit 0 on WARN).
 
 ## Generated reports
 
@@ -73,8 +87,8 @@ A fully enabled NPU stack should show these signals:
 | --- | --- | --- |
 | No AMDXDNA/XDNA kernel module | Kernel, firmware, or driver support missing | Re-run Tier 1 kernel/NPU detection and confirm platform firmware support. |
 | No NPU device node | Firmware, kernel driver, or permissions issue | Check `reports/latest/tier1-npu.md` and `reports/latest/npu-capabilities.json`. |
-| `xrt-smi` missing | Ryzen AI/XRT runtime tools are not installed or not in `PATH` | Stage Ubuntu 26.04 XRT/NPU `.deb` files under `.ai370-ai/amd-artifacts/` (see `configs/amd-acceleration.env`), re-run with `--accept-amd-acceleration-risk`, then rerun `scripts/210-check-ryzen-ai-software.sh`. |
-| No matching XRT/NPU debs / staged `*_24.04-*` ignored | Configured globs expect `*_26.04-*` package names | Stage Ubuntu 26.04 debs, or override `XRT_DEB_GLOBS` if you intentionally use another release’s packages. |
+| `xrt-smi` missing | Ryzen AI/XRT runtime tools are not installed or not in `PATH` | Stage XRT/NPU `.deb` files under `.ai370-ai/amd-artifacts/` (see `configs/amd-acceleration.env`), re-run with `--accept-amd-acceleration-risk`, then rerun `scripts/210-check-ryzen-ai-software.sh`. |
+| No matching XRT/NPU debs | No host/previous-LTS/discovered tags matched and no override | Auto mode uses host `VERSION_ID`, previous LTS, and tags parsed from staged deb names, then `XRT_DEB_GLOBS`. Stage matching debs, pin `XRT_UBUNTU_VERSIONS`, or set `XRT_DEB_GLOBS` / `XRT_DEB_GLOBS_MODE=override`. |
 | `ERROR: No wheels found in the current directory` | AMD `install_ryzen_ai.sh` expects `.whl` files in the process CWD | Use current `scripts/205-install-xrt-ryzen-ai.sh` (runs the installer from the extract directory). Ensure `ryzen_ai-*.tgz` fully extracted under `.ai370-ai/ryzen-ai/source`. |
 | Ryzen AI install needs Python 3.12 | Ryzen AI 1.7.x wheels and installer hard-require `python3.12` | Install Python 3.12 on `PATH` (host default may be 3.13/3.14). `uv python install 3.12` is fine; the toolkit resolves the real binary so AMD’s `venv --copies` works. |
 | `ensurepip` / `venv --copies` fails | uv/pyenv **shim** copied into the venv breaks stdlib paths | Re-run with current `scripts/205-install-xrt-ryzen-ai.sh`, or put the real `.../cpython-3.12.*/bin` ahead of shims on `PATH`. |
