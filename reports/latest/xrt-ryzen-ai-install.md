@@ -16,8 +16,8 @@ Install action: skipped-no-risk-ack
 
 - Mode: auto
 - Host Ubuntu: 26.04
-- Version preference source: explicit
-- Version preference: 22.04, 24.04
+- Version preference source: auto
+- Version preference: 26.04, 24.04
 - Match source: ubuntu-24.04
 - Matched package Ubuntu tag: 24.04
 
@@ -33,7 +33,7 @@ Install action: skipped-no-risk-ack
 
 ## Next steps
 
-- Stage XRT/NPU `.deb` files under the artifact root. Auto mode prefers the host Ubuntu version, then the previous LTS, then tags discovered in staged filenames (resolved order: 22.04, 24.04).
+- Stage XRT/NPU `.deb` files under the artifact root. Auto mode prefers the host Ubuntu version, then the previous LTS, then tags discovered in staged filenames (resolved order: 26.04, 24.04).
 - Optionally pin with `XRT_UBUNTU_VERSIONS`, set `XRT_DEB_GLOBS` as a last-resort override, or use `XRT_DEB_GLOBS_MODE=override` for custom globs only.
 - Optionally stage `ryzen_ai-*.tgz` for the Ryzen AI software installer.
 - Re-run with `--accept-amd-acceleration-risk` to install staged packages:

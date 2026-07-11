@@ -2,31 +2,42 @@
   "tier": 2,
   "milestone": "S2-M2",
   "phase": "benchmark-npu",
-  "status": "WARN",
-  "timestamp": "2026-07-11T20:40:49.999295Z",
+  "status": "PASS",
+  "timestamp": "2026-07-11T21:25:17.452851Z",
   "profile": "ai370",
   "mode": "safe",
   "persistence": "runtime",
   "offline": false,
+  "venv_python": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/ryzen-ai/venv/bin/python",
+  "venv_source": "ryzen-ai",
   "providers": [
-    "AzureExecutionProvider",
+    "VitisAIExecutionProvider",
     "CPUExecutionProvider"
   ],
-  "amd_provider_candidates": [],
+  "amd_provider_candidates": [
+    "VitisAIExecutionProvider"
+  ],
   "benchmarks": [
     {
       "requested_provider": "CPUExecutionProvider",
       "actual_provider": "CPUExecutionProvider",
       "runs": 25,
-      "mean_ms": 0.007529040012741461,
-      "median_ms": 0.007359999472100753,
-      "min_ms": 0.006980000762268901,
-      "max_ms": 0.00886999987415038
+      "mean_ms": 0.004249480116413906,
+      "median_ms": 0.004160001481068321,
+      "min_ms": 0.0038190009945537895,
+      "max_ms": 0.005480000254465267
+    },
+    {
+      "requested_provider": "VitisAIExecutionProvider",
+      "actual_provider": "VitisAIExecutionProvider",
+      "runs": 25,
+      "mean_ms": 0.0032219199056271464,
+      "median_ms": 0.0029090006137266755,
+      "min_ms": 0.0025200006348313764,
+      "max_ms": 0.009339999451185577
     }
   ],
-  "limitations": [
-    "No AMD/Vitis/Ryzen AI ONNX Runtime provider was detected; NPU benchmark was not run."
-  ],
+  "limitations": [],
   "error": "",
   "model": "generated local MatMul+Add smoke model"
 }

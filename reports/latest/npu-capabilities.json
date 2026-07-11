@@ -5,9 +5,11 @@
   "offline": false,
   "kernel_module": "loaded",
   "device_node": "present",
-  "runtime_tools": "not-installed",
-  "onnxruntime_providers": "AzureExecutionProvider,CPUExecutionProvider",
+  "runtime_tools": "available",
+  "onnxruntime_venv": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/ryzen-ai/venv/bin/python",
+  "onnxruntime_venv_source": "ryzen-ai",
+  "onnxruntime_providers": "VitisAIExecutionProvider,CPUExecutionProvider",
   "device_nodes": "/dev/accel\n/dev/accel/accel0",
-  "xrt_smi_examine": "not-run",
-  "xrt_smi_validate": "not-run"
+  "xrt_smi_examine": "XRT build version: 2.21.75\nBuild hash: 4eb1f4392a012b4e6eca759762389c612537f7c7\nBuild date: 2026-03-09 20:30:37\nGit branch: HEAD\nPID: 85931\nUID: 1000\n[Sat Jul 11 21:25:16 2026 GMT]\nHOST: EliteMini-AI370\nEXE: /opt/xilinx/xrt/bin/unwrapped/xrt-smi\n[xrt-smi] ERROR: mmap(addr=0x77d908000000, len=67108864, prot=3, flags=8209, offset=4294967296) failed (err=-11): Resource temporarily unavailable",
+  "xrt_smi_validate": "XRT build version: 2.21.75\nBuild hash: 4eb1f4392a012b4e6eca759762389c612537f7c7\nBuild date: 2026-03-09 20:30:37\nGit branch: HEAD\nPID: 85951\nUID: 1000\n[Sat Jul 11 21:25:16 2026 GMT]\nHOST: EliteMini-AI370\nEXE: /opt/xilinx/xrt/bin/unwrapped/xrt-smi\n[xrt-smi] ERROR: mmap(addr=0x721c68000000, len=67108864, prot=3, flags=8209, offset=4294967296) failed (err=-11): Resource temporarily unavailable"
 }

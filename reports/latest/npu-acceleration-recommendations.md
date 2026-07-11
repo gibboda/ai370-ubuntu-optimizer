@@ -9,14 +9,15 @@ Offline: false
 
 - kernel module: loaded
 - device node: present
-- runtime tools: not-installed
-- ONNX Runtime providers: AzureExecutionProvider,CPUExecutionProvider
+- runtime tools: available
+- ONNX Runtime venv: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/ryzen-ai/venv/bin/python (ryzen-ai)
+- ONNX Runtime providers: VitisAIExecutionProvider,CPUExecutionProvider
 
 ## Policy
 
 This track detects AMD XDNA2 NPU presence and locally installed runtime/provider visibility without fetching proprietary runtimes.
+Provider checks prefer `.ai370-ai/ryzen-ai/venv` (AMD install) over stock `.ai370-ai/venv` (CPU onnxruntime).
 
 ## Recommendations
 
-- Stage AMD Ryzen AI runtime tools in your approved offline artifacts before attempting NPU workloads.
 - Keep SAFE mode until NPU inference is validated.

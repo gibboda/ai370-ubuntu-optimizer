@@ -1,11 +1,29 @@
 # XRT Status
 
-Runtime tools: not-installed
+Runtime tools: available
 
 ## xrt-smi examine
 
-not-run
+XRT build version: 2.21.75
+Build hash: 4eb1f4392a012b4e6eca759762389c612537f7c7
+Build date: 2026-03-09 20:30:37
+Git branch: HEAD
+PID: 85931
+UID: 1000
+[Sat Jul 11 21:25:16 2026 GMT]
+HOST: EliteMini-AI370
+EXE: /opt/xilinx/xrt/bin/unwrapped/xrt-smi
+[xrt-smi] ERROR: mmap(addr=0x77d908000000, len=67108864, prot=3, flags=8209, offset=4294967296) failed (err=-11): Resource temporarily unavailable
 
 ## xrt-smi validate
 
-not-run
+XRT build version: 2.21.75
+Build hash: 4eb1f4392a012b4e6eca759762389c612537f7c7
+Build date: 2026-03-09 20:30:37
+Git branch: HEAD
+PID: 85951
+UID: 1000
+[Sat Jul 11 21:25:16 2026 GMT]
+HOST: EliteMini-AI370
+EXE: /opt/xilinx/xrt/bin/unwrapped/xrt-smi
+[xrt-smi] ERROR: mmap(addr=0x721c68000000, len=67108864, prot=3, flags=8209, offset=4294967296) failed (err=-11): Resource temporarily unavailable

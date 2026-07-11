@@ -5,6 +5,8 @@
   "offline": false,
   "kernel_module": "loaded",
   "device_node": "present",
-  "runtime_tools": "not-installed",
-  "onnxruntime_providers": "AzureExecutionProvider,CPUExecutionProvider"
+  "runtime_tools": "available",
+  "onnxruntime_venv": "/home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/ryzen-ai/venv/bin/python",
+  "onnxruntime_venv_source": "ryzen-ai",
+  "onnxruntime_providers": "VitisAIExecutionProvider,CPUExecutionProvider"
 }

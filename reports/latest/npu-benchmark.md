@@ -2,10 +2,11 @@
 
 Profile: ai370 | Mode: safe | Offline: False
 
-Status: WARN
+Status: PASS
 
-- Providers: AzureExecutionProvider, CPUExecutionProvider
-- AMD/Vitis candidates: none detected
+- Venv: /home/gibboda/Documents/Projects/ai370-ubuntu-optimizer/.ai370-ai/ryzen-ai/venv/bin/python (ryzen-ai)
+- Providers: VitisAIExecutionProvider, CPUExecutionProvider
+- AMD/Vitis candidates: VitisAIExecutionProvider
 
 ## Results
 
@@ -13,11 +14,16 @@ Status: WARN
 
 - Actual provider: CPUExecutionProvider
 - Runs: 25
-- Mean: 0.0075 ms
-- Median: 0.0074 ms
-- Min: 0.0070 ms
-- Max: 0.0089 ms
+- Mean: 0.0042 ms
+- Median: 0.0042 ms
+- Min: 0.0038 ms
+- Max: 0.0055 ms
 
-## Limitations / Diagnostics
+### VitisAIExecutionProvider
 
-- No AMD/Vitis/Ryzen AI ONNX Runtime provider was detected; NPU benchmark was not run.
+- Actual provider: VitisAIExecutionProvider
+- Runs: 25
+- Mean: 0.0032 ms
+- Median: 0.0029 ms
+- Min: 0.0025 ms
+- Max: 0.0093 ms
