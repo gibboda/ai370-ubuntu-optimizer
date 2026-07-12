@@ -130,7 +130,9 @@ A fully enabled NPU stack should show these signals:
 - ONNX Runtime provider list includes an AMD/Ryzen/Vitis/XDNA provider (requires
   the Ryzen AI venv).
 - `scripts/230-benchmark-npu.sh` completes a local generated ONNX smoke model
-  using that provider.
+  using that provider, and ORT profiling confirms kernels ran on the AMD EP
+  (`ep_executed` / `ep_verified` in `npu-benchmark.json`). Session listing alone
+  is not sufficient.
 
 ## Troubleshooting matrix
 
@@ -149,6 +151,7 @@ A fully enabled NPU stack should show these signals:
 | ONNX Runtime has only CPU provider | AMD execution-provider package is not installed or not compatible | Stage/install the matching Ryzen AI / Vitis AI ONNX Runtime provider package (produced by the Ryzen AI software install into `.ai370-ai/ryzen-ai/venv`). |
 | `Failed to load library libonnxruntime_vitisai_ep.so` / missing `libxcompiler-*.so` | `LD_LIBRARY_PATH` missing `voe/lib` (and related AMD dirs) | Re-run with current scripts (auto env prep), or `source reports/latest/xrt-ryzen-ai-env.sh` / activate the Ryzen AI venv before inference. |
 | Benchmark requests VitisAI but `actual_provider` is CPU | EP listed but session factory fell back | Same as missing native libs / XRT env above; treat as WARN until `actual_provider` matches. |
+| Session lists VitisAI but benchmark stays WARN / `ep_executed=false` | ORT profiled kernels still ran on `CPUExecutionProvider` (empty VAIML partition / unsupported ops) | `scripts/230-benchmark-npu.sh` and `245-compare-cpu-gpu-npu.sh` require profiled EP execution, not session listing alone. Check `profile.node_provider_counts` and VAIML summary in the JSON; use an NPU-supported model or fix partition/env. |
 | AMD provider visible but benchmark fails | Provider/runtime/model compatibility issue | Inspect `reports/latest/vitis-ai-ep-status.md`, `reports/latest/npu-benchmark.md`, and `reports/latest/xrt-status.txt`. |
 
 ## Completion criteria

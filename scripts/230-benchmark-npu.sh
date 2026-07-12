@@ -37,15 +37,14 @@ main() {
 
   PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
   VENV_PYTHON="${VENV_PYTHON:-$python_bin}" VENV_SOURCE="${VENV_SOURCE:-other}" \
+  PROJECT_ROOT="$PROJECT_ROOT" \
   "$python_bin" - "$BENCHMARK_JSON" "$BENCHMARK_MD" <<'PY'
 import datetime
 import importlib.util
 import json
 import os
-import statistics
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 json_path = Path(sys.argv[1])
@@ -56,6 +55,8 @@ persistence = os.environ["PERSISTENCE"]
 offline = os.environ["OFFLINE"] == "true"
 venv_python = os.environ.get("VENV_PYTHON", "")
 venv_source = os.environ.get("VENV_SOURCE", "unknown")
+project_root = Path(os.environ.get("PROJECT_ROOT", "")).resolve()
+sys.path.insert(0, str(project_root / "scripts" / "lib"))
 provider_tokens = ("vitis", "vai", "ryzen", "xilinx", "amd", "xdna")
 
 status = "WARN"
@@ -82,6 +83,7 @@ else:
     import onnx.helper as oh
     import onnx.numpy_helper as nh
     import onnxruntime as ort
+    from npu_ep_verify import run_provider_benchmark
 
     try:
         providers = list(ort.get_available_providers())
@@ -105,38 +107,34 @@ else:
             model.ir_version = min(model.ir_version, 10)
             onnx.checker.check_model(model)
             onnx.save(model, model_file)
-
-            def run_provider(provider):
-                sess = ort.InferenceSession(str(model_file), providers=[provider])
-                actual_provider = sess.get_providers()[0] if sess.get_providers() else provider
-                input_data = {"input": np.ones((1, 64), dtype=np.float32)}
-                for _ in range(5):
-                    sess.run(None, input_data)
-                timings = []
-                for _ in range(25):
-                    start = time.perf_counter()
-                    sess.run(None, input_data)
-                    timings.append((time.perf_counter() - start) * 1000)
-                return {
-                    "requested_provider": provider,
-                    "actual_provider": actual_provider,
-                    "runs": len(timings),
-                    "mean_ms": statistics.fmean(timings),
-                    "median_ms": statistics.median(timings),
-                    "min_ms": min(timings),
-                    "max_ms": max(timings),
-                }
+            input_data = {"input": np.ones((1, 64), dtype=np.float32)}
 
             if "CPUExecutionProvider" in providers:
-                benchmarks.append(run_provider("CPUExecutionProvider"))
+                benchmarks.append(
+                    run_provider_benchmark(
+                        model_file,
+                        "CPUExecutionProvider",
+                        input_feed=input_data,
+                        tokens=provider_tokens,
+                        require_ep_execution=False,
+                        enable_vitis_options=False,
+                    )
+                )
             else:
                 limitations.append("CPUExecutionProvider is unavailable, so no CPU baseline was generated.")
 
             for provider in amd_candidates[:1]:
                 try:
-                    result = run_provider(provider)
+                    result = run_provider_benchmark(
+                        model_file,
+                        provider,
+                        input_feed=input_data,
+                        tokens=provider_tokens,
+                        require_ep_execution=True,
+                        enable_vitis_options=True,
+                    )
                     benchmarks.append(result)
-                    # ORT may list VitisAI but fall back to CPU if native libs are missing.
+                    # Session-level fallback (provider list) — common when native libs missing.
                     if result.get("actual_provider") != provider and result.get("actual_provider") == "CPUExecutionProvider":
                         limitations.append(
                             f"Requested {provider} but session used CPUExecutionProvider "
@@ -144,11 +142,24 @@ else:
                             "Source reports/latest/xrt-ryzen-ai-env.sh and ensure "
                             "scripts/lib/npu-venv.sh prepare_npu_runtime_env paths are set."
                         )
+                    # Profile-level fallback: EP listed first but kernels still on CPU.
+                    elif not result.get("ep_verified"):
+                        note = result.get("note") or "NPU EP did not execute profiled kernels"
+                        limitations.append(
+                            f"{provider} did not pass EP execution verification: {note} "
+                            "Treat NPU as not proven until ORT profiling shows nodes on the AMD EP "
+                            "(or use an NPU-supported model / VAIML partition)."
+                        )
                 except Exception as exc:
-                    limitations.append(f"AMD provider {provider} was visible but benchmark execution failed: {type(exc).__name__}: {exc}")
+                    limitations.append(
+                        f"AMD provider {provider} was visible but benchmark execution failed: "
+                        f"{type(exc).__name__}: {exc}"
+                    )
 
         amd_ran_on_ep = any(
             b.get("requested_provider") in amd_candidates
+            and b.get("ep_verified")
+            and b.get("ep_executed")
             and b.get("actual_provider") == b.get("requested_provider")
             for b in benchmarks
         )
@@ -158,6 +169,12 @@ else:
             status = "WARN"
             if not any(b.get("requested_provider") in amd_candidates for b in benchmarks):
                 limitations.append("AMD provider is visible, but no successful AMD-provider benchmark was completed.")
+            elif not amd_ran_on_ep and not any(
+                "did not pass EP execution verification" in item for item in limitations
+            ):
+                limitations.append(
+                    "AMD provider is visible, but ORT profiling did not confirm kernel execution on that EP."
+                )
         else:
             status = "WARN"
             limitations.append("No AMD/Vitis/Ryzen AI ONNX Runtime provider was detected; NPU benchmark was not run.")
@@ -206,17 +223,27 @@ lines = [
 ]
 if benchmarks:
     for bench in benchmarks:
+        mean = bench.get("mean_ms")
+        median = bench.get("median_ms")
+        min_ms = bench.get("min_ms")
+        max_ms = bench.get("max_ms")
+        profile_counts = (bench.get("profile") or {}).get("node_provider_counts") or {}
         lines.extend([
             f"### {bench['requested_provider']}",
             "",
-            f"- Actual provider: {bench['actual_provider']}",
-            f"- Runs: {bench['runs']}",
-            f"- Mean: {bench['mean_ms']:.4f} ms",
-            f"- Median: {bench['median_ms']:.4f} ms",
-            f"- Min: {bench['min_ms']:.4f} ms",
-            f"- Max: {bench['max_ms']:.4f} ms",
-            "",
+            f"- Actual provider: {bench.get('actual_provider')}",
+            f"- EP executed (profiled): {str(bool(bench.get('ep_executed'))).lower()}",
+            f"- EP verified: {str(bool(bench.get('ep_verified'))).lower()}",
+            f"- Profile node providers: {profile_counts or 'none'}",
+            f"- Runs: {bench.get('runs')}",
+            f"- Mean: {mean:.4f} ms" if isinstance(mean, (int, float)) else f"- Mean: {mean}",
+            f"- Median: {median:.4f} ms" if isinstance(median, (int, float)) else f"- Median: {median}",
+            f"- Min: {min_ms:.4f} ms" if isinstance(min_ms, (int, float)) else f"- Min: {min_ms}",
+            f"- Max: {max_ms:.4f} ms" if isinstance(max_ms, (int, float)) else f"- Max: {max_ms}",
         ])
+        if bench.get("note"):
+            lines.append(f"- Note: {bench['note']}")
+        lines.append("")
 else:
     lines.append("No benchmark timings were generated.")
     lines.append("")

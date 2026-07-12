@@ -61,6 +61,7 @@ main() {
   PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
   ORT_PYTHON="${ort_python:-}" NPU_SOURCE="${npu_source:-unknown}" \
   TORCH_PYTHON="${torch_python:-}" LATEST_DIR="$LATEST_DIR" \
+  PROJECT_ROOT="$PROJECT_ROOT" \
   COMPARE_ORT_WARMUP="$COMPARE_ORT_WARMUP" COMPARE_ORT_RUNS="$COMPARE_ORT_RUNS" \
   COMPARE_TORCH_SIZE="$COMPARE_TORCH_SIZE" COMPARE_TORCH_ITERS="$COMPARE_TORCH_ITERS" \
   python3 - "$OUT_JSON" "$OUT_MD" <<'PY'
@@ -149,13 +150,15 @@ def parse_last_json(stdout: str):
 
 # --- ONNX Runtime: CPU + NPU on identical MatMul+Add model ---
 if ort_python:
+    project_root = os.environ.get("PROJECT_ROOT", "")
     ort_code = f"""
-import json, statistics, tempfile, time
+import json, os, sys, tempfile
 from pathlib import Path
 
 warmup = {ort_warmup}
 runs = {ort_runs}
 tokens = {provider_tokens!r}
+sys.path.insert(0, str(Path({project_root!r}) / "scripts" / "lib"))
 payload = {{"ok": True, "error": "", "providers": [], "amd_candidates": [], "results": []}}
 
 try:
@@ -164,6 +167,7 @@ try:
     import onnx.helper as oh
     import onnx.numpy_helper as nh
     import onnxruntime as ort
+    from npu_ep_verify import run_provider_benchmark
 except Exception as e:
     payload["ok"] = False
     payload["error"] = f"{{type(e).__name__}}: {{e}}"
@@ -197,39 +201,55 @@ try:
         model.ir_version = min(model.ir_version, 10)
         onnx.checker.check_model(model)
         onnx.save(model, model_file)
+        feed = {{"input": np.ones((1, 64), dtype=np.float32)}}
 
-        def bench(provider):
-            sess = ort.InferenceSession(str(model_file), providers=[provider])
-            actual = sess.get_providers()[0] if sess.get_providers() else provider
-            feed = {{"input": np.ones((1, 64), dtype=np.float32)}}
-            for _ in range(warmup):
-                sess.run(None, feed)
-            timings = []
-            for _ in range(runs):
-                t0 = time.perf_counter()
-                sess.run(None, feed)
-                timings.append((time.perf_counter() - t0) * 1000.0)
-            is_npu = any(t in actual.lower() for t in tokens)
-            dclass = "npu" if is_npu else ("cpu" if "cpu" in actual.lower() else "other")
-            note = "" if actual == provider else f"requested {{provider}} but session used {{actual}}"
-            st = "pass" if actual == provider or ("cpu" in provider.lower() and "cpu" in actual.lower()) else "warn"
+        def to_path_result(raw, device_class_hint):
+            actual = raw.get("actual_provider")
+            verified = bool(raw.get("ep_verified"))
+            executed = bool(raw.get("ep_executed"))
+            is_amd = any(t in (raw.get("requested_provider") or "").lower() for t in tokens)
+            if is_amd:
+                # Keep failed NPU attempts under device_class=npu for diagnostics;
+                # aggregation only counts status=pass with ep_verified.
+                dclass = "npu"
+                st = "pass" if verified and executed else "fail"
+            else:
+                dclass = device_class_hint
+                if "cpu" in (actual or "").lower():
+                    dclass = "cpu"
+                st = "pass" if verified else "warn"
+            note = raw.get("note") or ""
             return {{
                 "framework": "onnxruntime",
                 "workload": "onnx_matmul_add_1x64",
-                "requested_device": provider,
+                "requested_device": raw.get("requested_provider"),
                 "actual_device": actual,
                 "device_class": dclass,
-                "runs": len(timings),
-                "mean_ms": statistics.fmean(timings),
-                "median_ms": statistics.median(timings),
-                "min_ms": min(timings),
-                "max_ms": max(timings),
+                "runs": raw.get("runs") or 0,
+                "mean_ms": raw.get("mean_ms"),
+                "median_ms": raw.get("median_ms"),
+                "min_ms": raw.get("min_ms"),
+                "max_ms": raw.get("max_ms"),
                 "status": st,
                 "note": note,
+                "ep_executed": executed,
+                "ep_verified": verified,
+                "profile": raw.get("profile") or {{}},
+                "vaiml": raw.get("vaiml") or {{}},
             }}
 
         if "CPUExecutionProvider" in providers:
-            results.append(bench("CPUExecutionProvider"))
+            raw = run_provider_benchmark(
+                model_file,
+                "CPUExecutionProvider",
+                input_feed=feed,
+                warmup=warmup,
+                runs=runs,
+                tokens=tokens,
+                require_ep_execution=False,
+                enable_vitis_options=False,
+            )
+            results.append(to_path_result(raw, "cpu"))
         else:
             results.append({{
                 "framework": "onnxruntime",
@@ -244,12 +264,24 @@ try:
                 "max_ms": None,
                 "status": "skipped",
                 "note": "CPUExecutionProvider not available",
+                "ep_executed": False,
+                "ep_verified": False,
             }})
 
         if amd:
             for p in amd[:1]:
                 try:
-                    results.append(bench(p))
+                    raw = run_provider_benchmark(
+                        model_file,
+                        p,
+                        input_feed=feed,
+                        warmup=warmup,
+                        runs=runs,
+                        tokens=tokens,
+                        require_ep_execution=True,
+                        enable_vitis_options=True,
+                    )
+                    results.append(to_path_result(raw, "npu"))
                 except Exception as e:
                     results.append({{
                         "framework": "onnxruntime",
@@ -264,6 +296,8 @@ try:
                         "max_ms": None,
                         "status": "fail",
                         "note": f"{{type(e).__name__}}: {{e}}",
+                        "ep_executed": False,
+                        "ep_verified": False,
                     }})
         else:
             results.append({{
@@ -279,6 +313,8 @@ try:
                 "max_ms": None,
                 "status": "skipped",
                 "note": "No AMD/Vitis/Ryzen ONNX Runtime provider detected",
+                "ep_executed": False,
+                "ep_verified": False,
             }})
 except Exception as e:
     payload["error"] = f"{{type(e).__name__}}: {{e}}"
@@ -463,11 +499,17 @@ if llm_prior:
         "pytorch_rocm": llm_prior.get("pytorch_rocm"),
     }
 
-measured = [
-    p
-    for p in paths
-    if isinstance(p.get("mean_ms"), (int, float)) and p.get("status") in ("pass", "warn")
-]
+# Only verified passes contribute to device-class presence / speedups.
+# NPU requires ep_verified (profiled kernels on the AMD EP), not merely session listing.
+measured = []
+for p in paths:
+    if not isinstance(p.get("mean_ms"), (int, float)):
+        continue
+    if p.get("status") != "pass":
+        continue
+    if p.get("device_class") == "npu" and not (p.get("ep_verified") and p.get("ep_executed")):
+        continue
+    measured.append(p)
 by_class = {"cpu": [], "gpu": [], "npu": [], "other": []}
 for p in measured:
     by_class.setdefault(p.get("device_class") or "other", []).append(p)
@@ -574,10 +616,26 @@ if "gpu" not in classes_present:
             "(scripts/100-install-pytorch-rocm.sh) and confirm torch.cuda.is_available()."
         )
 if "npu" not in classes_present:
-    diagnostics.append(
-        "NPU path missing: run stage2-npu with --accept-amd-acceleration-risk, ensure "
-        "VitisAIExecutionProvider is visible, and prepare XRT env (see docs/npu-status.md)."
-    )
+    npu_failed = [
+        p
+        for p in paths
+        if p.get("device_class") == "npu" and p.get("status") in ("fail", "warn")
+    ]
+    if npu_failed:
+        notes = "; ".join(
+            (p.get("note") or f"{p.get('requested_device')}: not verified")[:200]
+            for p in npu_failed[:2]
+        )
+        diagnostics.append(
+            "NPU path not counted: provider may be visible but ORT profiling did not show "
+            f"kernels on the AMD EP ({notes}). Session listing alone is insufficient; "
+            "see docs/npu-status.md (EP execution verification)."
+        )
+    else:
+        diagnostics.append(
+            "NPU path missing: run stage2-npu with --accept-amd-acceleration-risk, ensure "
+            "VitisAIExecutionProvider is visible, and prepare XRT env (see docs/npu-status.md)."
+        )
 if "cpu" not in classes_present:
     diagnostics.append(
         "CPU path missing: unexpected; check Python venvs under .ai370-ai/ and package imports."
