@@ -149,13 +149,14 @@ run_script_or_legacy() {
 }
 
 run_stage1_inventory() {
-  echo "[INFO] Stage 1 inventory – detect + firmware + kernel + GPU + gate (no tuning/smoke)"
+  echo "[INFO] Stage 1 inventory – detect + firmware + kernel + GPU + inventory-scope validate (no tuning/smoke)"
   run_script "scripts/10-detect-hardware.sh"
   # 20 writes both BIOS baseline and firmware validation (25 is a wrapper)
   run_script "scripts/20-check-bios.sh"
   run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
   run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
-  run_script "scripts/90-validate.sh"
+  # inventory scope: do not require tier1-local-ai-benchmark.json from script 80
+  run_script "scripts/90-validate.sh" "inventory"
   write_report_index
 }
 

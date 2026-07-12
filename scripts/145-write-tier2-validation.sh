@@ -60,37 +60,76 @@ def state_from(*candidates, default="missing"):
             continue
         if isinstance(c, dict):
             for key in ("state", "status", "install_state"):
-                if c.get(key):
+                if c.get(key) is not None and str(c.get(key)).strip() != "":
                     return str(c[key]).lower()
         elif isinstance(c, str) and c.strip():
             return c.lower()
     return default
 
-pytorch_state = state_from(
-    (llm.get("pytorch") or {}).get("state"),
-    pytorch.get("state"),
-    pytorch.get("status"),
-    default="missing",
+def normalize_available(raw: str, *, has_binary: bool = False) -> str:
+    """Map install report status/state values to available|missing|warn|other."""
+    s = (raw or "missing").lower()
+    if s in ("available", "present", "installed", "ok"):
+        return "available"
+    if s in ("pass", "ok-pass") and has_binary:
+        return "available"
+    if s == "pass":
+        # Install report overall PASS without nested state still counts as available
+        return "available"
+    if s in ("warn", "warning"):
+        return "available" if has_binary else "warn"
+    if s in ("missing", "fail", "failed", "error", "not-installed"):
+        return "missing" if s == "missing" else s
+    return s
+
+# scripts/100-install-pytorch-rocm.sh nests runtime under pytorch.state / pytorch.hip_available
+pytorch_nested = pytorch.get("pytorch") if isinstance(pytorch.get("pytorch"), dict) else {}
+llm_pytorch = llm.get("pytorch") if isinstance(llm.get("pytorch"), dict) else {}
+
+pytorch_state = normalize_available(
+    state_from(
+        llm_pytorch.get("state"),
+        pytorch_nested.get("state"),
+        pytorch.get("state"),
+        pytorch.get("status"),
+        default="missing",
+    ),
+    has_binary=bool(pytorch_nested.get("state") or pytorch.get("venv")),
 )
+hip_flag = str(pytorch_nested.get("hip_available", "")).lower()
+rocm_runtime = str(pytorch_nested.get("rocm_runtime", "")).lower()
 pytorch_rocm = bool(
-    (llm.get("pytorch") or {}).get("rocm")
-    or pytorch.get("rocm")
-    or pytorch.get("pytorch_rocm")
+    llm_pytorch.get("rocm") is True
+    or hip_flag in ("true", "1", "yes")
+    or rocm_runtime in ("visible", "available", "true")
+    or pytorch.get("rocm") is True
+    or pytorch.get("pytorch_rocm") is True
 )
-llama_state = state_from(
-    (llm.get("llama_cpp") or {}).get("state"),
-    llama.get("state"),
-    llama.get("status"),
+
+llama_state = normalize_available(
+    state_from(
+        (llm.get("llama_cpp") or {}).get("state"),
+        llama.get("state"),
+        llama.get("status"),
+        default="missing",
+    ),
+    has_binary=bool(llama.get("binary")),
 )
-ollama_state = state_from(
-    (llm.get("ollama") or {}).get("state"),
-    ollama.get("state"),
-    ollama.get("status"),
+ollama_state = normalize_available(
+    state_from(
+        (llm.get("ollama") or {}).get("state"),
+        ollama.get("state"),
+        ollama.get("status"),
+        default="missing",
+    ),
 )
-webui_state = state_from(
-    (llm.get("open_webui") or {}).get("state"),
-    webui.get("state"),
-    webui.get("status"),
+webui_state = normalize_available(
+    state_from(
+        (llm.get("open_webui") or {}).get("state"),
+        webui.get("state"),
+        webui.get("status"),
+        default="missing",
+    ),
 )
 
 gguf_models = list(llm.get("gguf_models") or [])

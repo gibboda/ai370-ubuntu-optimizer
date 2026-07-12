@@ -112,7 +112,8 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 - `scripts/70-validate-gpu-stack.sh`, `scripts/80-benchmark-local-ai.sh`
   (no pip by default; set `AI370_STAGE1_INSTALL_ORT=true` for optional ORT smoke)
 - `scripts/90-validate.sh`
-- Command: `stage1-inventory` (detect + firmware + kernel + GPU + validate)
+- Command: `stage1-inventory` (detect + firmware + kernel + GPU + inventory-scope
+  validate; does not require local-AI smoke from script 80)
 
 **Stage 2 — Implemented (S2-M1–S2-M7; optional paths noted):**
 
