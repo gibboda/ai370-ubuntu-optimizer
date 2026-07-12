@@ -185,16 +185,17 @@ scripts/
 
 ### Stage 2 – Local AI Runtime & AI Optimization Software
 
-Use `stage2` for the roadmap-aligned aggregate command. Stage 2 planned scope
-is **implemented** (S2-M1–S2-M7). `stage2` runs the Stage 2 runtime/model-storage
-sequence, Stage 2 NPU checks, and always writes
-`reports/latest/tier3-validation.json` for the Stage 3 gate. Optional paths not
-required for that gate: `stage2-rag` (S2-M3), `stage2-lemonade` (S2-M6),
-`stage2-digest` (S2-M7).
+Use `stage2` for the roadmap-aligned **core** aggregate command. Stage 2 planned
+scope is **implemented** (S2-M1–S2-M7). Default `stage2` runs runtime/model-storage
+plus NPU checks and always writes `reports/latest/tier3-validation.json` for the
+Stage 3 gate. Optional packs are **not** run by default (not Stage 3 gate inputs):
 
 ```bash
 ./ai370-optimize.sh stage2 [--offline]
-./ai370-optimize.sh stage2-validate [--offline]
+./ai370-optimize.sh stage2 --with-lemonade --with-digest --with-rag   # optional packs
+./ai370-optimize.sh stage2-validate [--offline]                       # cheap gate refresh
+./ai370-optimize.sh stage2-validate --bench [--with-lemonade]         # full smokes
+./ai370-optimize.sh stage2-rag | stage2-lemonade | stage2-digest
 ```
 
 **Stage 3 gate policy (default):** Stage 1 must be `PASS`. Stage 2 runtime and
@@ -216,11 +217,11 @@ offline model storage accept `PASS` or `WARN`. Stage 2 NPU accepts `PASS`,
 **Commands:**
 
 ```bash
-./ai370-optimize.sh stage2 [--offline]
-./ai370-optimize.sh stage2-validate [--offline]
-./ai370-optimize.sh stage2-runtime [--offline]
-./ai370-optimize.sh stage2-runtime-validate [--offline]
-./ai370-optimize.sh tier2 [--offline]              # Legacy alias
+./ai370-optimize.sh stage2 [--offline] [--with-lemonade] [--with-digest] [--with-rag]
+./ai370-optimize.sh stage2-validate [--offline] [--bench] [--with-lemonade]
+./ai370-optimize.sh stage2-runtime [--offline] [--with-lemonade]
+./ai370-optimize.sh stage2-runtime-validate [--offline] [--with-lemonade]
+./ai370-optimize.sh tier2 [--offline]              # Legacy alias → stage2-runtime
 ./ai370-optimize.sh tier2-validate [--offline]     # Legacy alias
 ```
 
@@ -279,12 +280,12 @@ scripts/
 **Commands:**
 
 ```bash
-./ai370-optimize.sh stage2-npu [--offline]
+./ai370-optimize.sh stage2-npu [--offline] [--with-lemonade]
 ./ai370-optimize.sh stage2-npu --accept-amd-acceleration-risk   # install staged XRT/Ryzen AI
-./ai370-optimize.sh stage2-npu-validate
+./ai370-optimize.sh stage2-npu-validate [--bench] [--with-lemonade]
 ./ai370-optimize.sh stage2-lemonade [--offline]    # S2-M6 only
 ./ai370-optimize.sh stage2-digest [--offline]      # S2-M7 only
-./ai370-optimize.sh tier3 [--offline]              # Legacy alias
+./ai370-optimize.sh tier3 [--offline]              # Legacy alias → stage2-npu
 ./ai370-optimize.sh tier3-validate                 # Legacy alias
 ```
 
@@ -369,15 +370,17 @@ acceleration was explicitly installed and re-validated.
 ```bash
 ./ai370-optimize.sh stage1                 # Full core platform validation + optimization
 ./ai370-optimize.sh stage1-validate
-./ai370-optimize.sh stage2 [--offline]
-./ai370-optimize.sh stage2-validate [--offline]
-./ai370-optimize.sh stage2-runtime [--offline]
-./ai370-optimize.sh stage2-runtime-validate [--offline]
-./ai370-optimize.sh stage2-npu [--offline]
-./ai370-optimize.sh stage2-npu-validate
-./ai370-optimize.sh stage2-rag             # Optional RAG path (not required for Stage 3 gate)
+./ai370-optimize.sh stage2 [--offline] [--with-lemonade] [--with-digest] [--with-rag]
+./ai370-optimize.sh stage2-validate [--offline] [--bench] [--with-lemonade]
+./ai370-optimize.sh stage2-runtime [--offline] [--with-lemonade]
+./ai370-optimize.sh stage2-runtime-validate [--offline] [--with-lemonade]
+./ai370-optimize.sh stage2-npu [--offline] [--with-lemonade]
+./ai370-optimize.sh stage2-npu-validate [--bench] [--with-lemonade]
+./ai370-optimize.sh stage2-rag             # Optional RAG (S2-M3; not Stage 3 gate)
+./ai370-optimize.sh stage2-lemonade        # Optional Lemonade (S2-M6)
+./ai370-optimize.sh stage2-digest          # Optional Digest AI (S2-M7)
 ./ai370-optimize.sh stage3-image           # Requires Stage 1 + Stage 2 runtime/NPU validation gate
-./ai370-optimize.sh full-stack             # Stage 1 → Stage 2 runtime → Stage 2 NPU → (risk) accel → Stage 3 with gates
+./ai370-optimize.sh full-stack --accept-amd-acceleration-risk   # S1 + S2 core + optional packs + accel + S3 workflows
 ```
 
 Legacy `tierN` commands and legacy nine-phase commands remain available for

@@ -48,14 +48,14 @@ or **missing required artifacts** always blocks.
 
 **Command expectations:**
 
-* `./ai370-optimize.sh stage2` runs runtime installers, model-storage validation,
-  NPU checks, and **always** writes `tier3-validation.json` via
-  `scripts/240-write-tier3-validation.sh`. Current wiring may also invoke
-  optional S2-M6/S2-M7 scripts; focused entry points remain `stage2-lemonade`
-  and `stage2-digest`. Streamlining core-only defaults is optional polish
-  (Package B), not a missing milestone.
-* `./ai370-optimize.sh stage2-validate` refreshes runtime, model-storage, NPU
-  diagnostics, and the tier3 gate artifact.
+* `./ai370-optimize.sh stage2` runs **core** runtime installers, model-storage
+  validation, NPU checks, and **always** writes `tier3-validation.json` via
+  `scripts/240-write-tier3-validation.sh`. Optional packs are **opt-in**:
+  `--with-lemonade` (S2-M6), `--with-digest` (S2-M7), `--with-rag` (S2-M3), or
+  dedicated `stage2-lemonade` / `stage2-digest` / `stage2-rag` commands.
+* `./ai370-optimize.sh stage2-validate` is a **cheap gate refresh** (model
+  storage + NPU inventory + `240` re-aggregate). Pass `--bench` to re-run heavy
+  smokes (`140` / `230` / `245`); pass `--with-lemonade` to include `165`.
 * Stage 2 RAG (`stage2-rag`), Lemonade (`stage2-lemonade`), and Digest
   (`stage2-digest`) are **optional** and are **not** part of
   `require_tier123_pass`.
@@ -86,7 +86,7 @@ AMD EP execution via `scripts/lib/npu_ep_verify.py` (same rule as `230`).
 Stage 2 planned milestones are complete. Prefer optional Stage 1/2 streamlining or polish only when it unblocks local use; otherwise start Stage 3.
 
 1. **Optional S2 polish (not required for Stage 3 gate):** keep S2-M5 manifest entries current; Lemonade full smoke when a server/model is staged; AnythingLLM full-stack staging when needed.
-2. **Optional S1/S2 streamlining (Package B+):** core-only `stage2` defaults, fix stale `full-stack`/legacy paths, merge Stage 1 micro-scripts — see contributor notes / prior reviews; not a roadmap milestone.
+2. **Optional S1/S2 streamlining (Package C+):** merge Stage 1 micro-scripts, dedupe NPU smokes — not a roadmap milestone. **Package B** (core-only `stage2`, optional packs, slim validate, legacy/`full-stack` fixes) is implemented in `ai370-optimize.sh`.
 3. **S3-M1** — ComfyUI installer (`scripts/400-install-comfyui.sh`) with validation report.
 4. **S3-M2** — ComfyUI model installer + manifests (FLUX/SDXL/VAEs/LoRAs/ControlNet).
 5. **S3-M3 / S3-M5** — workflow library directories + start/stop/status/health automation.
@@ -120,7 +120,7 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 
 ### Gap Analysis
 
-* Missing S2 **milestones:** none for planned scope. **Optional polish only:** S2-M5 manifest population (chat/coding/embedding/Lemonade artifacts when staged), Lemonade full serving smoke, AnythingLLM full-stack staging, GPU HIP/gfx1150 comparison diagnostics, orchestrator streamlining (core-only `stage2`, legacy path cleanup).
+* Missing S2 **milestones:** none for planned scope. **Optional polish only:** S2-M5 manifest population (chat/coding/embedding/Lemonade artifacts when staged), Lemonade full serving smoke, AnythingLLM full-stack staging, GPU HIP/gfx1150 comparison diagnostics. Orchestrator streamlining (core-only `stage2`, optional packs, slim validate, legacy/`full-stack` fixes) is implemented.
 * Missing S3 work: ComfyUI installer, model installer, VAEs, LoRAs, ControlNet, upscalers, workflow subdirectories, startup/shutdown/status/health automation, Whisper installation/validation, local text-generation validation, embedding validation, model-management validation, **GAIA** agent/RAG application, and **LM Studio** desktop LLM install/validate (optional UI). **Active focus.**
 * Missing S4 work: VS Code installer, Continue config, Aider installation, Git/GitHub CLI validation, ShellCheck/Ruff/Black/Pyright setup, offline code-generation and code-review validation; point coding assistants at Ollama and/or Lemonade OpenAI endpoints when available.
 * Missing S5 work: update, health-check, backup, restore, regression, release, status, startup/shutdown, workflow-launching, and documentation-maintenance automation (including future Lemonade/GAIA/LM Studio services).

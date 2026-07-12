@@ -13,6 +13,10 @@ PERSISTENCE="runtime"
 DRY_RUN="false"
 OFFLINE="false"
 ACCEPT_AMD_ACCELERATION_RISK="false"
+WITH_LEMONADE="false"
+WITH_DIGEST="false"
+WITH_RAG="false"
+BENCH="false"
 
 usage() {
   cat <<'USAGE'
@@ -20,16 +24,23 @@ Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage1-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh stage2 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+       [--with-lemonade] [--with-digest] [--with-rag]
   ./ai370-optimize.sh stage2-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+       [--bench] [--with-lemonade]
   ./ai370-optimize.sh stage2-runtime [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+       [--with-lemonade]
   ./ai370-optimize.sh stage2-runtime-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+       [--with-lemonade]
   ./ai370-optimize.sh stage2-npu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+       [--with-lemonade]
   ./ai370-optimize.sh stage2-npu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+       [--bench] [--with-lemonade]
   ./ai370-optimize.sh stage2-rag [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh stage2-lemonade [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage2-digest [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage3-image [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh full-stack [--profile=ai370] [--mode=safe] [--persistence=runtime] --accept-amd-acceleration-risk
+  ./ai370-optimize.sh full-stack [--profile=ai370] [--mode=safe] [--persistence=runtime]
+       --accept-amd-acceleration-risk [--with-lemonade] [--with-digest] [--with-rag]
 
 Legacy tier aliases (still supported):
   ./ai370-optimize.sh tier1 | tier1-validate
@@ -38,67 +49,19 @@ Legacy tier aliases (still supported):
   ./ai370-optimize.sh tier4
   ./ai370-optimize.sh tier5
 
-Legacy / detailed phase commands (still supported):
-  ./ai370-optimize.sh hardware [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh firmware [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh kernel-amd [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--dry-run]
-  ./ai370-optimize.sh tune [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh accel-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh ai-bench [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh llm-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-  ./ai370-optimize.sh amd-accel-install [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline] --accept-amd-acceleration-risk
-  ./ai370-optimize.sh comfyui-install [--profile=ai370] [--mode=safe] [--persistence=runtime]
-  ./ai370-optimize.sh comfyui-bench [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh final-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-  ./ai370-optimize.sh all [--profile=ai370] [--mode=safe] [--persistence=runtime]
+Legacy / detailed phase commands (compat; prefer stage1/stage2):
+  ./ai370-optimize.sh hardware | firmware | kernel-amd | tune | accel-validate
+  ./ai370-optimize.sh ai-bench | llm-validate | amd-accel-install
+  ./ai370-optimize.sh comfyui-install | comfyui-bench | final-validate | all
+  (Broken root script paths retarget scripts/legacy/ or modern Stage 1/2 scripts.)
 
-Stage 1 scripts (S1 deliverables):
-  scripts/10-detect-hardware.sh
-  scripts/20-check-bios.sh
-  scripts/25-check-firmware.sh
-  scripts/30-validate-kernel.sh
-  scripts/40-optimize-cpu.sh
-  scripts/50-optimize-memory.sh
-  scripts/60-optimize-storage.sh
-  scripts/70-validate-gpu-stack.sh
-  scripts/75-detect-npu.sh
-  scripts/80-benchmark-local-ai.sh
-  scripts/90-validate.sh
-
-Stage 2 scripts (S2 deliverables across runtime + NPU + Lemonade):
-  scripts/100-install-pytorch-rocm.sh
-  scripts/110-install-llama-cpp.sh
-  scripts/120-install-ollama.sh
-  scripts/130-install-open-webui.sh
-  scripts/140-benchmark-llm.sh
-  scripts/150-validate-offline-model-storage.sh
-  scripts/160-install-lemonade.sh
-  scripts/165-validate-lemonade.sh
-  scripts/170-install-turnkeyml.sh
-  scripts/200-install-onnxruntime.sh
-  scripts/250-install-digest-ai.sh
-  scripts/255-analyze-model-digest.sh
-  scripts/205-install-xrt-ryzen-ai.sh
-  scripts/210-check-ryzen-ai-software.sh
-  scripts/220-check-vitis-ai-ep.sh
-  scripts/230-benchmark-npu.sh
-  scripts/240-write-tier3-validation.sh
-  scripts/245-compare-cpu-gpu-npu.sh
-
-Backward-compatible aliases:
-  inventory, audit        -> hardware (Stage 1 / legacy Tier 1)
-  baseline-plan, plan     -> legacy baseline planning
-  baseline-apply          -> legacy baseline apply
-  baseline-validate       -> legacy baseline validation
-  ai-runtime              -> ai-bench
-  gpu                     -> GPU half of accel-validate
-  npu                     -> NPU half of accel-validate
-  guide                   -> guided acceleration readiness plan
-  execute                 -> generated acceleration checklists
-  comfyui                 -> comfyui-install (Stage 3 image / legacy Tier 5, gated)
-  validate                -> final-validate
-  install                 -> kernel-amd + ai-bench
-  full-ai-install         -> multi-tier (requires --accept-amd-acceleration-risk)
+Stage 2 core (default stage2 / Stage 3 gate path):
+  Runtime: 100, 110, 120, 130, 140, 150
+  NPU:     205, 200, 210, 220, 230, 245, 240
+Optional packs (not Stage 3 gate inputs):
+  --with-lemonade / stage2-lemonade  → 170, 160, 165 (S2-M6)
+  --with-digest / stage2-digest      → 250, 255 (S2-M7)
+  --with-rag / stage2-rag            → 300, 310, 320 (S2-M3)
 
 Defaults:
   profile     ai370
@@ -106,12 +69,14 @@ Defaults:
   persistence runtime
 
 Notes:
-  Use --profile=generic-ryzen-ai only when intentionally broadening beyond strict AI370 validation.
+  stage2 is core-only by default (runtime + NPU + gate artifacts). Optional AMD
+    product packs require --with-lemonade, --with-digest, and/or --with-rag.
+  stage2-validate is a cheap gate refresh by default; pass --bench for LLM smoke
+    and NPU MatMul comparison re-runs (140 / 230 / 245).
   --offline affects Stage 1 (parts), Stage 2 runtime/NPU, and amd-accel-install.
-  --accept-amd-acceleration-risk is required for amd-accel-install, full-ai-install, full-stack,
-    and for stage2-npu / stage2 to install staged XRT/Ryzen AI packages via scripts/205-*.sh.
-  Stage 3 image generation (stage3-image / tier5 / comfyui) is blocked until Stage 1 + Stage 2 runtime + Stage 2 NPU validation passes.
-  system persistence is reserved for future persistent tuning and is blocked by current scripts.
+  --accept-amd-acceleration-risk is required for amd-accel-install, full-ai-install,
+    full-stack, and for stage2-npu / stage2 to install staged XRT/Ryzen AI packages.
+  Stage 3 image generation is blocked until Stage 1 + Stage 2 runtime + Stage 2 NPU pass.
   Stage 2 validators exit non-zero on status=FAIL (PASS/WARN remain exit 0).
 USAGE
 }
@@ -124,6 +89,10 @@ for arg in "$@"; do
     --dry-run) DRY_RUN="true" ;;
     --offline) OFFLINE="true" ;;
     --accept-amd-acceleration-risk) ACCEPT_AMD_ACCELERATION_RISK="true" ;;
+    --with-lemonade) WITH_LEMONADE="true" ;;
+    --with-digest) WITH_DIGEST="true" ;;
+    --with-rag) WITH_RAG="true" ;;
+    --bench|--full) BENCH="true" ;;
   esac
 done
 
@@ -156,17 +125,126 @@ run_script() {
   bash "$PROJECT_ROOT/$script" "$PROFILE" "$MODE" "$PERSISTENCE" "$@"
 }
 
-# Stage gate: Stage 3 image generation (and full generative flows) must not proceed until
-# Stage 1 + Stage 2 runtime + Stage 2 NPU have produced acceptable validation artifacts.
-# Prefers dedicated tierN-validation.json (M2/M3). Falls back to legacy for transition.
+# Prefer modern path; fall back to scripts/legacy/ for retired phase scripts.
+run_script_or_legacy() {
+  local modern="$1"
+  local legacy="$2"
+  shift 2 || true
+  if [[ -f "$PROJECT_ROOT/$modern" ]]; then
+    run_script "$modern" "$@"
+  elif [[ -f "$PROJECT_ROOT/$legacy" ]]; then
+    echo "[WARN] Using legacy script $legacy (prefer modern stage commands)."
+    run_script "$legacy" "$@"
+  else
+    echo "[ERROR] Missing script: $modern (and legacy fallback $legacy)"
+    exit 2
+  fi
+}
+
+run_stage1() {
+  echo "[INFO] Stage 1 – Hardware Detection & System Optimization"
+  run_script "scripts/10-detect-hardware.sh"
+  run_script "scripts/20-check-bios.sh"
+  run_script "scripts/25-check-firmware.sh"
+  run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
+  run_script "scripts/40-optimize-cpu.sh"
+  run_script "scripts/50-optimize-memory.sh"
+  run_script "scripts/60-optimize-storage.sh"
+  run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
+  run_script "scripts/75-detect-npu.sh" "$OFFLINE"
+  run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
+  run_script "scripts/90-validate.sh"
+}
+
+run_stage2_runtime_core() {
+  echo "[INFO] Stage 2 runtime core (S2-M1 / S2-M4 / S2-M5)"
+  run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
+  run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
+  run_script "scripts/120-install-ollama.sh" "$OFFLINE"
+  run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
+  run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+  run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+}
+
+run_stage2_npu_core() {
+  local include_compare="${1:-true}"
+  echo "[INFO] Stage 2 NPU core (S2-M2 / S2-M4)"
+  run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
+  run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
+  run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
+  run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
+  run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+  if [[ "$include_compare" == "true" ]]; then
+    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
+  fi
+  run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
+}
+
+run_optional_lemonade() {
+  echo "[INFO] Optional S2-M6 TurnkeyML + Lemonade"
+  run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
+  run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
+  run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+}
+
+run_optional_digest() {
+  echo "[INFO] Optional S2-M7 Digest AI model analysis"
+  run_script "scripts/250-install-digest-ai.sh" "$OFFLINE"
+  run_script "scripts/255-analyze-model-digest.sh" "$OFFLINE"
+}
+
+run_optional_rag() {
+  echo "[INFO] Optional S2-M3 Offline RAG"
+  run_script "scripts/300-install-anythingllm.sh" "$OFFLINE"
+  run_script "scripts/310-install-embedding-models.sh" "$OFFLINE"
+  run_script "scripts/320-validate-rag.sh" "$OFFLINE"
+}
+
+run_optional_packs() {
+  if [[ "$WITH_LEMONADE" == "true" ]]; then
+    run_optional_lemonade
+  fi
+  if [[ "$WITH_DIGEST" == "true" ]]; then
+    run_optional_digest
+  fi
+  if [[ "$WITH_RAG" == "true" ]]; then
+    run_optional_rag
+  fi
+}
+
+json_status() {
+  # Prints status from a JSON file, or MISSING / UNREADABLE.
+  local path="$1"
+  local keys="${2:-status}"
+  if [[ ! -f "$path" ]]; then
+    echo "MISSING"
+    return
+  fi
+  python3 - "$path" "$keys" <<'PY' 2>/dev/null || echo "UNREADABLE"
+import json, sys
+path, keys = sys.argv[1], sys.argv[2].split(",")
+try:
+    data = json.load(open(path))
+except Exception:
+    print("UNREADABLE")
+    raise SystemExit
+status = None
+for key in keys:
+    if key in data and data[key] is not None:
+        status = data[key]
+        break
+print(str(status if status is not None else "UNKNOWN").upper())
+PY
+}
+
+# Stage gate: Stage 3 image generation must not proceed until Stage 1 + Stage 2
+# runtime + Stage 2 NPU have produced acceptable validation artifacts.
 #
 # Gate policy (experimental default; see docs/ROADMAP.md "Stage gate policy"):
 #   Stage 1 (tier1-validation): PASS only
 #   Stage 2 runtime (tier2-validation): PASS or WARN
 #   Offline model storage: PASS or WARN (required file; optional models may WARN)
 #   Stage 2 NPU (tier3-validation): PASS, WARN, or EXPERIMENTAL-PASS
-# WARN / EXPERIMENTAL-PASS intentionally allow Stage 3 while hardware/models are still
-# incomplete; FAIL or missing required artifacts block the gate.
 require_tier123_pass() {
   local LATEST_DIR="$PROJECT_ROOT/reports/latest"
   local tier1_status="$LATEST_DIR/tier1-validation.json"
@@ -179,80 +257,72 @@ require_tier123_pass() {
   local llm_status="$LATEST_DIR/llm-validation.json"
 
   local pass="true"
+  local t1_result t2_result models_result t3_result
+  t1_result="unknown"
+  t2_result="unknown"
+  models_result="unknown"
+  t3_result="unknown"
 
   if [[ -f "$tier1_status" ]]; then
-    if ! python3 - "$tier1_status" <<'PY' >/dev/null 2>&1
-import json, sys
-data=json.load(open(sys.argv[1]))
-status = data.get("status") or data.get("tier1_status") or "UNKNOWN"
-if status.upper() != "PASS":
-    sys.exit(1)
-PY
-then
+    t1_result="$(json_status "$tier1_status" "status,tier1_status")"
+    if [[ "$t1_result" != "PASS" ]]; then
       pass="false"
     fi
   elif [[ -f "$legacy_final" ]]; then
-    if ! grep -q "Final Status: PASS" "$legacy_final" 2>/dev/null; then
+    if grep -q "Final Status: PASS" "$legacy_final" 2>/dev/null; then
+      t1_result="PASS (legacy final-validation.txt)"
+    else
+      t1_result="FAIL (legacy final-validation.txt)"
       pass="false"
     fi
   else
+    t1_result="MISSING (tier1-validation.json)"
     pass="false"
   fi
 
-  # Stage 2 runtime: require both runtime validation and S2-M5 offline model storage validation.
-  # WARN is accepted so optional staged models / partial stacks do not block Stage 3.
   if [[ -f "$tier2_status" ]]; then
-    if ! python3 - "$tier2_status" <<'PY' >/dev/null 2>&1
-import json, sys
-data=json.load(open(sys.argv[1]))
-status = data.get("status") or "UNKNOWN"
-if status.upper() not in ("PASS", "WARN"):
-    sys.exit(1)
-PY
-then
+    t2_result="$(json_status "$tier2_status" "status")"
+    if [[ "$t2_result" != "PASS" && "$t2_result" != "WARN" ]]; then
       pass="false"
     fi
-  elif [[ ! -f "$llm_status" && ! -f "$ai_status" ]]; then
+  elif [[ -f "$llm_status" || -f "$ai_status" ]]; then
+    t2_result="LEGACY (llm/ai-stack present; prefer tier2-validation.json)"
+  else
+    t2_result="MISSING (tier2-validation.json)"
     pass="false"
   fi
 
   if [[ -f "$offline_model_status" ]]; then
-    if ! python3 - "$offline_model_status" <<'PY' >/dev/null 2>&1
-import json, sys
-data=json.load(open(sys.argv[1]))
-status = data.get("status") or "UNKNOWN"
-if status.upper() not in ("PASS", "WARN"):
-    sys.exit(1)
-PY
-then
+    models_result="$(json_status "$offline_model_status" "status")"
+    if [[ "$models_result" != "PASS" && "$models_result" != "WARN" ]]; then
       pass="false"
     fi
   else
+    models_result="MISSING (offline-model-storage.json)"
     pass="false"
   fi
 
-  # Stage 2 NPU: prefer dedicated validation, else legacy npu evidence.
-  # EXPERIMENTAL-PASS means hardware/XRT visible without a full AMD EP benchmark PASS.
   if [[ -f "$tier3_status" ]]; then
-    if ! python3 - "$tier3_status" <<'PY' >/dev/null 2>&1
-import json, sys
-data=json.load(open(sys.argv[1]))
-status = data.get("status") or "UNKNOWN"
-if status.upper() not in ("PASS", "WARN", "EXPERIMENTAL-PASS"):
-    sys.exit(1)
-PY
-then
+    t3_result="$(json_status "$tier3_status" "status")"
+    if [[ "$t3_result" != "PASS" && "$t3_result" != "WARN" && "$t3_result" != "EXPERIMENTAL-PASS" ]]; then
       pass="false"
     fi
-  elif [[ ! -f "$npu_status" ]]; then
+  elif [[ -f "$npu_status" ]]; then
+    t3_result="LEGACY (npu-acceleration-status.txt present; prefer tier3-validation.json)"
+  else
+    t3_result="MISSING (tier3-validation.json)"
     pass="false"
   fi
 
   if [[ "$pass" != "true" ]]; then
     echo "[ERROR] Stage 1 + Stage 2 runtime + Stage 2 NPU validation has not passed."
+    echo "[ERROR] Gate artifact status:"
+    echo "[ERROR]   Stage 1 (tier1-validation):     $t1_result  (need PASS)"
+    echo "[ERROR]   Stage 2 runtime (tier2-validation): $t2_result  (need PASS|WARN)"
+    echo "[ERROR]   Model storage (offline-model-storage): $models_result  (need PASS|WARN)"
+    echo "[ERROR]   Stage 2 NPU (tier3-validation):  $t3_result  (need PASS|WARN|EXPERIMENTAL-PASS)"
     echo "[ERROR] Preferred: ./ai370-optimize.sh stage1 && ./ai370-optimize.sh stage2 && ./ai370-optimize.sh stage2-validate"
     echo "[ERROR] Or: stage1 + stage2-runtime + stage2-runtime-validate + stage2-npu-validate"
-    echo "[ERROR] Gate policy: Stage1=PASS; Stage2 runtime/models=PASS|WARN; Stage2 NPU=PASS|WARN|EXPERIMENTAL-PASS."
     echo "[ERROR] See docs/ROADMAP.md (Stage gate policy). Then re-run this command."
     exit 3
   fi
@@ -284,6 +354,18 @@ print_context() {
   if [[ "$ACCEPT_AMD_ACCELERATION_RISK" == "true" ]]; then
     echo "[INFO] AMD acceleration risk accepted: true"
   fi
+  if [[ "$WITH_LEMONADE" == "true" ]]; then
+    echo "[INFO] Optional pack: lemonade (S2-M6)"
+  fi
+  if [[ "$WITH_DIGEST" == "true" ]]; then
+    echo "[INFO] Optional pack: digest (S2-M7)"
+  fi
+  if [[ "$WITH_RAG" == "true" ]]; then
+    echo "[INFO] Optional pack: rag (S2-M3)"
+  fi
+  if [[ "$BENCH" == "true" ]]; then
+    echo "[INFO] Bench mode: true (full smoke/compare)"
+  fi
 }
 
 load_runtime_config
@@ -292,130 +374,101 @@ print_context
 case "$CMD" in
   # === Roadmap stage commands (primary recommended interface) ===
   stage1|tier1)
-    echo "[INFO] Running Stage 1 – Hardware Detection & System Optimization (formerly Tier 1)"
-    run_script "scripts/10-detect-hardware.sh"
-    run_script "scripts/20-check-bios.sh"
-    run_script "scripts/25-check-firmware.sh"
-    run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
-    run_script "scripts/40-optimize-cpu.sh"
-    run_script "scripts/50-optimize-memory.sh"
-    run_script "scripts/60-optimize-storage.sh"
-    run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
-    run_script "scripts/75-detect-npu.sh" "$OFFLINE"
-    run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
-    run_script "scripts/90-validate.sh"
+    run_stage1
     ;;
 
   stage1-validate|tier1-validate)
     run_script "scripts/90-validate.sh"
     ;;
 
-
   stage2)
-    echo "[INFO] Running Stage 2 – Local AI Runtime & AI Optimization Software"
-    echo "[INFO] Stage 2 includes runtime, Lemonade/TurnkeyML (S2-M6), model storage, NPU checks, and writes tier3-validation.json."
-    run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
-    run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
-    run_script "scripts/120-install-ollama.sh" "$OFFLINE"
-    run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
-    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
-    run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
-    # S2-M6: TurnkeyML + Lemonade (WARN-friendly sibling to Ollama; not a hard gate)
-    run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
-    run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
-    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
-    # S2-M7: Digest AI / ONNX model analysis (diagnostics only; not a gate)
-    run_script "scripts/250-install-digest-ai.sh" "$OFFLINE"
-    run_script "scripts/255-analyze-model-digest.sh" "$OFFLINE"
-    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
-    run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
-    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
-    run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
-    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
-    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
-    # Always finalize the Stage 2 NPU gate artifact so stage2 alone refreshes require_tier123_pass inputs.
-    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
-    echo "[INFO] Stage 2 RAG is optional and not part of the Stage 3 gate; run stage2-rag when needed."
+    echo "[INFO] Running Stage 2 core – runtime + model storage + NPU (Stage 3 gate path)"
+    echo "[INFO] Optional packs: --with-lemonade --with-digest --with-rag (or stage2-lemonade / stage2-digest / stage2-rag)."
+    run_stage2_runtime_core
+    run_stage2_npu_core "true"
+    run_optional_packs
+    if [[ "$WITH_LEMONADE" != "true" && "$WITH_DIGEST" != "true" && "$WITH_RAG" != "true" ]]; then
+      echo "[INFO] Skipped optional S2-M3/M6/M7 packs (not required for Stage 3 gate)."
+    fi
     ;;
 
   stage2-validate)
-    echo "[INFO] Validating Stage 2 – runtime/model storage plus Lemonade and NPU checks"
-    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+    echo "[INFO] Stage 2 validate – cheap gate refresh (use --bench for 140/230/245; --with-lemonade for 165)"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
-    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+    if [[ "$BENCH" == "true" ]]; then
+      run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+    fi
+    # Inventory / visibility (no heavy EP compare unless --bench)
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
-    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
-    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
+    if [[ "$BENCH" == "true" ]]; then
+      run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+      run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
+    fi
+    if [[ "$WITH_LEMONADE" == "true" ]]; then
+      run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+    fi
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
+    if [[ "$BENCH" != "true" ]]; then
+      echo "[INFO] Skipped heavy benches (140/230/245). Re-run with --bench to refresh smokes."
+    fi
     ;;
 
   stage2-runtime|tier2)
-    echo "[INFO] Running Stage 2 Runtime – Local AI Runtime & Model Storage (formerly Tier 2)"
-    run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
-    run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
-    run_script "scripts/120-install-ollama.sh" "$OFFLINE"
-    run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
-    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
-    run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
-    run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
-    run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
-    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+    echo "[INFO] Running Stage 2 Runtime core (formerly Tier 2)"
+    run_stage2_runtime_core
+    if [[ "$WITH_LEMONADE" == "true" ]]; then
+      run_optional_lemonade
+    else
+      echo "[INFO] Skipped Lemonade (pass --with-lemonade or run stage2-lemonade)."
+    fi
     ;;
 
   stage2-runtime-validate|tier2-validate)
-    echo "[INFO] Stage 2 runtime validation (writes/validates tier2-validation.json)"
+    echo "[INFO] Stage 2 runtime validation (writes/validates tier2-validation.json via 140)"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
-    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+    if [[ "$WITH_LEMONADE" == "true" ]]; then
+      run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+    fi
     ;;
 
   stage2-npu|tier3)
-    echo "[INFO] Running Stage 2 NPU – AMD AI Stack Enablement (formerly Tier 3)"
-    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
-    run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
-    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
-    run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
-    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
-    # Lemonade is the preferred NPU/hybrid *LLM* serving path when packages are staged
-    run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
-    run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
-    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
-    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
-    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
+    echo "[INFO] Running Stage 2 NPU core (formerly Tier 3)"
+    run_stage2_npu_core "true"
+    if [[ "$WITH_LEMONADE" == "true" ]]; then
+      run_optional_lemonade
+    else
+      echo "[INFO] Skipped Lemonade (pass --with-lemonade or run stage2-lemonade for NPU/hybrid LLM serving)."
+    fi
     ;;
 
   stage2-npu-validate|tier3-validate)
-    echo "[INFO] Stage 2 NPU validation (experimental; writes/validates tier3-validation.json)"
+    echo "[INFO] Stage 2 NPU validation (writes tier3-validation.json)"
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
-    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
-    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
+    if [[ "$BENCH" == "true" ]]; then
+      run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
+    fi
+    if [[ "$WITH_LEMONADE" == "true" ]]; then
+      run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+    fi
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     ;;
 
   stage2-lemonade)
-    echo "[INFO] Running Stage 2 Lemonade / TurnkeyML only (S2-M6)"
-    run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
-    run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
-    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+    run_optional_lemonade
     ;;
 
   stage2-digest)
-    echo "[INFO] Running Stage 2 Digest AI model analysis only (S2-M7; diagnostics, not NPU proof)"
-    run_script "scripts/250-install-digest-ai.sh" "$OFFLINE"
-    run_script "scripts/255-analyze-model-digest.sh" "$OFFLINE"
+    run_optional_digest
     ;;
 
   stage2-rag|tier4)
-    echo "[INFO] Running Stage 2 RAG (S2-M3) – AnythingLLM, embeddings, offline retrieval"
-    echo "[INFO] Offline staging: .ai370-ai/offline-artifacts/{anythingllm,embedding}/ and wheelhouse"
-    run_script "scripts/300-install-anythingllm.sh" "$OFFLINE"
-    run_script "scripts/310-install-embedding-models.sh" "$OFFLINE"
-    run_script "scripts/320-validate-rag.sh" "$OFFLINE"
+    run_optional_rag
     ;;
 
   stage3-image|tier5)
@@ -426,76 +479,58 @@ case "$CMD" in
 
   full-stack)
     if [[ "$OFFLINE" == "true" ]]; then
-      echo "[ERROR] full-stack does not support --offline (ComfyUI and some Tier 5 components fetch upstream)."
+      echo "[ERROR] full-stack does not support --offline (ComfyUI and some components fetch upstream)."
       exit 2
     fi
     if [[ "$ACCEPT_AMD_ACCELERATION_RISK" != "true" ]]; then
       echo "[ERROR] full-stack requires --accept-amd-acceleration-risk."
       exit 2
     fi
-    # Stage 1 (core)
-    run_script "scripts/10-detect-hardware.sh"
-    run_script "scripts/20-check-bios.sh"
-    run_script "scripts/25-check-firmware.sh"
-    run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
-    run_script "scripts/40-optimize-cpu.sh"
-    run_script "scripts/50-optimize-memory.sh"
-    run_script "scripts/60-optimize-storage.sh"
-    run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
-    run_script "scripts/75-detect-npu.sh" "$OFFLINE"
-    run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
-    run_script "scripts/90-validate.sh"
-    # Stage 2 runtime
-    run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
-    run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
-    run_script "scripts/120-install-ollama.sh" "$OFFLINE"
-    run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
-    run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
-    run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
-    # Stage 2 NPU (XRT/Ryzen staging install + visibility)
-    run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
-    run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
-    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
-    run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
-    run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
-    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
-    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
-    # Explicit full AMD accel (ROCm repos + XRT; risk already accepted)
+    echo "[INFO] full-stack: Stage 1 + Stage 2 core + optional packs + AMD accel + Stage 3 workflows"
+    run_stage1
+    run_stage2_runtime_core
+    run_stage2_npu_core "true"
+    run_optional_packs
     if [[ -f "$PROJECT_ROOT/scripts/65-amd-acceleration-install.sh" ]]; then
       run_script "scripts/65-amd-acceleration-install.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     fi
-    # Re-validate GPU/NPU after accel
     run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
-    # Stage 3 image generation (gate will be satisfied by above)
+    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
+    # Stage 3 image (workflows + synthetic/bench script; full ComfyUI install is S3-M1)
     run_script "scripts/70-comfyui-workflows.sh"
-    run_script "scripts/comfyui-benchmark.sh"
+    run_script_or_legacy "scripts/420-benchmark-comfyui.sh" "scripts/legacy/comfyui-benchmark.sh"
     run_script "scripts/90-validate.sh"
     ;;
 
-  # === Legacy phase commands (preserve for compatibility) ===
+  # === Legacy phase commands (compat; prefer stage1 / stage2) ===
   hardware|inventory|audit)
-    run_script "scripts/01-hardware-audit.sh"
+    # Prefer modern hardware detect when present.
+    run_script_or_legacy "scripts/10-detect-hardware.sh" "scripts/legacy/01-hardware-audit.sh"
     ;;
 
   firmware)
-    run_script "scripts/05-firmware-baseline.sh"
+    run_script_or_legacy "scripts/20-check-bios.sh" "scripts/legacy/05-firmware-baseline.sh"
+    run_script "scripts/25-check-firmware.sh"
     ;;
 
   kernel-amd)
-    run_script "scripts/02-generate-report.sh"
-    run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
-    run_script "scripts/03-baseline-validate.sh"
+    echo "[WARN] kernel-amd is legacy; prefer ./ai370-optimize.sh stage1"
+    run_script_or_legacy "scripts/30-validate-kernel.sh" "scripts/legacy/10-amd-baseline.sh" "$DRY_RUN"
     ;;
 
   tune)
-    run_script "scripts/25-system-tuning.sh"
+    echo "[WARN] tune is legacy; prefer stage1 CPU/memory/storage optimizers"
+    run_script "scripts/40-optimize-cpu.sh"
+    run_script "scripts/50-optimize-memory.sh"
+    run_script "scripts/60-optimize-storage.sh"
     ;;
 
   accel-validate)
-    run_script "scripts/30-rocm-igpu.sh" "$OFFLINE"
-    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
+    echo "[WARN] accel-validate is legacy; prefer stage1 GPU + stage2-npu-validate"
+    run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
+    run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     ;;
 
   ai-bench|ai-runtime)
@@ -516,7 +551,7 @@ case "$CMD" in
     ;;
 
   comfyui-bench)
-    run_script "scripts/comfyui-benchmark.sh"
+    run_script_or_legacy "scripts/420-benchmark-comfyui.sh" "scripts/legacy/comfyui-benchmark.sh"
     ;;
 
   final-validate|validate)
@@ -524,27 +559,28 @@ case "$CMD" in
     ;;
 
   baseline-plan|plan)
-    run_script "scripts/02-generate-report.sh"
+    echo "[WARN] baseline-plan is legacy; prefer stage1 hardware detection"
+    run_script_or_legacy "scripts/10-detect-hardware.sh" "scripts/legacy/02-generate-report.sh"
     ;;
 
   baseline-apply)
-    run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
+    echo "[WARN] baseline-apply is legacy; prefer stage1"
+    run_script_or_legacy "scripts/30-validate-kernel.sh" "scripts/legacy/10-amd-baseline.sh" "$DRY_RUN"
     ;;
 
   baseline-validate)
-    run_script "scripts/03-baseline-validate.sh"
+    echo "[WARN] baseline-validate is legacy; prefer stage1-validate"
+    run_script_or_legacy "scripts/90-validate.sh" "scripts/legacy/03-baseline-validate.sh"
     ;;
 
   install)
-    # Legacy install = core baseline + AI runtime (Stage 1 + Stage 2 runtime overlap). No Stage 3 image generation.
-    run_script "scripts/02-generate-report.sh"
-    run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
-    run_script "scripts/03-baseline-validate.sh"
-    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
+    echo "[WARN] install is legacy; running stage1 + stage2-runtime core"
+    run_stage1
+    run_stage2_runtime_core
     ;;
 
   gpu)
-    run_script "scripts/30-rocm-igpu.sh" "$OFFLINE"
+    run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
     ;;
 
   npu)
@@ -554,11 +590,12 @@ case "$CMD" in
     ;;
 
   guide)
-    run_script "scripts/50-guided-acceleration.sh" "$OFFLINE"
+    run_script_or_legacy "scripts/70-validate-gpu-stack.sh" "scripts/legacy/50-guided-acceleration.sh" "$OFFLINE"
     ;;
 
   execute)
-    run_script "scripts/60-acceleration-execution.sh" "$OFFLINE"
+    echo "[WARN] execute is legacy acceleration checklist; prefer stage2-npu"
+    run_script_or_legacy "scripts/210-check-ryzen-ai-software.sh" "scripts/legacy/60-acceleration-execution.sh" "$OFFLINE"
     ;;
 
   full-ai-install)
@@ -570,29 +607,27 @@ case "$CMD" in
       echo "[ERROR] Command 'full-ai-install' requires --accept-amd-acceleration-risk."
       exit 2
     fi
-    # Delegate to the roadmap-stage full-stack implementation for consistency with gates
-    # (kept for backward compat; prefer ./ai370-optimize.sh full-stack)
-    "$0" full-stack --profile="$PROFILE" --mode="$MODE" --persistence="$PERSISTENCE" --accept-amd-acceleration-risk
+    # Preserve optional pack flags for the delegated full-stack run.
+    local_flags=(--profile="$PROFILE" --mode="$MODE" --persistence="$PERSISTENCE" --accept-amd-acceleration-risk)
+    [[ "$WITH_LEMONADE" == "true" ]] && local_flags+=(--with-lemonade)
+    [[ "$WITH_DIGEST" == "true" ]] && local_flags+=(--with-digest)
+    [[ "$WITH_RAG" == "true" ]] && local_flags+=(--with-rag)
+    "$0" full-stack "${local_flags[@]}"
     ;;
 
   all)
     if [[ "$OFFLINE" == "true" ]]; then
-      echo "[ERROR] Command 'all' does not support --offline. Run phases 5-7 individually with --offline."
+      echo "[ERROR] Command 'all' does not support --offline. Run stage commands individually with --offline."
       exit 2
     fi
-    # Run a safe subset (Stage 1 + Stage 2 runtime + ComfyUI without forcing the risky AMD accel stack)
-    run_script "scripts/01-hardware-audit.sh"
-    run_script "scripts/05-firmware-baseline.sh"
-    run_script "scripts/02-generate-report.sh"
-    run_script "scripts/10-amd-baseline.sh" "$DRY_RUN"
-    run_script "scripts/03-baseline-validate.sh"
-    run_script "scripts/25-system-tuning.sh"
-    run_script "scripts/30-rocm-igpu.sh" "$OFFLINE"
-    run_script "scripts/40-ryzen-ai-npu.sh" "$OFFLINE"
-    run_script "scripts/20-ai-stack.sh" "$OFFLINE"
-    run_script "scripts/80-llm-validation.sh" "$OFFLINE"
+    echo "[WARN] 'all' is legacy; running modern Stage 1 + Stage 2 core + Stage 3 workflows (no forced AMD risk install)"
+    run_stage1
+    run_stage2_runtime_core
+    # NPU path without requiring risk flag for inventory-only 205
+    run_stage2_npu_core "true"
+    run_optional_packs
     run_script "scripts/70-comfyui-workflows.sh"
-    run_script "scripts/comfyui-benchmark.sh"
+    run_script_or_legacy "scripts/420-benchmark-comfyui.sh" "scripts/legacy/comfyui-benchmark.sh"
     run_script "scripts/90-validate.sh"
     ;;
 
