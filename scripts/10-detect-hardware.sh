@@ -143,7 +143,67 @@ PY
   cp "$LATEST_DIR/tier1-hardware.json" "$LATEST_DIR/hardware-inventory.json" 2>/dev/null || true
   cp "$LATEST_DIR/tier1-hardware.md" "$LATEST_DIR/hardware-summary.md" 2>/dev/null || true
 
-  echo "[INFO] Wrote tier1-hardware.json and tier1-hardware.md"
+  # Package C: also emit tier1-npu.* here (formerly scripts/75-detect-npu.sh)
+  local xrt_smi xrt_state npu_status
+  xrt_smi="$(capture_command xrt-smi examine)"
+  if [[ "$xrt_smi" == command-not-found:* ]]; then
+    xrt_state="missing"
+  else
+    xrt_state="available"
+  fi
+  npu_status="PASS"
+  if [[ "$NPU_PRESENT" != "true" ]]; then
+    npu_status="WARN"
+  fi
+
+  export PROFILE MODE PERSISTENCE NPU_MODULE NPU_DEVICE NPU_PRESENT xrt_state xrt_smi npu_status
+  python3 - <<'PY' > "$LATEST_DIR/tier1-npu.json"
+import json
+import os
+from datetime import datetime, UTC
+
+print(json.dumps({
+    "tier": 1,
+    "phase": "detect-npu",
+    "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+    "profile": os.environ.get("PROFILE", "ai370"),
+    "mode": os.environ.get("MODE", "safe"),
+    "persistence": os.environ.get("PERSISTENCE", "runtime"),
+    "offline": False,
+    "status": os.environ.get("npu_status", "WARN"),
+    "amdxdna": {
+        "present": os.environ.get("NPU_PRESENT", "false").lower() == "true",
+        "module_text": os.environ.get("NPU_MODULE", ""),
+        "device_text": os.environ.get("NPU_DEVICE", ""),
+    },
+    "xrt": {
+        "state": os.environ.get("xrt_state", "missing"),
+        "examine_output": os.environ.get("xrt_smi", ""),
+    },
+    "note": "NPU detection is part of 10-detect-hardware.sh (Package C). Missing AMDXDNA/XRT is WARN at Stage 1; Stage 2 NPU owns enablement.",
+    "source_script": "scripts/10-detect-hardware.sh",
+}, indent=2))
+PY
+
+  {
+    echo "# Tier 1 AMDXDNA / NPU Detection"
+    echo
+    echo "**Status:** $npu_status"
+    echo
+    echo "- AMDXDNA/XDNA present: $NPU_PRESENT"
+    echo "- XRT tools: $xrt_state"
+    echo
+    echo "## Kernel module evidence"
+    printf '%s\n' "${NPU_MODULE:-none detected}"
+    echo
+    echo "## Device node evidence"
+    printf '%s\n' "${NPU_DEVICE:-none detected}"
+    echo
+    echo "Emitted by scripts/10-detect-hardware.sh (Package C fold of 75-detect-npu)."
+  } > "$LATEST_DIR/tier1-npu.md"
+  echo "$npu_status" > "$LATEST_DIR/tier1-npu.txt"
+
+  echo "[INFO] Wrote tier1-hardware.json, tier1-hardware.md, and tier1-npu.*"
   echo "[INFO] 10-detect-hardware.sh complete."
 }
 

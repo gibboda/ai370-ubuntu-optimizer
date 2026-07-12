@@ -22,6 +22,7 @@ usage() {
   cat <<'USAGE'
 Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh stage1-inventory [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage1-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh stage2 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
        [--with-lemonade] [--with-digest] [--with-rag]
@@ -55,9 +56,15 @@ Legacy / detailed phase commands (compat; prefer stage1/stage2):
   ./ai370-optimize.sh comfyui-install | comfyui-bench | final-validate | all
   (Broken root script paths retarget scripts/legacy/ or modern Stage 1/2 scripts.)
 
+Stage 1 (Package C streamlined):
+  10 (incl. NPU), 20 (BIOS+firmware; 25 wrapper), 30, 40-platform-tuning (40/50/60 wrappers),
+  70, 80 (no pip by default), 90
+  stage1-inventory = detect + firmware + kernel + GPU + validate (no tuning/smoke)
+
 Stage 2 core (default stage2 / Stage 3 gate path):
-  Runtime: 100, 110, 120, 130, 140, 150
+  Runtime: 100, 110, 120, 130, 140, 145, 150
   NPU:     205, 200, 210, 220, 230, 245, 240
+  (145 writes tier2-validation.json; 245 reuses 230 NPU results by default)
 Optional packs (not Stage 3 gate inputs):
   --with-lemonade / stage2-lemonade  → 170, 160, 165 (S2-M6)
   --with-digest / stage2-digest      → 250, 255 (S2-M7)
@@ -141,19 +148,35 @@ run_script_or_legacy() {
   fi
 }
 
+run_stage1_inventory() {
+  echo "[INFO] Stage 1 inventory – detect + firmware + kernel + GPU + gate (no tuning/smoke)"
+  run_script "scripts/10-detect-hardware.sh"
+  # 20 writes both BIOS baseline and firmware validation (25 is a wrapper)
+  run_script "scripts/20-check-bios.sh"
+  run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
+  run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
+  run_script "scripts/90-validate.sh"
+  write_report_index
+}
+
 run_stage1() {
   echo "[INFO] Stage 1 – Hardware Detection & System Optimization"
   run_script "scripts/10-detect-hardware.sh"
+  # Combined BIOS + firmware (Package C); keep 25 as optional no-op path for compat
   run_script "scripts/20-check-bios.sh"
-  run_script "scripts/25-check-firmware.sh"
   run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
-  run_script "scripts/40-optimize-cpu.sh"
-  run_script "scripts/50-optimize-memory.sh"
-  run_script "scripts/60-optimize-storage.sh"
+  run_script "scripts/40-platform-tuning.sh"
   run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
-  run_script "scripts/75-detect-npu.sh" "$OFFLINE"
+  # NPU detect is included in 10; 75 remains a thin wrapper if called directly
   run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
   run_script "scripts/90-validate.sh"
+  write_report_index
+}
+
+write_report_index() {
+  # shellcheck source=scripts/lib/common.sh
+  PROJECT_ROOT="$PROJECT_ROOT" source "$PROJECT_ROOT/scripts/lib/common.sh"
+  ai370_write_report_index "$PROJECT_ROOT/reports/latest"
 }
 
 run_stage2_runtime_core() {
@@ -163,6 +186,8 @@ run_stage2_runtime_core() {
   run_script "scripts/120-install-ollama.sh" "$OFFLINE"
   run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
   run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+  # 140 invokes 145; call again so runtime-only paths still refresh the gate artifact
+  run_script "scripts/145-write-tier2-validation.sh" "$OFFLINE"
   run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
 }
 
@@ -175,9 +200,11 @@ run_stage2_npu_core() {
   run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
   run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
   if [[ "$include_compare" == "true" ]]; then
+    # Reuses npu-benchmark.json from 230 by default (AI370_REUSE_NPU_BENCH=true)
     run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
   fi
   run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
+  write_report_index
 }
 
 run_optional_lemonade() {
@@ -377,8 +404,13 @@ case "$CMD" in
     run_stage1
     ;;
 
+  stage1-inventory)
+    run_stage1_inventory
+    ;;
+
   stage1-validate|tier1-validate)
     run_script "scripts/90-validate.sh"
+    write_report_index
     ;;
 
   stage2)
@@ -398,6 +430,8 @@ case "$CMD" in
     if [[ "$BENCH" == "true" ]]; then
       run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     fi
+    # Refresh tier2 gate artifact from existing llm reports (or after --bench)
+    run_script "scripts/145-write-tier2-validation.sh" "$OFFLINE"
     # Inventory / visibility (no heavy EP compare unless --bench)
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
@@ -410,6 +444,7 @@ case "$CMD" in
       run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     fi
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
+    write_report_index
     if [[ "$BENCH" != "true" ]]; then
       echo "[INFO] Skipped heavy benches (140/230/245). Re-run with --bench to refresh smokes."
     fi
@@ -426,12 +461,14 @@ case "$CMD" in
     ;;
 
   stage2-runtime-validate|tier2-validate)
-    echo "[INFO] Stage 2 runtime validation (writes/validates tier2-validation.json via 140)"
+    echo "[INFO] Stage 2 runtime validation (140 smoke + 145 tier2 aggregate)"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
+    run_script "scripts/145-write-tier2-validation.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
     if [[ "$WITH_LEMONADE" == "true" ]]; then
       run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     fi
+    write_report_index
     ;;
 
   stage2-npu|tier3)
@@ -521,10 +558,8 @@ case "$CMD" in
     ;;
 
   tune)
-    echo "[WARN] tune is legacy; prefer stage1 CPU/memory/storage optimizers"
-    run_script "scripts/40-optimize-cpu.sh"
-    run_script "scripts/50-optimize-memory.sh"
-    run_script "scripts/60-optimize-storage.sh"
+    echo "[WARN] tune is legacy; prefer stage1 platform tuning"
+    run_script "scripts/40-platform-tuning.sh"
     ;;
 
   accel-validate)

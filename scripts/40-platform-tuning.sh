@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Stage 1: combined CPU / memory / storage runtime tuning plans (Package C merge of 40/50/60).
+# Detection + reviewable recommendations only; no system-persistent changes.
+
+set -euo pipefail
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/common.sh
+source "$PROJECT_ROOT/scripts/lib/common.sh"
+# shellcheck source=lib/hardware-detect.sh
+source "$PROJECT_ROOT/scripts/lib/hardware-detect.sh"
+
+ai370_parse_standard_args "$@"
+ai370_init_latest_dir
+ai370_require_runtime_persistence "platform tuning"
+
+main() {
+  echo "[INFO] Stage 1 / 40-platform-tuning.sh (CPU + memory + storage)"
+  echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
+
+  local cpu_model governor governors target_power mem_total zram_active swap_show storage nvme
+  cpu_model="$(detect_cpu_model)"
+  governor="$(detect_cpu_current_governor)"
+  governors="$(detect_cpu_governors)"
+  target_power="balanced"
+  [[ "$MODE" == "aggressive" ]] && target_power="performance"
+
+  mem_total="$(detect_memory_total)"
+  zram_active="$(systemctl is-active systemd-zram-setup@zram0.service 2>/dev/null || echo inactive)"
+  swap_show="$(swapon --show --noheadings 2>/dev/null || true)"
+
+  storage="$(detect_storage_text)"
+  nvme="$(detect_nvme_text)"
+
+  # --- Combined platform report ---
+  {
+    echo "# Tier 1 Platform Tuning Plan"
+    echo
+    echo "Profile: $PROFILE | Mode: $MODE | Persistence: $PERSISTENCE"
+    echo "Generated: $(ai370_utc_now)"
+    echo
+    echo "## CPU"
+    echo
+    echo "- Target power profile: $target_power (runtime only via powerprofilesctl)"
+    echo "- Current governor: ${governor:-unknown}"
+    echo "- Available governors: ${governors:-unknown}"
+    echo "- CPU: $cpu_model"
+    echo
+    echo "## Memory"
+    echo
+    echo "- Total memory: $mem_total"
+    echo "- zram0 active: $zram_active"
+    echo "- Current swap:"
+    echo "$swap_show"
+    echo
+    echo "Recommendations (runtime-only):"
+    echo "- Consider enabling zram for better interactive behavior on 32/64 GB LPDDR5X systems."
+    echo "- Review swappiness if using heavy local LLM inference."
+    echo
+    echo "## Storage"
+    echo
+    echo "### Block devices"
+    lsblk -o NAME,MODEL,SIZE,TYPE,MOUNTPOINTS 2>/dev/null || echo "(lsblk unavailable)"
+    echo
+    echo "### NVMe"
+    echo "${nvme:-No NVMe devices detected via lsblk}"
+    echo
+    echo "Run 'sudo nvme list' and 'sudo smartctl -a /dev/nvme0n1' (or equivalent) for detailed health."
+    echo
+    echo "Review and run the generated commands in:"
+    echo "  reports/latest/tier1-cpu-runtime-commands.sh"
+  } > "$LATEST_DIR/tier1-platform-tuning.md"
+
+  # Compatibility copies for existing consumers / 90-validate soft checks
+  cp "$LATEST_DIR/tier1-platform-tuning.md" "$LATEST_DIR/tier1-cpu-plan.md" 2>/dev/null || true
+  {
+    echo "# Tier 1 Memory Report"
+    echo
+    echo "- Total memory: $mem_total"
+    echo "- zram0 active: $zram_active"
+    echo "- Current swap:"
+    echo "$swap_show"
+    echo
+    echo "Recommendations (runtime-only):"
+    echo "- Consider enabling zram for better interactive behavior on 32/64 GB LPDDR5X systems."
+    echo "- Review swappiness if using heavy local LLM inference."
+    echo
+    echo "See also: tier1-platform-tuning.md (combined report)."
+  } > "$LATEST_DIR/tier1-memory.md"
+  {
+    echo "# Tier 1 Storage Health"
+    echo
+    echo "## Block devices"
+    lsblk -o NAME,MODEL,SIZE,TYPE,MOUNTPOINTS 2>/dev/null || echo "(lsblk unavailable)"
+    echo
+    echo "## NVMe"
+    echo "${nvme:-No NVMe devices detected via lsblk}"
+    echo
+    echo "Run 'sudo nvme list' and 'sudo smartctl -a /dev/nvme0n1' (or equivalent) for detailed health."
+    echo
+    echo "See also: tier1-platform-tuning.md (combined report)."
+  } > "$LATEST_DIR/tier1-storage.md"
+
+  cat > "$LATEST_DIR/tier1-cpu-runtime-commands.sh" <<CMDS
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+# Generated Tier 1 CPU runtime tuning commands. Review before execution.
+set -euo pipefail
+
+echo "[TUNE] Setting power profile (runtime)..."
+if command -v powerprofilesctl >/dev/null 2>&1; then
+  powerprofilesctl set ${target_power} || true
+else
+  echo "[WARN] powerprofilesctl not available."
+fi
+
+echo "[TUNE] CPU frequency info (if cpupower present)..."
+if command -v cpupower >/dev/null 2>&1; then
+  cpupower frequency-info || true
+fi
+CMDS
+  chmod +x "$LATEST_DIR/tier1-cpu-runtime-commands.sh"
+
+  PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" \
+  TARGET_POWER="$target_power" CPU_MODEL="$cpu_model" GOVERNOR="${governor:-}" \
+  MEM_TOTAL="$mem_total" ZRAM_ACTIVE="$zram_active" \
+  python3 - <<'PY' > "$LATEST_DIR/tier1-platform-tuning.json"
+import json, os
+from datetime import datetime, UTC
+print(json.dumps({
+  "tier": 1,
+  "phase": "platform-tuning",
+  "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+  "profile": os.environ.get("PROFILE", "ai370"),
+  "mode": os.environ.get("MODE", "safe"),
+  "persistence": os.environ.get("PERSISTENCE", "runtime"),
+  "cpu": {
+    "model": os.environ.get("CPU_MODEL", ""),
+    "target_power": os.environ.get("TARGET_POWER", "balanced"),
+    "governor": os.environ.get("GOVERNOR", ""),
+  },
+  "memory": {
+    "total": os.environ.get("MEM_TOTAL", ""),
+    "zram0": os.environ.get("ZRAM_ACTIVE", ""),
+  },
+  "storage": {"report": "reports/latest/tier1-storage.md"},
+  "compatibility_reports": [
+    "tier1-cpu-plan.md",
+    "tier1-memory.md",
+    "tier1-storage.md",
+    "tier1-cpu-runtime-commands.sh",
+  ],
+}, indent=2))
+PY
+
+  echo "[INFO] Wrote tier1-platform-tuning.* (+ compatibility cpu/memory/storage reports)"
+  echo "[INFO] 40-platform-tuning.sh complete."
+}
+
+main "$@"

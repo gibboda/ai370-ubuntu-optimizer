@@ -70,8 +70,11 @@ detect_npu_stack() {
     xrt_validate="$("$xrt_smi_bin" validate 2>&1 || true)"
   fi
 
-  if [[ -n "${VENV_PYTHON:-}" && -x "$VENV_PYTHON" ]]; then
-    if ! ort_providers="$("$VENV_PYTHON" - <<'PY'
+  # Package C: ORT provider listing is owned by 220-check-vitis-ai-ep.sh.
+  # Set AI370_210_LIST_ORT=true to restore the historical dual list here.
+  if [[ "${AI370_210_LIST_ORT:-false}" == "true" ]]; then
+    if [[ -n "${VENV_PYTHON:-}" && -x "$VENV_PYTHON" ]]; then
+      if ! ort_providers="$("$VENV_PYTHON" - <<'PY'
 try:
     import onnxruntime as ort
 except ModuleNotFoundError:
@@ -80,10 +83,13 @@ else:
     print(",".join(ort.get_available_providers()))
 PY
 )"; then
-      ort_providers="error: onnxruntime provider check failed"
+        ort_providers="error: onnxruntime provider check failed"
+      fi
+    else
+      ort_providers="missing: no NPU/stock venv python"
     fi
   else
-    ort_providers="missing: no NPU/stock venv python"
+    ort_providers="deferred-to-220-check-vitis-ai-ep"
   fi
 
   {

@@ -86,7 +86,9 @@ files, current stage alignment, and contributor guidance.
 Current high-level status (see `docs/ROADMAP.md` for details):
 
 - Stage 1: **Implemented** (hardware detection, BIOS/firmware validation,
-  kernel/driver validation, system optimization, and benchmarking).
+  kernel/driver validation, system optimization, and benchmarking). Package C
+  merges platform tuning and firmware steps; use `stage1-inventory` for a
+  faster detect-only pass.
 - Stage 2: **Implemented** for planned roadmap scope (S2-M1 through S2-M7).
   Aggregate/runtime/NPU commands: `stage2`, `stage2-runtime`, `stage2-npu`
   (legacy `tier2` / `tier3`). NPU PASS requires profiled AMD EP execution
@@ -101,27 +103,30 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 
 ### Implemented / Planned (high level)
 
-**Stage 1 — Implemented:**
+**Stage 1 — Implemented (Package C streamlined):**
 
-- `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`,
-  `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`
-- `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`,
-  `scripts/60-optimize-storage.sh`
-- `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`,
-  `scripts/80-benchmark-local-ai.sh`, `scripts/90-validate.sh`
+- `scripts/10-detect-hardware.sh` (includes NPU detect; `75` is a wrapper)
+- `scripts/20-check-bios.sh` (BIOS + firmware validation; `25` is a wrapper)
+- `scripts/30-validate-kernel.sh`
+- `scripts/40-platform-tuning.sh` (CPU+memory+storage; `40`/`50`/`60` wrappers)
+- `scripts/70-validate-gpu-stack.sh`, `scripts/80-benchmark-local-ai.sh`
+  (no pip by default; set `AI370_STAGE1_INSTALL_ORT=true` for optional ORT smoke)
+- `scripts/90-validate.sh`
+- Command: `stage1-inventory` (detect + firmware + kernel + GPU + validate)
 
 **Stage 2 — Implemented (S2-M1–S2-M7; optional paths noted):**
 
 - `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`,
   `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`,
-  `scripts/140-benchmark-llm.sh`,
+  `scripts/140-benchmark-llm.sh`, `scripts/145-write-tier2-validation.sh`,
   `scripts/150-validate-offline-model-storage.sh` (S2-M1 / S2-M4 / S2-M5)
 - `scripts/200-install-onnxruntime.sh`,
   `scripts/205-install-xrt-ryzen-ai.sh`,
   `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`,
   `scripts/230-benchmark-npu.sh`, `scripts/240-write-tier3-validation.sh`,
-  `scripts/245-compare-cpu-gpu-npu.sh`, `scripts/lib/npu_ep_verify.py`,
-  `docs/npu-status.md` (S2-M2 / S2-M4)
+  `scripts/245-compare-cpu-gpu-npu.sh` (reuses 230 NPU results by default),
+  `scripts/lib/npu_ep_verify.py`, `scripts/lib/common.sh`, `docs/npu-status.md`
+  (S2-M2 / S2-M4)
 - `scripts/300-install-anythingllm.sh`,
   `scripts/310-install-embedding-models.sh`, `scripts/320-validate-rag.sh`
   (S2-M3 offline RAG; optional, not Stage 3 gate)

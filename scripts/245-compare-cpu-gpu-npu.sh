@@ -58,10 +58,14 @@ main() {
 
   local ort_python="${npu_python:-$torch_python}"
 
+  # Package C: reuse profiled NPU results from 230 when fresh (default on).
+  REUSE_NPU_BENCH="${AI370_REUSE_NPU_BENCH:-true}"
+
   PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
   ORT_PYTHON="${ort_python:-}" NPU_SOURCE="${npu_source:-unknown}" \
   TORCH_PYTHON="${torch_python:-}" LATEST_DIR="$LATEST_DIR" \
   PROJECT_ROOT="$PROJECT_ROOT" \
+  REUSE_NPU_BENCH="$REUSE_NPU_BENCH" \
   COMPARE_ORT_WARMUP="$COMPARE_ORT_WARMUP" COMPARE_ORT_RUNS="$COMPARE_ORT_RUNS" \
   COMPARE_TORCH_SIZE="$COMPARE_TORCH_SIZE" COMPARE_TORCH_ITERS="$COMPARE_TORCH_ITERS" \
   python3 - "$OUT_JSON" "$OUT_MD" <<'PY'
@@ -95,6 +99,8 @@ provider_tokens = ("vitis", "vai", "ryzen", "xilinx", "amd", "xdna")
 paths = []
 diagnostics = []
 prior_reports = {}
+reuse_npu_bench = os.environ.get("REUSE_NPU_BENCH", "true").lower() == "true"
+skip_live_npu_ort = False
 
 
 def load_json(name: str):
@@ -148,9 +154,48 @@ def parse_last_json(stdout: str):
     return None
 
 
+# Package C: reuse NPU EP timings from scripts/230 when available.
+npu_prior = load_json("npu-benchmark.json")
+if npu_prior:
+    prior_reports["npu-benchmark.json"] = npu_prior.get("status")
+if reuse_npu_bench and npu_prior:
+    for bench in npu_prior.get("benchmarks") or []:
+        req = str(bench.get("requested_provider") or "")
+        is_amd = any(t in req.lower() for t in provider_tokens)
+        if not is_amd:
+            continue
+        if not (bench.get("ep_verified") and bench.get("ep_executed")):
+            continue
+        paths.append({
+            "framework": "onnxruntime",
+            "workload": "onnx_matmul_add_1x64",
+            "requested_device": bench.get("requested_provider"),
+            "actual_device": bench.get("actual_provider"),
+            "device_class": "npu",
+            "runs": bench.get("runs") or 0,
+            "mean_ms": bench.get("mean_ms"),
+            "median_ms": bench.get("median_ms"),
+            "min_ms": bench.get("min_ms"),
+            "max_ms": bench.get("max_ms"),
+            "status": "pass",
+            "note": "reused from npu-benchmark.json (230); set AI370_REUSE_NPU_BENCH=false to re-run",
+            "ep_executed": True,
+            "ep_verified": True,
+            "profile": bench.get("profile") or {},
+            "vaiml": bench.get("vaiml") or {},
+            "source": "npu-benchmark.json",
+        })
+        skip_live_npu_ort = True
+    if skip_live_npu_ort:
+        diagnostics.append(
+            "Reused profiled NPU EP results from npu-benchmark.json (Package C). "
+            "Set AI370_REUSE_NPU_BENCH=false to force a live NPU MatMul in 245."
+        )
+
 # --- ONNX Runtime: CPU + NPU on identical MatMul+Add model ---
 if ort_python:
     project_root = os.environ.get("PROJECT_ROOT", "")
+    skip_npu = skip_live_npu_ort
     ort_code = f"""
 import json, os, sys, tempfile
 from pathlib import Path
@@ -158,6 +203,7 @@ from pathlib import Path
 warmup = {ort_warmup}
 runs = {ort_runs}
 tokens = {provider_tokens!r}
+skip_npu = {skip_npu!r}
 sys.path.insert(0, str(Path({project_root!r}) / "scripts" / "lib"))
 payload = {{"ok": True, "error": "", "providers": [], "amd_candidates": [], "results": []}}
 
@@ -268,7 +314,10 @@ try:
                 "ep_verified": False,
             }})
 
-        if amd:
+        if skip_npu:
+            # NPU path already filled from npu-benchmark.json by outer 245 process.
+            pass
+        elif amd:
             for p in amd[:1]:
                 try:
                     raw = run_provider_benchmark(
