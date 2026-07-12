@@ -26,6 +26,7 @@ Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage2-npu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage2-npu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh stage2-rag [--profile=ai370] [--mode=safe] [--persistence=runtime]
+  ./ai370-optimize.sh stage2-lemonade [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage3-image [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh full-stack [--profile=ai370] [--mode=safe] [--persistence=runtime] --accept-amd-acceleration-risk
 
@@ -63,13 +64,16 @@ Stage 1 scripts (S1 deliverables):
   scripts/80-benchmark-local-ai.sh
   scripts/90-validate.sh
 
-Stage 2 scripts (S2 deliverables across runtime + NPU):
+Stage 2 scripts (S2 deliverables across runtime + NPU + Lemonade):
   scripts/100-install-pytorch-rocm.sh
   scripts/110-install-llama-cpp.sh
   scripts/120-install-ollama.sh
   scripts/130-install-open-webui.sh
   scripts/140-benchmark-llm.sh
   scripts/150-validate-offline-model-storage.sh
+  scripts/160-install-lemonade.sh
+  scripts/165-validate-lemonade.sh
+  scripts/170-install-turnkeyml.sh
   scripts/200-install-onnxruntime.sh
   scripts/205-install-xrt-ryzen-ai.sh
   scripts/210-check-ryzen-ai-software.sh
@@ -306,13 +310,17 @@ case "$CMD" in
 
   stage2)
     echo "[INFO] Running Stage 2 – Local AI Runtime & AI Optimization Software"
-    echo "[INFO] Stage 2 includes runtime, model storage, NPU checks, and writes tier3-validation.json."
+    echo "[INFO] Stage 2 includes runtime, Lemonade/TurnkeyML (S2-M6), model storage, NPU checks, and writes tier3-validation.json."
     run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
     run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
     run_script "scripts/120-install-ollama.sh" "$OFFLINE"
     run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+    # S2-M6: TurnkeyML + Lemonade (WARN-friendly sibling to Ollama; not a hard gate)
+    run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
+    run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
+    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
@@ -325,9 +333,10 @@ case "$CMD" in
     ;;
 
   stage2-validate)
-    echo "[INFO] Validating Stage 2 – runtime/model storage plus NPU checks"
+    echo "[INFO] Validating Stage 2 – runtime/model storage plus Lemonade and NPU checks"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
@@ -344,12 +353,16 @@ case "$CMD" in
     run_script "scripts/130-install-open-webui.sh" "$OFFLINE"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+    run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
+    run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
+    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     ;;
 
   stage2-runtime-validate|tier2-validate)
     echo "[INFO] Stage 2 runtime validation (writes/validates tier2-validation.json)"
     run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
     run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     ;;
 
   stage2-npu|tier3)
@@ -359,6 +372,10 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    # Lemonade is the preferred NPU/hybrid *LLM* serving path when packages are staged
+    run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
+    run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
+    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     ;;
@@ -369,8 +386,16 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
+    ;;
+
+  stage2-lemonade)
+    echo "[INFO] Running Stage 2 Lemonade / TurnkeyML only (S2-M6)"
+    run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
+    run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
+    run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     ;;
 
   stage2-rag|tier4)

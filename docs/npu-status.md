@@ -69,14 +69,49 @@ inventories artifacts and writes diagnostics (exit 0 on WARN).
 | `reports/latest/npu-benchmark.json` | `scripts/230-benchmark-npu.sh` | CPU baseline and AMD-provider benchmark timings when available, or actionable limitations. |
 | `reports/latest/npu-benchmark.md` | `scripts/230-benchmark-npu.sh` | Human-readable NPU benchmark/diagnostic summary. |
 
-## Python environments (two venvs)
+## Python environments (two venvs + optional Lemonade)
 
-Stage 2 NPU intentionally uses **two** Python environments:
+Stage 2 NPU intentionally uses **two** Python environments for ORT/XRT:
 
 | Path | Purpose | Typical packages |
 | --- | --- | --- |
 | `.ai370-ai/ryzen-ai/venv` | AMD Ryzen AI software + NPU EP (preferred for S2-M2 checks) | `ryzen-ai`, `onnxruntime-vitisai` (import name `onnxruntime`), `onnxruntime-genai-ryzenai` |
 | `.ai370-ai/venv` | Stock CPU ONNX Runtime from `scripts/200-install-onnxruntime.sh` | PyPI `onnxruntime`, `onnx`, `numpy` |
+
+### S2-M6 Lemonade / TurnkeyML (NPU/hybrid *LLM* serving)
+
+Tiny ONNX MatMul smokes often cannot exercise VAIML even when VitisAI is listed.
+**Lemonade Server** (OpenAI-compatible) is the Stage 2 path for real LLM serving
+with hybrid/NPU backends where the platform supports them.
+
+| Path / command | Purpose |
+| --- | --- |
+| `.ai370-ai/lemonade/venv` | Dedicated venv for `lemonade-sdk` (Python **3.10–3.13** only) |
+| `scripts/170-install-turnkeyml.sh` | TurnkeyML inventory + lemonade-sdk companion install |
+| `scripts/160-install-lemonade.sh` | Install/detect Lemonade SDK or system package |
+| `scripts/165-validate-lemonade.sh` | Health + optional `/api/v1` models + chat smoke |
+| `./ai370-optimize.sh stage2-lemonade` | Run S2-M6 only |
+| Default API | `http://127.0.0.1:8000/api/v1` (`LEMONADE_BASE_URL`) |
+
+**Rules:**
+
+* Ollama remains the general-purpose LLM runtime; Lemonade is a **sibling**, not a replacement.
+* Package install alone is **not** NPU inference proof (same honesty as profiled EP checks).
+* On Linux, NPU (OGA) may be limited vs Windows; CPU/GPU (Vulkan/ROCm) paths are primary.
+* Offline: stage wheels under `.ai370-ai/wheelhouse` or `.ai370-ai/offline-artifacts/lemonade/`.
+* Lemonade failure is **WARN**-friendly and does not hard-fail Stage 2 gates.
+
+```bash
+# Online install (needs python3.12 or 3.11/3.13):
+LEMONADE_PYTHON=python3.12 ./ai370-optimize.sh stage2-lemonade
+
+# Offline after staging wheels:
+pip download lemonade-sdk -d .ai370-ai/wheelhouse
+./ai370-optimize.sh stage2-lemonade --offline
+
+# Optional: start server during validate and pull a model (online)
+LEMONADE_START=true LEMONADE_PULL_MODEL=Gemma-3-4b-it-GGUF ./scripts/165-validate-lemonade.sh
+```
 
 `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, and
 `scripts/230-benchmark-npu.sh` resolve the interpreter via
