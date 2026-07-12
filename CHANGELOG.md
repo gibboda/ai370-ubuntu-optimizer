@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.9.0...v0.9.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* require profiled EP execution before NPU pass ([#109](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/109)) ([0340a4a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/0340a4a7c8034b20de062388b454248bc56a914e))
+
 ## [0.9.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.8.0...v0.9.0) (2026-07-12)
 
 
