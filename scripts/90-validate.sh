@@ -10,6 +10,19 @@ set -euo pipefail
 PROFILE="${1:-ai370}"
 MODE="${2:-safe}"
 PERSISTENCE="${3:-runtime}"
+# full (default) | inventory — inventory skips requiring Stage 1 local-AI smoke artifacts
+SCOPE="${4:-full}"
+case "$SCOPE" in
+  full|inventory) ;;
+  true|false)
+    # Back-compat if a 4th offline-style boolean was ever passed; treat as full.
+    SCOPE="full"
+    ;;
+  *)
+    echo "[WARN] Unknown Stage 1 validate scope '$SCOPE'; using full"
+    SCOPE="full"
+    ;;
+esac
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
@@ -32,7 +45,7 @@ main() {
   mkdir -p "$LATEST_DIR"
 
   echo "[INFO] Tier 1 / 90-validate.sh (Tier 1 final gate)"
-  echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
+  echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE  Scope: $SCOPE"
 
   # Re-detect key facts (best effort)
   GPU_TEXT="$(detect_gpu_text 2>/dev/null || echo '')"
@@ -107,8 +120,20 @@ PY
     record_warn "BIOS version not at target $EXPECTED_BIOS for $PROFILE profile (see tier1-firmware.json)."
   fi
 
-  # Require that the main previous Tier 1 steps produced artifacts (loose but useful)
-  for f in tier1-hardware.json tier1-firmware.json tier1-firmware-validation.json tier1-kernel-plan.json tier1-gpu-stack.json tier1-npu.json tier1-local-ai-benchmark.json; do
+  # Require that the main previous Tier 1 steps produced artifacts (loose but useful).
+  # inventory scope: hardware/firmware/kernel/GPU/NPU only (no local-AI smoke).
+  expected_artifacts=(
+    tier1-hardware.json
+    tier1-firmware.json
+    tier1-firmware-validation.json
+    tier1-kernel-plan.json
+    tier1-gpu-stack.json
+    tier1-npu.json
+  )
+  if [[ "$SCOPE" == "full" ]]; then
+    expected_artifacts+=(tier1-local-ai-benchmark.json)
+  fi
+  for f in "${expected_artifacts[@]}"; do
     if [[ ! -f "$LATEST_DIR/$f" ]]; then
       record_warn "Expected Tier 1 artifact missing: $f"
     fi
@@ -117,7 +142,7 @@ PY
   # Write machine gate artifact (export locals for the python snippet)
   FAILURES="$(printf '%s\n' ${failures[@]+"${failures[@]}"})"
   WARNINGS="$(printf '%s\n' ${warnings[@]+"${warnings[@]}"})"
-  export LATEST_DIR PROFILE status GPU_ARCH NPU_PRESENT FAILURES WARNINGS vulkan_ok BIOS_ACCEPTABLE
+  export LATEST_DIR PROFILE status GPU_ARCH NPU_PRESENT FAILURES WARNINGS vulkan_ok BIOS_ACCEPTABLE SCOPE
   python3 - <<'PY' > "$OUT_JSON"
 import json, os, datetime
 st = os.environ.get("status", "PASS")
@@ -125,12 +150,20 @@ gpu_arch = os.environ.get("GPU_ARCH", "unknown")
 npu_present = os.environ.get("NPU_PRESENT", "false")
 vulkan_ok = os.environ.get("vulkan_ok", "false")
 bios_acc = os.environ.get("BIOS_ACCEPTABLE", "unknown")
+scope = os.environ.get("SCOPE", "full")
 fails = [x for x in os.environ.get("FAILURES", "").splitlines() if x.strip()]
 warns = [x for x in os.environ.get("WARNINGS", "").splitlines() if x.strip()]
+notes = []
+if scope == "inventory":
+    notes.append(
+        "Inventory-only validation: local-AI smoke (80 / tier1-local-ai-benchmark.json) not required. "
+        "Run full stage1 for complete Stage 1 exit criteria including script 80."
+    )
 
 data = {
   "tier": 1,
   "status": st,
+  "scope": scope,
   "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),
   "profile": os.environ.get("PROFILE", "ai370"),
   "acceptance": {
@@ -138,7 +171,8 @@ data = {
     "amdxdna_npu": npu_present == "true",
     "vulkan_validated": vulkan_ok == "true",
     "bios_version_acceptable": bios_acc,
-    "rocm_note": "ROCm is validated for visibility only in Tier 1. Full stack install is opt-in."
+    "rocm_note": "ROCm is validated for visibility only in Tier 1. Full stack install is opt-in.",
+    "inventory_only": scope == "inventory",
   },
   "artifacts": {
     "hardware": "reports/latest/tier1-hardware.json",
@@ -147,10 +181,11 @@ data = {
     "npu": "reports/latest/tier1-npu.json",
     "firmware": "reports/latest/tier1-firmware.json",
     "firmware_validation": "reports/latest/tier1-firmware-validation.json",
-    "local_ai": "reports/latest/tier1-local-ai-benchmark.json"
+    "local_ai": "reports/latest/tier1-local-ai-benchmark.json" if scope == "full" else None,
   },
   "failures": fails,
-  "warnings": warns
+  "warnings": warns,
+  "notes": notes,
 }
 print(json.dumps(data, indent=2))
 PY
@@ -183,6 +218,12 @@ PY
       for w in "${warnings[@]}"; do echo "- $w"; done
       echo
     fi
+    echo "## Scope"
+    echo "- Validate scope: $SCOPE"
+    if [[ "$SCOPE" == "inventory" ]]; then
+      echo "- Inventory-only: local-AI smoke artifact not required. Run full \`stage1\` for complete Stage 1 exit criteria."
+    fi
+    echo
     echo "## Next steps"
     echo "- Run Tier 2 (ai runtime + LLM) and Tier 3 (NPU) before attempting Tier 5 (ComfyUI / generative)."
     echo "- Use ./ai370-optimize.sh tier1-validate to re-check this gate."
