@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.0...v0.12.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* address Package C Codex review on inventory and tier2 ([#123](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/123)) ([b044eee](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/b044eee33e72470a08b4f4c97b9669abeda0bead))
+
 ## [0.12.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.11.0...v0.12.0) (2026-07-12)
 
 
