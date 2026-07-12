@@ -182,6 +182,33 @@ for entry in models:
 
     exists = False
     resolved_path = None
+    ollama_tag = entry.get("ollama_tag")
+    ollama_tag_present = False
+    # Package D: if an Ollama tag is listed and available locally, treat as present
+    # even when the export path under model_root is empty (common for ollama-managed storage).
+    if ollama_tag and shutil.which("ollama"):
+        try:
+            import subprocess
+            listed = subprocess.run(
+                ["ollama", "list"],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+            if listed.returncode == 0 and listed.stdout:
+                # Match tag as a line prefix (NAME column) or exact name without :latest noise
+                tag = str(ollama_tag).strip()
+                tag_base = tag.split(":", 1)[0]
+                for line in listed.stdout.splitlines()[1:]:
+                    name = line.split()[0] if line.split() else ""
+                    name_base = name.split(":", 1)[0]
+                    if name == tag or name_base == tag_base:
+                        ollama_tag_present = True
+                        break
+        except Exception:
+            ollama_tag_present = False
+
     if path_value:
         resolved_path = normalize_path(rel_or_abs(path_value))
         try:
@@ -190,9 +217,32 @@ for entry in models:
             entry_status = set_entry_status(entry_status, "FAIL")
             entry_messages.append("path is outside the canonical model root")
         exists = resolved_path.exists()
+        # Directory only with README stubs from 155 does not count as a staged model
+        if exists and resolved_path.is_dir():
+            real_files = [
+                p for p in resolved_path.rglob("*")
+                if p.is_file() and p.name not in {"README.md", ".gitkeep"}
+            ]
+            if not real_files and not ollama_tag_present:
+                exists = False
+                entry_messages.append(
+                    "path exists but has no model files yet (layout-only; run 155 is not enough)"
+                )
+        if ollama_tag_present and not exists:
+            exists = True
+            entry_messages.append(f"ollama tag present locally: {ollama_tag}")
         if not exists:
             entry_status = set_entry_status(entry_status, "FAIL" if required else "WARN")
-            entry_messages.append("model artifact is not present locally")
+            if not any("no model files" in m for m in entry_messages):
+                entry_messages.append("model artifact is not present locally")
+            if ollama_tag:
+                entry_messages.append(
+                    f"stage path or pull ollama tag `{ollama_tag}` when online"
+                )
+            else:
+                entry_messages.append(
+                    "stage under path or run scripts/155-stage-model-layout.sh then copy weights"
+                )
         elif algorithm == "sha256":
             if not checksum_value:
                 entry_status = set_entry_status(entry_status, "WARN")
@@ -205,7 +255,14 @@ for entry in models:
             else:
                 entry_status = set_entry_status(entry_status, "WARN")
                 entry_messages.append("sha256 checksum is only applied to files by this validator")
-    elif not entry.get("ollama_tag"):
+    elif ollama_tag:
+        if ollama_tag_present:
+            exists = True
+            entry_messages.append(f"ollama tag present locally: {ollama_tag}")
+        else:
+            entry_status = set_entry_status(entry_status, "FAIL" if required else "WARN")
+            entry_messages.append(f"ollama tag not present locally: {ollama_tag}")
+    else:
         entry_status = set_entry_status(entry_status, "FAIL")
         entry_messages.append("entry must define path or ollama_tag")
 
@@ -225,7 +282,8 @@ for entry in models:
         "runtime": entry.get("runtime"),
         "format": entry.get("format"),
         "path": path_value,
-        "ollama_tag": entry.get("ollama_tag"),
+        "ollama_tag": ollama_tag,
+        "ollama_tag_present": ollama_tag_present,
         "required": required,
         "exists": exists,
         "status": entry_status,

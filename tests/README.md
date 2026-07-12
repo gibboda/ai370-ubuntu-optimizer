@@ -6,23 +6,33 @@ Lightweight smoke tests for the ai370-ubuntu-optimizer tier commands and artifac
 
 ```bash
 bash tests/smoke_tier1.sh
-# (future)
 bash tests/smoke_tier2.sh
-bash tests/run-all-smokes.sh
 ```
 
 Or from repo root after making executable:
 
 ```bash
 ./tests/smoke_tier1.sh
+./tests/smoke_tier2.sh
 ```
 
 ## Scope (current)
 
+### Stage 1 (`smoke_tier1.sh`)
+
 - Syntax (`bash -n`)
 - Non-mutating or dry-run friendly execution of tier scripts
-- Presence + basic structure of `reports/latest/tierN-*.json` (and MD) artifacts
-- Milestone 1 acceptance signals, including Radeon 890M/gfx1150 detection, AMDGPU, Vulkan, ROCm clean-missing reporting, AMDXDNA clean-missing reporting, BIOS 2.01 validation metadata, and `90-validate.sh` artifact generation
+- Presence + basic structure of `reports/latest/tier1-*.json` artifacts
+- Milestone 1 acceptance signals (GPU arch, NPU, BIOS metadata, Vulkan keys)
+
+### Stage 2 (`smoke_tier2.sh` — Package D)
+
+- Syntax for Stage 2 installers, validators, Lemonade/Digest/RAG scripts, and libs
+- Manifest parse + chat/coding/embedding categories
+- `155` model layout staging (no downloads) + `150` offline storage validate
+- `145` tier2 + `240` tier3 aggregators
+- Structure checks for gate JSON (`tier2-validation`, `tier3-validation`, offline storage)
+- Orchestrator help mentions `stage1-inventory` and `--with-lemonade`
 
 These help prevent regressions in script generation, JSON writers, and the cross-tier gate.
 

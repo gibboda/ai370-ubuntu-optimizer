@@ -86,7 +86,7 @@ AMD EP execution via `scripts/lib/npu_ep_verify.py` (same rule as `230`).
 Stage 2 planned milestones are complete. Prefer optional Stage 1/2 streamlining or polish only when it unblocks local use; otherwise start Stage 3.
 
 1. **Optional S2 polish (not required for Stage 3 gate):** keep S2-M5 manifest entries current; Lemonade full smoke when a server/model is staged; AnythingLLM full-stack staging when needed.
-2. **Packages A–C streamlining implemented:** docs sync (A), core-only `stage2` (B), Stage 1 merges + tier2 aggregator + NPU reuse (C). Remaining optional polish is Package D (manifest population / full smokes).
+2. **Packages A–D streamlining implemented:** docs sync (A), core-only `stage2` (B), Stage 1 merges + tier2 aggregator + NPU reuse (C), model layout staging + S2 smoke + Lemonade/RAG full-smoke docs + GPU diagnostics (D).
 3. **S3-M1** — ComfyUI installer (`scripts/400-install-comfyui.sh`) with validation report.
 4. **S3-M2** — ComfyUI model installer + manifests (FLUX/SDXL/VAEs/LoRAs/ControlNet).
 5. **S3-M3 / S3-M5** — workflow library directories + start/stop/status/health automation.
