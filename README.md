@@ -94,8 +94,9 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   `stage2-rag` / `tier4` (`scripts/300-*`–`320-*`) with offline staged
   AnythingLLM/embedding lifecycle and aggregate validation; optional and not
   part of the Stage 3 gate. S2-M6 TurnkeyML + Lemonade is implemented
-  (`stage2-lemonade`, scripts `170`/`160`/`165`; WARN-friendly). Planned:
-  S2-M7 Digest AI. See `docs/ROADMAP.md`.
+  (`stage2-lemonade`, scripts `170`/`160`/`165`; WARN-friendly). S2-M7 Digest AI
+  is implemented (`stage2-digest`, scripts `250`/`255`; diagnostics only).
+  See `docs/ROADMAP.md`.
 - Stage 3 Image Generation: Ongoing (benchmarks and workflows exist; ComfyUI
   install/model scripts and workflow subdirectories remain planned). GAIA and
   LM Studio are planned Stage 3 applications (not Stage 2 gate runtimes).
@@ -126,11 +127,11 @@ Implemented:
 - `scripts/170-install-turnkeyml.sh`, `scripts/160-install-lemonade.sh`,
   `scripts/165-validate-lemonade.sh`, `scripts/lib/lemonade-env.sh`
   (S2-M6 TurnkeyML + Lemonade; optional WARN-friendly path)
+- `scripts/250-install-digest-ai.sh`, `scripts/255-analyze-model-digest.sh`,
+  `scripts/lib/digest_analyze.py` (S2-M7 Digest AI / ONNX analysis; diagnostics only)
 
 Planned / Not present in repo:
 
-- S2-M7: `scripts/250-install-digest-ai.sh`,
-  `scripts/255-analyze-model-digest.sh`
 - `scripts/400-install-comfyui.sh`
 - `scripts/410-install-comfyui-models.sh`
 - `workflows/comfyui/flux/`, `workflows/comfyui/sdxl/`,

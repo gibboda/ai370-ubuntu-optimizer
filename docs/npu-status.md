@@ -113,6 +113,23 @@ pip download lemonade-sdk -d .ai370-ai/wheelhouse
 LEMONADE_START=true LEMONADE_PULL_MODEL=Gemma-3-4b-it-GGUF ./scripts/165-validate-lemonade.sh
 ```
 
+### S2-M7 Digest AI (model analysis diagnostics)
+
+| Path / command | Purpose |
+| --- | --- |
+| `.ai370-ai/digest/venv` | Optional native Digest AI venv (**Python 3.9–3.10** required by upstream) |
+| `scripts/250-install-digest-ai.sh` | Install/inventory Digest AI; ensure ONNX fallback readiness |
+| `scripts/255-analyze-model-digest.sh` | Analyze staged ONNX models → `digest-model-report.md` |
+| `scripts/lib/digest_analyze.py` | Digest API or pure-ONNX fallback analyzer |
+| `./ai370-optimize.sh stage2-digest` | Run S2-M7 only |
+
+**Rules:**
+
+* Digest AI / ONNX stats (parameters, FLOPs, op histograms) are **diagnostics only**.
+* They are **never** proof of NPU inference (use `npu_ep_verify` and Lemonade smokes).
+* When Python 3.9–3.10 is missing, install still provides ONNX fallback analysis offline.
+* Optional: stage `https://github.com/onnx/digestai` under `.ai370-ai/offline-artifacts/digestai/`.
+
 `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, and
 `scripts/230-benchmark-npu.sh` resolve the interpreter via
 `scripts/lib/npu-venv.sh` and **prefer the Ryzen AI venv** when it is usable.
