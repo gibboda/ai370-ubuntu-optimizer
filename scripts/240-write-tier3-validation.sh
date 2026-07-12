@@ -81,13 +81,49 @@ onnx_runtime_present = vitis_status.get("onnxruntime_state") == "available" or (
 )
 npu_ep_visible = bool(amd_candidates) or vitis_status.get("provider_smoke") == "visible"
 benchmarks = list(benchmark_status.get("benchmarks") or [])
-npu_smoke_executed = bool(benchmarks)
+
+def is_amd_npu_bench(bench: dict) -> bool:
+    return has_amd_provider(
+        [
+            str(bench.get("requested_provider", "")),
+            str(bench.get("actual_provider", "")),
+        ]
+    )
+
+# Smoke "executed on NPU" only when an AMD EP run is verified (or legacy actual==requested).
+npu_smoke_executed = any(
+    is_amd_npu_bench(bench)
+    and (
+        (bench.get("ep_verified") and bench.get("ep_executed"))
+        or (
+            bench.get("ep_verified") is None
+            and bench.get("actual_provider") == bench.get("requested_provider")
+            and has_amd_provider([str(bench.get("actual_provider", ""))])
+        )
+    )
+    for bench in benchmarks
+)
 
 vitis_pass = vitis_status.get("status") == "PASS"
 benchmark_pass = benchmark_status.get("status") == "PASS"
+# Require actual EP execution evidence, not merely a requested AMD provider name.
+# Prefer explicit ep_verified/ep_executed from scripts/230-benchmark-npu.sh; fall back
+# to actual_provider == requested_provider for older reports.
 amd_benchmark_ran = any(
-    bench.get("requested_provider") in amd_candidates
-    or has_amd_provider([str(bench.get("requested_provider", ""))])
+    (
+        (
+            bench.get("requested_provider") in amd_candidates
+            or has_amd_provider([str(bench.get("requested_provider", ""))])
+        )
+        and (
+            (bench.get("ep_verified") and bench.get("ep_executed"))
+            or (
+                bench.get("ep_verified") is None
+                and bench.get("actual_provider") == bench.get("requested_provider")
+                and has_amd_provider([str(bench.get("actual_provider", ""))])
+            )
+        )
+    )
     for bench in benchmarks
 )
 
