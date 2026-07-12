@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.2](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.1...v0.12.2) (2026-07-12)
+
+
+### Bug Fixes
+
+* use manifest format for model dirs and exact Ollama tags ([#126](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/126)) ([b2fae5a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/b2fae5a7b0cc2f2f2e3b01ce9b536f2b63a73e91))
+
 ## [0.12.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.0...v0.12.1) (2026-07-12)
 
 
