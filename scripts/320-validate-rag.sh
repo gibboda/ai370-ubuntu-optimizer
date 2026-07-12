@@ -14,31 +14,25 @@ PERSISTENCE="${3:-runtime}"
 OFFLINE="${4:-false}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/offline-paths.sh
+source "$PROJECT_ROOT/scripts/lib/offline-paths.sh"
+ai370_apply_offline_rag_paths
+
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
-AI_ROOT="$PROJECT_ROOT/.ai370-ai"
+AI_ROOT="$AI370_AI_ROOT"
 VENV_DIR="${EMBEDDING_VENV_DIR:-$AI_ROOT/venv}"
-WHEELHOUSE="${OFFLINE_WHEELHOUSE:-$AI_ROOT/wheelhouse}"
-MODEL_DIR="${EMBEDDING_MODEL_DIR:-$AI_ROOT/models/embedding/local-embedding-model}"
-DOC_DIR="${ANYTHINGLLM_DOC_DIR:-$AI_ROOT/rag/documents}"
+WHEELHOUSE="$AI370_WHEELHOUSE"
+MODEL_DIR="$AI370_EMBEDDING_MODEL_DIR"
+DOC_DIR="$AI370_RAG_DOC_DIR"
 STATUS_JSON="$LATEST_DIR/rag-validation.json"
 SUMMARY_MD="$LATEST_DIR/rag-validation.md"
 AGG_JSON="$LATEST_DIR/stage2-rag-validation.json"
 AGG_MD="$LATEST_DIR/stage2-rag-validation.md"
 ANYTHING_JSON="$LATEST_DIR/anythingllm-status.json"
 EMBED_JSON="$LATEST_DIR/tier4-embedding-models.json"
-OFFLINE_REQ="$PROJECT_ROOT/configs/ai-runtime/requirements-offline.txt"
-
-if [[ -f "$PROJECT_ROOT/configs/offline/ai-runtime.env" ]]; then
-  # shellcheck disable=SC1091
-  source "$PROJECT_ROOT/configs/offline/ai-runtime.env" || true
-  if [[ -n "${OFFLINE_WHEELHOUSE:-}" ]]; then
-    if [[ "${OFFLINE_WHEELHOUSE}" = /* ]]; then
-      WHEELHOUSE="$OFFLINE_WHEELHOUSE"
-    else
-      WHEELHOUSE="$PROJECT_ROOT/${OFFLINE_WHEELHOUSE#./}"
-    fi
-  fi
-fi
+OFFLINE_REQ="$AI370_OFFLINE_REQ"
+OFFLINE_CONFIG="$PROJECT_ROOT/configs/offline/ai-runtime.env"
+REQUIRED_EMBEDDING_PKGS=(torch transformers safetensors numpy)
 
 json_escape() { python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
 bool_json() { [[ "$1" == "true" ]] && echo true || echo false; }
@@ -76,22 +70,23 @@ ensure_packages() {
   if [[ ! -x "$VENV_DIR/bin/python" ]]; then
     return 1
   fi
-  if "$VENV_DIR/bin/python" -c 'import transformers, torch, safetensors, numpy' >/dev/null 2>&1; then
+  # torch is required for AutoModel inference (same set as 310 installer).
+  if "$VENV_DIR/bin/python" -c 'import torch, transformers, safetensors, numpy' >/dev/null 2>&1; then
     return 0
   fi
   if [[ "$OFFLINE" == "true" ]]; then
     if [[ -d "$WHEELHOUSE" ]] && compgen -G "$WHEELHOUSE/*" >/dev/null 2>&1; then
-      echo "[INFO] Offline: installing retrieval deps from wheelhouse..."
+      echo "[INFO] Offline: installing retrieval deps (incl. torch) from wheelhouse $WHEELHOUSE ..."
       if [[ -f "$OFFLINE_REQ" ]]; then
         "$VENV_DIR/bin/python" -m pip install --no-index --find-links="$WHEELHOUSE" -r "$OFFLINE_REQ" >/dev/null 2>&1 || true
       fi
-      "$VENV_DIR/bin/python" -m pip install --no-index --find-links="$WHEELHOUSE" transformers torch safetensors numpy >/dev/null 2>&1 || true
+      "$VENV_DIR/bin/python" -m pip install --no-index --find-links="$WHEELHOUSE" "${REQUIRED_EMBEDDING_PKGS[@]}" >/dev/null 2>&1 || true
     fi
   else
-    echo "[INFO] Installing required packages in venv..."
-    "$VENV_DIR/bin/python" -m pip install torch transformers safetensors numpy >/dev/null 2>&1 || true
+    echo "[INFO] Installing required packages (incl. torch) in venv..."
+    "$VENV_DIR/bin/python" -m pip install "${REQUIRED_EMBEDDING_PKGS[@]}" >/dev/null 2>&1 || true
   fi
-  "$VENV_DIR/bin/python" -c 'import transformers, torch, safetensors, numpy' >/dev/null 2>&1
+  "$VENV_DIR/bin/python" -c 'import torch, transformers, safetensors, numpy' >/dev/null 2>&1
 }
 
 run_retrieval_smoke() {
@@ -187,14 +182,14 @@ main() {
 
   if [[ "$model_ok" != "true" ]]; then
     detail="Validation failed: local embedding model is missing from $MODEL_DIR. Run scripts/310-install-embedding-models.sh first (or stage offline artifacts)."
-    recommendations+=("Stage model under $AI_ROOT/offline-artifacts/embedding/ and rerun stage2-rag --offline")
+    recommendations+=("Stage model under $AI370_EMBEDDING_STAGED and rerun stage2-rag --offline")
   elif [[ ! -x "$VENV_DIR/bin/python" ]]; then
     detail="Validation failed: Python virtualenv at $VENV_DIR is missing or not configured."
   elif ! ensure_packages; then
     packages_ok="false"
-    detail="Validation failed: required packages (transformers, torch, safetensors, numpy) are not available in $VENV_DIR."
+    detail="Validation failed: required packages (torch, transformers, safetensors, numpy) are not available in $VENV_DIR."
     if [[ "$OFFLINE" == "true" ]]; then
-      recommendations+=("Populate $WHEELHOUSE with wheels and rerun with --offline")
+      recommendations+=("Populate $WHEELHOUSE with wheels (including torch) and rerun with --offline")
     fi
   else
     packages_ok="true"
@@ -290,6 +285,9 @@ print(lines[-1] if lines else "")')"
   detail_json="$(printf '%s' "$detail" | json_escape)"
   query_result_json="$(printf '%s' "$query_result" | json_escape)"
 
+  local required_packages_json
+  required_packages_json="$(printf '%s\n' "${REQUIRED_EMBEDDING_PKGS[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+
   cat > "$STATUS_JSON" <<EOF_JSON
 {
   "tier": 4,
@@ -303,6 +301,7 @@ print(lines[-1] if lines else "")')"
   "state": "$state",
   "model_ok": $(bool_json "$model_ok"),
   "packages_ok": $(bool_json "$packages_ok"),
+  "required_packages": $required_packages_json,
   "validation_smoke": "$validation_smoke",
   "retrieval_success": $(bool_json "$retrieval_success"),
   "retrieved_chunk": $query_result_json,
@@ -310,6 +309,15 @@ print(lines[-1] if lines else "")')"
   "document_count": $document_count,
   "document_dir": $(printf '%s' "$DOC_DIR" | json_escape),
   "model_path": $(printf '%s' "$MODEL_DIR" | json_escape),
+  "wheelhouse": $(printf '%s' "$WHEELHOUSE" | json_escape),
+  "embedding_staged_dir": $(printf '%s' "$AI370_EMBEDDING_STAGED" | json_escape),
+  "offline_config": $(printf '%s' "$OFFLINE_CONFIG" | json_escape),
+  "path_sources": {
+    "model_path": "EMBEDDING_MODEL_DIR | OFFLINE_MODEL_ROOT/embedding/local-embedding-model",
+    "document_dir": "ANYTHINGLLM_DOC_DIR | OFFLINE_RAG_DOC_DIR",
+    "wheelhouse": "OFFLINE_WHEELHOUSE",
+    "embedding_staged_dir": "EMBEDDING_STAGED_DIR | OFFLINE_EMBEDDING_DIR"
+  },
   "production_ready": $(bool_json "$production_ready"),
   "full_stack_ready": $(bool_json "$full_stack_ready"),
   "recommendations": $rec_json,
@@ -365,11 +373,14 @@ EOF_JSON
     echo
     echo "- State: $state"
     echo "- Model OK: $model_ok"
-    echo "- Packages OK: $packages_ok"
+    echo "- Packages OK: $packages_ok (requires: ${REQUIRED_EMBEDDING_PKGS[*]})"
     echo "- Validation smoke: $validation_smoke"
     echo "- Retrieval success: $retrieval_success"
     echo "- Document count: $document_count"
     echo "- Document dir: $DOC_DIR"
+    echo "- Model path: $MODEL_DIR"
+    echo "- Wheelhouse: $WHEELHOUSE"
+    echo "- Offline config: $OFFLINE_CONFIG"
     echo "- Retrieved chunk: $query_result"
     echo "- Cosine similarity score: $score"
     echo "- Production-ready (embedding RAG): $production_ready"

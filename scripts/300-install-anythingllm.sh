@@ -13,16 +13,20 @@ PERSISTENCE="${3:-runtime}"
 OFFLINE="${4:-false}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/offline-paths.sh
+source "$PROJECT_ROOT/scripts/lib/offline-paths.sh"
+ai370_apply_offline_rag_paths
+
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
-AI_ROOT="$PROJECT_ROOT/.ai370-ai"
-STAGED_DIR="${ANYTHINGLLM_STAGED_DIR:-$AI_ROOT/offline-artifacts/anythingllm}"
-APPIMAGE_DIR="${ANYTHINGLLM_APPIMAGE_DIR:-$AI_ROOT/tools/anythingllm}"
-DOC_DIR="${ANYTHINGLLM_DOC_DIR:-$AI_ROOT/rag/documents}"
-STORAGE_DIR="${ANYTHINGLLM_STORAGE_DIR:-$AI_ROOT/rag/anythingllm-storage}"
+STAGED_DIR="$AI370_ANYTHINGLLM_STAGED"
+APPIMAGE_DIR="$AI370_ANYTHINGLLM_APPIMAGE_DIR"
+DOC_DIR="$AI370_RAG_DOC_DIR"
+STORAGE_DIR="$AI370_RAG_STORAGE_DIR"
 IMAGE_NAME="${ANYTHINGLLM_IMAGE:-mintplexlabs/anythingllm:latest}"
 CONTAINER_NAME="${ANYTHINGLLM_CONTAINER_NAME:-ai370-anythingllm}"
 STATUS_JSON="$LATEST_DIR/anythingllm-status.json"
 SUMMARY_MD="$LATEST_DIR/anythingllm-status.md"
+OFFLINE_CONFIG="$PROJECT_ROOT/configs/offline/ai-runtime.env"
 
 json_escape() { python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
 
@@ -256,8 +260,16 @@ EOF
   "staged_dir": $(printf '%s' "$STAGED_DIR" | json_escape),
   "staged_image": $staged_json,
   "appimage_path": $appimage_json,
+  "appimage_dir": $(printf '%s' "$APPIMAGE_DIR" | json_escape),
   "document_dir": $(printf '%s' "$DOC_DIR" | json_escape),
   "storage_dir": $(printf '%s' "$STORAGE_DIR" | json_escape),
+  "offline_config": $(printf '%s' "$OFFLINE_CONFIG" | json_escape),
+  "path_sources": {
+    "staged_dir": "ANYTHINGLLM_STAGED_DIR | OFFLINE_ANYTHINGLLM_DIR",
+    "appimage_dir": "ANYTHINGLLM_APPIMAGE_DIR | OFFLINE_TOOL_ROOT/anythingllm",
+    "document_dir": "ANYTHINGLLM_DOC_DIR | OFFLINE_RAG_DOC_DIR",
+    "storage_dir": "ANYTHINGLLM_STORAGE_DIR | OFFLINE_RAG_STORAGE_DIR"
+  },
   "recommendations": $rec_json,
   "detail": $detail_json
 }
@@ -276,9 +288,11 @@ EOF_JSON
     echo "- Image present: $image_present (loaded this run: $image_loaded)"
     echo "- Container present/running: $container_present / $container_is_running"
     echo "- Staged image dir: $STAGED_DIR"
+    echo "- AppImage dir: $APPIMAGE_DIR"
     echo "- AppImage: ${appimage_path:-none}"
     echo "- Document store: $DOC_DIR"
     echo "- Storage volume: $STORAGE_DIR"
+    echo "- Offline config: $OFFLINE_CONFIG"
     echo "- Action: $action (start: $start_action)"
     echo
     printf '%s\n' "$detail"

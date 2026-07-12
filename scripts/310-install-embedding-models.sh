@@ -13,34 +13,36 @@ PERSISTENCE="${3:-runtime}"
 OFFLINE="${4:-false}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/offline-paths.sh
+source "$PROJECT_ROOT/scripts/lib/offline-paths.sh"
+ai370_apply_offline_rag_paths
+
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
-AI_ROOT="$PROJECT_ROOT/.ai370-ai"
+AI_ROOT="$AI370_AI_ROOT"
 VENV_DIR="${EMBEDDING_VENV_DIR:-$AI_ROOT/venv}"
-WHEELHOUSE="${OFFLINE_WHEELHOUSE:-$AI_ROOT/wheelhouse}"
-MODEL_DIR="${EMBEDDING_MODEL_DIR:-$AI_ROOT/models/embedding/local-embedding-model}"
+WHEELHOUSE="$AI370_WHEELHOUSE"
+MODEL_DIR="$AI370_EMBEDDING_MODEL_DIR"
 STAGED_MODEL_DIRS=(
-  "${EMBEDDING_STAGED_DIR:-$AI_ROOT/offline-artifacts/embedding}"
-  "$AI_ROOT/models/staging/embedding"
-  "$AI_ROOT/models/staging/local-embedding-model"
+  "$AI370_EMBEDDING_STAGED"
+  "$AI370_MODEL_ROOT/staging/embedding"
+  "$AI370_MODEL_ROOT/staging/local-embedding-model"
 )
 HF_REPO="${EMBEDDING_HF_REPO:-sentence-transformers/all-MiniLM-L6-v2}"
 STATUS_JSON="$LATEST_DIR/tier4-embedding-models.json"
 SUMMARY_MD="$LATEST_DIR/tier4-embedding-models.md"
 PACKAGES_FILE="$LATEST_DIR/tier4-embedding-models-packages.txt"
-OFFLINE_REQ="$PROJECT_ROOT/configs/ai-runtime/requirements-offline.txt"
-
-# Optional offline config overlay
-if [[ -f "$PROJECT_ROOT/configs/offline/ai-runtime.env" ]]; then
-  # shellcheck disable=SC1091
-  source "$PROJECT_ROOT/configs/offline/ai-runtime.env" || true
-  WHEELHOUSE="${OFFLINE_WHEELHOUSE:-$WHEELHOUSE}"
-  if [[ "${OFFLINE_WHEELHOUSE:-}" != /* && -n "${OFFLINE_WHEELHOUSE:-}" ]]; then
-    WHEELHOUSE="$PROJECT_ROOT/${OFFLINE_WHEELHOUSE#./}"
-  fi
-fi
+OFFLINE_REQ="$AI370_OFFLINE_REQ"
+OFFLINE_CONFIG="$PROJECT_ROOT/configs/offline/ai-runtime.env"
+# torch is required for AutoModel inference in 320-validate-rag.sh
+REQUIRED_EMBEDDING_PKGS=(torch transformers safetensors numpy huggingface-hub)
 
 json_escape() { python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
 bool_json() { [[ "$1" == "true" ]] && echo true || echo false; }
+
+embedding_packages_ok() {
+  [[ -x "$VENV_DIR/bin/python" ]] || return 1
+  "$VENV_DIR/bin/python" -c 'import torch, transformers, safetensors, numpy' >/dev/null 2>&1
+}
 
 model_files_present() {
   local dir="$1"
@@ -81,10 +83,11 @@ ensure_venv() {
 }
 
 pip_install_deps() {
-  local pkgs=(huggingface-hub transformers safetensors numpy)
+  # Include torch: retrieval smoke and AutoModel.from_pretrained require it.
+  local pkgs=("${REQUIRED_EMBEDDING_PKGS[@]}")
   if [[ "$OFFLINE" == "true" ]]; then
     if [[ -d "$WHEELHOUSE" ]] && compgen -G "$WHEELHOUSE/*" >/dev/null 2>&1; then
-      echo "[INFO] Installing embedding deps from wheelhouse $WHEELHOUSE ..."
+      echo "[INFO] Installing embedding deps (incl. torch) from wheelhouse $WHEELHOUSE ..."
       if [[ -f "$OFFLINE_REQ" ]]; then
         "$VENV_DIR/bin/python" -m pip install --no-index --find-links="$WHEELHOUSE" -r "$OFFLINE_REQ" >/dev/null 2>&1 || true
       fi
@@ -94,7 +97,7 @@ pip_install_deps() {
     echo "[INFO] Offline mode: no wheelhouse packages installed; using existing venv packages if present."
     return 0
   fi
-  echo "[INFO] Ensuring embedding Python packages in venv..."
+  echo "[INFO] Ensuring embedding Python packages (incl. torch) in venv..."
   "$VENV_DIR/bin/python" -m pip install "${pkgs[@]}" >/dev/null 2>&1 || true
 }
 
@@ -120,7 +123,8 @@ copy_staged_model() {
 }
 
 main() {
-  mkdir -p "$LATEST_DIR" "$(dirname "$MODEL_DIR")" "$AI_ROOT/offline-artifacts/embedding" "$AI_ROOT/models/staging/embedding"
+  mkdir -p "$LATEST_DIR" "$(dirname "$MODEL_DIR")" "$AI370_EMBEDDING_STAGED" \
+    "$AI370_MODEL_ROOT/staging/embedding"
 
   local state="missing" action="none" status="WARN" detail=""
   local model_downloaded="false" model_staged_from="" offline_ready="false"
@@ -129,7 +133,8 @@ main() {
   ensure_venv
   pip_install_deps
 
-  local installed_packages_json="[]"
+  local installed_packages_json="[]" required_packages_json
+  required_packages_json="$(printf '%s\n' "${REQUIRED_EMBEDDING_PKGS[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
   if [[ -x "$VENV_DIR/bin/python" ]]; then
     echo "[INFO] Recording installed Python packages (pip freeze)..."
     "$VENV_DIR/bin/python" -m pip freeze 2>/dev/null | tee "$VENV_DIR/requirements.txt" >"$PACKAGES_FILE" || true
@@ -142,7 +147,7 @@ except Exception:
 print(json.dumps(reqs))
 PY
 )"
-    if "$VENV_DIR/bin/python" -c 'import transformers, safetensors, numpy' >/dev/null 2>&1; then
+    if embedding_packages_ok; then
       packages_ok="true"
     fi
   fi
@@ -164,10 +169,10 @@ PY
       fi
     elif [[ "$OFFLINE" == "true" ]]; then
       action="skipped-offline-missing-model"
-      detail="Offline mode: embedding model missing at $MODEL_DIR and no staged model under offline-artifacts/embedding or models/staging/embedding."
+      detail="Offline mode: embedding model missing at $MODEL_DIR and no staged model under $AI370_EMBEDDING_STAGED or $AI370_MODEL_ROOT/staging/embedding."
       recommendations+=(
         "Copy a sentence-transformers model directory (with config.json and model.safetensors) to $MODEL_DIR"
-        "Or stage under $AI_ROOT/offline-artifacts/embedding/ then rerun with --offline"
+        "Or stage under $AI370_EMBEDDING_STAGED then rerun with --offline"
       )
     else
       action="download-attempted"
@@ -196,7 +201,7 @@ PY
         fi
       else
         detail="Failed to download embedding model $HF_REPO. Check network/Hugging Face access, or stage the model offline."
-        recommendations+=("Offline fallback: snapshot the model on a connected host into $AI_ROOT/offline-artifacts/embedding/ then rerun with --offline.")
+        recommendations+=("Offline fallback: snapshot the model on a connected host into $AI370_EMBEDDING_STAGED then rerun with --offline.")
       fi
     fi
   fi
@@ -207,14 +212,14 @@ PY
       status="PASS"
     else
       status="WARN"
-      detail="${detail:+$detail }Model files are present but transformers/safetensors/numpy are missing from $VENV_DIR. Stage wheels under $WHEELHOUSE or install online."
-      recommendations+=("Populate $WHEELHOUSE and rerun with --offline, or install packages online once.")
+      detail="${detail:+$detail }Model files are present but required packages (torch, transformers, safetensors, numpy) are missing from $VENV_DIR. Stage wheels under $WHEELHOUSE or install online."
+      recommendations+=("Populate $WHEELHOUSE (including torch) and rerun with --offline, or install packages online once.")
     fi
   fi
 
   if [[ -z "$detail" ]]; then
     if [[ "$status" == "PASS" ]]; then
-      detail="Local embedding model is available at $MODEL_DIR and required Python packages are importable."
+      detail="Local embedding model is available at $MODEL_DIR and required Python packages (torch, transformers, safetensors, numpy) are importable."
     else
       detail="Local embedding model validation completed with limitations."
     fi
@@ -243,12 +248,21 @@ PY
   "state": "$state",
   "offline_ready": $(bool_json "$offline_ready"),
   "packages_ok": $(bool_json "$packages_ok"),
+  "required_packages": $required_packages_json,
   "model_downloaded": $(bool_json "$model_downloaded"),
   "model_path": $model_path_json,
   "model_staged_from": $staged_json,
+  "embedding_staged_dir": $(printf '%s' "$AI370_EMBEDDING_STAGED" | json_escape),
   "hf_repo": $(printf '%s' "$HF_REPO" | json_escape),
   "wheelhouse": $(printf '%s' "$WHEELHOUSE" | json_escape),
   "venv": $(printf '%s' "$VENV_DIR" | json_escape),
+  "offline_config": $(printf '%s' "$OFFLINE_CONFIG" | json_escape),
+  "offline_requirements": $(printf '%s' "$OFFLINE_REQ" | json_escape),
+  "path_sources": {
+    "model_path": "EMBEDDING_MODEL_DIR | OFFLINE_MODEL_ROOT/embedding/local-embedding-model",
+    "embedding_staged_dir": "EMBEDDING_STAGED_DIR | OFFLINE_EMBEDDING_DIR",
+    "wheelhouse": "OFFLINE_WHEELHOUSE"
+  },
   "install_action": "$action",
   "detail": $detail_json,
   "recommendations": $rec_json,
@@ -265,10 +279,12 @@ EOF_JSON
     echo
     echo "- State: $state"
     echo "- Offline-ready: $offline_ready"
-    echo "- Packages OK: $packages_ok"
+    echo "- Packages OK: $packages_ok (requires: ${REQUIRED_EMBEDDING_PKGS[*]})"
     echo "- Model path: $MODEL_DIR"
+    echo "- Staged dir: $AI370_EMBEDDING_STAGED"
     echo "- Staged from: ${model_staged_from:-n/a}"
     echo "- Wheelhouse: $WHEELHOUSE"
+    echo "- Offline config: $OFFLINE_CONFIG"
     echo "- Action: $action"
     echo
     printf '%s\n' "$detail"
@@ -285,8 +301,8 @@ EOF_JSON
     echo
     echo '```bash'
     echo "# Copy a local sentence-transformers tree:"
-    echo "mkdir -p $AI_ROOT/offline-artifacts/embedding"
-    echo "cp -a /path/to/all-MiniLM-L6-v2/. $AI_ROOT/offline-artifacts/embedding/"
+    echo "mkdir -p $AI370_EMBEDDING_STAGED"
+    echo "cp -a /path/to/all-MiniLM-L6-v2/. $AI370_EMBEDDING_STAGED/"
     echo "./scripts/310-install-embedding-models.sh $PROFILE $MODE $PERSISTENCE true"
     echo '```'
   } > "$SUMMARY_MD"
