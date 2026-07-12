@@ -51,6 +51,20 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 manifest = json.loads(Path(sys.argv[2]).read_text())
+# Prefer manifest format over Path.suffix (names like qwen2.5-coder-7b have a
+# non-empty suffix but are directory staging paths for format=ollama/directory).
+DIRECTORY_FORMATS = frozenset({"directory", "ollama"})
+FILE_FORMATS = frozenset({"gguf", "onnx"})
+
+def is_directory_path(entry: dict, path: Path) -> bool:
+    fmt = str(entry.get("format") or "").strip().lower()
+    if fmt in DIRECTORY_FORMATS:
+        return True
+    if fmt in FILE_FORMATS:
+        return False
+    # Fallback when format is unknown: suffix-less paths are directories.
+    return path.suffix == ""
+
 for entry in manifest.get("models") or []:
     path_value = entry.get("path")
     if not path_value:
@@ -58,12 +72,13 @@ for entry in manifest.get("models") or []:
     p = Path(path_value)
     if not p.is_absolute():
         p = root / p
-    if p.suffix:  # file path — ensure parent dir
-        p.parent.mkdir(parents=True, exist_ok=True)
-        readme = p.parent / "README.md"
-    else:
+    if is_directory_path(entry, p):
         p.mkdir(parents=True, exist_ok=True)
         readme = p / "README.md"
+    else:
+        # File path (e.g. *.gguf / *.onnx) — ensure parent dir only
+        p.parent.mkdir(parents=True, exist_ok=True)
+        readme = p.parent / "README.md"
     if readme.exists():
         continue
     mid = entry.get("id", "model")

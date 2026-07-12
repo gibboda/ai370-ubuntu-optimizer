@@ -197,13 +197,12 @@ for entry in models:
                 check=False,
             )
             if listed.returncode == 0 and listed.stdout:
-                # Match tag as a line prefix (NAME column) or exact name without :latest noise
+                # Exact NAME-column match only (e.g. qwen2.5-coder:7b must not
+                # match qwen2.5-coder:0.5b via base-name fallback).
                 tag = str(ollama_tag).strip()
-                tag_base = tag.split(":", 1)[0]
                 for line in listed.stdout.splitlines()[1:]:
                     name = line.split()[0] if line.split() else ""
-                    name_base = name.split(":", 1)[0]
-                    if name == tag or name_base == tag_base:
+                    if name == tag:
                         ollama_tag_present = True
                         break
         except Exception:
