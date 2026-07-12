@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.10.1...v0.11.0) (2026-07-12)
+
+
+### Features
+
+* implement S2-M6 TurnkeyML and Lemonade LLM serving ([#116](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/116)) ([e15ed48](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/e15ed48c0d6168f0da7067f887bd9184e020266e))
+
 ## [0.10.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.10.0...v0.10.1) (2026-07-12)
 
 
