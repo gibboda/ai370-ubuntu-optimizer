@@ -15,7 +15,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 ### Current Repository Alignment
 
 * Stage 1 is the active foundation stage and must remain the first implementation priority. The implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
-* Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, and `scripts/150-validate-offline-model-storage.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` exist and are wired through `stage2-rag` / `tier4`, but remain a partial implementation (Docker/network-oriented install paths and incomplete offline lifecycle).
+* Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, `scripts/150-validate-offline-model-storage.sh`, and `scripts/245-compare-cpu-gpu-npu.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` exist and are wired through `stage2-rag` / `tier4`, but remain a partial implementation (Docker/network-oriented install paths and incomplete offline lifecycle).
 * Milestone 2.2 is implemented. `scripts/200-install-onnxruntime.sh`, `scripts/205-install-xrt-ryzen-ai.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, and `docs/npu-status.md` are present; benchmark scripts emit either local timing results or actionable diagnostics when NPU providers are unavailable. `205` installs staged XRT/Ryzen AI packages only when `--accept-amd-acceleration-risk` is set.
 * Stage 3 is ongoing. ComfyUI workflow and benchmark artifacts exist, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. Install/model scripts, documentation, and required workflow subdirectories remain planned.
 * Stages 4 and 5 remain planning sections and should not be started until earlier stage validation gates pass.
@@ -63,6 +63,10 @@ or **missing required artifacts** always blocks.
 is available (`load_time_ms`, `tokens_generated`, `tokens_per_sec`,
 `wall_time_ms`) in `llm-validation.json` and `tier2-runtime-benchmark.json`.
 
+`scripts/245-compare-cpu-gpu-npu.sh` compares CPU/GPU/NPU microbenchmark paths
+and writes `cpu-gpu-npu-comparison.json` / `.md` (same-workload speedups when
+two or more device classes are available).
+
 ---
 
 ## Alignment Report
@@ -87,7 +91,7 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 
 ### Gap Analysis
 
-* Missing S2 work: CPU/GPU/NPU comparison benchmark automation remains planned (`245` suggested; id `240` is used by tier3 validation writer). S2-M2 now includes `scripts/205-install-xrt-ryzen-ai.sh`. S2-M5 provides offline model manifest/storage validation and chat/coding/embedding model classification.
+* Missing S2 work: S2-M4 comparison is implemented (`scripts/245-compare-cpu-gpu-npu.sh`). Remaining Stage 2 gap is completing Offline RAG (S2-M3) full offline lifecycle. S2-M2 includes `scripts/205-install-xrt-ryzen-ai.sh`. S2-M5 provides offline model manifest/storage validation and chat/coding/embedding model classification.
 * Missing S3 work: ComfyUI installer, model installer, VAEs, LoRAs, ControlNet, upscalers, workflow subdirectories, startup/shutdown/status/health automation, Whisper installation/validation, local text-generation validation, embedding validation, and model-management validation.
 * Missing S4 work: VS Code installer, Continue config, Aider installation, Git/GitHub CLI validation, ShellCheck/Ruff/Black/Pyright setup, offline code-generation and code-review validation.
 * Missing S5 work: update, health-check, backup, restore, regression, release, status, startup/shutdown, workflow-launching, and documentation-maintenance automation.
@@ -522,7 +526,7 @@ scripts/320-validate-rag.sh
 
 ### S2-M4 — AI Runtime Benchmark & Diagnostics
 
-**Status:** Ongoing
+**Status:** Implemented
 
 #### Description
 
@@ -532,9 +536,11 @@ Benchmark LLM, embedding, ONNX Runtime, ROCm/GPU, CPU, and NPU inference paths w
 
 ```text
 scripts/140-benchmark-llm.sh
-scripts/240-compare-cpu-gpu-npu.sh
+scripts/245-compare-cpu-gpu-npu.sh
 reports/latest/llm-validation.json
 reports/latest/llm-validation.md
+reports/latest/cpu-gpu-npu-comparison.json
+reports/latest/cpu-gpu-npu-comparison.md
 ```
 
 #### Acceptance Criteria
@@ -550,23 +556,26 @@ reports/latest/llm-validation.md
 
 ```text
 ./scripts/140-benchmark-llm.sh
-./scripts/240-compare-cpu-gpu-npu.sh
+./scripts/245-compare-cpu-gpu-npu.sh
 ```
 
 Implemented / Planned:
 
 * Implemented: measured LLM smoke in `scripts/140-benchmark-llm.sh` (llama.cpp
   timings, Ollama `/api/generate` metrics, PyTorch matmul fallback).
-* Planned / Not present: `scripts/240-compare-cpu-gpu-npu.sh` (note: script id
-  `240` is already used by `240-write-tier3-validation.sh`; comparison should
-  use a free id such as `245` when implemented).
+* Implemented: CPU/GPU/NPU comparison in `scripts/245-compare-cpu-gpu-npu.sh`
+  (ONNX Runtime CPU vs NPU MatMul+Add; PyTorch CPU vs GPU/ROCm matmul;
+  same-workload speedups and diagnostics). Wired into `stage2`,
+  `stage2-validate`, `stage2-npu`, and `stage2-npu-validate`.
+  (Script id `245`; id `240` remains `240-write-tier3-validation.sh`.)
+* Planned / Not present: none for this milestone.
 
 #### Completion Checklist
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [ ] All benchmark deliverables implemented.
-* [ ] CPU/GPU/NPU comparison script implemented.
+* [x] All benchmark deliverables implemented.
+* [x] CPU/GPU/NPU comparison script implemented.
 * [x] Existing LLM benchmark report generated.
 * [x] Measured smoke metrics (tokens/s and/or load time) when a local model runs.
 
@@ -1479,11 +1488,11 @@ reports/latest/ai370-health.md
 | S1-M3 | Kernel & Driver Validation | Implemented | Kernel, GPU, and NPU validation scripts are present. |
 | S1-M4 | System Optimization | Implemented | CPU, memory, and storage scripts emit current `tier1-*` optimization reports. |
 | S1-M5 | Validation & Benchmarking | Implemented | Benchmark and validation scripts emit current `tier1-local-ai-benchmark.*` and summary reports. |
-| S2 | AI Runtime Foundation | Ongoing | Base runtimes, XRT/Ryzen AI install path (`205`), ONNX Runtime checks, Vitis AI EP detection, NPU benchmark, and model storage exist; remaining S2 gaps are CPU/GPU/NPU comparison benchmark (`245`) and completing Offline RAG. |
+| S2 | AI Runtime Foundation | Ongoing | Base runtimes, XRT/Ryzen AI install path (`205`), ONNX Runtime checks, Vitis AI EP detection, NPU benchmark, model storage, and CPU/GPU/NPU comparison (`245`) exist; remaining S2 gap is completing Offline RAG. |
 | S2-M1 | Base AI Runtime | Implemented | Required runtime scripts are present. |
 | S2-M2 | Ryzen AI NPU Runtime Stack | Implemented | ONNX Runtime, `scripts/205-install-xrt-ryzen-ai.sh` (inventory by default; install with `--accept-amd-acceleration-risk`), Ryzen AI checks, Vitis AI EP detection, NPU benchmark, and `docs/npu-status.md` are present. |
 | S2-M3 | Offline RAG | Staged / Partial | `stage2-rag` invokes `300`–`320`; scripts perform detect/pull/download and optional offline smoke validation, but full offline installers and lifecycle remain incomplete. |
-| S2-M4 | AI Runtime Benchmark & Diagnostics | Ongoing | Measured LLM smoke in `scripts/140-benchmark-llm.sh` and reports are present; CPU/GPU/NPU comparison benchmark remains planned (`245`; id `240` is used by the tier3 validation writer). |
+| S2-M4 | AI Runtime Benchmark & Diagnostics | Implemented | Measured LLM smoke in `scripts/140-benchmark-llm.sh`; CPU/GPU/NPU comparison in `scripts/245-compare-cpu-gpu-npu.sh` with `cpu-gpu-npu-comparison.{json,md}` reports. |
 | S2-M5 | Offline Model Storage & Model Management | Implemented | Manifest, storage policy, validation script, and reports are present. |
 | S3 | Offline AI Frameworks & Applications | Ongoing | Benchmark/workflow artifacts exist; text-generation, embedding/RAG, Whisper, installer, models, docs, and automation remain incomplete. |
 | S3-M1 | ComfyUI | Planning | Required installer is represented but not present. |
