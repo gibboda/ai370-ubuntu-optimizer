@@ -85,25 +85,23 @@ files, current stage alignment, and contributor guidance.
 
 Current high-level status (see `docs/ROADMAP.md` for details):
 
-- Stage 1: Implemented and active (hardware detection, BIOS/firmware validation,
+- Stage 1: **Implemented** (hardware detection, BIOS/firmware validation,
   kernel/driver validation, system optimization, and benchmarking).
-- Stage 2: Aggregate, runtime, and NPU command groups are implemented for the
-  current roadmap scope (`stage2`, `stage2-runtime`, and `stage2-npu`; legacy
-  aliases `tier2` and `tier3`). NPU PASS requires profiled AMD EP execution
-  (`scripts/lib/npu_ep_verify.py`). Stage 2 RAG (S2-M3) is implemented via
-  `stage2-rag` / `tier4` (`scripts/300-*`–`320-*`) with offline staged
-  AnythingLLM/embedding lifecycle and aggregate validation; optional and not
-  part of the Stage 3 gate. S2-M6 TurnkeyML + Lemonade is implemented
-  (`stage2-lemonade`, scripts `170`/`160`/`165`; WARN-friendly). S2-M7 Digest AI
-  is implemented (`stage2-digest`, scripts `250`/`255`; diagnostics only).
-  See `docs/ROADMAP.md`.
-- Stage 3 Image Generation: Ongoing (benchmarks and workflows exist; ComfyUI
+- Stage 2: **Implemented** for planned roadmap scope (S2-M1 through S2-M7).
+  Aggregate/runtime/NPU commands: `stage2`, `stage2-runtime`, `stage2-npu`
+  (legacy `tier2` / `tier3`). NPU PASS requires profiled AMD EP execution
+  (`scripts/lib/npu_ep_verify.py`). Optional paths (not Stage 3 gate):
+  RAG S2-M3 (`stage2-rag` / `tier4`), TurnkeyML + Lemonade S2-M6
+  (`stage2-lemonade`), Digest AI S2-M7 (`stage2-digest`). Remaining S2 work is
+  optional polish (manifest population, full-stack smokes), not missing
+  milestones. See `docs/ROADMAP.md`.
+- Stage 3: **Ongoing / active focus** (benchmarks and workflows exist; ComfyUI
   install/model scripts and workflow subdirectories remain planned). GAIA and
   LM Studio are planned Stage 3 applications (not Stage 2 gate runtimes).
 
 ### Implemented / Planned (high level)
 
-Implemented:
+**Stage 1 — Implemented:**
 
 - `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`,
   `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`
@@ -111,34 +109,44 @@ Implemented:
   `scripts/60-optimize-storage.sh`
 - `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`,
   `scripts/80-benchmark-local-ai.sh`, `scripts/90-validate.sh`
+
+**Stage 2 — Implemented (S2-M1–S2-M7; optional paths noted):**
+
 - `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`,
   `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`,
   `scripts/140-benchmark-llm.sh`,
-  `scripts/150-validate-offline-model-storage.sh`
+  `scripts/150-validate-offline-model-storage.sh` (S2-M1 / S2-M4 / S2-M5)
 - `scripts/200-install-onnxruntime.sh`,
   `scripts/205-install-xrt-ryzen-ai.sh`,
   `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`,
   `scripts/230-benchmark-npu.sh`, `scripts/240-write-tier3-validation.sh`,
   `scripts/245-compare-cpu-gpu-npu.sh`, `scripts/lib/npu_ep_verify.py`,
-  `docs/npu-status.md`
+  `docs/npu-status.md` (S2-M2 / S2-M4)
 - `scripts/300-install-anythingllm.sh`,
   `scripts/310-install-embedding-models.sh`, `scripts/320-validate-rag.sh`
-  (S2-M3 offline RAG lifecycle; optional Stage 2 path)
+  (S2-M3 offline RAG; optional, not Stage 3 gate)
 - `scripts/170-install-turnkeyml.sh`, `scripts/160-install-lemonade.sh`,
   `scripts/165-validate-lemonade.sh`, `scripts/lib/lemonade-env.sh`
   (S2-M6 TurnkeyML + Lemonade; optional WARN-friendly path)
 - `scripts/250-install-digest-ai.sh`, `scripts/255-analyze-model-digest.sh`,
   `scripts/lib/digest_analyze.py` (S2-M7 Digest AI / ONNX analysis; diagnostics only)
 
-Planned / Not present in repo:
+**Stage 3+ — Planned / not present (or partial):**
 
-- `scripts/400-install-comfyui.sh`
-- `scripts/410-install-comfyui-models.sh`
+- `scripts/400-install-comfyui.sh` (S3-M1)
+- `scripts/410-install-comfyui-models.sh` (S3-M2)
 - `workflows/comfyui/flux/`, `workflows/comfyui/sdxl/`,
-  `workflows/comfyui/controlnet/`
+  `workflows/comfyui/controlnet/`, `workflows/comfyui/upscalers/` (S3-M3)
+- ComfyUI start/stop/status/health automation (`430`–`434`, S3-M5)
+- Offline text/embed/Whisper app validators (`440`–`444`, S3-M6)
+- GAIA and LM Studio installers (optional S3 apps)
+- Stage 4 Continue/Aider and Stage 5 lifecycle automation
+
+Partial Stage 3 already present: `scripts/420-benchmark-comfyui.sh` and some
+workflows under `workflows/comfyui/`.
 
 For the authoritative, up-to-date status and contributor guidance consult
-`docs/ROADMAP.md`.
+`docs/ROADMAP.md` (including **Next implementation steps** after Stage 2).
 
 **Deliverables (Stage 1 scripts):**
 
@@ -177,10 +185,12 @@ scripts/
 
 ### Stage 2 – Local AI Runtime & AI Optimization Software
 
-Use `stage2` for the roadmap-aligned aggregate command. It runs the implemented
-Stage 2 runtime/model-storage sequence, Stage 2 NPU checks, and always writes
-`reports/latest/tier3-validation.json` for the Stage 3 gate. Stage 2 RAG is
-optional (`stage2-rag`) and is not part of that gate.
+Use `stage2` for the roadmap-aligned aggregate command. Stage 2 planned scope
+is **implemented** (S2-M1–S2-M7). `stage2` runs the Stage 2 runtime/model-storage
+sequence, Stage 2 NPU checks, and always writes
+`reports/latest/tier3-validation.json` for the Stage 3 gate. Optional paths not
+required for that gate: `stage2-rag` (S2-M3), `stage2-lemonade` (S2-M6),
+`stage2-digest` (S2-M7).
 
 ```bash
 ./ai370-optimize.sh stage2 [--offline]
@@ -262,8 +272,9 @@ scripts/
 - Profiled EP verification (`scripts/lib/npu_ep_verify.py`) — NPU PASS only when
   kernels run on the AMD EP
 - NPU-specific benchmark suite (ONNX smoke + XRT tools)
-- Planned: TurnkeyML + Lemonade Server (S2-M6) for NPU/hybrid LLM serving;
-  Digest AI (S2-M7) for model-analysis diagnostics
+- Implemented (optional WARN path): TurnkeyML + Lemonade Server (S2-M6) for
+  NPU/hybrid LLM serving via `stage2-lemonade` / `stage2-npu` wiring
+- Implemented (diagnostics only): Digest AI (S2-M7) via `stage2-digest`
 
 **Commands:**
 
@@ -271,6 +282,8 @@ scripts/
 ./ai370-optimize.sh stage2-npu [--offline]
 ./ai370-optimize.sh stage2-npu --accept-amd-acceleration-risk   # install staged XRT/Ryzen AI
 ./ai370-optimize.sh stage2-npu-validate
+./ai370-optimize.sh stage2-lemonade [--offline]    # S2-M6 only
+./ai370-optimize.sh stage2-digest [--offline]      # S2-M7 only
 ./ai370-optimize.sh tier3 [--offline]              # Legacy alias
 ./ai370-optimize.sh tier3-validate                 # Legacy alias
 ```
