@@ -23,8 +23,7 @@ STATUS_JSON="$LATEST_DIR/llm-validation.json"
 SUMMARY_MD="$LATEST_DIR/llm-validation.md"
 BENCHMARK_JSON="$LATEST_DIR/tier2-runtime-benchmark.json"
 BENCHMARK_MD="$LATEST_DIR/tier2-runtime-benchmark.md"
-TIER2_JSON="$LATEST_DIR/tier2-validation.json"
-TIER2_MD="$LATEST_DIR/tier2-validation.md"
+# tier2-validation.json is written by scripts/145-write-tier2-validation.sh (Package C)
 
 # Smoke benchmark knobs (override via environment).
 SMOKE_N_PREDICT="${SMOKE_N_PREDICT:-16}"
@@ -621,15 +620,14 @@ main() {
   LOAD_TIME_MS="${LOAD_TIME_MS:-}" TOKENS_GENERATED="${TOKENS_GENERATED:-}" TOKENS_PER_SEC="${TOKENS_PER_SEC:-}" \
   WALL_TIME_MS="${WALL_TIME_MS:-}" EVAL_TIME_MS="${EVAL_TIME_MS:-}" \
   SMOKE_N_PREDICT="$SMOKE_N_PREDICT" \
-  python3 - "$STATUS_JSON" "$BENCHMARK_JSON" "$TIER2_JSON" <<'PY'
+  python3 - "$STATUS_JSON" "$BENCHMARK_JSON" <<'PY'
 import json
 import os
 import sys
 from pathlib import Path
 
-status_path, benchmark_path, tier2_path = sys.argv[1:]
+status_path, benchmark_path = sys.argv[1:]
 gguf_models = [line for line in os.environ.get("GGUF_FILES", "").splitlines() if line.strip()]
-ollama_has_models = "NAME" in os.environ.get("OLLAMA_LIST", "")
 
 def num_or_none(key):
     raw = os.environ.get(key, "").strip()
@@ -709,42 +707,6 @@ benchmark_data = {
     "open_webui_source": os.environ["OPEN_WEBUI_SOURCE"],
 }
 Path(benchmark_path).write_text(json.dumps(benchmark_data, indent=2) + "\n")
-
-tier2_data = {
-    "tier": 2,
-    "stage": 2,
-    "status": os.environ["STATUS"],
-    "profile": os.environ["PROFILE"],
-    "mode": os.environ["MODE"],
-    "persistence": os.environ["PERSISTENCE"],
-    "offline": os.environ["OFFLINE"] == "true",
-    "acceptance": {
-        "pytorch_available": os.environ["PYTORCH_STATE"] == "available",
-        "pytorch_rocm": os.environ["PYTORCH_ROCM"] == "true",
-        "llama_cpp_available": os.environ["LLAMA_STATE"] == "available",
-        "ollama_available": os.environ["OLLAMA_STATE"] == "available",
-        "open_webui_available": os.environ["OPEN_WEBUI_STATE"] == "available",
-        "local_model_available": bool(gguf_models) or ollama_has_models,
-        "local_inference_smoke": os.environ["LOCAL_INFERENCE_SMOKE"],
-        "measured_smoke": measured,
-        "tokens_per_sec": metrics["tokens_per_sec"],
-        "load_time_ms": metrics["load_time_ms"],
-        "benchmark_report_generated": True,
-    },
-    "artifacts": {
-        "pytorch": "reports/latest/tier2-pytorch-rocm.json",
-        "llama_cpp": "reports/latest/tier2-llama-cpp.json",
-        "ollama": "reports/latest/tier2-ollama.json",
-        "open_webui": "reports/latest/tier2-open-webui.json",
-        "benchmark": "reports/latest/tier2-runtime-benchmark.json",
-        "llm_validation": "reports/latest/llm-validation.json",
-    },
-    "notes": (
-        "ROCm is accepted when torch.version.hip is visible; otherwise it is cleanly reported "
-        "missing or CPU-only. WARN is accepted by the Stage 3 gate (see docs/ROADMAP.md Stage gate policy)."
-    ),
-}
-Path(tier2_path).write_text(json.dumps(tier2_data, indent=2) + "\n")
 PY
 
   {
@@ -827,24 +789,6 @@ PY
     echo "Detail: ${SMOKE_DETAIL:-}"
   } > "$BENCHMARK_MD"
 
-  {
-    echo "# Tier 2 Validation"
-    echo
-    echo "Profile: $PROFILE | Mode: $MODE | Offline: $OFFLINE"
-    echo "Status: $status"
-    echo
-    echo "## Acceptance"
-    echo "- PyTorch detects ROCm when available: $pytorch_rocm"
-    echo "- llama.cpp available/build output: $llama_state"
-    echo "- Ollama local models: $([[ "$ollama_list" == *"NAME"* ]] && echo present || echo missing)"
-    echo "- Measured smoke: $local_inference_smoke"
-    echo "- tokens_per_sec: ${TOKENS_PER_SEC:-n/a}"
-    echo "- load_time_ms: ${LOAD_TIME_MS:-n/a}"
-    echo "- Benchmark report generated: yes"
-    echo
-    echo "Gate note: PASS and WARN both satisfy the default Stage 3 gate (see docs/ROADMAP.md)."
-  } > "$TIER2_MD"
-
   echo "[INFO] LLM validation status: $status"
   echo "[INFO] Smoke: $local_inference_smoke backend=${SMOKE_BACKEND:-none} tokens_per_sec=${TOKENS_PER_SEC:-n/a} load_time_ms=${LOAD_TIME_MS:-n/a}"
   echo "[INFO] Wrote $STATUS_TXT"
@@ -852,8 +796,10 @@ PY
   echo "[INFO] Wrote $SUMMARY_MD"
   echo "[INFO] Wrote $BENCHMARK_JSON"
   echo "[INFO] Wrote $BENCHMARK_MD"
-  echo "[INFO] Wrote $TIER2_JSON"
-  echo "[INFO] Wrote $TIER2_MD"
+
+  # Package C: dedicated gate aggregator (tier2-validation.json)
+  bash "$PROJECT_ROOT/scripts/145-write-tier2-validation.sh" "$PROFILE" "$MODE" "$PERSISTENCE" "$OFFLINE"
+
   if [[ "$status" == "FAIL" ]]; then
     exit 1
   fi
