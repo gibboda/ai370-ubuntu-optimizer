@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.8.0...v0.9.0) (2026-07-12)
+
+
+### Features
+
+* add S2-M4 CPU/GPU/NPU comparison benchmark ([#107](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/107)) ([589c26d](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/589c26d05591d84473ad7c3895b5d2b5c49725d2))
+
 ## [0.8.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.7.0...v0.8.0) (2026-07-11)
 
 
