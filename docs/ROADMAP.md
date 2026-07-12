@@ -15,7 +15,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 ### Current Repository Alignment
 
 * Stage 1 is the active foundation stage and must remain the first implementation priority. The implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
-* Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, `scripts/150-validate-offline-model-storage.sh`, and `scripts/245-compare-cpu-gpu-npu.sh`. Offline RAG scripts `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` exist and are wired through `stage2-rag` / `tier4`, but remain a partial implementation (Docker/network-oriented install paths and incomplete offline lifecycle).
+* Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, `scripts/150-validate-offline-model-storage.sh`, and `scripts/245-compare-cpu-gpu-npu.sh`. Offline RAG (**S2-M3**) is implemented via `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` (wired through `stage2-rag` / `tier4`): staged Docker/AppImage + embedding offline install, document store layout, offline retrieval smoke, and aggregate `stage2-rag-validation.*` reports. Still optional and not part of the Stage 3 gate.
 * Milestone 2.2 (S2-M2) is implemented. `scripts/200-install-onnxruntime.sh`, `scripts/205-install-xrt-ryzen-ai.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `scripts/lib/npu_ep_verify.py`, and `docs/npu-status.md` are present. NPU PASS requires profiled kernels on the AMD EP (`ep_executed` / `ep_verified`); listing VitisAI alone is not sufficient. `205` installs staged XRT/Ryzen AI packages only when `--accept-amd-acceleration-risk` is set.
 * Stage 2 planned AMD runtime extensions: **S2-M6** TurnkeyML + Lemonade (NPU/hybrid OpenAI-compatible LLM serving, sibling to Ollama) and **S2-M7** Digest AI (ONNX/model analysis diagnostics). Neither is part of the Stage 3 gate until implemented and optionally opted in.
 * Stage 3 is ongoing. ComfyUI workflow and benchmark artifacts exist, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. Install/model scripts, documentation, and required workflow subdirectories remain planned. AMD **GAIA** (agent/RAG app) and **LM Studio** (desktop LLM UI) are planned as Stage 3 applications, not Stage 2 gate runtimes.
@@ -28,7 +28,7 @@ Roadmap stages are the preferred user-facing names. Legacy `tierN` commands rema
 | Roadmap stage | Preferred command group | Legacy tier alias | Status | Command gate |
 | --- | --- | --- | --- | --- |
 | S1 — Hardware Detection & System Optimization | Stage 1 — Core Platform | Tier 1 | Implemented | `./ai370-optimize.sh stage1` followed by `./ai370-optimize.sh stage1-validate` |
-| S2 — AI Runtime Foundation | Stage 2 Runtime / Stage 2 NPU / Stage 2 RAG | Tier 2 / Tier 3 / Tier 4 staged | Ongoing | `stage2`, `stage2-validate`, `stage2-runtime`, `stage2-runtime-validate`, `stage2-npu`, `stage2-npu-validate`; `stage2-rag` partial (optional, not a Stage 3 gate) |
+| S2 — AI Runtime Foundation | Stage 2 Runtime / Stage 2 NPU / Stage 2 RAG | Tier 2 / Tier 3 / Tier 4 | Ongoing | `stage2`, `stage2-validate`, `stage2-runtime`, `stage2-runtime-validate`, `stage2-npu`, `stage2-npu-validate`; `stage2-rag` implemented (optional, not a Stage 3 gate) |
 | S3 — Offline AI Frameworks & Applications | Stage 3 Offline Applications / Image Generation | Tier 5 plus future app workflows | Ongoing | `stage3-image`, `comfyui-install`, `comfyui-bench`; future `stage3-whisper`, `stage3-code`, and `stage3-apps-validate` |
 | S4 — Offline Development Environment | Stage 4 Development Assistant | Future extension | Planning | Not yet available |
 | S5 — Maintenance & Lifecycle Management | Stage 5 Lifecycle Operations | Future maintenance workflow | Planning | Not yet available |
@@ -75,7 +75,7 @@ AMD EP execution via `scripts/lib/npu_ep_verify.py` (same rule as `230`).
 | --- | --- | --- | --- |
 | TurnkeyML + Lemonade Server | **S2-M6** (planned) | NPU/hybrid LLM serving (OpenAI-compatible); sibling to Ollama | Optional WARN path; not required for Stage 3 gate until implemented |
 | Digest AI | **S2-M7** (planned) | Model ingestion/analysis diagnostics (ONNX/HF) | Optional; never proof of NPU inference alone |
-| AnythingLLM + embeddings | **S2-M3** (partial) | Offline RAG runtime path | Optional; not part of Stage 3 gate |
+| AnythingLLM + embeddings | **S2-M3** (implemented) | Offline RAG runtime path | Optional; not part of Stage 3 gate |
 | GAIA | **S3** (planned app) | Multi-agent local RAG / agents on top of S2 backends | Not a Stage 2 runtime |
 | LM Studio | **S3** (planned app) | Desktop LLM UI; optional early install only | Not a Stage 2 exit criterion |
 
@@ -106,10 +106,9 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 ### Gap Analysis
 
 * Missing S2 work:
-  * **S2-M3** Offline RAG full offline lifecycle (AnythingLLM staged/partial).
   * **S2-M6** TurnkeyML + Lemonade NPU/hybrid LLM serving (not present).
   * **S2-M7** Digest AI model analysis tooling (not present).
-  * S2-M2, S2-M4, and S2-M5 are implemented, including profiled EP verification (`scripts/lib/npu_ep_verify.py`) and CPU/GPU/NPU comparison (`scripts/245-compare-cpu-gpu-npu.sh`). Tiny ONNX MatMul smokes often cannot exercise VAIML; S2-M6 is the planned path for real NPU-accelerated LLM serving.
+  * S2-M2, S2-M3, S2-M4, and S2-M5 are implemented, including profiled EP verification (`scripts/lib/npu_ep_verify.py`), offline RAG lifecycle (`300`/`310`/`320`), and CPU/GPU/NPU comparison (`scripts/245-compare-cpu-gpu-npu.sh`). Tiny ONNX MatMul smokes often cannot exercise VAIML; S2-M6 is the planned path for real NPU-accelerated LLM serving.
 * Missing S3 work: ComfyUI installer, model installer, VAEs, LoRAs, ControlNet, upscalers, workflow subdirectories, startup/shutdown/status/health automation, Whisper installation/validation, local text-generation validation, embedding validation, model-management validation, **GAIA** agent/RAG application, and **LM Studio** desktop LLM install/validate (optional UI).
 * Missing S4 work: VS Code installer, Continue config, Aider installation, Git/GitHub CLI validation, ShellCheck/Ruff/Black/Pyright setup, offline code-generation and code-review validation; point coding assistants at Ollama and/or Lemonade OpenAI endpoints when available.
 * Missing S5 work: update, health-check, backup, restore, regression, release, status, startup/shutdown, workflow-launching, and documentation-maintenance automation (including future Lemonade/GAIA/LM Studio services).
@@ -119,7 +118,7 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 1. ~~Implement S2-M2 explicit XRT/Ryzen AI package installation automation.~~ Done (`scripts/205-install-xrt-ryzen-ai.sh`).
 2. ~~Require profiled AMD EP execution before NPU PASS.~~ Done (`scripts/lib/npu_ep_verify.py`, hardened `230` / `245` / `240`).
 3. ~~Implement S2-M4 CPU/GPU/NPU comparison benchmark.~~ Done (`scripts/245-compare-cpu-gpu-npu.sh`).
-4. Complete S2-M3 Offline RAG full offline lifecycle (staged artifacts, no network after install).
+4. ~~Complete S2-M3 Offline RAG full offline lifecycle.~~ Done (`scripts/300`/`310`/`320` staged lifecycle + aggregate validation).
 5. Implement S2-M6 TurnkeyML + Lemonade install/validate/benchmark (offline-first, inventory-first on Linux).
 6. Implement S2-M7 Digest AI install and model-analysis reports (optional diagnostics).
 7. Keep S2-M5 model manifest entries current as required offline models are selected (including Lemonade-compatible entries when S2-M6 lands).
@@ -427,12 +426,12 @@ Prepare and validate the Ryzen AI software stack and local acceleration runtimes
 ### Exit Criteria
 
 * PyTorch ROCm, llama.cpp, Ollama runtime service, ONNX Runtime, Vitis AI EP detection with profiled execution policy, XRT/Ryzen AI package checks, XDNA2/NPU diagnostics, offline model storage, runtime documentation, and CPU/GPU/NPU comparison benchmarks complete or produce actionable diagnostics.
-* S2-M3 Offline RAG completes full offline lifecycle (or remains explicitly optional with documented limitations).
+* S2-M3 Offline RAG offline lifecycle is implemented (`stage2-rag`); remains optional and not part of the Stage 3 gate.
 * S2-M6 and S2-M7 are optional Stage 2 extensions: when present they must be offline-first and inventory/diagnose-first on Linux; they are not hard Stage 3 gate inputs until explicitly promoted.
 
 ### Stage 2 implementation order (priority)
 
-1. **S2-M3** — Finish Offline RAG full offline lifecycle (AnythingLLM + embeddings).
+1. ~~**S2-M3** — Finish Offline RAG full offline lifecycle.~~ **Done** (optional path; not a Stage 3 gate).
 2. **S2-M6** — TurnkeyML + Lemonade (real NPU/hybrid LLM serving path after EP verification).
 3. **S2-M7** — Digest AI model analysis (optional diagnostics).
 4. **S2-M5 polish** — Keep manifest entries current (chat/coding/embedding; Lemonade-compatible models when S2-M6 lands).
@@ -530,11 +529,11 @@ Implemented / Planned:
 
 ### S2-M3 — Offline RAG
 
-**Status:** Staged / Partial
+**Status:** Implemented (optional Stage 2 path; not part of Stage 3 gate)
 
 #### Description
 
-Install AnythingLLM, install embedding models, configure local document storage, and validate offline RAG.
+Install AnythingLLM, install embedding models, configure local document storage, and validate offline RAG. Supports full offline lifecycle when artifacts are staged under `.ai370-ai/offline-artifacts/` (Docker image tarball or AppImage for AnythingLLM; embedding model tree; optional wheelhouse for Python deps). Online mode may pull/download once for staging hosts.
 
 #### Deliverables
 
@@ -542,29 +541,44 @@ Install AnythingLLM, install embedding models, configure local document storage,
 scripts/300-install-anythingllm.sh
 scripts/310-install-embedding-models.sh
 scripts/320-validate-rag.sh
+configs/offline/ai-runtime.env
+configs/models/storage-policy.md
+reports/latest/anythingllm-status.json
+reports/latest/tier4-embedding-models.json
+reports/latest/rag-validation.json
+reports/latest/stage2-rag-validation.json
 ```
+
+Implemented / Planned:
+
+* Implemented: staged Docker `docker load` / AppImage detection for AnythingLLM; RAG document + storage dirs; embedding staged-copy + wheelhouse offline installs; offline retrieval smoke (`local_files_only`); aggregate `stage2-rag-validation.*` with production_ready / full_stack_ready criteria.
+* Optional: set `ANYTHINGLLM_START=true` to attempt container start after image is available.
+* Not required for Stage 3 gate (`require_tier123_pass`).
 
 #### Acceptance Criteria
 
-* Offline embedding model installation is supported by a complete installer.
-* RAG validation does not require internet access after installation.
-* `./ai370-optimize.sh stage2-rag` invokes the Stage 2 RAG installer/model/validation sequence instead of printing placeholder guidance (`tier4` remains a legacy alias).
+* Offline embedding model installation is supported by a complete installer (existing path, staged copy, or online download).
+* RAG validation does not require internet access after installation/staging (`--offline` uses local model files and wheelhouse only).
+* `./ai370-optimize.sh stage2-rag` invokes the Stage 2 RAG installer/model/validation sequence (`tier4` remains a legacy alias).
+* Aggregate report documents production vs full-stack readiness with actionable recommendations when components are missing.
 
 #### Validation Steps
 
 ```text
-./scripts/300-install-anythingllm.sh
-./scripts/310-install-embedding-models.sh
-./scripts/320-validate-rag.sh
+./scripts/300-install-anythingllm.sh ai370 safe runtime true
+./scripts/310-install-embedding-models.sh ai370 safe runtime true
+./scripts/320-validate-rag.sh ai370 safe runtime true
+# or:
+./ai370-optimize.sh stage2-rag --offline
 ```
 
 #### Completion Checklist
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [x] Scripts present and invoked by `stage2-rag` / `tier4` (partial: detect/pull/download + smoke validation).
-* [ ] Full offline installers and lifecycle (no network dependency after staging).
-* [ ] Validation documented with complete actionable pass/fail results for production RAG.
+* [x] Scripts present and invoked by `stage2-rag` / `tier4`.
+* [x] Full offline installers and lifecycle (no network dependency after staging).
+* [x] Validation documented with complete actionable pass/fail results for production RAG.
 
 ### S2-M4 — AI Runtime Benchmark & Diagnostics
 

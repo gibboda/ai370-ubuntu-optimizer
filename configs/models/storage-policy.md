@@ -17,6 +17,12 @@ case:
 - `.ai370-ai/models/embedding/` for embedding and RAG models.
 - `.ai370-ai/models/rag/` for document-specific model artifacts when needed.
 - `.ai370-ai/models/staging/` for temporary imports before checksum validation.
+- `.ai370-ai/offline-artifacts/embedding/` for offline-staged embedding model
+  trees consumed by `scripts/310-install-embedding-models.sh`.
+- `.ai370-ai/offline-artifacts/anythingllm/` for Docker image tarballs or
+  AppImages consumed by `scripts/300-install-anythingllm.sh`.
+- `.ai370-ai/rag/documents/` for local documents to ingest offline.
+- `.ai370-ai/rag/anythingllm-storage/` for AnythingLLM container volume data.
 
 ## Manifest requirements
 

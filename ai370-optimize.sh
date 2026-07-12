@@ -374,7 +374,8 @@ case "$CMD" in
     ;;
 
   stage2-rag|tier4)
-    echo "[INFO] Running Stage 2 RAG – Local Knowledge Systems (AnythingLLM / RAG)"
+    echo "[INFO] Running Stage 2 RAG (S2-M3) – AnythingLLM, embeddings, offline retrieval"
+    echo "[INFO] Offline staging: .ai370-ai/offline-artifacts/{anythingllm,embedding}/ and wheelhouse"
     run_script "scripts/300-install-anythingllm.sh" "$OFFLINE"
     run_script "scripts/310-install-embedding-models.sh" "$OFFLINE"
     run_script "scripts/320-validate-rag.sh" "$OFFLINE"
