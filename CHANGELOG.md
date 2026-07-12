@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.11.0...v0.12.0) (2026-07-12)
+
+
+### Features
+
+* implement S2-M7 Digest AI model analysis tooling ([#118](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/118)) ([efa195d](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/efa195d14b19a024bffaf60f06ca971baaec6afe))
+
 ## [0.11.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.10.1...v0.11.0) (2026-07-12)
 
 
