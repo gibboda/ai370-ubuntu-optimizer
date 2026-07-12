@@ -60,6 +60,12 @@ open-webui-venv
 
 # Artifacts
 .ai370-ai/amd-artifacts/
+.ai370-ai/offline-artifacts/
+.ai370-ai/rag/
+.ai370-ai/tools/
+.ai370-ai/venv/
+.ai370-ai/ryzen-ai/
+.ai370-ai/open-webui-venv/
 *.whl
 *.tgz
 *.debug

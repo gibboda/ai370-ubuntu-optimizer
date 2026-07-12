@@ -90,11 +90,11 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 - Stage 2: Aggregate, runtime, and NPU command groups are implemented for the
   current roadmap scope (`stage2`, `stage2-runtime`, and `stage2-npu`; legacy
   aliases `tier2` and `tier3`). NPU PASS requires profiled AMD EP execution
-  (`scripts/lib/npu_ep_verify.py`). Stage 2 RAG remains partial/staged:
-  `stage2-rag` / `tier4` invoke `scripts/300-*` through `scripts/320-*`, but
-  offline installers and lifecycle are incomplete. Planned Stage 2 extensions:
-  S2-M6 TurnkeyML + Lemonade (NPU/hybrid LLM serving) and S2-M7 Digest AI
-  (model analysis). See `docs/ROADMAP.md` Stage 2 implementation order.
+  (`scripts/lib/npu_ep_verify.py`). Stage 2 RAG (S2-M3) is implemented via
+  `stage2-rag` / `tier4` (`scripts/300-*`–`320-*`) with offline staged
+  AnythingLLM/embedding lifecycle and aggregate validation; optional and not
+  part of the Stage 3 gate. Planned Stage 2 extensions: S2-M6 TurnkeyML +
+  Lemonade and S2-M7 Digest AI. See `docs/ROADMAP.md`.
 - Stage 3 Image Generation: Ongoing (benchmarks and workflows exist; ComfyUI
   install/model scripts and workflow subdirectories remain planned). GAIA and
   LM Studio are planned Stage 3 applications (not Stage 2 gate runtimes).
@@ -119,11 +119,9 @@ Implemented:
   `scripts/230-benchmark-npu.sh`, `scripts/240-write-tier3-validation.sh`,
   `scripts/245-compare-cpu-gpu-npu.sh`, `scripts/lib/npu_ep_verify.py`,
   `docs/npu-status.md`
-
-Staged / partial (present, not full Stage 2 RAG / Tier 4 implementation):
-
 - `scripts/300-install-anythingllm.sh`,
   `scripts/310-install-embedding-models.sh`, `scripts/320-validate-rag.sh`
+  (S2-M3 offline RAG lifecycle; optional Stage 2 path)
 
 Planned / Not present in repo:
 
@@ -291,28 +289,32 @@ generation installation.
 
 **Components:**
 
-- AnythingLLM (or equivalent local RAG)
-- Local embeddings models
-- Offline document indexing + retrieval
+- AnythingLLM (Docker image or AppImage; offline-staged under
+  `.ai370-ai/offline-artifacts/anythingllm/`)
+- Local embedding models (existing, staged copy, or download)
+- Offline document store (`.ai370-ai/rag/documents/`) + retrieval smoke
+- Aggregate report: `reports/latest/stage2-rag-validation.json`
 
-**Commands (staged / partial):**
+**Commands:**
 
 ```bash
 ./ai370-optimize.sh stage2-rag
+./ai370-optimize.sh stage2-rag --offline
 ./ai370-optimize.sh tier4          # Legacy alias
 ```
 
-**Current status:** Partial implementation. `stage2-rag` / `tier4` invoke
-`scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`,
-and `scripts/320-validate-rag.sh` (Docker image detect/pull, embedding model
-download or local check, optional offline retrieval smoke). Full offline
-installers, staged-artifact workflows, and production lifecycle automation
-remain incomplete. Stage 2 RAG is optional and is not part of the Stage 3 gate.
+**Current status:** Implemented offline lifecycle (S2-M3). `stage2-rag` /
+`tier4` invoke `scripts/300-install-anythingllm.sh`,
+`scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh`.
+Online mode may pull/download; offline mode uses staged artifacts and
+wheelhouse only. Stage 2 RAG is optional and is not part of the Stage 3 gate.
 
 **Acceptance Criteria:**
 
-- PDF / document ingestion functional
-- Offline RAG queries operational against local index
+- Embedding model installable offline from staged tree or online download
+- Offline semantic retrieval smoke passes without network after staging
+- AnythingLLM image/AppImage loadable from staged artifacts when Docker/AppImage present
+- Aggregate report distinguishes production_ready (embedding RAG) vs full_stack_ready (+ AnythingLLM)
 
 ### Stage 3 Image Generation – Generative AI
 
