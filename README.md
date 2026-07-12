@@ -89,11 +89,15 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   kernel/driver validation, system optimization, and benchmarking).
 - Stage 2: Aggregate, runtime, and NPU command groups are implemented for the
   current roadmap scope (`stage2`, `stage2-runtime`, and `stage2-npu`; legacy
-  aliases `tier2` and `tier3`). Stage 2 RAG remains partial/staged: `stage2-rag`
-  / `tier4` invoke `scripts/300-*` through `scripts/320-*`, but offline
-  installers and lifecycle are incomplete.
+  aliases `tier2` and `tier3`). NPU PASS requires profiled AMD EP execution
+  (`scripts/lib/npu_ep_verify.py`). Stage 2 RAG remains partial/staged:
+  `stage2-rag` / `tier4` invoke `scripts/300-*` through `scripts/320-*`, but
+  offline installers and lifecycle are incomplete. Planned Stage 2 extensions:
+  S2-M6 TurnkeyML + Lemonade (NPU/hybrid LLM serving) and S2-M7 Digest AI
+  (model analysis). See `docs/ROADMAP.md` Stage 2 implementation order.
 - Stage 3 Image Generation: Ongoing (benchmarks and workflows exist; ComfyUI
-  install/model scripts and workflow subdirectories remain planned).
+  install/model scripts and workflow subdirectories remain planned). GAIA and
+  LM Studio are planned Stage 3 applications (not Stage 2 gate runtimes).
 
 ### Implemented / Planned (high level)
 
@@ -113,7 +117,7 @@ Implemented:
   `scripts/205-install-xrt-ryzen-ai.sh`,
   `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`,
   `scripts/230-benchmark-npu.sh`, `scripts/240-write-tier3-validation.sh`,
-  `scripts/245-compare-cpu-gpu-npu.sh`,
+  `scripts/245-compare-cpu-gpu-npu.sh`, `scripts/lib/npu_ep_verify.py`,
   `docs/npu-status.md`
 
 Staged / partial (present, not full Stage 2 RAG / Tier 4 implementation):
@@ -123,6 +127,10 @@ Staged / partial (present, not full Stage 2 RAG / Tier 4 implementation):
 
 Planned / Not present in repo:
 
+- S2-M6: `scripts/160-install-lemonade.sh`, `scripts/165-validate-lemonade.sh`,
+  `scripts/170-install-turnkeyml.sh`
+- S2-M7: `scripts/250-install-digest-ai.sh`,
+  `scripts/255-analyze-model-digest.sh`
 - `scripts/400-install-comfyui.sh`
 - `scripts/410-install-comfyui-models.sh`
 - `workflows/comfyui/flux/`, `workflows/comfyui/sdxl/`,
@@ -250,7 +258,11 @@ scripts/
 - ONNX + ONNX Runtime
 - Ryzen AI Software (staged artifacts)
 - Vitis AI / NPU Execution Provider support
+- Profiled EP verification (`scripts/lib/npu_ep_verify.py`) — NPU PASS only when
+  kernels run on the AMD EP
 - NPU-specific benchmark suite (ONNX smoke + XRT tools)
+- Planned: TurnkeyML + Lemonade Server (S2-M6) for NPU/hybrid LLM serving;
+  Digest AI (S2-M7) for model-analysis diagnostics
 
 **Commands:**
 
