@@ -39,6 +39,7 @@ Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage2-rag [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh stage2-lemonade [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage2-digest [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh stage2-models [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh stage3-image [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh full-stack [--profile=ai370] [--mode=safe] [--persistence=runtime]
        --accept-amd-acceleration-risk [--with-lemonade] [--with-digest] [--with-rag]
@@ -69,6 +70,8 @@ Optional packs (not Stage 3 gate inputs):
   --with-lemonade / stage2-lemonade  → 170, 160, 165 (S2-M6)
   --with-digest / stage2-digest      → 250, 255 (S2-M7)
   --with-rag / stage2-rag            → 300, 310, 320 (S2-M3)
+  stage2-models                      → 155 layout + 150 validate (S2-M5 polish; no downloads)
+  Env: LEMONADE_START=true, ANYTHINGLLM_START=true for full serving/UI smokes
 
 Defaults:
   profile     ai370
@@ -189,6 +192,14 @@ run_stage2_runtime_core() {
   run_script "scripts/140-benchmark-llm.sh" "$OFFLINE"
   # 140 invokes 145; call again so runtime-only paths still refresh the gate artifact
   run_script "scripts/145-write-tier2-validation.sh" "$OFFLINE"
+  # Layout stubs (no downloads) then validate offline model storage
+  run_script "scripts/155-stage-model-layout.sh" "$OFFLINE"
+  run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
+}
+
+run_stage2_models() {
+  echo "[INFO] Stage 2 model layout + offline validation (S2-M5 polish; no downloads)"
+  run_script "scripts/155-stage-model-layout.sh" "$OFFLINE"
   run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
 }
 
@@ -503,6 +514,11 @@ case "$CMD" in
 
   stage2-digest)
     run_optional_digest
+    ;;
+
+  stage2-models)
+    run_stage2_models
+    write_report_index
     ;;
 
   stage2-rag|tier4)

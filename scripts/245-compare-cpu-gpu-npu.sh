@@ -413,7 +413,15 @@ except Exception as e:
     raise SystemExit(0)
 
 out["hip"] = bool(getattr(torch.version, "hip", None))
+out["hip_version"] = str(getattr(torch.version, "hip", None) or "")
 out["cuda_available"] = bool(torch.cuda.is_available()) if hasattr(torch, "cuda") else False
+try:
+    out["device_count"] = int(torch.cuda.device_count()) if out["cuda_available"] else 0
+    out["device_name"] = torch.cuda.get_device_name(0) if out["cuda_available"] and out["device_count"] else ""
+except Exception as e:
+    out["device_count"] = 0
+    out["device_name"] = ""
+    out["device_query_error"] = f"{{type(e).__name__}}: {{e}}"
 
 def bench(device_name, dclass):
     device = torch.device(device_name)
@@ -490,6 +498,18 @@ if out["cuda_available"]:
             "note": f"{{type(e).__name__}}: {{e}}",
         }})
 else:
+    # Package D: richer gfx1150 / HIP diagnostics when GPU path is unavailable
+    tip_parts = ["torch.cuda.is_available() is false"]
+    if out["hip"]:
+        tip_parts.append("HIP build present but no device")
+        tip_parts.append(
+            "On Radeon 890M (gfx1150) try a ROCm build that lists gfx1150, "
+            "or set HSA_OVERRIDE_GFX_VERSION only as a last-resort experiment"
+        )
+        tip_parts.append("confirm rocminfo shows the agent and amdgpu is loaded")
+    else:
+        tip_parts.append("no ROCm/CUDA device for PyTorch (CPU-only torch?)")
+        tip_parts.append("re-run scripts/100-install-pytorch-rocm.sh for a HIP wheel")
     out["results"].append({{
         "framework": "pytorch",
         "workload": f"torch_matmul_{{size}}x{{size}}",
@@ -502,10 +522,9 @@ else:
         "min_ms": None,
         "max_ms": None,
         "status": "skipped",
-        "note": (
-            "torch.cuda.is_available() is false"
-            + ("; HIP build present but no device" if out["hip"] else "; no ROCm/CUDA device for PyTorch")
-        ),
+        "note": "; ".join(tip_parts),
+        "hip": out["hip"],
+        "hip_version": out.get("hip_version"),
     }})
 
 print(json.dumps(out))
@@ -525,7 +544,21 @@ print(json.dumps(out))
         for r in payload.get("results") or []:
             paths.append(r)
             if r.get("status") == "skipped" and r.get("device_class") == "gpu":
-                diagnostics.append(r.get("note") or "GPU path skipped")
+                note = r.get("note") or "GPU path skipped"
+                diagnostics.append(note)
+                # Surface gfx1150-oriented guidance once when HIP is present but unused
+                if payload.get("hip") and not payload.get("cuda_available"):
+                    diagnostics.append(
+                        "GPU class skipped with HIP build: Radeon 890M/gfx1150 often needs a "
+                        "ROCm PyTorch wheel that advertises the arch; check rocminfo + "
+                        "scripts/100-install-pytorch-rocm.sh. NPU path is independent (230/reuse)."
+                    )
+            if r.get("status") == "fail" and r.get("device_class") == "gpu":
+                diagnostics.append(
+                    f"GPU matmul failed: {r.get('note')}. "
+                    "For gfx1150, verify HIP runtime and that torch sees the device "
+                    f"(hip={payload.get('hip')}, cuda_available={payload.get('cuda_available')})."
+                )
 else:
     diagnostics.append(
         "Skipped PyTorch comparison: no interpreter. Run scripts/100-install-pytorch-rocm.sh."

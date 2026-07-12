@@ -95,8 +95,8 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   (`scripts/lib/npu_ep_verify.py`). Optional paths (not Stage 3 gate):
   RAG S2-M3 (`stage2-rag` / `tier4`), TurnkeyML + Lemonade S2-M6
   (`stage2-lemonade`), Digest AI S2-M7 (`stage2-digest`). Remaining S2 work is
-  optional polish (manifest population, full-stack smokes), not missing
-  milestones. See `docs/ROADMAP.md`.
+  optional polish is tooling-level (Package D: layout staging, smokes docs,
+  tests). See `docs/ROADMAP.md`.
 - Stage 3: **Ongoing / active focus** (benchmarks and workflows exist; ComfyUI
   install/model scripts and workflow subdirectories remain planned). GAIA and
   LM Studio are planned Stage 3 applications (not Stage 2 gate runtimes).
@@ -120,7 +120,8 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 - `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`,
   `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`,
   `scripts/140-benchmark-llm.sh`, `scripts/145-write-tier2-validation.sh`,
-  `scripts/150-validate-offline-model-storage.sh` (S2-M1 / S2-M4 / S2-M5)
+  `scripts/150-validate-offline-model-storage.sh`,
+  `scripts/155-stage-model-layout.sh` (S2-M1 / S2-M4 / S2-M5; layout polish)
 - `scripts/200-install-onnxruntime.sh`,
   `scripts/205-install-xrt-ryzen-ai.sh`,
   `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`,
@@ -202,6 +203,10 @@ Stage 3 gate. Optional packs are **not** run by default (not Stage 3 gate inputs
 ./ai370-optimize.sh stage2-validate [--offline]                       # cheap gate refresh
 ./ai370-optimize.sh stage2-validate --bench [--with-lemonade]         # full smokes
 ./ai370-optimize.sh stage2-rag | stage2-lemonade | stage2-digest
+./ai370-optimize.sh stage2-models   # S2-M5 layout + validate (no downloads)
+# Full-stack optional smokes:
+#   LEMONADE_START=true ./scripts/165-validate-lemonade.sh
+#   ANYTHINGLLM_START=true ./scripts/300-install-anythingllm.sh
 ```
 
 **Stage 3 gate policy (default):** Stage 1 must be `PASS`. Stage 2 runtime and
@@ -385,6 +390,7 @@ acceleration was explicitly installed and re-validated.
 ./ai370-optimize.sh stage2-rag             # Optional RAG (S2-M3; not Stage 3 gate)
 ./ai370-optimize.sh stage2-lemonade        # Optional Lemonade (S2-M6)
 ./ai370-optimize.sh stage2-digest          # Optional Digest AI (S2-M7)
+./ai370-optimize.sh stage2-models          # S2-M5 layout + storage validate (no downloads)
 ./ai370-optimize.sh stage3-image           # Requires Stage 1 + Stage 2 runtime/NPU validation gate
 ./ai370-optimize.sh full-stack --accept-amd-acceleration-risk   # S1 + S2 core + optional packs + accel + S3 workflows
 ```

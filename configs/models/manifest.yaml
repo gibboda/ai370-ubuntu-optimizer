@@ -13,7 +13,7 @@
       "required": false,
       "checksum": {"algorithm": "sha256", "value": null},
       "min_free_gb": 8,
-      "notes": "Replace with the preferred offline chat model GGUF file. Optional by default so fresh installs produce actionable WARN diagnostics instead of failing."
+      "notes": "Copy a preferred offline chat GGUF here (e.g. Qwen/Llama family). Run scripts/155-stage-model-layout.sh first for dirs. Optional so fresh installs WARN instead of FAIL."
     },
     {
       "id": "coding-ollama-local",
@@ -26,7 +26,7 @@
       "required": false,
       "checksum": {"algorithm": "none", "value": null},
       "min_free_gb": 8,
-      "notes": "Import or pull before offline use, then keep runtime artifacts or an export under the listed local path."
+      "notes": "When online: ollama pull qwen2.5-coder:7b. Validator accepts a local Ollama tag even if the export path is empty. Optional offline export under path."
     },
     {
       "id": "embedding-local",
@@ -38,7 +38,7 @@
       "required": false,
       "checksum": {"algorithm": "none", "value": null},
       "min_free_gb": 2,
-      "notes": "Stage a local embedding model directory here for offline RAG validation."
+      "notes": "Stage a sentence-transformers tree here or under .ai370-ai/offline-artifacts/embedding/ for scripts/310-install-embedding-models.sh."
     },
     {
       "id": "lemonade-chat-gguf",
@@ -50,7 +50,7 @@
       "required": false,
       "checksum": {"algorithm": "none", "value": null},
       "min_free_gb": 4,
-      "notes": "Optional S2-M6 path. Stage GGUF/ONNX artifacts for Lemonade Server or pull via lemonade-server when online. Sibling to Ollama; not required for Stage 3 gate."
+      "notes": "Optional S2-M6. Stage GGUF/ONNX for Lemonade Server. Full smoke: LEMONADE_START=true ./scripts/165-validate-lemonade.sh. Not a Stage 3 gate input."
     }
   ]
 }
