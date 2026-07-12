@@ -27,6 +27,7 @@ Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage2-npu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh stage2-rag [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh stage2-lemonade [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh stage2-digest [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage3-image [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh full-stack [--profile=ai370] [--mode=safe] [--persistence=runtime] --accept-amd-acceleration-risk
 
@@ -75,6 +76,8 @@ Stage 2 scripts (S2 deliverables across runtime + NPU + Lemonade):
   scripts/165-validate-lemonade.sh
   scripts/170-install-turnkeyml.sh
   scripts/200-install-onnxruntime.sh
+  scripts/250-install-digest-ai.sh
+  scripts/255-analyze-model-digest.sh
   scripts/205-install-xrt-ryzen-ai.sh
   scripts/210-check-ryzen-ai-software.sh
   scripts/220-check-vitis-ai-ep.sh
@@ -321,6 +324,9 @@ case "$CMD" in
     run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
     run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
     run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+    # S2-M7: Digest AI / ONNX model analysis (diagnostics only; not a gate)
+    run_script "scripts/250-install-digest-ai.sh" "$OFFLINE"
+    run_script "scripts/255-analyze-model-digest.sh" "$OFFLINE"
     run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
     run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
@@ -396,6 +402,12 @@ case "$CMD" in
     run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
     run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
     run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
+    ;;
+
+  stage2-digest)
+    echo "[INFO] Running Stage 2 Digest AI model analysis only (S2-M7; diagnostics, not NPU proof)"
+    run_script "scripts/250-install-digest-ai.sh" "$OFFLINE"
+    run_script "scripts/255-analyze-model-digest.sh" "$OFFLINE"
     ;;
 
   stage2-rag|tier4)

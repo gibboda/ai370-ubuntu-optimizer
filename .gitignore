@@ -67,6 +67,7 @@ open-webui-venv
 .ai370-ai/ryzen-ai/
 .ai370-ai/open-webui-venv/
 .ai370-ai/lemonade/
+.ai370-ai/digest/
 *.whl
 *.tgz
 *.debug
