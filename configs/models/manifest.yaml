@@ -39,6 +39,18 @@
       "checksum": {"algorithm": "none", "value": null},
       "min_free_gb": 2,
       "notes": "Stage a local embedding model directory here for offline RAG validation."
+    },
+    {
+      "id": "lemonade-chat-gguf",
+      "name": "Lemonade-compatible chat model (GGUF or server tag)",
+      "category": "chat",
+      "runtime": "lemonade",
+      "format": "directory",
+      "path": ".ai370-ai/models/lemonade",
+      "required": false,
+      "checksum": {"algorithm": "none", "value": null},
+      "min_free_gb": 4,
+      "notes": "Optional S2-M6 path. Stage GGUF/ONNX artifacts for Lemonade Server or pull via lemonade-server when online. Sibling to Ollama; not required for Stage 3 gate."
     }
   ]
 }

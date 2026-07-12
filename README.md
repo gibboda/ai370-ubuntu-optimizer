@@ -93,8 +93,9 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   (`scripts/lib/npu_ep_verify.py`). Stage 2 RAG (S2-M3) is implemented via
   `stage2-rag` / `tier4` (`scripts/300-*`–`320-*`) with offline staged
   AnythingLLM/embedding lifecycle and aggregate validation; optional and not
-  part of the Stage 3 gate. Planned Stage 2 extensions: S2-M6 TurnkeyML +
-  Lemonade and S2-M7 Digest AI. See `docs/ROADMAP.md`.
+  part of the Stage 3 gate. S2-M6 TurnkeyML + Lemonade is implemented
+  (`stage2-lemonade`, scripts `170`/`160`/`165`; WARN-friendly). Planned:
+  S2-M7 Digest AI. See `docs/ROADMAP.md`.
 - Stage 3 Image Generation: Ongoing (benchmarks and workflows exist; ComfyUI
   install/model scripts and workflow subdirectories remain planned). GAIA and
   LM Studio are planned Stage 3 applications (not Stage 2 gate runtimes).
@@ -122,11 +123,12 @@ Implemented:
 - `scripts/300-install-anythingllm.sh`,
   `scripts/310-install-embedding-models.sh`, `scripts/320-validate-rag.sh`
   (S2-M3 offline RAG lifecycle; optional Stage 2 path)
+- `scripts/170-install-turnkeyml.sh`, `scripts/160-install-lemonade.sh`,
+  `scripts/165-validate-lemonade.sh`, `scripts/lib/lemonade-env.sh`
+  (S2-M6 TurnkeyML + Lemonade; optional WARN-friendly path)
 
 Planned / Not present in repo:
 
-- S2-M6: `scripts/160-install-lemonade.sh`, `scripts/165-validate-lemonade.sh`,
-  `scripts/170-install-turnkeyml.sh`
 - S2-M7: `scripts/250-install-digest-ai.sh`,
   `scripts/255-analyze-model-digest.sh`
 - `scripts/400-install-comfyui.sh`

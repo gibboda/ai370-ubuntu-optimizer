@@ -32,6 +32,12 @@ SMOKE_PROMPT="${SMOKE_PROMPT:-Hi}"
 SMOKE_LLAMA_TIMEOUT_SEC="${SMOKE_LLAMA_TIMEOUT_SEC:-90}"
 SMOKE_OLLAMA_TIMEOUT_SEC="${SMOKE_OLLAMA_TIMEOUT_SEC:-120}"
 OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
+# S2-M6 Lemonade OpenAI-compatible defaults (optional smoke when server is up)
+LEMONADE_HOST="${LEMONADE_HOST:-127.0.0.1}"
+LEMONADE_PORT="${LEMONADE_PORT:-8000}"
+LEMONADE_BASE_URL="${LEMONADE_BASE_URL:-http://${LEMONADE_HOST}:${LEMONADE_PORT}/api/v1}"
+LEMONADE_API_KEY="${LEMONADE_API_KEY:-lemonade}"
+SMOKE_LEMONADE_TIMEOUT_SEC="${SMOKE_LEMONADE_TIMEOUT_SEC:-30}"
 
 capture_command() {
   local command_name="$1"
@@ -286,6 +292,95 @@ PY
   return "$py_rc"
 }
 
+# Optional Lemonade OpenAI smoke when a local server is already running with models.
+run_lemonade_smoke() {
+  local start_ns end_ns wall_ms models_raw first_model body resp
+  start_ns="$(date +%s%N)"
+  models_raw=""
+  if command -v curl >/dev/null 2>&1; then
+    models_raw="$(curl -fsS --max-time "$SMOKE_LEMONADE_TIMEOUT_SEC" "${LEMONADE_BASE_URL}/models" 2>/dev/null || true)"
+  fi
+  if [[ -z "$models_raw" ]]; then
+    end_ns="$(date +%s%N)"
+    wall_ms="$(python3 -c "print(round(($end_ns - $start_ns) / 1e6, 3))")"
+    echo "smoke_backend=lemonade"
+    echo "smoke_model="
+    echo "load_time_ms="
+    echo "tokens_generated="
+    echo "tokens_per_sec="
+    echo "wall_time_ms=$wall_ms"
+    echo "eval_time_ms="
+    echo "smoke_status=warn"
+    echo "detail=lemonade server not reachable at ${LEMONADE_BASE_URL}/models (start server or skip)"
+    return 1
+  fi
+  first_model="$(printf '%s' "$models_raw" | python3 -c 'import json,sys
+try:
+  d=json.load(sys.stdin)
+  data=d.get("data") or []
+  print(data[0]["id"] if data and isinstance(data[0], dict) else "")
+except Exception:
+  print("")
+' 2>/dev/null || true)"
+  if [[ -z "$first_model" ]]; then
+    end_ns="$(date +%s%N)"
+    wall_ms="$(python3 -c "print(round(($end_ns - $start_ns) / 1e6, 3))")"
+    echo "smoke_backend=lemonade"
+    echo "smoke_model="
+    echo "load_time_ms="
+    echo "tokens_generated="
+    echo "tokens_per_sec="
+    echo "wall_time_ms=$wall_ms"
+    echo "eval_time_ms="
+    echo "smoke_status=warn"
+    echo "detail=lemonade /models returned no model ids"
+    return 1
+  fi
+  body="$(python3 -c 'import json,sys; print(json.dumps({"model":sys.argv[1],"messages":[{"role":"user","content":sys.argv[2]}],"max_tokens":int(sys.argv[3]),"temperature":0}))' "$first_model" "$SMOKE_PROMPT" "$SMOKE_N_PREDICT")"
+  start_ns="$(date +%s%N)"
+  set +e
+  resp="$(curl -fsS --max-time "$SMOKE_LEMONADE_TIMEOUT_SEC" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${LEMONADE_API_KEY}" \
+    -d "$body" \
+    "${LEMONADE_BASE_URL}/chat/completions" 2>/dev/null || true)"
+  set -e
+  end_ns="$(date +%s%N)"
+  wall_ms="$(python3 -c "print(round(($end_ns - $start_ns) / 1e6, 3))")"
+  if printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); raise SystemExit(0 if d.get("choices") else 1)' 2>/dev/null; then
+    local tokens
+    tokens="$(printf '%s' "$resp" | python3 -c 'import json,sys
+d=json.load(sys.stdin)
+u=d.get("usage") or {}
+print(u.get("completion_tokens") or u.get("total_tokens") or "")
+' 2>/dev/null || true)"
+    echo "smoke_backend=lemonade"
+    echo "smoke_model=$first_model"
+    echo "load_time_ms="
+    echo "tokens_generated=${tokens}"
+    if [[ -n "$tokens" && "$tokens" != "0" ]]; then
+      echo "tokens_per_sec=$(python3 -c "print(round(float('$tokens') / (float('$wall_ms')/1000.0), 3) if float('$wall_ms')>0 else '')" 2>/dev/null || true)"
+    else
+      echo "tokens_per_sec="
+    fi
+    echo "wall_time_ms=$wall_ms"
+    echo "eval_time_ms="
+    echo "smoke_status=pass"
+    echo "detail=lemonade OpenAI chat.completions smoke completed"
+    return 0
+  fi
+  echo "smoke_backend=lemonade"
+  echo "smoke_model=$first_model"
+  echo "load_time_ms="
+  echo "tokens_generated="
+  echo "tokens_per_sec="
+  echo "wall_time_ms=$wall_ms"
+  echo "eval_time_ms="
+  echo "smoke_status=warn"
+  echo "detail=lemonade chat.completions failed or empty"
+  return 1
+}
+
 run_pytorch_smoke() {
   local start_ns end_ns wall_ms
   local out
@@ -438,7 +533,8 @@ main() {
     open_webui_source="docker-image"
   fi
 
-  # Prefer token-generating backends: llama.cpp GGUF, then Ollama, then PyTorch matmul fallback.
+  # Prefer token-generating backends: llama.cpp GGUF, then Ollama, then Lemonade
+  # (S2-M6 OpenAI server if already running), then PyTorch matmul fallback.
   local_inference_smoke="skipped"
   if [[ "$llama_state" == "available" && -n "$gguf_files" ]]; then
     first_gguf="$(printf '%s\n' "$gguf_files" | head -n 1)"
@@ -457,11 +553,21 @@ main() {
       local_inference_smoke="skipped"
       SMOKE_DETAIL="Ollama is available but no model name could be parsed from ollama list."
     fi
-  elif [[ "$pytorch_state" == "available" ]]; then
-    echo "[INFO] Measured smoke: PyTorch matmul fallback (no local LLM model)"
-    metric_blob="$(run_pytorch_smoke || true)"
+  else
+    # Try Lemonade only when no llama/ollama model path already smoked.
+    metric_blob="$(run_lemonade_smoke || true)"
     apply_metric_lines <<<"$metric_blob"
-    local_inference_smoke="$SMOKE_STATUS"
+    if [[ "${SMOKE_STATUS:-}" == "pass" ]]; then
+      local_inference_smoke="pass"
+      echo "[INFO] Measured smoke: lemonade + ${SMOKE_MODEL:-unknown}"
+    elif [[ "$pytorch_state" == "available" ]]; then
+      echo "[INFO] Measured smoke: PyTorch matmul fallback (no local LLM model)"
+      metric_blob="$(run_pytorch_smoke || true)"
+      apply_metric_lines <<<"$metric_blob"
+      local_inference_smoke="$SMOKE_STATUS"
+    elif [[ "${SMOKE_BACKEND:-}" == "lemonade" ]]; then
+      local_inference_smoke="${SMOKE_STATUS:-warn}"
+    fi
   fi
 
   status="PASS"

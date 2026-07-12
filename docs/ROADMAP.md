@@ -17,7 +17,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 * Stage 1 is the active foundation stage and must remain the first implementation priority. The implemented Tier 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
 * Stage 2 runtime work is implemented through Tier 2 scripts: `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`, `scripts/140-benchmark-llm.sh`, `scripts/150-validate-offline-model-storage.sh`, and `scripts/245-compare-cpu-gpu-npu.sh`. Offline RAG (**S2-M3**) is implemented via `scripts/300-install-anythingllm.sh`, `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh` (wired through `stage2-rag` / `tier4`): staged Docker/AppImage + embedding offline install, document store layout, offline retrieval smoke, and aggregate `stage2-rag-validation.*` reports. Still optional and not part of the Stage 3 gate.
 * Milestone 2.2 (S2-M2) is implemented. `scripts/200-install-onnxruntime.sh`, `scripts/205-install-xrt-ryzen-ai.sh`, `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, `scripts/lib/npu_ep_verify.py`, and `docs/npu-status.md` are present. NPU PASS requires profiled kernels on the AMD EP (`ep_executed` / `ep_verified`); listing VitisAI alone is not sufficient. `205` installs staged XRT/Ryzen AI packages only when `--accept-amd-acceleration-risk` is set.
-* Stage 2 planned AMD runtime extensions: **S2-M6** TurnkeyML + Lemonade (NPU/hybrid OpenAI-compatible LLM serving, sibling to Ollama) and **S2-M7** Digest AI (ONNX/model analysis diagnostics). Neither is part of the Stage 3 gate until implemented and optionally opted in.
+* Stage 2 AMD runtime extensions: **S2-M6** TurnkeyML + Lemonade is implemented (`scripts/170` / `160` / `165`, `stage2-lemonade`; WARN-friendly NPU/hybrid OpenAI-compatible LLM serving, sibling to Ollama). **S2-M7** Digest AI remains planned (ONNX/model analysis diagnostics).
 * Stage 3 is ongoing. ComfyUI workflow and benchmark artifacts exist, including `scripts/420-benchmark-comfyui.sh` and workflow JSON files under `workflows/comfyui/`. Install/model scripts, documentation, and required workflow subdirectories remain planned. AMD **GAIA** (agent/RAG app) and **LM Studio** (desktop LLM UI) are planned as Stage 3 applications, not Stage 2 gate runtimes.
 * Stages 4 and 5 remain planning sections and should not be started until earlier stage validation gates pass.
 
@@ -73,7 +73,7 @@ AMD EP execution via `scripts/lib/npu_ep_verify.py` (same rule as `230`).
 
 | Product | Stage / milestone | Role | Gate |
 | --- | --- | --- | --- |
-| TurnkeyML + Lemonade Server | **S2-M6** (planned) | NPU/hybrid LLM serving (OpenAI-compatible); sibling to Ollama | Optional WARN path; not required for Stage 3 gate until implemented |
+| TurnkeyML + Lemonade Server | **S2-M6** (implemented) | NPU/hybrid LLM serving (OpenAI-compatible); sibling to Ollama | Optional WARN path; not required for Stage 3 gate |
 | Digest AI | **S2-M7** (planned) | Model ingestion/analysis diagnostics (ONNX/HF) | Optional; never proof of NPU inference alone |
 | AnythingLLM + embeddings | **S2-M3** (implemented) | Offline RAG runtime path | Optional; not part of Stage 3 gate |
 | GAIA | **S3** (planned app) | Multi-agent local RAG / agents on top of S2 backends | Not a Stage 2 runtime |
@@ -106,9 +106,8 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 ### Gap Analysis
 
 * Missing S2 work:
-  * **S2-M6** TurnkeyML + Lemonade NPU/hybrid LLM serving (not present).
   * **S2-M7** Digest AI model analysis tooling (not present).
-  * S2-M2, S2-M3, S2-M4, and S2-M5 are implemented, including profiled EP verification (`scripts/lib/npu_ep_verify.py`), offline RAG lifecycle (`300`/`310`/`320`), and CPU/GPU/NPU comparison (`scripts/245-compare-cpu-gpu-npu.sh`). Tiny ONNX MatMul smokes often cannot exercise VAIML; S2-M6 is the planned path for real NPU-accelerated LLM serving.
+  * S2-M2, S2-M3, S2-M4, S2-M5, and S2-M6 are implemented, including profiled EP verification, offline RAG lifecycle, CPU/GPU/NPU comparison, and TurnkeyML/Lemonade LLM serving (`170`/`160`/`165`).
 * Missing S3 work: ComfyUI installer, model installer, VAEs, LoRAs, ControlNet, upscalers, workflow subdirectories, startup/shutdown/status/health automation, Whisper installation/validation, local text-generation validation, embedding validation, model-management validation, **GAIA** agent/RAG application, and **LM Studio** desktop LLM install/validate (optional UI).
 * Missing S4 work: VS Code installer, Continue config, Aider installation, Git/GitHub CLI validation, ShellCheck/Ruff/Black/Pyright setup, offline code-generation and code-review validation; point coding assistants at Ollama and/or Lemonade OpenAI endpoints when available.
 * Missing S5 work: update, health-check, backup, restore, regression, release, status, startup/shutdown, workflow-launching, and documentation-maintenance automation (including future Lemonade/GAIA/LM Studio services).
@@ -119,7 +118,7 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 2. ~~Require profiled AMD EP execution before NPU PASS.~~ Done (`scripts/lib/npu_ep_verify.py`, hardened `230` / `245` / `240`).
 3. ~~Implement S2-M4 CPU/GPU/NPU comparison benchmark.~~ Done (`scripts/245-compare-cpu-gpu-npu.sh`).
 4. ~~Complete S2-M3 Offline RAG full offline lifecycle.~~ Done (`scripts/300`/`310`/`320` staged lifecycle + aggregate validation).
-5. Implement S2-M6 TurnkeyML + Lemonade install/validate/benchmark (offline-first, inventory-first on Linux).
+5. ~~Implement S2-M6 TurnkeyML + Lemonade install/validate/benchmark.~~ Done (`scripts/170`/`160`/`165`, `stage2-lemonade`).
 6. Implement S2-M7 Digest AI install and model-analysis reports (optional diagnostics).
 7. Keep S2-M5 model manifest entries current as required offline models are selected (including Lemonade-compatible entries when S2-M6 lands).
 8. Implement S3-M1 ComfyUI installer with validation.
@@ -432,9 +431,9 @@ Prepare and validate the Ryzen AI software stack and local acceleration runtimes
 ### Stage 2 implementation order (priority)
 
 1. ~~**S2-M3** — Finish Offline RAG full offline lifecycle.~~ **Done** (optional path; not a Stage 3 gate).
-2. **S2-M6** — TurnkeyML + Lemonade (real NPU/hybrid LLM serving path after EP verification).
+2. ~~**S2-M6** — TurnkeyML + Lemonade.~~ **Done** (`stage2-lemonade`; WARN-friendly; Ollama sibling).
 3. **S2-M7** — Digest AI model analysis (optional diagnostics).
-4. **S2-M5 polish** — Keep manifest entries current (chat/coding/embedding; Lemonade-compatible models when S2-M6 lands).
+4. **S2-M5 polish** — Keep manifest entries current (chat/coding/embedding; Lemonade models when staged).
 5. Then proceed to Stage 3 apps (ComfyUI, then GAIA / LM Studio as planned).
 
 ### S2-M1 — Base AI Runtime
@@ -681,7 +680,7 @@ Implemented / Planned:
 
 ### S2-M6 — NPU LLM Serving (TurnkeyML + Lemonade)
 
-**Status:** Planning
+**Status:** Implemented (optional WARN-friendly path; not a Stage 3 hard gate)
 
 #### Description
 
@@ -695,21 +694,24 @@ Do not place Lemonade only in Stage 3: applications (GAIA, Continue, Open WebUI 
 scripts/160-install-lemonade.sh
 scripts/165-validate-lemonade.sh
 scripts/170-install-turnkeyml.sh
+scripts/lib/lemonade-env.sh
 reports/latest/lemonade-status.json
 reports/latest/lemonade-status.md
-# Extend when present:
+reports/latest/lemonade-validation.json
+reports/latest/turnkeyml-status.json
+# Extended:
 scripts/140-benchmark-llm.sh
-scripts/245-compare-cpu-gpu-npu.sh
 configs/models/manifest.yaml
 docs/npu-status.md
+configs/offline/ai-runtime.env
 ```
 
 Implemented / Planned:
 
-* Planned / Not present: all scripts and reports above.
-* Offline-first: staged wheels/artifacts under `.ai370-ai/` (same inventory pattern as `205`).
+* Implemented: install/validate scripts, dedicated `.ai370-ai/lemonade/venv` (Python 3.10–3.13), offline wheelhouse/staged installs, OpenAI smoke when server is up, `stage2-lemonade` command, wiring into `stage2` / `stage2-runtime` / `stage2-npu`, optional Lemonade path in `140-benchmark-llm.sh`, manifest entry `lemonade-chat-gguf`, docs in `docs/npu-status.md`.
+* Offline-first: staged wheels under `.ai370-ai/wheelhouse` or `.ai370-ai/offline-artifacts/lemonade/`.
 * Linux maturity: inventory and diagnose when NPU/hybrid backends are unavailable; never assume Windows one-click installers.
-* Gate policy: Lemonade failure → **WARN** (experimental), not hard FAIL of all Stage 2, until packaging is solid.
+* Gate policy: Lemonade failure → **WARN** (experimental), not hard FAIL of all Stage 2.
 
 #### Acceptance Criteria
 
@@ -725,6 +727,7 @@ Implemented / Planned:
 ./scripts/170-install-turnkeyml.sh
 ./scripts/160-install-lemonade.sh
 ./scripts/165-validate-lemonade.sh
+./ai370-optimize.sh stage2-lemonade
 ./scripts/140-benchmark-llm.sh
 ```
 
@@ -732,10 +735,10 @@ Implemented / Planned:
 
 * [x] Stable ID assigned.
 * [x] Unique descriptive name assigned.
-* [ ] Deliverables implemented.
-* [ ] Offline/staged install path documented.
-* [ ] Validation report generated.
-* [ ] Optional wiring into `stage2` / `stage2-npu` (WARN-friendly).
+* [x] Deliverables implemented.
+* [x] Offline/staged install path documented.
+* [x] Validation report generated.
+* [x] Optional wiring into `stage2` / `stage2-npu` (WARN-friendly).
 
 ### S2-M7 — Model Analysis Tooling (Digest AI)
 
