@@ -76,6 +76,7 @@ Stage 2 scripts (S2 deliverables across runtime + NPU):
   scripts/220-check-vitis-ai-ep.sh
   scripts/230-benchmark-npu.sh
   scripts/240-write-tier3-validation.sh
+  scripts/245-compare-cpu-gpu-npu.sh
 
 Backward-compatible aliases:
   inventory, audit        -> hardware (Stage 1 / legacy Tier 1)
@@ -317,6 +318,7 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
     # Always finalize the Stage 2 NPU gate artifact so stage2 alone refreshes require_tier123_pass inputs.
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     echo "[INFO] Stage 2 RAG is optional and not part of the Stage 3 gate; run stage2-rag when needed."
@@ -330,6 +332,7 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     ;;
 
@@ -356,6 +359,7 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     ;;
 
@@ -365,6 +369,7 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     ;;
 
@@ -415,6 +420,8 @@ case "$CMD" in
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
     run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
+    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
+    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     # Explicit full AMD accel (ROCm repos + XRT; risk already accepted)
     if [[ -f "$PROJECT_ROOT/scripts/65-amd-acceleration-install.sh" ]]; then
       run_script "scripts/65-amd-acceleration-install.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
@@ -422,6 +429,7 @@ case "$CMD" in
     # Re-validate GPU/NPU after accel
     run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
+    run_script "scripts/245-compare-cpu-gpu-npu.sh" "$OFFLINE"
     # Stage 3 image generation (gate will be satisfied by above)
     run_script "scripts/70-comfyui-workflows.sh"
     run_script "scripts/comfyui-benchmark.sh"

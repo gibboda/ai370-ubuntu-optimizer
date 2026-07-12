@@ -113,6 +113,7 @@ Implemented:
   `scripts/205-install-xrt-ryzen-ai.sh`,
   `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`,
   `scripts/230-benchmark-npu.sh`, `scripts/240-write-tier3-validation.sh`,
+  `scripts/245-compare-cpu-gpu-npu.sh`,
   `docs/npu-status.md`
 
 Staged / partial (present, not full Stage 2 RAG / Tier 4 implementation):
