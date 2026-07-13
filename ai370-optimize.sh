@@ -198,6 +198,8 @@ export_stage1_env() {
   else
     export AI370_STAGE1_WITH_AI_SMOKE=false
   fi
+  # Honor orchestrator --dry-run for optional apply-tuning (40-platform-tuning).
+  export DRY_RUN="${DRY_RUN:-false}"
 }
 
 run_stage1_inventory() {
