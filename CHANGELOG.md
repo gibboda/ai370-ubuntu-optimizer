@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.3](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.2...v0.12.3) (2026-07-13)
+
+
+### Bug Fixes
+
+* **tier1:** Keep Stage 1 PASS on soft acceptance misses ([#134](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/134)) ([6dd215f](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/6dd215f9e6567eb409b28348b90a8e2f91fdacdd))
+
 ## [0.12.2](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.1...v0.12.2) (2026-07-12)
 
 
