@@ -17,13 +17,21 @@ WITH_LEMONADE="false"
 WITH_DIGEST="false"
 WITH_RAG="false"
 BENCH="false"
+# Package E Stage 1 options
+WITH_AI_SMOKE="false"
+APPLY_TUNING="false"
+STRICT="false"
+STAGE1_VALIDATE_SCOPE="full"
 
 usage() {
   cat <<'USAGE'
 Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+       [--with-ai-smoke] [--apply-tuning] [--strict]
   ./ai370-optimize.sh stage1-inventory [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+       [--strict]
   ./ai370-optimize.sh stage1-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+       [--inventory] [--strict]
   ./ai370-optimize.sh stage2 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
        [--with-lemonade] [--with-digest] [--with-rag]
   ./ai370-optimize.sh stage2-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
@@ -57,10 +65,15 @@ Legacy / detailed phase commands (compat; prefer stage1/stage2):
   ./ai370-optimize.sh comfyui-install | comfyui-bench | final-validate | all
   (Broken root script paths retarget scripts/legacy/ or modern Stage 1/2 scripts.)
 
-Stage 1 (Package C streamlined):
-  10 (incl. NPU), 20 (BIOS+firmware; 25 wrapper), 30, 40-platform-tuning (40/50/60 wrappers),
-  70, 80 (no pip by default), 90
-  stage1-inventory = detect + firmware + kernel + GPU + validate (no tuning/smoke)
+Stage 1 (Package C + E):
+  Canonical: 10 (incl. NPU), 20 (BIOS+firmware; 25 wrapper), 30,
+    40-platform-tuning (40/50/60 wrappers; plan-only unless --apply-tuning),
+    70, 90 (scope: inventory|full|smoke)
+  Default stage1 skips script 80; pass --with-ai-smoke (or AI370_STAGE1_WITH_AI_SMOKE=true)
+  --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing
+  --apply-tuning (or AI370_APPLY_TUNING=true): run generated runtime power-profile commands
+  stage1-inventory = detect + firmware + kernel + GPU + inventory-scope validate
+  stage1-validate --inventory re-checks inventory scope only
 
 Stage 2 core (default stage2 / Stage 3 gate path):
   Runtime: 100, 110, 120, 130, 140, 145, 150
@@ -79,6 +92,8 @@ Defaults:
   persistence runtime
 
 Notes:
+  Stage 1 PASS may still include acceptance WARNs (missing optional hardware); that
+    is intentional and experimental-friendly. Use --strict for hard AI370 checks.
   stage2 is core-only by default (runtime + NPU + gate artifacts). Optional AMD
     product packs require --with-lemonade, --with-digest, and/or --with-rag.
   stage2-validate is a cheap gate refresh by default; pass --bench for LLM smoke
@@ -103,8 +118,23 @@ for arg in "$@"; do
     --with-digest) WITH_DIGEST="true" ;;
     --with-rag) WITH_RAG="true" ;;
     --bench|--full) BENCH="true" ;;
+    --with-ai-smoke) WITH_AI_SMOKE="true" ;;
+    --apply-tuning) APPLY_TUNING="true" ;;
+    --strict) STRICT="true" ;;
+    --inventory) STAGE1_VALIDATE_SCOPE="inventory" ;;
   esac
 done
+
+# Env overrides (Package E) — CLI flags win when set true above; env can enable too.
+if [[ "${AI370_STAGE1_WITH_AI_SMOKE:-false}" == "true" ]]; then
+  WITH_AI_SMOKE="true"
+fi
+if [[ "${AI370_APPLY_TUNING:-false}" == "true" ]]; then
+  APPLY_TUNING="true"
+fi
+if [[ "${AI370_STAGE1_STRICT:-false}" == "true" ]]; then
+  STRICT="true"
+fi
 
 case "$MODE" in
   safe|aggressive) ;;
@@ -151,29 +181,61 @@ run_script_or_legacy() {
   fi
 }
 
+export_stage1_env() {
+  # Propagate Package E options into Stage 1 scripts via environment.
+  if [[ "$STRICT" == "true" ]]; then
+    export AI370_STAGE1_STRICT=true
+  else
+    export AI370_STAGE1_STRICT=false
+  fi
+  if [[ "$APPLY_TUNING" == "true" ]]; then
+    export AI370_APPLY_TUNING=true
+  else
+    export AI370_APPLY_TUNING=false
+  fi
+  if [[ "$WITH_AI_SMOKE" == "true" ]]; then
+    export AI370_STAGE1_WITH_AI_SMOKE=true
+  else
+    export AI370_STAGE1_WITH_AI_SMOKE=false
+  fi
+  # Honor orchestrator --dry-run for optional apply-tuning (40-platform-tuning).
+  export DRY_RUN="${DRY_RUN:-false}"
+}
+
 run_stage1_inventory() {
   echo "[INFO] Stage 1 inventory – detect + firmware + kernel + GPU + inventory-scope validate (no tuning/smoke)"
+  export_stage1_env
   run_script "scripts/10-detect-hardware.sh"
   # 20 writes both BIOS baseline and firmware validation (25 is a wrapper)
   run_script "scripts/20-check-bios.sh"
   run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
   run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
-  # inventory scope: do not require tier1-local-ai-benchmark.json from script 80
+  # inventory scope: no platform-tuning / script 80 requirement
   run_script "scripts/90-validate.sh" "inventory"
   write_report_index
 }
 
 run_stage1() {
-  echo "[INFO] Stage 1 – Hardware Detection & System Optimization"
+  echo "[INFO] Stage 1 – Hardware Detection & System Optimization (platform plan; optional AI smoke)"
+  export_stage1_env
   run_script "scripts/10-detect-hardware.sh"
   # Combined BIOS + firmware (Package C); keep 25 as optional no-op path for compat
   run_script "scripts/20-check-bios.sh"
   run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
+  # Plan-only platform recommendations unless --apply-tuning / AI370_APPLY_TUNING=true
   run_script "scripts/40-platform-tuning.sh"
   run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
   # NPU detect is included in 10; 75 remains a thin wrapper if called directly
-  run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
-  run_script "scripts/90-validate.sh"
+  # Package E: script 80 demoted — opt-in via --with-ai-smoke (Stage 2–adjacent readiness)
+  local validate_scope="full"
+  if [[ "$WITH_AI_SMOKE" == "true" ]]; then
+    echo "[INFO] Running optional Stage 1 local-AI smoke (script 80)"
+    run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
+    validate_scope="smoke"
+  else
+    echo "[INFO] Skipping script 80 local-AI smoke (pass --with-ai-smoke to include)"
+  fi
+  run_script "scripts/90-validate.sh" "$validate_scope"
   write_report_index
 }
 
@@ -405,6 +467,18 @@ print_context() {
   if [[ "$BENCH" == "true" ]]; then
     echo "[INFO] Bench mode: true (full smoke/compare)"
   fi
+  if [[ "$WITH_AI_SMOKE" == "true" ]]; then
+    echo "[INFO] Stage 1 AI smoke: true (script 80)"
+  fi
+  if [[ "$APPLY_TUNING" == "true" ]]; then
+    echo "[INFO] Apply runtime tuning: true"
+  fi
+  if [[ "$STRICT" == "true" ]]; then
+    echo "[INFO] Stage 1 strict gate: true (gfx1150 + NPU required)"
+  fi
+  if [[ "$STAGE1_VALIDATE_SCOPE" == "inventory" ]]; then
+    echo "[INFO] Stage 1 validate scope: inventory"
+  fi
 }
 
 load_runtime_config
@@ -421,7 +495,8 @@ case "$CMD" in
     ;;
 
   stage1-validate|tier1-validate)
-    run_script "scripts/90-validate.sh"
+    export_stage1_env
+    run_script "scripts/90-validate.sh" "$STAGE1_VALIDATE_SCOPE"
     write_report_index
     ;;
 

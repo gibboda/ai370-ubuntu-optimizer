@@ -56,24 +56,32 @@ validation criteria have passed**).
 
 **Legacy tier alignment:** Roadmap Stage 1 maps directly to legacy Tier 1.
 Complete this stage before starting any Stage 2 work. The sequence is detection
-first, validation second, optimization third, and benchmarking last, matching
-the roadmap operating rules.
+first, validation second, platform planning third, and optional local-AI smoke
+last, matching the roadmap operating rules (Package C + E).
 
 **Canonical commands:**
 
 ```bash
-./ai370-optimize.sh stage1                 # Run the full Stage 1 sequence (recommended)
-./ai370-optimize.sh stage1-validate        # Final Stage 1 gate + acceptance checks
-./ai370-optimize.sh tier1                  # Legacy alias
-./ai370-optimize.sh tier1-validate         # Legacy alias
+./ai370-optimize.sh stage1                 # Platform Stage 1 (no script 80 by default)
+./ai370-optimize.sh stage1-inventory       # Faster detect + inventory-scope validate
+./ai370-optimize.sh stage1-validate        # Final Stage 1 gate (full scope)
+./ai370-optimize.sh stage1-validate --inventory  # Re-check inventory scope only
+./ai370-optimize.sh stage1 --with-ai-smoke # Include optional local-AI smoke (script 80)
+./ai370-optimize.sh stage1 --apply-tuning  # Apply runtime power-profile commands after plan
+./ai370-optimize.sh stage1 --strict        # FAIL if gfx1150 or NPU missing
+./ai370-optimize.sh tier1                  # Legacy alias for stage1
+./ai370-optimize.sh tier1-validate         # Legacy alias for stage1-validate
 ```
 
-**Execution order:**
+**Execution order (default `stage1`):**
 
 ```text
-10-detect-hardware -> 20-check-bios -> 25-check-firmware -> 30-validate-kernel
--> 40-optimize-cpu -> 50-optimize-memory -> 60-optimize-storage
--> 70-validate-gpu-stack -> 75-detect-npu -> 80-benchmark-local-ai -> 90-validate
+10-detect-hardware (incl. NPU; 75 wrapper)
+-> 20-check-bios (BIOS + firmware; 25 wrapper)
+-> 30-validate-kernel
+-> 40-platform-tuning (CPU+memory+storage plan; 40/50/60 wrappers)
+-> 70-validate-gpu-stack
+-> 90-validate (scope=full; script 80 skipped unless --with-ai-smoke)
 ```
 
 ## Canonical Roadmap and Status
@@ -86,9 +94,10 @@ files, current stage alignment, and contributor guidance.
 Current high-level status (see `docs/ROADMAP.md` for details):
 
 - Stage 1: **Implemented** (hardware detection, BIOS/firmware validation,
-  kernel/driver validation, system optimization, and benchmarking). Package C
-  merges platform tuning and firmware steps; use `stage1-inventory` for a
-  faster detect-only pass.
+  kernel/driver validation, platform tuning plans). Package C merges platform
+  tuning and firmware steps; Package E demotes script 80 from default
+  `stage1`, adds optional `--strict` / `--apply-tuning` / `--with-ai-smoke`.
+  Use `stage1-inventory` for a faster detect-only pass.
 - Stage 2: **Implemented** for planned roadmap scope (S2-M1 through S2-M7).
   Aggregate/runtime/NPU commands: `stage2`, `stage2-runtime`, `stage2-npu`
   (legacy `tier2` / `tier3`). NPU PASS requires profiled AMD EP execution
@@ -103,17 +112,19 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 
 ### Implemented / Planned (high level)
 
-**Stage 1 — Implemented (Package C streamlined):**
+**Stage 1 — Implemented (Package C + E streamlined):**
 
 - `scripts/10-detect-hardware.sh` (includes NPU detect; `75` is a wrapper)
 - `scripts/20-check-bios.sh` (BIOS + firmware validation; `25` is a wrapper)
 - `scripts/30-validate-kernel.sh`
-- `scripts/40-platform-tuning.sh` (CPU+memory+storage; `40`/`50`/`60` wrappers)
-- `scripts/70-validate-gpu-stack.sh`, `scripts/80-benchmark-local-ai.sh`
-  (no pip by default; set `AI370_STAGE1_INSTALL_ORT=true` for optional ORT smoke)
-- `scripts/90-validate.sh`
-- Command: `stage1-inventory` (detect + firmware + kernel + GPU + inventory-scope
-  validate; does not require local-AI smoke from script 80)
+- `scripts/40-platform-tuning.sh` (CPU+memory+storage plan; `40`/`50`/`60`
+  wrappers; `--apply-tuning` / `AI370_APPLY_TUNING=true` runs runtime commands)
+- `scripts/70-validate-gpu-stack.sh`
+- `scripts/80-benchmark-local-ai.sh` (optional; not in default `stage1`;
+  `--with-ai-smoke` / `AI370_STAGE1_WITH_AI_SMOKE=true`; no pip by default)
+- `scripts/90-validate.sh` (scopes: `inventory` | `full` | `smoke`;
+  `--strict` / `AI370_STAGE1_STRICT=true` fails missing gfx1150/NPU)
+- Commands: `stage1`, `stage1-inventory`, `stage1-validate` (`--inventory`)
 
 **Stage 2 — Implemented (S2-M1–S2-M7; optional paths noted):**
 
@@ -155,40 +166,45 @@ workflows under `workflows/comfyui/`.
 For the authoritative, up-to-date status and contributor guidance consult
 `docs/ROADMAP.md` (including **Next implementation steps** after Stage 2).
 
-**Deliverables (Stage 1 scripts):**
+**Deliverables (Stage 1 scripts — canonical + wrappers):**
 
 ```text
 scripts/
-  10-detect-hardware.sh
-  20-check-bios.sh
-  25-check-firmware.sh
-  30-validate-kernel.sh
-  40-optimize-cpu.sh
-  50-optimize-memory.sh
-  60-optimize-storage.sh
-  70-validate-gpu-stack.sh
-  75-detect-npu.sh
-  80-benchmark-local-ai.sh
-  90-validate.sh
+  10-detect-hardware.sh          # canonical (incl. NPU → tier1-npu.json)
+  20-check-bios.sh               # canonical (BIOS + firmware)
+  25-check-firmware.sh           # wrapper → 20
+  30-validate-kernel.sh          # canonical
+  40-platform-tuning.sh          # canonical (CPU+memory+storage plan)
+  40-optimize-cpu.sh             # wrapper → 40-platform-tuning
+  50-optimize-memory.sh          # wrapper → 40-platform-tuning
+  60-optimize-storage.sh         # wrapper → 40-platform-tuning
+  70-validate-gpu-stack.sh       # canonical
+  75-detect-npu.sh               # wrapper → 10
+  80-benchmark-local-ai.sh       # optional (--with-ai-smoke)
+  90-validate.sh                 # gate (inventory|full|smoke)
 ```
 
 **Acceptance Criteria:**
 
-- `./ai370-optimize.sh stage1` completes all Stage 1 scripts in milestone order
-  (`tier1` remains an alias).
-- Radeon 890M detected, or profile variance is clearly reported.
+- `./ai370-optimize.sh stage1` completes the canonical platform sequence
+  (`tier1` remains an alias). Script 80 is optional.
+- Radeon 890M detected, or profile variance is clearly reported (WARN by
+  default; FAIL with `--strict`).
 - AMDGPU kernel driver state recorded.
 - Vulkan available, or missing support is clearly reported.
 - ROCm detected or cleanly reported missing.
-- AMDXDNA / XDNA2 NPU detected or cleanly reported missing.
+- AMDXDNA / XDNA2 NPU detected or cleanly reported missing (WARN by default;
+  FAIL with `--strict`).
 - BIOS 2.01 validation recorded for EliteMini AI370.
 - Firmware, Secure Boot, and microcode validation recorded.
 - Kernel validation recorded.
-- CPU, memory, and storage optimization plans complete without overwriting user
-  data.
-- Local AI benchmark output is generated.
-- `scripts/90-validate.sh` exits successfully and writes
-  `reports/latest/tier1-validation.json` plus `reports/latest/tier1-summary.md`.
+- CPU, memory, and storage platform plans complete without overwriting user
+  data (runtime apply is opt-in via `--apply-tuning`).
+- Local AI smoke output is generated when `--with-ai-smoke` is used.
+- `scripts/90-validate.sh` exits successfully (or FAIL under strict missing
+  hardware) and writes `reports/latest/tier1-validation.json` plus
+  `reports/latest/tier1-summary.md`. Stage 1 `PASS` may still list acceptance
+  WARNs; that is intentional for experimental iteration.
 
 ### Stage 2 – Local AI Runtime & AI Optimization Software
 
@@ -379,8 +395,9 @@ acceleration was explicitly installed and re-validated.
 ### Stage Commands (recommended user interface)
 
 ```bash
-./ai370-optimize.sh stage1                 # Full core platform validation + optimization
-./ai370-optimize.sh stage1-validate
+./ai370-optimize.sh stage1                 # Platform Stage 1 (plan-only; optional --with-ai-smoke/--strict/--apply-tuning)
+./ai370-optimize.sh stage1-inventory       # Detect-only + inventory-scope validate
+./ai370-optimize.sh stage1-validate        # Gate re-check (add --inventory or --strict)
 ./ai370-optimize.sh stage2 [--offline] [--with-lemonade] [--with-digest] [--with-rag]
 ./ai370-optimize.sh stage2-validate [--offline] [--bench] [--with-lemonade]
 ./ai370-optimize.sh stage2-runtime [--offline] [--with-lemonade]

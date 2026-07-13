@@ -14,7 +14,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 
 ### Current Repository Alignment
 
-* Stage 1 is **implemented**. It remains the required first validation gate for later stages. The Stage 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
+* Stage 1 is **implemented**. It remains the required first validation gate for later stages. **Canonical** command surface: `scripts/10-detect-hardware.sh` (incl. NPU; `75` wrapper), `scripts/20-check-bios.sh` (BIOS+firmware; `25` wrapper), `scripts/30-validate-kernel.sh`, `scripts/40-platform-tuning.sh` (CPU+memory+storage plan; `40`/`50`/`60` wrappers), `scripts/70-validate-gpu-stack.sh`, optional `scripts/80-benchmark-local-ai.sh` (`--with-ai-smoke`), and `scripts/90-validate.sh` (`inventory` | `full` | `smoke`). Orchestrator: `stage1`, `stage1-inventory`, `stage1-validate` (`--inventory`); Package E flags `--strict`, `--apply-tuning`, `--with-ai-smoke`.
 * Stage 2 planned scope is **implemented** (S2-M1 through S2-M7). Remaining Stage 2 items are **optional polish** (manifest population, full Lemonade/AnythingLLM smokes), not missing milestones. Core runtime: `scripts/100`–`150`, `245`. Offline RAG (**S2-M3**): `scripts/300`–`320` via `stage2-rag` / `tier4` (optional; not part of the Stage 3 gate). NPU stack (**S2-M2**): `scripts/200`–`240`, `lib/npu_ep_verify.py`, `docs/npu-status.md`; NPU PASS requires profiled AMD EP execution (`ep_executed` / `ep_verified`). XRT/Ryzen AI package install (`205`) requires `--accept-amd-acceleration-risk`. **S2-M6** TurnkeyML + Lemonade: `scripts/170` / `160` / `165`, `stage2-lemonade`. **S2-M7** Digest AI: `scripts/250` / `255`, `stage2-digest` (diagnostics only; ONNX fallback when Python 3.9–3.10 is unavailable).
 * Stage 3 is the **active implementation focus**. ComfyUI workflow and benchmark artifacts exist (`scripts/420-benchmark-comfyui.sh`, `workflows/comfyui/`). Install/model scripts, documentation, required workflow subdirectories, automation, and the planned **S3-M7** ComfyUI heterogeneous GPU/NPU acceleration policy remain planned. AMD **GAIA** (agent/RAG app) and **LM Studio** (desktop LLM UI) are planned Stage 3 applications, not Stage 2 gate runtimes.
 * Stages 4 and 5 remain planning sections and should not be started until Stage 3 validation gates and application baselines are in place.
@@ -41,7 +41,7 @@ or **missing required artifacts** always blocks.
 
 | Gate input | Artifact | Accepted statuses | Notes |
 | --- | --- | --- | --- |
-| Stage 1 | `reports/latest/tier1-validation.json` | `PASS` only | Strict hardware foundation. |
+| Stage 1 | `reports/latest/tier1-validation.json` | `PASS` only | Hardware foundation. Default validate is experimental-friendly: acceptance criteria (gfx1150, NPU) may WARN while overall status remains `PASS`. Optional `--strict` / `AI370_STAGE1_STRICT=true` elevates missing gfx1150/NPU to `FAIL`. |
 | Stage 2 runtime | `reports/latest/tier2-validation.json` | `PASS`, `WARN` | `WARN` covers missing optional models, partial runtimes, or smoke issues. |
 | Offline model storage (S2-M5) | `reports/latest/offline-model-storage.json` | `PASS`, `WARN` | File is required. Optional manifest entries may WARN without failing the gate. |
 | Stage 2 NPU | `reports/latest/tier3-validation.json` | `PASS`, `WARN`, `EXPERIMENTAL-PASS` | `EXPERIMENTAL-PASS` means module/device/XRT visibility without a full AMD EP benchmark PASS. |
@@ -59,8 +59,10 @@ or **missing required artifacts** always blocks.
 * Stage 2 RAG (`stage2-rag`), Lemonade (`stage2-lemonade`), and Digest
   (`stage2-digest`) are **optional** and are **not** part of
   `require_tier123_pass`.
-* A future strict gate mode may reject `WARN` / `EXPERIMENTAL-PASS`; until then,
-  treat those statuses as “proceed with caution,” not full production readiness.
+* Stage 1 optional strict mode (`--strict` / `AI370_STAGE1_STRICT=true`) fails
+  missing gfx1150 or NPU. Stage 2/3 still accept `WARN` / `EXPERIMENTAL-PASS`
+  on later gates; treat those statuses as “proceed with caution,” not full
+  production readiness.
 
 `scripts/140-benchmark-llm.sh` records measured smoke metrics when a local model
 is available (`load_time_ms`, `tokens_generated`, `tokens_per_sec`,
@@ -86,7 +88,7 @@ AMD EP execution via `scripts/lib/npu_ep_verify.py` (same rule as `230`).
 Stage 2 planned milestones are complete. Prefer optional Stage 1/2 streamlining or polish only when it unblocks local use; otherwise start Stage 3.
 
 1. **Optional S2 polish (not required for Stage 3 gate):** keep S2-M5 manifest entries current; Lemonade full smoke when a server/model is staged; AnythingLLM full-stack staging when needed.
-2. **Packages A–D streamlining implemented:** docs sync (A), core-only `stage2` (B), Stage 1 merges + tier2 aggregator + NPU reuse (C), model layout staging + S2 smoke + Lemonade/RAG full-smoke docs + GPU diagnostics (D).
+2. **Packages A–E streamlining implemented:** docs sync (A), core-only `stage2` (B), Stage 1 merges + tier2 aggregator + NPU reuse (C), model layout staging + S2 smoke + Lemonade/RAG full-smoke docs + GPU diagnostics (D), Stage 1 hygiene (E): docs/tests, optional `--strict` / `--apply-tuning`, demote script `80` from default `stage1`.
 3. **S3-M1** — ComfyUI installer (`scripts/400-install-comfyui.sh`) with validation report.
 4. **S3-M2** — ComfyUI model installer + manifests (FLUX/SDXL/VAEs/LoRAs/ControlNet).
 5. **S3-M3 / S3-M5** — workflow library directories + start/stop/status/health automation.
@@ -207,8 +209,8 @@ Prepare Ubuntu 26.04 LTS and the AI370 hardware for local AI workloads.
 
 ### Deliverables
 
-* Hardware, BIOS, firmware, kernel, driver, Vulkan, ROCm, AMDXDNA/NPU, CPU, memory, storage, and AI benchmark reports.
-* Stage 1 command orchestration through `ai370-optimize.sh` (`stage1`; legacy alias `tier1`).
+* Hardware, BIOS, firmware, kernel, driver, Vulkan, ROCm, AMDXDNA/NPU, CPU, memory, storage, and optional local-AI smoke reports.
+* Stage 1 command orchestration through `ai370-optimize.sh` (`stage1`, `stage1-inventory`, `stage1-validate`; legacy alias `tier1`).
 
 ### Dependencies
 
@@ -223,8 +225,8 @@ Prepare Ubuntu 26.04 LTS and the AI370 hardware for local AI workloads.
 
 ### Exit Criteria
 
-* `./ai370-optimize.sh stage1` and `./ai370-optimize.sh stage1-validate` complete or report actionable diagnostics.
-* No user data is overwritten.
+* `./ai370-optimize.sh stage1` and `./ai370-optimize.sh stage1-validate` complete or report actionable diagnostics (`PASS` may include acceptance WARNs unless `--strict`).
+* No user data is overwritten; platform tuning remains plan-only unless `--apply-tuning`.
 * Reports are written under `reports/latest/`.
 
 ### S1-M1 — Hardware Detection
@@ -1170,8 +1172,8 @@ Every evaluated hybrid or NPU workload must use one of these classifications:
 * Silent CPU fallback is detected and reported for ComfyUI, external services, and custom-node execution paths.
 * Stage 2 NPU validation artifacts are reused rather than regenerated as a separate foundation.
 * NPU workloads are validated independently before ComfyUI integration.
-* At least one XDNA2-compatible workload is evaluated.
-* NPU workload execution is proven through profiling, provider telemetry, or another reproducible execution record.
+* At least one candidate XDNA2 workload is evaluated and classified. If every evaluated candidate is classified as `UNSUPPORTED` or `BLOCKED_UPSTREAM`, no XDNA2-compatible workload is required for Stage 3 exit when the Radeon 890M GPU fallback remains validated.
+* For workloads classified as `SUPPORTED` or `EXPERIMENTAL`, NPU workload execution is proven through profiling, provider telemetry, or another reproducible execution record. For workloads classified as `UNSUPPORTED` or `BLOCKED_UPSTREAM`, a documented unsupported evaluation is sufficient when the Radeon 890M GPU fallback remains validated.
 * GPU-only versus hybrid GPU/NPU benchmarking is performed where workloads are technically comparable.
 * Benchmarks measure latency, throughput, memory use, device allocation, data-transfer overhead, power consumption when available, and image-quality implications.
 * GPU and CPU fallback paths are documented and validated.
@@ -1196,7 +1198,7 @@ Every evaluated hybrid or NPU workload must use one of these classifications:
 * [ ] Deliverables implemented.
 * [ ] Radeon 890M GPU baseline validated and CPU fallback detection reported.
 * [ ] Stage 2 NPU validation artifacts reused for ComfyUI integration decisions.
-* [ ] At least one XDNA2-compatible workload evaluated with execution evidence.
+* [ ] At least one candidate XDNA2 workload evaluated and classified; execution evidence is required only for `SUPPORTED` or `EXPERIMENTAL` classifications. If every evaluated candidate is `UNSUPPORTED` or `BLOCKED_UPSTREAM`, documented unsupported evaluation is sufficient when the Radeon 890M fallback is validated.
 * [ ] GPU-only versus hybrid benchmark report generated.
 * [ ] Acceleration policy generated with fallback and unsupported-workload documentation.
 

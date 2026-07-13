@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
 # Stage 1: combined CPU / memory / storage runtime tuning plans (Package C merge of 40/50/60).
-# Detection + reviewable recommendations only; no system-persistent changes.
+# Detection + reviewable recommendations by default (no system-persistent changes).
+# Opt-in runtime apply: AI370_APPLY_TUNING=true or ./ai370-optimize.sh stage1 --apply-tuning
 
 set -euo pipefail
 
@@ -156,6 +157,67 @@ print(json.dumps({
 PY
 
   echo "[INFO] Wrote tier1-platform-tuning.* (+ compatibility cpu/memory/storage reports)"
+
+  # Package E: optional runtime apply (power profile / cpupower info only; still non-persistent).
+  # Honor DRY_RUN / AI370_DRY_RUN from orchestrator --dry-run (exported by export_stage1_env).
+  local apply="${AI370_APPLY_TUNING:-false}"
+  local dry="${DRY_RUN:-${AI370_DRY_RUN:-false}}"
+  case "$dry" in
+    true|1|yes|on) dry="true" ;;
+    *) dry="false" ;;
+  esac
+  case "$apply" in
+    true|1|yes|on)
+      if [[ "$dry" == "true" ]]; then
+        echo "[INFO] AI370_APPLY_TUNING set but dry-run active; not applying runtime tuning."
+        python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY' || true
+import json, sys
+path = sys.argv[1]
+try:
+    data = json.load(open(path))
+except Exception:
+    raise SystemExit(0)
+data["runtime_apply"] = {
+    "requested": True,
+    "applied": False,
+    "dry_run": True,
+    "commands": "reports/latest/tier1-cpu-runtime-commands.sh",
+}
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
+      else
+        echo "[INFO] Applying runtime tuning commands (AI370_APPLY_TUNING=true)..."
+        # shellcheck disable=SC1091
+        bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh" || {
+          echo "[WARN] Runtime tuning commands exited non-zero; review tier1-cpu-runtime-commands.sh"
+        }
+        # Mark apply attempt in JSON for observability
+        python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY' || true
+import json, sys
+path = sys.argv[1]
+try:
+    data = json.load(open(path))
+except Exception:
+    raise SystemExit(0)
+data["runtime_apply"] = {
+    "requested": True,
+    "applied": True,
+    "dry_run": False,
+    "commands": "reports/latest/tier1-cpu-runtime-commands.sh",
+}
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
+      fi
+      ;;
+    *)
+      echo "[INFO] Platform tuning is plan-only. Pass --apply-tuning or AI370_APPLY_TUNING=true to run runtime commands."
+      ;;
+  esac
+
   echo "[INFO] 40-platform-tuning.sh complete."
 }
 

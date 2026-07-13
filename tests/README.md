@@ -18,12 +18,16 @@ Or from repo root after making executable:
 
 ## Scope (current)
 
-### Stage 1 (`smoke_tier1.sh`)
+### Stage 1 (`smoke_tier1.sh` — Package E)
 
-- Syntax (`bash -n`)
-- Non-mutating or dry-run friendly execution of tier scripts
-- Presence + basic structure of `reports/latest/tier1-*.json` artifacts
-- Milestone 1 acceptance signals (GPU arch, NPU, BIOS metadata, Vulkan keys)
+- Syntax (`bash -n`) for canonical Stage 1 scripts, `40-platform-tuning`, `lib/common.sh`, orchestrator
+- Help mentions `stage1-inventory`, `--with-ai-smoke`, `--apply-tuning`, `--strict`
+- `stage1-inventory` → asserts `scope == inventory` and no local-AI smoke requirement
+- Asserts `tier1-npu.json` from script `10`
+- Runs `40-platform-tuning` plan-only and asserts platform-tuning artifacts
+- `stage1-validate` (full scope) → no AI smoke required by default
+- Strict mode (`AI370_STAGE1_STRICT=true`) elevates missing gfx1150/NPU to FAIL
+- Presence + structure of `reports/latest/tier1-*.json` gate artifacts
 
 ### Stage 2 (`smoke_tier2.sh` — Package D)
 
@@ -42,4 +46,4 @@ See `TASK_PROPOSALS.md` and the main implementation plan for additional test ide
 
 - Follow the repository shell standards (SPDX, `set -euo pipefail`, `main()` where applicable).
 - Smokes must be runnable without the physical AI370 hardware and without network (use `--offline` paths where relevant).
-- Do not mutate system state.
+- Do not mutate system state (Stage 1 apply-tuning is opt-in and not used in smokes).
