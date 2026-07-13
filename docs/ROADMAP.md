@@ -1170,7 +1170,7 @@ Every evaluated hybrid or NPU workload must use one of these classifications:
 * Silent CPU fallback is detected and reported for ComfyUI, external services, and custom-node execution paths.
 * Stage 2 NPU validation artifacts are reused rather than regenerated as a separate foundation.
 * NPU workloads are validated independently before ComfyUI integration.
-* At least one XDNA2-compatible workload is evaluated.
+* At least one candidate XDNA2 workload is evaluated and classified. If every evaluated candidate is classified as `UNSUPPORTED` or `BLOCKED_UPSTREAM`, no XDNA2-compatible workload is required for Stage 3 exit when the Radeon 890M GPU fallback remains validated.
 * For workloads classified as `SUPPORTED` or `EXPERIMENTAL`, NPU workload execution is proven through profiling, provider telemetry, or another reproducible execution record. For workloads classified as `UNSUPPORTED` or `BLOCKED_UPSTREAM`, a documented unsupported evaluation is sufficient when the Radeon 890M GPU fallback remains validated.
 * GPU-only versus hybrid GPU/NPU benchmarking is performed where workloads are technically comparable.
 * Benchmarks measure latency, throughput, memory use, device allocation, data-transfer overhead, power consumption when available, and image-quality implications.
@@ -1196,7 +1196,7 @@ Every evaluated hybrid or NPU workload must use one of these classifications:
 * [ ] Deliverables implemented.
 * [ ] Radeon 890M GPU baseline validated and CPU fallback detection reported.
 * [ ] Stage 2 NPU validation artifacts reused for ComfyUI integration decisions.
-* [ ] At least one XDNA2 workload evaluated; execution evidence is required only for `SUPPORTED` or `EXPERIMENTAL` classifications, while documented `UNSUPPORTED` or `BLOCKED_UPSTREAM` evaluation is sufficient when the Radeon 890M fallback is validated.
+* [ ] At least one candidate XDNA2 workload evaluated and classified; execution evidence is required only for `SUPPORTED` or `EXPERIMENTAL` classifications. If every evaluated candidate is `UNSUPPORTED` or `BLOCKED_UPSTREAM`, documented unsupported evaluation is sufficient when the Radeon 890M fallback is validated.
 * [ ] GPU-only versus hybrid benchmark report generated.
 * [ ] Acceleration policy generated with fallback and unsupported-workload documentation.
 
