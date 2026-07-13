@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.5](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.4...v0.12.5) (2026-07-13)
+
+
+### Bug Fixes
+
+* **tier2:** Do not treat ollama list header as models ([#139](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/139)) ([d16fc29](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/d16fc296069e7bd1b1e69c7c3c4ed36edebc62ef))
+
 ## [0.12.4](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.3...v0.12.4) (2026-07-13)
 
 
