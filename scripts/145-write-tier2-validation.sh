@@ -134,7 +134,33 @@ webui_state = normalize_available(
 
 gguf_models = list(llm.get("gguf_models") or [])
 ollama_list = str((llm.get("ollama") or {}).get("list") or "")
-ollama_has_models = "NAME" in ollama_list
+
+
+def ollama_list_has_models(list_text: str) -> bool:
+    """True only when `ollama list` has a data row (not just the NAME header).
+
+    The table always starts with a NAME/ID/SIZE/MODIFIED header even when no
+    models are installed. Matching on the substring "NAME" falsely reported
+    local_model_available=true for empty registries.
+    """
+    lines = [ln.strip() for ln in (list_text or "").splitlines() if ln.strip()]
+    if not lines:
+        return False
+    head = lines[0].lower()
+    if "command-not-found" in head or head.startswith("error"):
+        return False
+    start = 0
+    first_tok = lines[0].split()[0].upper() if lines[0].split() else ""
+    if first_tok == "NAME":
+        start = 1
+    for line in lines[start:]:
+        name = line.split()[0] if line.split() else ""
+        if name and name.upper() != "NAME":
+            return True
+    return False
+
+
+ollama_has_models = ollama_list_has_models(ollama_list)
 smoke = str(llm.get("local_inference_smoke") or bench.get("local_inference_smoke") or "skipped")
 metrics = llm.get("metrics") or bench.get("metrics") or {}
 measured = bool(bench.get("measured")) or (
