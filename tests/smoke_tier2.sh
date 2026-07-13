@@ -106,9 +106,46 @@ assert data.get("tier") == 2
 assert "status" in data
 assert isinstance(data.get("acceptance"), dict)
 acc = data["acceptance"]
-for key in ("pytorch_available", "llama_cpp_available", "ollama_available"):
+for key in ("pytorch_available", "llama_cpp_available", "ollama_available", "local_model_available"):
     assert key in acc, f"missing acceptance.{key}"
 print("[OK] tier2-validation.json structure + acceptance keys")
+PY
+
+# Regression: empty `ollama list` header must not imply local models (145 gate field).
+python3 - "$PROJECT_ROOT/scripts/145-write-tier2-validation.sh" <<'PY'
+import pathlib, re, sys
+
+src = pathlib.Path(sys.argv[1]).read_text()
+assert 'ollama_has_models = "NAME" in ollama_list' not in src, (
+    "145 still uses NAME-substring false positive for ollama models"
+)
+assert "def ollama_list_has_models" in src, "145 missing ollama_list_has_models helper"
+
+# Mirror the helper logic for behavioral checks (keep aligned with 145).
+def ollama_list_has_models(list_text: str) -> bool:
+    lines = [ln.strip() for ln in (list_text or "").splitlines() if ln.strip()]
+    if not lines:
+        return False
+    head = lines[0].lower()
+    if "command-not-found" in head or head.startswith("error"):
+        return False
+    start = 0
+    first_tok = lines[0].split()[0].upper() if lines[0].split() else ""
+    if first_tok == "NAME":
+        start = 1
+    for line in lines[start:]:
+        name = line.split()[0] if line.split() else ""
+        if name and name.upper() != "NAME":
+            return True
+    return False
+
+assert ollama_list_has_models("NAME    ID    SIZE    MODIFIED\n") is False
+assert ollama_list_has_models(
+    "NAME    ID    SIZE    MODIFIED\nllama3:8b    abc    4.7 GB    yesterday\n"
+) is True
+assert ollama_list_has_models("command-not-found: ollama") is False
+assert ollama_list_has_models("") is False
+print("[OK] ollama list header is not treated as local models present")
 PY
 
 python3 - "$LATEST_DIR/tier3-validation.json" <<'PY'
