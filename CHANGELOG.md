@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.4](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.3...v0.12.4) (2026-07-13)
+
+
+### Bug Fixes
+
+* **tier1:** Avoid double inactive zram status ([#137](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/137)) ([3e8418a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/3e8418ae065e81a889ba8a48dbb99d950b6c04db))
+
 ## [0.12.3](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.2...v0.12.3) (2026-07-13)
 
 
