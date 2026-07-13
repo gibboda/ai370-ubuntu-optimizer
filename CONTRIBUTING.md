@@ -100,6 +100,12 @@ All scripts in this repository follow these conventions:
 3. Open a PR with a title that follows the Conventional Commits format.
 4. CI will validate the PR title automatically and reject commit subjects that
    do not follow the same convention on multi-commit PRs.
+   Before pushing generated or automated commits, validate their subject locally:
+
+   ```bash
+   bash scripts/validate-commit-subject.sh "type(optional-scope): Subject"
+   ```
+
 5. Once merged into `main`, the `release-please` workflow automatically updates
    (or creates) a Release PR. This Release PR handles bumping the version in
    `VERSION` and `.release-please-manifest.json`, and updating `CHANGELOG.md`.

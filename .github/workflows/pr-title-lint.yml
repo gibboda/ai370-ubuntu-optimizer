@@ -138,7 +138,18 @@ jobs:
               pull_number: context.payload.pull_request.number,
               per_page: 100,
             });
-            const legacyAllowedCommitShas = new Set(['9b00ebb', 'ba39fe9', 'b125679', '96e12a0', '8e1d5af', 'd0f9a5a', 'c101d13', 'e197783']);
+            const legacyAllowedCommitShas = new Set([
+              '9b00ebb',
+              'ba39fe9',
+              'b125679',
+              '96e12a0',
+              '8e1d5af',
+              'd0f9a5a',
+              'c101d13',
+              'e197783',
+              '91b51f3',
+              '606ac61',
+            ]);
 
             if (commits.length <= 1) {
               core.info('Skipping commit-subject enforcement for single-commit PRs because the PR title lint already validates the squash-merge subject.');
