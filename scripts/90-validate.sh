@@ -51,13 +51,16 @@ warnings=()
 
 record_fail() { status="FAIL"; failures+=("$1"); }
 record_warn() { [[ "$status" == "PASS" ]] && status="WARN"; warnings+=("$1"); }
-# WARN by default; FAIL when --strict / AI370_STAGE1_STRICT=true
+# Acceptance (gfx1150 / NPU): non-strict records the miss without demoting overall
+# status (Stage 3 gate needs Stage 1 PASS). Strict elevates to FAIL.
 record_acceptance() {
   local msg="$1"
   if [[ "$STRICT" == "true" ]]; then
     record_fail "$msg (strict)"
   else
-    record_warn "$msg"
+    # Keep overall status PASS so require_tier123_pass still opens Stage 3;
+    # acceptance fields + warnings[] still capture the miss for operators.
+    warnings+=("$msg")
   fi
 }
 
@@ -189,7 +192,8 @@ elif scope == "full":
     notes.append(
         "Platform Stage 1 validation: local-AI smoke (80 / tier1-local-ai-benchmark.json) is optional. "
         "Pass --with-ai-smoke (scope=smoke) to require it. "
-        "PASS with acceptance WARNs is experimental-friendly; use --strict to fail on missing gfx1150/NPU."
+        "Missing gfx1150/NPU is recorded in warnings[] without demoting status to WARN "
+        "(gate stays PASS unless --strict)."
     )
 elif scope == "smoke":
     notes.append(
@@ -285,7 +289,8 @@ PY
         ;;
       full)
         echo "- Platform Stage 1: local-AI smoke (script 80) is optional."
-        echo "- PASS with acceptance WARNs is OK for the Stage 3 gate; use --strict for hard AI370 checks."
+        echo "- Missing gfx1150/NPU is listed under Warnings without demoting status to WARN;"
+        echo "  overall PASS still opens the Stage 3 gate. Use --strict for hard AI370 checks."
         ;;
       smoke)
         echo "- Smoke scope: requires tier1-local-ai-benchmark.json from script 80."

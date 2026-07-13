@@ -159,11 +159,34 @@ PY
   echo "[INFO] Wrote tier1-platform-tuning.* (+ compatibility cpu/memory/storage reports)"
 
   # Package E: optional runtime apply (power profile / cpupower info only; still non-persistent).
+  # Honor DRY_RUN / AI370_DRY_RUN from orchestrator --dry-run (exported by export_stage1_env).
   local apply="${AI370_APPLY_TUNING:-false}"
+  local dry="${DRY_RUN:-${AI370_DRY_RUN:-false}}"
+  case "$dry" in
+    true|1|yes|on) dry="true" ;;
+    *) dry="false" ;;
+  esac
   case "$apply" in
     true|1|yes|on)
-      if [[ "${DRY_RUN:-false}" == "true" ]]; then
+      if [[ "$dry" == "true" ]]; then
         echo "[INFO] AI370_APPLY_TUNING set but dry-run active; not applying runtime tuning."
+        python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY' || true
+import json, sys
+path = sys.argv[1]
+try:
+    data = json.load(open(path))
+except Exception:
+    raise SystemExit(0)
+data["runtime_apply"] = {
+    "requested": True,
+    "applied": False,
+    "dry_run": True,
+    "commands": "reports/latest/tier1-cpu-runtime-commands.sh",
+}
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
       else
         echo "[INFO] Applying runtime tuning commands (AI370_APPLY_TUNING=true)..."
         # shellcheck disable=SC1091
@@ -178,7 +201,12 @@ try:
     data = json.load(open(path))
 except Exception:
     raise SystemExit(0)
-data["runtime_apply"] = {"requested": True, "commands": "reports/latest/tier1-cpu-runtime-commands.sh"}
+data["runtime_apply"] = {
+    "requested": True,
+    "applied": True,
+    "dry_run": False,
+    "commands": "reports/latest/tier1-cpu-runtime-commands.sh",
+}
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")
