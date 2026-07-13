@@ -8,7 +8,7 @@
 
 ## Roadmap Review Status
 
-**Last reviewed:** 2026-07-12 (Package A — Stage 2 status sync)
+**Last reviewed:** 2026-07-13 (Stage 3 ComfyUI heterogeneous acceleration planning)
 
 This repository contains `docs/ROADMAP.md` as the canonical roadmap file. References to `Roadmap.md`, `ROADMAP.md`, or `roadmap.md` should resolve to this document unless a future repository-level roadmap is intentionally added.
 
@@ -16,7 +16,7 @@ This repository contains `docs/ROADMAP.md` as the canonical roadmap file. Refere
 
 * Stage 1 is **implemented**. It remains the required first validation gate for later stages. The Stage 1 command surface in `README.md` and `ai370-optimize.sh` provides `scripts/10-detect-hardware.sh`, `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh`, `scripts/30-validate-kernel.sh`, `scripts/40-optimize-cpu.sh`, `scripts/50-optimize-memory.sh`, `scripts/60-optimize-storage.sh`, `scripts/70-validate-gpu-stack.sh`, `scripts/75-detect-npu.sh`, `scripts/80-benchmark-local-ai.sh`, and `scripts/90-validate.sh`.
 * Stage 2 planned scope is **implemented** (S2-M1 through S2-M7). Remaining Stage 2 items are **optional polish** (manifest population, full Lemonade/AnythingLLM smokes), not missing milestones. Core runtime: `scripts/100`–`150`, `245`. Offline RAG (**S2-M3**): `scripts/300`–`320` via `stage2-rag` / `tier4` (optional; not part of the Stage 3 gate). NPU stack (**S2-M2**): `scripts/200`–`240`, `lib/npu_ep_verify.py`, `docs/npu-status.md`; NPU PASS requires profiled AMD EP execution (`ep_executed` / `ep_verified`). XRT/Ryzen AI package install (`205`) requires `--accept-amd-acceleration-risk`. **S2-M6** TurnkeyML + Lemonade: `scripts/170` / `160` / `165`, `stage2-lemonade`. **S2-M7** Digest AI: `scripts/250` / `255`, `stage2-digest` (diagnostics only; ONNX fallback when Python 3.9–3.10 is unavailable).
-* Stage 3 is the **active implementation focus**. ComfyUI workflow and benchmark artifacts exist (`scripts/420-benchmark-comfyui.sh`, `workflows/comfyui/`). Install/model scripts, documentation, and required workflow subdirectories remain planned. AMD **GAIA** (agent/RAG app) and **LM Studio** (desktop LLM UI) are planned Stage 3 applications, not Stage 2 gate runtimes.
+* Stage 3 is the **active implementation focus**. ComfyUI workflow and benchmark artifacts exist (`scripts/420-benchmark-comfyui.sh`, `workflows/comfyui/`). Install/model scripts, documentation, required workflow subdirectories, automation, and the planned **S3-M7** ComfyUI heterogeneous GPU/NPU acceleration policy remain planned. AMD **GAIA** (agent/RAG app) and **LM Studio** (desktop LLM UI) are planned Stage 3 applications, not Stage 2 gate runtimes.
 * Stages 4 and 5 remain planning sections and should not be started until Stage 3 validation gates and application baselines are in place.
 
 ### Roadmap-Aligned Command Mapping
@@ -91,14 +91,15 @@ Stage 2 planned milestones are complete. Prefer optional Stage 1/2 streamlining 
 4. **S3-M2** — ComfyUI model installer + manifests (FLUX/SDXL/VAEs/LoRAs/ControlNet).
 5. **S3-M3 / S3-M5** — workflow library directories + start/stop/status/health automation.
 6. **S3-M6** — offline text/embed/RAG/Whisper application validators.
-7. **S3 apps** — GAIA and LM Studio installers (optional; consume Ollama/Lemonade).
-8. **S4+** — Continue/Aider and lifecycle after Stage 3 baselines exist.
+7. **S3-M7** — evidence-based ComfyUI heterogeneous GPU/NPU acceleration planning: Radeon 890M GPU baseline first, XDNA2 only for verified beneficial workloads.
+8. **S3 apps** — GAIA and LM Studio installers (optional; consume Ollama/Lemonade).
+9. **S4+** — Continue/Aider and lifecycle after Stage 3 baselines exist.
 
 ---
 
 ## Alignment Report
 
-The roadmap aligns with the target offline AI workstation architecture after this review and now preserves a four-layer implementation boundary: Stage 1 for hardware optimization, Stage 2 for AI runtime enablement, Stage 3 for offline AI applications/frameworks, and Stage 4 for the offline development environment. Ubuntu 26.04 LTS, hardware detection, hardware optimization, CPU, memory, storage, AMD GPU, ROCm, Vulkan, AMDXDNA/NPU, and driver validation are represented in Stage 1. Ollama, Lemonade (implemented, optional WARN path), local LLM management, offline model storage, coding/chat/embedding models, Digest AI model analysis (implemented, diagnostics only), and RAG are represented in Stage 2. VS Code, Continue, Aider, Git, GitHub CLI, ShellCheck, Ruff, Black, and Pyright are represented in Stage 4. ComfyUI, FLUX, SDXL, VAEs, LoRAs, ControlNet, upscalers, GAIA (planned), and LM Studio (planned) are represented in Stage 3. Installation, validation, startup, shutdown, status, benchmarking, health checks, backup, restore, updating, and workflow launching are represented across Stages 1 through 5.
+The roadmap aligns with the target offline AI workstation architecture after this review and now preserves a four-layer implementation boundary: Stage 1 for hardware optimization, Stage 2 for AI runtime enablement, Stage 3 for offline AI applications/frameworks, and Stage 4 for the offline development environment. Ubuntu 26.04 LTS, hardware detection, hardware optimization, CPU, memory, storage, AMD GPU, ROCm, Vulkan, AMDXDNA/NPU, and driver validation are represented in Stage 1. Ollama, Lemonade (implemented, optional WARN path), local LLM management, offline model storage, coding/chat/embedding models, Digest AI model analysis (implemented, diagnostics only), and RAG are represented in Stage 2. VS Code, Continue, Aider, Git, GitHub CLI, ShellCheck, Ruff, Black, and Pyright are represented in Stage 4. ComfyUI, FLUX, SDXL, VAEs, LoRAs, ControlNet, upscalers, evidence-based ComfyUI GPU/NPU acceleration policy, GAIA (planned), and LM Studio (planned) are represented in Stage 3. Installation, validation, startup, shutdown, status, benchmarking, health checks, backup, restore, updating, and workflow launching are represented across Stages 1 through 5.
 
 ### Rename Table
 
@@ -114,6 +115,7 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 * S2-M6 (Lemonade/TurnkeyML) depends on S2-M2 (XRT/Ryzen AI visibility) and benefits from S2-M5 model storage conventions; it remains a sibling to Ollama, not a replacement.
 * S2-M7 (Digest AI) depends on the Python/ORT toolchain from S2-M1/S2-M2 and is diagnostics-only (not an inference gate).
 * S3 depends on S2 because Ollama/Lemonade application workloads, embeddings/RAG, Whisper, ComfyUI, GAIA, LM Studio, and local model workflows require the runtime baseline, provider diagnostics, and model storage conventions.
+* S3-M7 depends on S1 validation, S2-M2, S2-M4, S2-M5, S2-M6 when local-service integration is used, and S3-M1 through S3-M4. Under the repository linear milestone rule, S3-M6 remains a sequencing predecessor before S3-M7 starts, but it is not a direct technical dependency for ComfyUI GPU/NPU acceleration.
 * S4 depends on S2 because Continue, Aider, and local coding models require Ollama (or Lemonade OpenAI endpoint), Git, Python, and offline model storage.
 * S5 depends on S1 through S4 because backup, restore, update, regression, and release workflows must cover all installed components.
 * Missing dependencies corrected in-place: VS Code tooling now depends on Git/GitHub CLI/Python validation; image-generation models now depend on ComfyUI installation and offline model storage; backup/restore now depends on model manifests and configuration inventories.
@@ -121,7 +123,7 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 ### Gap Analysis
 
 * Missing S2 **milestones:** none for planned scope. **Optional polish only:** S2-M5 manifest population (chat/coding/embedding/Lemonade artifacts when staged), Lemonade full serving smoke, AnythingLLM full-stack staging, GPU HIP/gfx1150 comparison diagnostics. Orchestrator streamlining (core-only `stage2`, optional packs, slim validate, legacy/`full-stack` fixes) is implemented.
-* Missing S3 work: ComfyUI installer, model installer, VAEs, LoRAs, ControlNet, upscalers, workflow subdirectories, startup/shutdown/status/health automation, Whisper installation/validation, local text-generation validation, embedding validation, model-management validation, **GAIA** agent/RAG application, and **LM Studio** desktop LLM install/validate (optional UI). **Active focus.**
+* Missing S3 work: ComfyUI installer, model installer, VAEs, LoRAs, ControlNet, upscalers, workflow subdirectories, startup/shutdown/status/health automation, Whisper installation/validation, local text-generation validation, embedding validation, model-management validation, **GAIA** agent/RAG application, **LM Studio** desktop LLM install/validate (optional UI), and S3-M7 ComfyUI heterogeneous GPU/NPU acceleration planning with GPU baseline, XDNA2 workload inventory, hybrid benchmarking, and acceleration-policy selection. **Active focus.**
 * Missing S4 work: VS Code installer, Continue config, Aider installation, Git/GitHub CLI validation, ShellCheck/Ruff/Black/Pyright setup, offline code-generation and code-review validation; point coding assistants at Ollama and/or Lemonade OpenAI endpoints when available.
 * Missing S5 work: update, health-check, backup, restore, regression, release, status, startup/shutdown, workflow-launching, and documentation-maintenance automation (including future Lemonade/GAIA/LM Studio services).
 
@@ -140,11 +142,14 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 11. Add S3-M5 ComfyUI startup, shutdown, status, and health-check automation.
 12. Implement S3-M6 offline text-generation, embedding, RAG, Whisper, and model-management validators.
 13. Implement S3 GAIA and LM Studio installers as optional application milestones (S2 backends already exist).
-14. Implement S4-M1 VS Code, Git, GitHub CLI, and Python development tool validation.
-15. Implement S4-M2 Continue and Aider offline configuration (Ollama and/or Lemonade endpoints).
-16. Implement S4-M3 offline coding model installation and manifest entries.
-17. Implement S4-M6 ShellCheck, Ruff, Black, Pyright, and offline review reports.
-18. Implement S5 maintenance commands for update, health, backup, restore, regression, status, workflow launch, and release validation.
+14. Implement S3-M7 Radeon 890M ComfyUI GPU baseline and silent CPU-fallback detection.
+15. Implement S3-M7 XDNA2 workload inventory and custom-node or local-service integration.
+16. Implement S3-M7 GPU-only versus hybrid GPU/NPU benchmarking and acceleration-policy generation.
+17. Implement S4-M1 VS Code, Git, GitHub CLI, and Python development tool validation.
+18. Implement S4-M2 Continue and Aider offline configuration (Ollama and/or Lemonade endpoints).
+19. Implement S4-M3 offline coding model installation and manifest entries.
+20. Implement S4-M6 ShellCheck, Ruff, Black, Pyright, and offline review reports.
+21. Implement S5 maintenance commands for update, health, backup, restore, regression, status, workflow launch, and release validation.
 
 ### Additional Milestones Added
 
@@ -153,6 +158,7 @@ The roadmap aligns with the target offline AI workstation architecture after thi
 * S2-M7 — Model Analysis Tooling (Digest AI)
 * S3-M5 — Image Generation Automation
 * S3-M6 — Offline Text, Embedding, RAG, and Whisper Workloads
+* S3-M7 — ComfyUI Heterogeneous GPU/NPU Acceleration
 * S4-M8 — Offline Development Toolchain Validation
 * S5-M8 — Runtime Operations Automation
 
@@ -818,20 +824,21 @@ Install and validate complete offline AI applications and frameworks without clo
 
 ### Deliverables
 
-* Ollama application workloads, local text-generation inference, local embedding models, model management, Whisper, ComfyUI, FLUX, Stable Diffusion XL, VAEs, LoRAs, ControlNet, upscalers, offline code models, workflow library, planned GAIA and LM Studio application installers, benchmark reports, and service automation.
+* Ollama application workloads, local text-generation inference, local embedding models, model management, Whisper, ComfyUI, FLUX, Stable Diffusion XL, VAEs, LoRAs, ControlNet, upscalers, offline code models, workflow library, planned GAIA and LM Studio application installers, benchmark reports, service automation, and evidence-based ComfyUI heterogeneous GPU/NPU acceleration policy.
 
 ### Dependencies
 
 * S2 runtime foundation exit criteria complete, including Python/GPU/NPU provider diagnostics.
 * S2-M5 offline model storage conventions available before large model installation.
+* S3-M7 additionally reuses S2-M2 NPU validation, S2-M4 CPU/GPU/NPU comparison artifacts, S2-M6 Lemonade when local-service integration is selected, and the S3-M1 through S3-M4 ComfyUI baseline. S3-M6 is a required sequencing predecessor under the linear milestone rule, not a direct technical dependency.
 
 ### Validation
 
-* Validate Ollama application workloads, local text-generation inference, embeddings, RAG, Whisper, GPU, Vulkan, ROCm, Python, ComfyUI, image/code model paths, workflows, and benchmark output before and after installation.
+* Validate Ollama application workloads, local text-generation inference, embeddings, RAG, Whisper, GPU, Vulkan, ROCm, Python, ComfyUI, image/code model paths, workflows, benchmark output, silent CPU-fallback detection, and GPU-only versus hybrid acceleration evidence before and after installation.
 
 ### Exit Criteria
 
-* Offline chat/text-generation, embeddings/RAG, Whisper, image generation, code model application workflows, and model-management validation complete with no cloud dependency.
+* Offline chat/text-generation, embeddings/RAG, Whisper, image generation, code model application workflows, and model-management validation complete with no cloud dependency. S3-M7 must not require successful native XDNA2 execution to exit Stage 3; documented `UNSUPPORTED` or `BLOCKED_UPSTREAM` outcomes are acceptable when the Radeon 890M GPU-only path remains validated.
 
 ### S3-M1 — ComfyUI
 
@@ -1057,6 +1064,141 @@ reports/latest/offline-ai-applications.md
 * [x] Unique descriptive name assigned.
 * [ ] Deliverables implemented.
 * [ ] Offline application workflow validation generated.
+
+### S3-M7 — ComfyUI Heterogeneous GPU/NPU Acceleration
+
+**Status:** Planning
+
+#### Description
+
+Plan and validate evidence-based heterogeneous acceleration for ComfyUI on the Minisforum EliteMini AI370. ComfyUI does not currently provide a transparent AMD XDNA2 execution backend, so the AMD Radeon 890M GPU remains the required primary diffusion accelerator for image generation. XDNA2 NPU integration may be explored through custom ComfyUI nodes, ONNX Runtime and Ryzen AI execution providers, Lemonade, or another validated local inference service.
+
+This milestone reuses Stage 2 GPU/NPU validation artifacts instead of rebuilding the hardware and runtime foundation. Hybrid acceleration must not be enabled merely because both GPU and NPU devices are visible, because packages install successfully, or because an execution provider is enumerated. GPU/NPU transfer, serialization, and synchronization overhead must be measured, and unsupported upstream functionality must be documented honestly rather than treated as successful local integration.
+
+Dependencies: S1 validation; S2-M2 NPU foundation; S2-M4 CPU/GPU/NPU comparison; S2-M5 offline model storage; S2-M6 Lemonade when local-service integration is used; S3-M1 ComfyUI installation; S3-M2 model installation; S3-M3 workflow baseline; and S3-M4 GPU image-generation benchmark. Under the repository linear milestone operating rule, S3-M6 is a sequencing predecessor before S3-M7 starts, but it is not a direct technical dependency for this milestone.
+
+#### Workload Allocation
+
+| Workload | Preferred device |
+| --- | --- |
+| Diffusion model, UNet, or DiT | Radeon 890M GPU |
+| VAE encode/decode | Radeon 890M GPU initially |
+| ControlNet and IPAdapter | Radeon 890M GPU initially |
+| Text encoder | GPU or CPU, based on benchmarks |
+| Object detection | XDNA2 NPU when supported |
+| Image segmentation | XDNA2 NPU when supported |
+| Image classification | XDNA2 NPU when supported |
+| Upscaling | GPU or NPU, based on equivalent-model benchmarks |
+| Stable Diffusion component offload | Experimental only |
+| Unsupported NPU workloads | GPU or CPU fallback |
+
+#### Target Architecture
+
+```text
+ComfyUI
+   |
+   +-- Radeon 890M GPU
+   |      +-- Diffusion model / DiT
+   |      +-- UNet
+   |      +-- VAE
+   |      +-- ControlNet
+   |      +-- IPAdapter
+   |      `-- Large tensor operations
+   |
+   `-- XDNA2 NPU integration
+          +-- Custom ComfyUI node
+          |      `-- ONNX Runtime / Ryzen AI execution provider
+          |
+          +-- Local inference service
+          |      `-- Lemonade or validated AMD runtime endpoint
+          |
+          +-- Object detection
+          +-- Image segmentation
+          +-- Image classification
+          +-- Upscaling when supported
+          `-- Stable Diffusion components when validated
+```
+
+#### Deliverables
+
+```text
+scripts/450-detect-comfyui-accelerators.sh
+scripts/451-validate-comfyui-gpu-baseline.sh
+scripts/452-install-comfyui-xdna-nodes.sh
+scripts/453-validate-comfyui-npu-nodes.sh
+scripts/454-benchmark-comfyui-hybrid.sh
+scripts/455-select-comfyui-acceleration-policy.sh
+custom_nodes/ai370_xdna/
+custom_nodes/ai370_xdna/__init__.py
+custom_nodes/ai370_xdna/nodes.py
+custom_nodes/ai370_xdna/runtime.py
+configs/comfyui/acceleration-policy.yaml
+workflows/comfyui/hybrid/
+docs/comfyui-heterogeneous-acceleration.md
+reports/latest/comfyui-accelerator-inventory.json
+reports/latest/comfyui-gpu-baseline.json
+reports/latest/comfyui-npu-validation.json
+reports/latest/comfyui-hybrid-benchmark.csv
+reports/latest/comfyui-hybrid-benchmark-summary.md
+reports/latest/comfyui-acceleration-policy.json
+```
+
+#### Implementation Requirements
+
+* Preserve the Radeon 890M GPU-only path as the validated baseline and fallback.
+* Detect and report silent CPU fallback for ComfyUI and any external inference service.
+* Reuse Stage 2 NPU validation artifacts, provider telemetry, model-storage conventions, and CPU/GPU/NPU comparison reports.
+* Validate every NPU workload independently before exposing it through ComfyUI.
+* Enable hybrid GPU/NPU execution only when comparable benchmarks show a measurable benefit over the GPU-only baseline.
+* Measure latency, throughput, memory use, device allocation, data-transfer overhead, synchronization overhead, serialization overhead, power consumption when available, and image-quality implications.
+* Keep package installation, device visibility, and execution-provider enumeration separate from proof of workload execution.
+* Preserve offline operation after packages, custom nodes, runtime artifacts, models, and workflows have been staged.
+
+#### Supported Status Classifications
+
+Every evaluated hybrid or NPU workload must use one of these classifications:
+
+* `SUPPORTED`: reproducible verified execution with a measurable benefit.
+* `EXPERIMENTAL`: verified execution, but not sufficiently stable, compatible, or performant for normal use.
+* `UNSUPPORTED`: required workload or operators cannot execute through the available XDNA2 stack.
+* `REGRESSIVE`: hybrid execution works but performs worse than the GPU baseline or materially increases resource use.
+* `BLOCKED_UPSTREAM`: required support is absent from ComfyUI, AMD software, ONNX Runtime, model conversion tooling, or another upstream dependency.
+
+#### Acceptance Criteria
+
+* Radeon 890M GPU execution is verified for the ComfyUI image-generation baseline.
+* Silent CPU fallback is detected and reported for ComfyUI, external services, and custom-node execution paths.
+* Stage 2 NPU validation artifacts are reused rather than regenerated as a separate foundation.
+* NPU workloads are validated independently before ComfyUI integration.
+* At least one XDNA2-compatible workload is evaluated.
+* NPU workload execution is proven through profiling, provider telemetry, or another reproducible execution record.
+* GPU-only versus hybrid GPU/NPU benchmarking is performed where workloads are technically comparable.
+* Benchmarks measure latency, throughput, memory use, device allocation, data-transfer overhead, power consumption when available, and image-quality implications.
+* GPU and CPU fallback paths are documented and validated.
+* Offline operation works after packages and models have been staged.
+* Unsupported and regressive workloads are documented without blocking the validated Radeon 890M GPU-only path.
+* Successful native XDNA2 execution is not a mandatory Stage 3 exit condition; documented `UNSUPPORTED` or `BLOCKED_UPSTREAM` results must not block Stage 3 when GPU-only ComfyUI remains validated.
+
+#### Validation Steps
+
+```text
+./scripts/450-detect-comfyui-accelerators.sh
+./scripts/451-validate-comfyui-gpu-baseline.sh
+./scripts/453-validate-comfyui-npu-nodes.sh
+./scripts/454-benchmark-comfyui-hybrid.sh
+./scripts/455-select-comfyui-acceleration-policy.sh
+```
+
+#### Completion Checklist
+
+* [x] Stable ID assigned.
+* [x] Unique descriptive name assigned.
+* [ ] Deliverables implemented.
+* [ ] Radeon 890M GPU baseline validated and CPU fallback detection reported.
+* [ ] Stage 2 NPU validation artifacts reused for ComfyUI integration decisions.
+* [ ] At least one XDNA2-compatible workload evaluated with execution evidence.
+* [ ] GPU-only versus hybrid benchmark report generated.
+* [ ] Acceleration policy generated with fallback and unsupported-workload documentation.
 
 ---
 
@@ -1688,6 +1830,7 @@ reports/latest/ai370-health.md
 | S3-M4 | Image Generation Benchmark | Ongoing | Benchmark script exists; documentation remains missing. |
 | S3-M5 | Image Generation Automation | Missing | Required startup/shutdown/status/health/workflow automation was not represented before this review. |
 | S3-M6 | Offline Text, Embedding, RAG, and Whisper Workloads | Planned | Required offline application workload validators are represented, but implementation files are not present. |
+| S3-M7 | ComfyUI Heterogeneous GPU/NPU Acceleration | Planning | Planned evidence-based Radeon 890M GPU baseline, XDNA2 workload inventory, hybrid benchmark, custom-node or local-service integration, and acceleration-policy files are represented; implementation files are not present. |
 | S4 | Offline Development Environment | Planning | Work is planned; implementation files are not present. |
 | S4-M1 | VS Code Installation | Planning | Planned installer/config are not present. |
 | S4-M2 | Local AI Extension | Planning | Continue/Aider configs are not present. |
