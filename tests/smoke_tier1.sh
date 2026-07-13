@@ -74,6 +74,15 @@ fi
 if [[ ! -f "$LATEST_DIR/tier1-cpu-runtime-commands.sh" ]]; then
   echo "[FAIL] missing generated commands: tier1-cpu-runtime-commands.sh"; exit 2
 fi
+# Regression: systemctl is-active + || echo must not double "inactive"
+python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+zram = (data.get("memory") or {}).get("zram0", "")
+assert "\n" not in zram, f"zram0 status must be a single token, got {zram!r}"
+assert zram, "zram0 status should not be empty"
+print(f"[OK] platform-tuning zram0 status is single-line: {zram!r}")
+PY
 echo "[OK] platform-tuning plan artifacts present"
 
 # Full-scope validate (default stage1 gate; does not require script 80)

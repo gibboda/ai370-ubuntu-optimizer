@@ -29,7 +29,12 @@ main() {
   [[ "$MODE" == "aggressive" ]] && target_power="performance"
 
   mem_total="$(detect_memory_total)"
-  zram_active="$(systemctl is-active systemd-zram-setup@zram0.service 2>/dev/null || echo inactive)"
+  # systemctl is-active prints inactive/failed and exits non-zero; do not append
+  # another "inactive" via || echo (that produced "inactive\ninactive").
+  zram_active="$(systemctl is-active systemd-zram-setup@zram0.service 2>/dev/null || true)"
+  zram_active="${zram_active:-inactive}"
+  # Collapse accidental multi-line noise to a single token for reports/JSON.
+  zram_active="${zram_active%%$'\n'*}"
   swap_show="$(swapon --show --noheadings 2>/dev/null || true)"
 
   storage="$(detect_storage_text)"
