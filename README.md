@@ -147,7 +147,8 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   `scripts/165-validate-lemonade.sh`, `scripts/lib/lemonade-env.sh`
   (S2-M6 TurnkeyML + Lemonade; optional WARN-friendly path)
 - `scripts/250-install-digest-ai.sh`, `scripts/255-analyze-model-digest.sh`,
-  `scripts/lib/digest_analyze.py` (S2-M7 Digest AI / ONNX analysis; diagnostics only)
+  `scripts/lib/digest_analyze.py` (S2-M7 Digest AI / ONNX analysis;
+  diagnostics only)
 
 **Stage 3+ — Planned / not present (or partial):**
 
@@ -165,6 +166,10 @@ workflows under `workflows/comfyui/`.
 
 For the authoritative, up-to-date status and contributor guidance consult
 `docs/ROADMAP.md` (including **Next implementation steps** after Stage 2).
+
+For a proposed Stage 3 personal-agent architecture that composes OpenClaw with
+multiple local LLM roles, Ollama/Lemonade providers, offline RAG, and tiered
+tool permissions, see `docs/openclaw-multi-llm-agent.md`.
 
 **Deliverables (Stage 1 scripts — canonical + wrappers):**
 
@@ -357,8 +362,10 @@ wheelhouse only. Stage 2 RAG is optional and is not part of the Stage 3 gate.
 
 - Embedding model installable offline from staged tree or online download
 - Offline semantic retrieval smoke passes without network after staging
-- AnythingLLM image/AppImage loadable from staged artifacts when Docker/AppImage present
-- Aggregate report distinguishes production_ready (embedding RAG) vs full_stack_ready (+ AnythingLLM)
+- AnythingLLM image/AppImage loadable from staged artifacts when Docker/AppImage
+  is present
+- Aggregate report distinguishes `production_ready` (embedding RAG) from
+  `full_stack_ready` (including AnythingLLM)
 
 ### Stage 3 Image Generation – Generative AI
 
