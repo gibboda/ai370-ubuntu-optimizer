@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai370.local/schemas/system-profile-v1.json",
+  "title": "AI370 Stage 1 System Profile",
+  "type": "object",
+  "required": ["schema", "generation", "classification", "hardware", "capabilities", "unknowns", "collection"],
+  "properties": {
+    "schema": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "ai370-system-profile"},
+        "version": {"const": 1}
+      },
+      "additionalProperties": false
+    },
+    "generation": {
+      "type": "object",
+      "required": ["timestamp", "generator_version", "hardware_fingerprint", "complete"],
+      "properties": {
+        "timestamp": {"type": "string", "format": "date-time"},
+        "generator_version": {"type": "string"},
+        "hardware_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "complete": {"type": "boolean"}
+      }
+    },
+    "classification": {
+      "type": "object",
+      "required": ["matched_profile", "confidence", "evidence", "mismatches"],
+      "properties": {
+        "matched_profile": {"type": ["string", "null"]},
+        "confidence": {"enum": ["exact", "family", "none"]},
+        "evidence": {"type": "array", "items": {"type": "string"}},
+        "mismatches": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "hardware": {"type": "object"},
+    "capabilities": {"type": "object"},
+    "unknowns": {"type": "array", "items": {"type": "string"}},
+    "collection": {
+      "type": "object",
+      "required": ["missing_tools", "failed_probes"],
+      "properties": {
+        "missing_tools": {"type": "array", "items": {"type": "string"}},
+        "failed_probes": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

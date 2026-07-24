@@ -7,6 +7,7 @@ Lightweight smoke tests for the ai370-ubuntu-optimizer tier commands and artifac
 ```bash
 bash tests/smoke_tier1.sh
 bash tests/smoke_tier2.sh
+python3 -m unittest tests/test_system_profile.py
 ```
 
 Or from repo root after making executable:
@@ -28,6 +29,8 @@ Or from repo root after making executable:
 - `stage1-validate` (full scope) → no AI smoke required by default
 - Strict mode (`AI370_STAGE1_STRICT=true`) elevates missing gfx1150/NPU to FAIL
 - Presence + structure of `reports/latest/tier1-*.json` gate artifacts
+- Fixture-style classification tests for the versioned system profile are in
+  `test_system_profile.py` and do not depend on host hardware
 
 ### Stage 2 (`smoke_tier2.sh` — Package D)
 
