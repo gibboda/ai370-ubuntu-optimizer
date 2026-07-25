@@ -71,7 +71,7 @@ Stage 1 (Package C + E):
     70, 90 (scope: inventory|full|smoke)
   Default stage1 skips script 80; pass --with-ai-smoke (or AI370_STAGE1_WITH_AI_SMOKE=true)
   --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing
-  --apply-tuning (or AI370_APPLY_TUNING=true): run generated runtime power-profile commands
+  --apply-tuning (or AI370_APPLY_TUNING=true): compatibility-only migration path; target Stage 1 contract is read-only
   stage1-inventory = detect + firmware + kernel + GPU + inventory-scope validate
   stage1-validate --inventory re-checks inventory scope only
 

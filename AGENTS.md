@@ -47,8 +47,8 @@ Allowed scopes:
 - `tier2`
 
 The `tier`, `tier1`, and `tier2` scopes are deprecated compatibility scopes.
-Do not use them for new work; retain them only until the corresponding
-compatibility migration in `docs/ROADMAP.md` begins.
+Do not use them for new work; retain them until their `docs/ROADMAP.md`
+compatibility removal targets are reached.
 
 Rules:
 

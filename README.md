@@ -67,7 +67,7 @@ last, matching the roadmap operating rules (Package C + E).
 ./ai370-optimize.sh stage1-validate        # Final Stage 1 gate (full scope)
 ./ai370-optimize.sh stage1-validate --inventory  # Re-check inventory scope only
 ./ai370-optimize.sh stage1 --with-ai-smoke # Include optional local-AI smoke (script 80)
-./ai370-optimize.sh stage1 --apply-tuning  # Apply runtime power-profile commands after plan
+./ai370-optimize.sh stage1 --apply-tuning  # Compatibility-only migration path; target Stage 1 contract is read-only
 ./ai370-optimize.sh stage1 --strict        # FAIL if gfx1150 or NPU missing
 ./ai370-optimize.sh tier1                  # Legacy alias for stage1
 ./ai370-optimize.sh tier1-validate         # Legacy alias for stage1-validate
@@ -97,6 +97,8 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   kernel/driver validation, platform tuning plans). Package C merges platform
   tuning and firmware steps; Package E demotes script 80 from default
   `stage1`, adds optional `--strict` / `--apply-tuning` / `--with-ai-smoke`.
+  During migration, `--apply-tuning` remains a compatibility path; the target
+  Stage 1 contract in `docs/ROADMAP.md` and `AGENTS.md` is read-only.
   Use `stage1-inventory` for a faster detect-only pass.
 - Stage 2: **Implemented** for planned roadmap scope (S2-M1 through S2-M7).
   Aggregate/runtime/NPU commands: `stage2`, `stage2-runtime`, `stage2-npu`
