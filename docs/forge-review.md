@@ -37,10 +37,10 @@ were not treated as implementation evidence.
 
 ### FORGE-01 — No Forge integration is present (high)
 
-No tracked product code or documentation identifies Stable Diffusion WebUI
-Forge. There is no supported install path, top-level command, generated
-launcher, health check, status artifact, benchmark, or update/uninstall policy
-for Forge.
+Prior to this review, no tracked product code or documentation identified
+Stable Diffusion WebUI Forge. There was no supported install path, top-level
+command, generated launcher, health check, status artifact, benchmark, or
+update/uninstall policy for Forge.
 
 The repository's Open WebUI integration is an LLM frontend. The existing
 ComfyUI script and workflows target a different image-generation application.
