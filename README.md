@@ -179,6 +179,10 @@ AUTOMATIC1111's Stable Diffusion WebUI is not currently supported. See the
 [`AUTOMATIC1111 codebase review`](docs/automatic1111-review.md) for the audited
 gaps, risks, and recommended Stage 3 implementation boundary.
 
+Stable Diffusion WebUI Forge is also not currently supported. See the
+[`Forge codebase review`](docs/forge-review.md) for the audited integration
+gaps, fork-specific risks, and recommended Stage 3 implementation boundary.
+
 For a proposed Stage 3 personal-agent architecture that composes OpenClaw with
 multiple local LLM roles, Ollama/Lemonade providers, offline RAG, and tiered
 tool permissions, see `docs/openclaw-multi-llm-agent.md`.
