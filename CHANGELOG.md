@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.5...v0.13.0) (2026-07-25)
+
+
+### Features
+
+* **baseline:** Add versioned system profile builder ([#142](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/142)) ([7710d23](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/7710d237583a1a9f90bf3466317167d1be099406))
+
 ## [0.12.5](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.12.4...v0.12.5) (2026-07-13)
 
 
