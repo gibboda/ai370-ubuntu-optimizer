@@ -10,7 +10,7 @@ WebUI integration is an LLM user interface and must not be interpreted as
 AUTOMATIC1111 support.
 
 Image generation is currently designed around ComfyUI. That work is itself
-partial: the legacy `scripts/70-comfyui-workflows.sh` implementation and the
+partial: the active `scripts/70-comfyui-workflows.sh` implementation and the
 benchmark/workflow assets exist, while the numbered Stage 3 installer, model
 manifest, and lifecycle commands remain planned. Adding a second image UI
 before those shared Stage 3 foundations exist would duplicate installation,
@@ -53,7 +53,7 @@ as `automatic1111` in commands and report keys; never shorten it to `webui`.
 
 The authoritative roadmap still lists `scripts/400-install-comfyui.sh` and
 `scripts/410-install-comfyui-models.sh` as planned. The current image-generation
-model folders are created by the older ComfyUI workflow script rather than by a
+model folders are created by `scripts/70-comfyui-workflows.sh` rather than by a
 UI-neutral image-model manager. The main model manifest only covers chat,
 coding, embedding, and Lemonade assets.
 
