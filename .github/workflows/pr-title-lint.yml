@@ -168,6 +168,11 @@ jobs:
                   return false;
                 }
 
+                if (subject.startsWith('Merge ')) {
+                  core.info(`Skipping merge commit subject enforcement for ${fullSha.slice(0, 7)}.`);
+                  return false;
+                }
+
                 return !commitSubjectPattern.test(subject);
               });
 
