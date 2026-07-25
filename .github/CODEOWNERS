@@ -1,0 +1,19 @@
+# Default owner for all repository files.
+* @gibboda
+
+# Repository governance and automation.
+/.github/ @gibboda
+/AGENTS.md @gibboda
+/CONTRIBUTING.md @gibboda
+/release-please-config.json @gibboda
+/VERSION @gibboda
+
+# Core implementation areas.
+/scripts/ @gibboda
+/configs/ @gibboda
+/tests/ @gibboda
+
+# Documentation and workflow assets.
+/docs/ @gibboda
+/workflows/ @gibboda
+/reports/ @gibboda
