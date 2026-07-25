@@ -26,7 +26,6 @@ main() {
   CPU_CORES="$(detect_cpu_logical)"
   KERNEL="$(detect_kernel)"
   OS_DESCRIPTION="$(detect_os_description)"
-  OS_ID="$(detect_os_id)"
   OS_VERSION_ID="$(detect_os_version_id)"
   OS_CODENAME="$(detect_os_codename)"
 
@@ -143,6 +142,17 @@ PY
   cp "$LATEST_DIR/tier1-hardware.json" "$LATEST_DIR/hardware-inventory.json" 2>/dev/null || true
   cp "$LATEST_DIR/tier1-hardware.md" "$LATEST_DIR/hardware-summary.md" 2>/dev/null || true
 
+  # Phase 1 of the Stage 1 profile-builder migration: publish a versioned,
+  # normalized profile alongside the compatibility inventory artifacts.
+  local generator_version="unknown"
+  if [[ -f "$PROJECT_ROOT/VERSION" ]]; then
+    generator_version="$(tr -d '[:space:]' < "$PROJECT_ROOT/VERSION")"
+  fi
+  python3 "$PROJECT_ROOT/scripts/lib/system_profile.py" \
+    --input "$LATEST_DIR/tier1-hardware.json" \
+    --output "$LATEST_DIR/system-profile.json" \
+    --generator-version "$generator_version"
+
   # Package C: also emit tier1-npu.* here (formerly scripts/75-detect-npu.sh)
   local xrt_smi xrt_state npu_status
   xrt_smi="$(capture_command xrt-smi examine)"
@@ -203,7 +213,7 @@ PY
   } > "$LATEST_DIR/tier1-npu.md"
   echo "$npu_status" > "$LATEST_DIR/tier1-npu.txt"
 
-  echo "[INFO] Wrote tier1-hardware.json, tier1-hardware.md, and tier1-npu.*"
+  echo "[INFO] Wrote tier1-hardware.json, tier1-hardware.md, system-profile.json, and tier1-npu.*"
   echo "[INFO] 10-detect-hardware.sh complete."
 }
 

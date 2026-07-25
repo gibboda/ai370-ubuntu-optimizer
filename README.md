@@ -114,7 +114,8 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 
 **Stage 1 — Implemented (Package C + E streamlined):**
 
-- `scripts/10-detect-hardware.sh` (includes NPU detect; `75` is a wrapper)
+- `scripts/10-detect-hardware.sh` (includes NPU detect; `75` is a wrapper;
+  also publishes the versioned `reports/latest/system-profile.json`)
 - `scripts/20-check-bios.sh` (BIOS + firmware validation; `25` is a wrapper)
 - `scripts/30-validate-kernel.sh`
 - `scripts/40-platform-tuning.sh` (CPU+memory+storage plan; `40`/`50`/`60`
@@ -125,6 +126,13 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 - `scripts/90-validate.sh` (scopes: `inventory` | `full` | `smoke`;
   `--strict` / `AI370_STAGE1_STRICT=true` fails missing gfx1150/NPU)
 - Commands: `stage1`, `stage1-inventory`, `stage1-validate` (`--inventory`)
+
+The generated system profile is currently additive: existing `tier1-*`
+artifacts and gates remain available while Stage 2 consumers are migrated. Its
+schema is defined in `configs/schemas/system-profile.schema.json`; it records
+normalized hardware facts, classification evidence, derived capability
+candidates, unknown fields, and missing collection tools. It does not assert
+that a Stage 2 runtime has executed successfully.
 
 **Stage 2 — Implemented (S2-M1–S2-M7; optional paths noted):**
 
