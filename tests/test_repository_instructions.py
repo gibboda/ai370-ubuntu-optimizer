@@ -20,9 +20,13 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertTrue((ROOT / ".github/copilot-instructions.md").is_file())
 
     def test_copilot_instructions_link_to_authoritative_documents(self) -> None:
-        self.assertIn("[`/AGENTS.md`](/AGENTS.md)", self.copilot_instructions)
+        self.assertIn("[`../AGENTS.md`](../AGENTS.md)", self.copilot_instructions)
         self.assertIn(
-            "[`/docs/ROADMAP.md`](/docs/ROADMAP.md)", self.copilot_instructions
+            "[`../docs/ROADMAP.md`](../docs/ROADMAP.md)", self.copilot_instructions
+        )
+        self.assertIn(
+            "[`../configs/schemas/system-profile.schema.json`](../configs/schemas/system-profile.schema.json)",
+            self.copilot_instructions,
         )
 
     def test_both_instruction_files_preserve_stage_1_boundary(self) -> None:
