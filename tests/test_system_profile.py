@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Unit tests for deterministic Stage 1 profile normalization and classification."""
+"""Deterministic contract and publication tests for the Stage 1 profile."""
 
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location(
-    "system_profile", ROOT / "scripts/lib/system_profile.py"
-)
+FIXTURES = ROOT / "tests/fixtures/system-profile/v2"
+SPEC = importlib.util.spec_from_file_location("system_profile", ROOT / "scripts/lib/system_profile.py")
 assert SPEC and SPEC.loader
 system_profile = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(system_profile)
@@ -17,42 +18,68 @@ SPEC.loader.exec_module(system_profile)
 
 def inventory(cpu: str, vendor: str, gpu: str, npu: bool) -> dict:
     return {
-        "system": {"vendor": "Micro Computer", "product": "AI370", "kernel": "6.14"},
+        "system": {"vendor": "Sanitized Vendor", "product": "Ryzen AI system", "kernel": "6.14",
+                   "os": "Ubuntu 24.04", "bios_version": "2.00"},
         "cpu": {"model": cpu, "vendor": vendor, "logical_cores": 24},
-        "gpu": {"text": "AMD Radeon 890M", "arch": gpu, "amdgpu_module": "loaded"},
+        "gpu": {"text": "AMD display controller", "arch": gpu, "amdgpu_module": "loaded"},
         "npu": {"present": npu, "module_text": "amdxdna" if npu else "", "device_text": ""},
-        "memory": {"total": "32Gi"},
-        "storage": {"summary": "nvme0n1", "nvme": "nvme0n1"},
+        "memory": {"total": "32GiB"}, "storage": {"summary": "nvme0n1", "nvme": "nvme0n1"},
         "tools": {"missing": "clinfo,jq"},
     }
 
 
-class SystemProfileTests(unittest.TestCase):
-    def test_exact_ai370_classification(self) -> None:
+class SchemaContractTests(unittest.TestCase):
+    def test_versioned_valid_fixture_satisfies_contract(self) -> None:
+        profile = json.loads((FIXTURES / "valid-reference.json").read_text())
+        system_profile.validate_profile(profile)
+
+    def test_invalid_fixture_reports_all_contract_violations(self) -> None:
+        profile = json.loads((FIXTURES / "invalid-contract.json").read_text())
+        with self.assertRaises(system_profile.ProfileValidationError) as caught:
+            system_profile.validate_profile(profile)
+        self.assertIn("fingerprint.value", str(caught.exception))
+        self.assertIn("unexpected property", str(caught.exception))
+
+    def test_invalid_candidate_does_not_replace_last_valid_profile(self) -> None:
+        valid = json.loads((FIXTURES / "valid-reference.json").read_text())
+        invalid = json.loads((FIXTURES / "invalid-contract.json").read_text())
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "system-profile.json"
+            system_profile.atomic_write(destination, valid)
+            before = destination.read_bytes()
+            with self.assertRaises(system_profile.ProfileValidationError):
+                system_profile.atomic_write(destination, invalid)
+            self.assertEqual(destination.read_bytes(), before)
+            self.assertEqual(list(destination.parent.glob(".system-profile.json.*")), [])
+
+
+class NormalizationTests(unittest.TestCase):
+    def test_complete_profile_is_valid_and_exactly_classified(self) -> None:
         profile = system_profile.build_profile(
             inventory("AMD Ryzen AI 9 HX 370", "AuthenticAMD", "gfx1150", True), "test"
         )
-        self.assertEqual(profile["schema"], {"name": "ai370-system-profile", "version": 1})
-        self.assertEqual(profile["classification"]["matched_profile"], "ai370")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["schema"]["version"], 2)
+        self.assertEqual(profile["classification"]["platform_id"], "ai370")
         self.assertEqual(profile["classification"]["confidence"], "exact")
-        self.assertTrue(profile["capabilities"]["gpu"]["rocm_candidate"])
-        self.assertEqual(profile["collection"]["missing_tools"], ["clinfo", "jq"])
+        self.assertEqual(profile["fingerprint"]["algorithm"], "sha256")
+        self.assertEqual([tool["state"] for tool in profile["collection"]["tools"]],
+                         ["tool_missing", "tool_missing"])
 
-    def test_generic_ryzen_ai_classification(self) -> None:
+    def test_newer_ryzen_ai_is_a_family_match(self) -> None:
         profile = system_profile.build_profile(
             inventory("AMD Ryzen AI 7 PRO 360", "AuthenticAMD", "unknown", False)
         )
-        self.assertEqual(profile["classification"]["matched_profile"], "generic-ryzen-ai")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["classification"]["platform_id"], "generic-ryzen-ai")
         self.assertEqual(profile["classification"]["confidence"], "family")
-        self.assertFalse(profile["capabilities"]["npu"]["present"])
-        self.assertIn("gpu.arch", profile["unknowns"])
+        self.assertEqual(profile["capability_candidates"][1]["state"], "not_present")
 
-    def test_unsupported_host_is_not_forced_into_profile(self) -> None:
-        profile = system_profile.build_profile(
-            inventory("Intel Xeon", "GenuineIntel", "unknown", False)
-        )
-        self.assertIsNone(profile["classification"]["matched_profile"])
-        self.assertEqual(profile["classification"]["confidence"], "none")
+    def test_unsupported_host_has_explicit_state(self) -> None:
+        profile = system_profile.build_profile(inventory("Intel Xeon", "GenuineIntel", "unknown", False))
+        system_profile.validate_profile(profile)
+        self.assertIsNone(profile["classification"]["platform_id"])
+        self.assertEqual(profile["classification"]["state"], "unsupported")
 
 
 if __name__ == "__main__":
