@@ -78,6 +78,15 @@ complete publication intact and return an actionable failure. Stable ordering,
 normalized units, explicit `null`/unavailable values, and removal of volatile
 timestamps or paths from test fixtures are required for deterministic tests.
 
+System-profile schema v2 replaces the provisional v1 shape. It separates the
+fingerprint algorithm and inputs from generation metadata; normalizes system,
+OS, kernel, CPU, memory, storage, GPU, accelerator, and firmware observations;
+and records tools, probes, classification, capability candidates, and unknown
+facts with explicit states. Stage 2 and later consumers must reject v1 rather
+than infer missing v2 facts. Versioned v2 fixtures and atomic-publication tests
+are the migration evidence; the compatibility inventory remains an input to the
+v2 normalizer while Stage 1 collectors are migrated.
+
 ## Target architecture and canonical deliverables
 
 All milestones in this section are **Planned** unless a row explicitly says
