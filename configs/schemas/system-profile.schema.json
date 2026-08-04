@@ -91,13 +91,18 @@
       "type": "object", "required": ["state", "name", "device_path", "kind", "transport", "size_bytes", "removable", "model", "serial", "firmware_version"],
       "properties": {"state": {"$ref": "#/$defs/state"}, "name": {"type": "string", "minLength": 1}, "device_path": {"$ref": "#/$defs/nullableString"}, "kind": {"enum": ["disk", "partition", "rom", "loop", "unknown"]}, "transport": {"enum": ["nvme", "sata", "usb", "virtio", "mmc", "unknown", null]}, "size_bytes": {"$ref": "#/$defs/nullableInteger"}, "removable": {"type": ["boolean", "null"]}, "model": {"$ref": "#/$defs/nullableString"}, "serial": {"$ref": "#/$defs/nullableString"}, "firmware_version": {"$ref": "#/$defs/nullableString"}}, "additionalProperties": false
     },
+    "driverBinding": {
+      "type": "object", "required": ["state", "name"],
+      "properties": {"state": {"$ref": "#/$defs/state"}, "name": {"$ref": "#/$defs/nullableString"}},
+      "additionalProperties": false
+    },
     "gpuDevice": {
       "type": "object", "required": ["state", "id", "name", "pci", "driver", "architecture", "vram_bytes", "runtime"],
-      "properties": {"state": {"$ref": "#/$defs/state"}, "id": {"type": "string", "minLength": 1}, "name": {"$ref": "#/$defs/nullableString"}, "pci": {"$ref": "#/$defs/pciIdentity"}, "driver": {"$ref": "#/$defs/nullableString"}, "architecture": {"$ref": "#/$defs/nullableString"}, "vram_bytes": {"$ref": "#/$defs/nullableInteger"}, "runtime": {"enum": ["observed", "not_present", "unsupported", "unknown", "tool_missing", "permission_denied", "probe_failed", "unrecognized"]}}, "additionalProperties": false
+      "properties": {"state": {"$ref": "#/$defs/state"}, "id": {"type": "string", "minLength": 1}, "name": {"$ref": "#/$defs/nullableString"}, "pci": {"$ref": "#/$defs/pciIdentity"}, "driver": {"$ref": "#/$defs/driverBinding"}, "architecture": {"$ref": "#/$defs/nullableString"}, "vram_bytes": {"$ref": "#/$defs/nullableInteger"}, "runtime": {"enum": ["observed", "not_present", "unsupported", "unknown", "tool_missing", "permission_denied", "probe_failed", "unrecognized"]}}, "additionalProperties": false
     },
     "acceleratorDevice": {
       "type": "object", "required": ["state", "id", "kind", "name", "pci", "device_nodes", "driver", "runtime"],
-      "properties": {"state": {"$ref": "#/$defs/state"}, "id": {"type": "string", "minLength": 1}, "kind": {"enum": ["npu", "fpga", "dsp", "other", "unknown"]}, "name": {"$ref": "#/$defs/nullableString"}, "pci": {"$ref": "#/$defs/pciIdentity"}, "device_nodes": {"type": "array", "items": {"type": "string", "minLength": 1}}, "driver": {"$ref": "#/$defs/nullableString"}, "runtime": {"$ref": "#/$defs/state"}}, "additionalProperties": false
+      "properties": {"state": {"$ref": "#/$defs/state"}, "id": {"type": "string", "minLength": 1}, "kind": {"enum": ["npu", "fpga", "dsp", "other", "unknown"]}, "name": {"$ref": "#/$defs/nullableString"}, "pci": {"$ref": "#/$defs/pciIdentity"}, "device_nodes": {"type": "array", "items": {"type": "string", "minLength": 1}}, "driver": {"$ref": "#/$defs/driverBinding"}, "runtime": {"$ref": "#/$defs/state"}}, "additionalProperties": false
     },
     "firmware": {
       "type": "object", "required": ["state", "bios_vendor", "bios_version", "bios_date", "uefi", "secure_boot"],

@@ -39,12 +39,21 @@ def _state(value: Any) -> str:
 def _bytes(value: Any) -> int | None:
     if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
         return value
-    match = re.fullmatch(r"\s*([0-9]+(?:\.[0-9]+)?)\s*([KMGTPE]?i?B)?\s*", str(value), re.I)
+    # Accept both IEC (GiB, MiB, KiB) and SI (GB, MB, KB) suffixes, plus the
+    # abbreviated forms emitted by `free -h` (Gi, Mi, Ki) that omit the trailing B.
+    match = re.fullmatch(r"\s*([0-9]+(?:\.[0-9]+)?)\s*([KMGTPE]i?B|[KMGTPE]i)\s*", str(value), re.I)
     if not match:
         return None
-    units = {"B": 1, "KB": 1000, "MB": 1000**2, "GB": 1000**3, "TB": 1000**4,
+    suffix = match.group(2).upper()
+    # Normalise abbreviated IEC suffixes (Gi -> GiB, etc.)
+    if not suffix.endswith("B"):
+        suffix += "B"
+    units = {"KB": 1000, "MB": 1000**2, "GB": 1000**3, "TB": 1000**4,
              "KIB": 1024, "MIB": 1024**2, "GIB": 1024**3, "TIB": 1024**4}
-    return int(float(match.group(1)) * units.get((match.group(2) or "B").upper(), 1))
+    multiplier = units.get(suffix)
+    if multiplier is None:
+        return None
+    return int(float(match.group(1)) * multiplier)
 
 
 def _pci() -> dict[str, None]:
@@ -65,15 +74,33 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
                "XDNA device and kernel module are not visible"))
     for matched, positive, negative in checks:
         (evidence if matched else mismatches).append(positive if matched else negative)
-    amd_ryzen_ai = "AMD" in str(hardware.get("cpu", {}).get("vendor", "")) and "Ryzen AI" in cpu_model
+    cpu_vendor = str(hardware.get("cpu", {}).get("vendor", ""))
+    amd_ryzen_ai = "AMD" in cpu_vendor and "Ryzen AI" in cpu_model
+    cpu_identified = _known(cpu_model) and _known(cpu_vendor)
     if len(evidence) == 3:
         platform_id, confidence, state = "ai370", "exact", "observed"
     elif amd_ryzen_ai:
         platform_id, confidence, state = "generic-ryzen-ai", "family", "observed"
+    elif not cpu_identified:
+        platform_id, confidence, state = None, "none", "unknown"
     else:
         platform_id, confidence, state = None, "none", "unsupported"
     return {"state": state, "platform_id": platform_id, "confidence": confidence,
             "evidence": evidence, "mismatches": mismatches}
+
+
+def _gpu_driver(gpu: dict[str, Any]) -> dict[str, Any]:
+    """Return a state-bearing driver binding object for a GPU entry."""
+    if gpu.get("amdgpu_module") == "loaded":
+        return {"state": "observed", "name": "amdgpu"}
+    return {"state": "unknown", "name": None}
+
+
+def _accel_driver(npu: dict[str, Any]) -> dict[str, Any]:
+    """Return a state-bearing driver binding object for an accelerator entry."""
+    if _known(npu.get("module_text")):
+        return {"state": "observed", "name": "amdxdna"}
+    return {"state": "unknown", "name": None}
 
 
 def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") -> dict[str, Any]:
@@ -82,41 +109,154 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
     gpu, npu = hardware.get("gpu", {}), hardware.get("npu", {})
     memory, storage = hardware.get("memory", {}), hardware.get("storage", {})
     missing_tools = [name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name]
-    unknown_paths = []
-    for path, value in (("system.manufacturer", system.get("vendor")),
-                        ("system.product", system.get("product")),
-                        ("cpu.model_name", cpu.get("model")),
-                        ("memory.total_bytes", _bytes(memory.get("total")))):
+
+    # Collect unknown facts across all major profile sections.
+    unknown_paths: list[str] = []
+    for path, value in (
+        ("system.manufacturer", system.get("vendor")),
+        ("system.product", system.get("product")),
+        ("operating_system.pretty_name", system.get("os")),
+        ("kernel.release", system.get("kernel")),
+        ("cpu.vendor_id", cpu.get("vendor")),
+        ("cpu.model_name", cpu.get("model")),
+        ("memory.total_bytes", _bytes(memory.get("total"))),
+        ("firmware.bios_version", system.get("bios_version")),
+    ):
         if not _known(value):
             unknown_paths.append(path)
 
-    fingerprint_facts = {"system": system, "cpu": cpu, "gpu": gpu, "npu": npu, "storage": storage}
-    digest = hashlib.sha256(json.dumps(fingerprint_facts, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    gpu_present, npu_present = _known(gpu.get("text")), npu.get("present") is True
-    gpu_devices = []
-    if gpu_present:
-        gpu_devices.append({"state": "observed", "id": "gpu0", "name": _nullable(gpu.get("text")),
-                            "pci": _pci(), "driver": "amdgpu" if gpu.get("amdgpu_module") == "loaded" else None,
-                            "architecture": _nullable(gpu.get("arch")), "vram_bytes": None, "runtime": "unknown"})
-    accelerators = []
+    # Fingerprint: hash only stable hardware-identity fields; exclude driver
+    # bindings, module states, and runtime observations that change independently
+    # of the physical hardware.
+    fingerprint_facts = {
+        "system": {"vendor": _nullable(system.get("vendor")), "product": _nullable(system.get("product"))},
+        "cpu": {"vendor": _nullable(cpu.get("vendor")), "model": _nullable(cpu.get("model"))},
+        "gpu": {"arch": _nullable(gpu.get("arch"))},
+        "npu": {"present": npu.get("present")},
+        "storage": {"nvme": _nullable(storage.get("nvme"))},
+    }
+    fingerprint_inputs = ["cpu", "gpu", "npu", "storage", "system"]
+    digest = hashlib.sha256(
+        json.dumps(fingerprint_facts, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+    # GPU devices: one record per detected lspci line.
+    gpu_text = gpu.get("text", "")
+    lspci_tool_present = "lspci" not in missing_tools
+    gpu_devices: list[dict[str, Any]] = []
+    if _known(gpu_text):
+        for idx, line in enumerate(str(gpu_text).splitlines()):
+            line = line.strip()
+            if not line:
+                continue
+            gpu_devices.append({
+                "state": "observed",
+                "id": f"gpu{idx}",
+                "name": line,
+                "pci": _pci(),
+                "driver": _gpu_driver(gpu),
+                "architecture": _nullable(gpu.get("arch")),
+                "vram_bytes": None,
+                "runtime": "unknown",
+            })
+    elif not lspci_tool_present:
+        gpu_devices.append({
+            "state": "tool_missing",
+            "id": "gpu0",
+            "name": None,
+            "pci": _pci(),
+            "driver": {"state": "unknown", "name": None},
+            "architecture": None,
+            "vram_bytes": None,
+            "runtime": "unknown",
+        })
+
+    # Accelerators: NPU.
+    npu_device_text = npu.get("device_text", "")
+    npu_module_text = npu.get("module_text", "")
+    npu_present = npu.get("present") is True
+    accelerators: list[dict[str, Any]] = []
     if npu_present:
-        accelerators.append({"state": "observed", "id": "npu0", "kind": "npu", "name": "AMD XDNA",
-                             "pci": _pci(), "device_nodes": [], "driver": "amdxdna" if _known(npu.get("module_text")) else None,
-                             "runtime": "unknown"})
-    storage_devices = []
-    if _known(storage.get("nvme")):
-        storage_devices.append({"state": "observed", "name": str(storage["nvme"]).splitlines()[0],
-                                "device_path": None, "kind": "disk", "transport": "nvme", "size_bytes": None,
-                                "removable": None, "model": None, "serial": None, "firmware_version": None})
+        if _known(npu_device_text):
+            npu_evidence = "XDNA device visible"
+        else:
+            npu_evidence = "XDNA kernel module loaded"
+        accelerators.append({
+            "state": "observed",
+            "id": "npu0",
+            "kind": "npu",
+            "name": "AMD XDNA",
+            "pci": _pci(),
+            "device_nodes": [],
+            "driver": _accel_driver(npu),
+            "runtime": "unknown",
+        })
+    else:
+        npu_evidence = None
+
+    # Storage devices: one record per non-empty lsblk output line; first field
+    # is the device name.
+    lsblk_tool_present = "lsblk" not in missing_tools
+    storage_devices: list[dict[str, Any]] = []
+    nvme_raw = storage.get("nvme", "")
+    if _known(nvme_raw):
+        for line in str(nvme_raw).splitlines():
+            fields = line.split()
+            if not fields:
+                continue
+            storage_devices.append({
+                "state": "observed",
+                "name": fields[0],
+                "device_path": None,
+                "kind": "disk",
+                "transport": "nvme",
+                "size_bytes": None,
+                "removable": None,
+                "model": None,
+                "serial": None,
+                "firmware_version": None,
+            })
+    elif not lsblk_tool_present:
+        storage_devices.append({
+            "state": "tool_missing",
+            "name": "unknown",
+            "device_path": None,
+            "kind": "unknown",
+            "transport": None,
+            "size_bytes": None,
+            "removable": None,
+            "model": None,
+            "serial": None,
+            "firmware_version": None,
+        })
+
     tools = [{"name": name, "state": "tool_missing", "path": None, "version": None,
               "error": {"code": "not_found", "message": f"{name} was not found in PATH"}} for name in missing_tools]
+
+    # Capability candidates: distinguish probe failures from confirmed absence.
+    gpu_candidate_state: str
+    if gpu_devices and gpu_devices[0]["state"] == "tool_missing":
+        gpu_candidate_state = "tool_missing"
+    elif gpu_devices:
+        gpu_candidate_state = "observed"
+    else:
+        gpu_candidate_state = "not_present"
+
+    nvme_candidate_state: str
+    if storage_devices and storage_devices[0]["state"] == "tool_missing":
+        nvme_candidate_state = "tool_missing"
+    elif storage_devices:
+        nvme_candidate_state = "observed"
+    else:
+        nvme_candidate_state = "not_present"
+
     return {
         "schema": {"name": SCHEMA_NAME, "version": SCHEMA_VERSION, "uri": SCHEMA_URI},
         "generation": {"timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
                        "generator": {"name": "system_profile.py", "version": generator_version},
                        "complete": not unknown_paths},
         "fingerprint": {"algorithm": "sha256", "value": digest,
-                        "inputs": ["cpu", "gpu", "npu", "storage", "system"]},
+                        "inputs": fingerprint_inputs},
         "system": {"state": _state(system.get("vendor") or system.get("product")),
                    "manufacturer": _nullable(system.get("vendor")), "product": _nullable(system.get("product")),
                    "version": None, "serial": None, "uuid": None,
@@ -142,12 +282,18 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
                                                        "source": "tier1-hardware.json", "error": None}]},
         "classification": classify(hardware),
         "capability_candidates": [
-            {"id": "gpu.rocm", "state": "observed" if gpu_present else "not_present",
-             "candidate": gpu.get("arch") == "gfx1150", "evidence": [str(gpu.get("arch"))] if _known(gpu.get("arch")) else []},
-            {"id": "npu.runtime", "state": "observed" if npu_present else "not_present",
-             "candidate": npu_present, "evidence": ["XDNA device visible"] if npu_present else []},
-            {"id": "storage.nvme", "state": "observed" if storage_devices else "not_present",
-             "candidate": bool(storage_devices), "evidence": [storage_devices[0]["name"]] if storage_devices else []}],
+            {"id": "gpu.rocm",
+             "state": gpu_candidate_state,
+             "candidate": gpu.get("arch") == "gfx1150" if gpu_candidate_state == "observed" else None,
+             "evidence": [str(gpu.get("arch"))] if _known(gpu.get("arch")) else []},
+            {"id": "npu.runtime",
+             "state": "observed" if npu_present else "not_present",
+             "candidate": npu_present if npu_present else None,
+             "evidence": [npu_evidence] if npu_evidence else []},
+            {"id": "storage.nvme",
+             "state": nvme_candidate_state,
+             "candidate": bool(storage_devices) if nvme_candidate_state == "observed" else None,
+             "evidence": [storage_devices[0]["name"]] if storage_devices and storage_devices[0]["state"] == "observed" else []}],
         "unknown_facts": [{"path": path, "state": "unknown", "reason": "collector returned no recognized value"}
                           for path in unknown_paths],
     }

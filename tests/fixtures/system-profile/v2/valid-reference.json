@@ -14,7 +14,7 @@
   },
   "fingerprint": {
     "algorithm": "sha256",
-    "value": "9670e2b822edb1bb90156a2947e664e5bb5f5fcea816020032c0ae6d7a15e54e",
+    "value": "211fa562675e52ee4bce96705d667c51f0e7673665bcc6f880c9ce87646208d6",
     "inputs": [
       "cpu",
       "gpu",
@@ -99,7 +99,7 @@
         "subsystem_vendor_id": null,
         "subsystem_device_id": null
       },
-      "driver": "amdgpu",
+      "driver": {"state": "observed", "name": "amdgpu"},
       "architecture": "gfx1150",
       "vram_bytes": null,
       "runtime": "unknown"
@@ -119,7 +119,7 @@
         "subsystem_device_id": null
       },
       "device_nodes": [],
-      "driver": "amdxdna",
+      "driver": {"state": "observed", "name": "amdxdna"},
       "runtime": "unknown"
     }
   ],
