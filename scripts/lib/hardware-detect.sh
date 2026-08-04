@@ -265,7 +265,7 @@ def meminfo_total():
 
 
 lscpu = run_probe("cpu.lscpu", ["lscpu"])
-lspci = run_probe("pci.lspci", ["lspci", "-Dnnmmk"])
+lspci = run_probe("pci.lspci", ["lspci", "-D", "-nn", "-vmm", "-k"])
 lsblk = run_probe("storage.lsblk", ["lsblk", "-J", "-b", "-O"])
 lsmod = run_probe("kernel_modules.lsmod", ["lsmod"])
 os_values, os_probe = os_release()
