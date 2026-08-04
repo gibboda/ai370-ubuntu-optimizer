@@ -56,6 +56,52 @@ def _bytes(value: Any) -> int | None:
     return int(float(match.group(1)) * multiplier)
 
 
+
+def _probe_value(probe: Any) -> Any:
+    if isinstance(probe, dict) and probe.get("state") == "observed":
+        return probe.get("value")
+    return None
+
+
+def _hardware_from_raw_probes(raw: dict[str, Any]) -> dict[str, Any]:
+    """Adapt the Stage 1 raw probe artifact to the profile builder input shape."""
+    cpu = raw.get("cpu", {})
+    dmi = raw.get("dmi", {})
+    system = dmi.get("system", {})
+    board = dmi.get("board", {})
+    firmware = raw.get("firmware", {})
+    os_info = raw.get("os", {})
+    kernel = raw.get("kernel", {})
+    gpu = raw.get("gpu", {})
+    accelerators = raw.get("accelerators", {})
+    storage = raw.get("storage", {})
+    missing_tools = raw.get("collection", {}).get("missing_tools", [])
+    gpu_lines = [device.get("device_name") or device.get("class") or "" for device in gpu.get("devices", [])]
+    npu_present = accelerators.get("state") == "observed"
+    npu_drivers = sorted({device.get("bound_driver") for device in accelerators.get("devices", []) if device.get("bound_driver")})
+    npu_nodes = [node.get("path") for node in accelerators.get("device_nodes", []) if node.get("path")]
+    return {
+        "_raw_stage1": raw,
+        "system": {"vendor": _probe_value(system.get("vendor")), "product": _probe_value(system.get("product")),
+                   "version": _probe_value(system.get("version")), "bios_vendor": _probe_value(firmware.get("bios_vendor")),
+                   "bios_version": _probe_value(firmware.get("bios_version")), "bios_date": _probe_value(firmware.get("bios_date")),
+                   "os": os_info.get("pretty_name"), "os_id": os_info.get("id"), "os_name": os_info.get("name"),
+                   "os_version_id": os_info.get("version_id"), "os_codename": os_info.get("version_codename"),
+                   "kernel": kernel.get("release"), "kernel_architecture": kernel.get("architecture"),
+                   "board_vendor": _probe_value(board.get("vendor")), "board_product": _probe_value(board.get("product")),
+                   "board_version": _probe_value(board.get("version"))},
+        "cpu": {"model": cpu.get("model_name"), "vendor": cpu.get("vendor_id"), "family": cpu.get("family"),
+                "cpu_model": cpu.get("model"), "stepping": cpu.get("stepping"), "architecture": cpu.get("architecture"),
+                "topology": cpu.get("topology", {}), "logical_cores": cpu.get("topology", {}).get("logical_processors")},
+        "gpu": {"text": "\n".join(gpu_lines), "arch": gpu.get("architecture", {}).get("value"),
+                "devices": gpu.get("devices", []), "amdgpu_module": "loaded" if any(d.get("bound_driver") == "amdgpu" for d in gpu.get("devices", [])) else ""},
+        "npu": {"present": npu_present, "module_text": "\n".join(npu_drivers), "device_text": "\n".join(npu_nodes),
+                "devices": accelerators.get("devices", []), "device_nodes": npu_nodes},
+        "memory": {"total_bytes": raw.get("memory", {}).get("total_bytes"), "total": raw.get("memory", {}).get("total_bytes")},
+        "storage": {"devices": storage.get("devices", []), "nvme": "\n".join(device.get("name", "") for device in storage.get("devices", []) if str(device.get("name", "")).startswith("nvme"))},
+        "tools": {"missing": ",".join(missing_tools)},
+    }
+
 def _pci() -> dict[str, None]:
     return {"address": None, "vendor_id": None, "device_id": None,
             "subsystem_vendor_id": None, "subsystem_device_id": None}
@@ -104,7 +150,9 @@ def _accel_driver(npu: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") -> dict[str, Any]:
-    """Convert the compatibility inventory into the complete v2 contract."""
+    """Convert the Stage 1 raw probe artifact into the complete v2 contract."""
+    if hardware.get("artifact") == "stage1-raw-probes":
+        hardware = _hardware_from_raw_probes(hardware)
     system, cpu = hardware.get("system", {}), hardware.get("cpu", {})
     gpu, npu = hardware.get("gpu", {}), hardware.get("npu", {})
     memory, storage = hardware.get("memory", {}), hardware.get("storage", {})
@@ -198,24 +246,27 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
     # is the device name.
     lsblk_tool_present = "lsblk" not in missing_tools
     storage_devices: list[dict[str, Any]] = []
-    nvme_raw = storage.get("nvme", "")
-    if _known(nvme_raw):
-        for line in str(nvme_raw).splitlines():
-            fields = line.split()
-            if not fields:
-                continue
+    raw_storage_devices = storage.get("devices", [])
+    if raw_storage_devices:
+        for device in raw_storage_devices:
+            name = device.get("name")
             storage_devices.append({
                 "state": "observed",
-                "name": fields[0],
-                "device_path": None,
-                "kind": "disk",
-                "transport": "nvme",
-                "size_bytes": None,
-                "removable": None,
-                "model": None,
-                "serial": None,
-                "firmware_version": None,
+                "name": name or "unknown",
+                "device_path": f"/dev/{name}" if name else None,
+                "kind": device.get("type") or "unknown",
+                "transport": device.get("tran"),
+                "size_bytes": device.get("size") if isinstance(device.get("size"), int) else None,
+                "removable": device.get("rm") if isinstance(device.get("rm"), bool) else None,
+                "model": device.get("model"),
+                "serial": device.get("serial"),
+                "firmware_version": device.get("rev"),
             })
+    elif _known(storage.get("nvme")):
+        for line in str(storage.get("nvme")).splitlines():
+            fields = line.split()
+            if fields:
+                storage_devices.append({"state": "observed", "name": fields[0], "device_path": None, "kind": "disk", "transport": "nvme", "size_bytes": None, "removable": None, "model": None, "serial": None, "firmware_version": None})
     elif not lsblk_tool_present:
         storage_devices.append({
             "state": "tool_missing",
@@ -259,24 +310,24 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
                         "inputs": fingerprint_inputs},
         "system": {"state": _state(system.get("vendor") or system.get("product")),
                    "manufacturer": _nullable(system.get("vendor")), "product": _nullable(system.get("product")),
-                   "version": None, "serial": None, "uuid": None,
-                   "motherboard": {"state": "unknown", "manufacturer": None, "product": None,
-                                   "version": None, "serial": None}},
-        "operating_system": {"state": _state(system.get("os")), "id": None, "name": None,
-                             "pretty_name": _nullable(system.get("os")), "version_id": None, "version_codename": None},
+                   "version": _nullable(system.get("version")), "serial": None, "uuid": None,
+                   "motherboard": {"state": _state(system.get("board_vendor") or system.get("board_product")), "manufacturer": _nullable(system.get("board_vendor")), "product": _nullable(system.get("board_product")),
+                                   "version": _nullable(system.get("board_version")), "serial": None}},
+        "operating_system": {"state": _state(system.get("os")), "id": _nullable(system.get("os_id")), "name": _nullable(system.get("os_name")),
+                             "pretty_name": _nullable(system.get("os")), "version_id": _nullable(system.get("os_version_id")), "version_codename": _nullable(system.get("os_codename"))},
         "kernel": {"state": _state(system.get("kernel")), "release": _nullable(system.get("kernel")),
-                   "architecture": None, "command_line": None},
+                   "architecture": _nullable(system.get("kernel_architecture")), "command_line": None},
         "cpu": {"state": _state(cpu.get("model")), "vendor_id": _nullable(cpu.get("vendor")),
-                "model_name": _nullable(cpu.get("model")), "architecture": None, "family": None,
-                "model": None, "stepping": None,
-                "topology": {"sockets": None, "physical_cores": None,
+                "model_name": _nullable(cpu.get("model")), "architecture": _nullable(cpu.get("architecture")), "family": int(cpu.get("family")) if str(cpu.get("family") or "").isdigit() else None,
+                "model": int(cpu.get("cpu_model")) if str(cpu.get("cpu_model") or "").isdigit() else None, "stepping": int(cpu.get("stepping")) if str(cpu.get("stepping") or "").isdigit() else None,
+                "topology": {"sockets": cpu.get("topology", {}).get("sockets"), "physical_cores": None,
                              "logical_processors": cpu.get("logical_cores") or None,
-                             "cores_per_socket": None, "threads_per_core": None}},
+                             "cores_per_socket": cpu.get("topology", {}).get("cores_per_socket"), "threads_per_core": cpu.get("topology", {}).get("threads_per_core")}},
         "memory": {"state": _state(_bytes(memory.get("total"))), "total_bytes": _bytes(memory.get("total")),
                    "available_bytes": None},
         "storage": storage_devices, "gpus": gpu_devices, "accelerators": accelerators,
-        "firmware": {"state": _state(system.get("bios_version")), "bios_vendor": None,
-                     "bios_version": _nullable(system.get("bios_version")), "bios_date": None,
+        "firmware": {"state": _state(system.get("bios_version")), "bios_vendor": _nullable(system.get("bios_vendor")),
+                     "bios_version": _nullable(system.get("bios_version")), "bios_date": _nullable(system.get("bios_date")),
                      "uefi": "unknown", "secure_boot": {"state": "unknown", "enabled": None}},
         "collection": {"tools": tools, "probes": [{"id": "compatibility-inventory", "state": "observed",
                                                        "source": "tier1-hardware.json", "error": None}]},

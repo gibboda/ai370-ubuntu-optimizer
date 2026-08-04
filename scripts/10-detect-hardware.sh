@@ -21,129 +21,66 @@ main() {
   echo "[INFO] Tier 1 / 10-detect-hardware.sh"
   echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
 
-  CPU_MODEL="$(detect_cpu_model)"
-  CPU_VENDOR="$(detect_cpu_vendor)"
-  CPU_CORES="$(detect_cpu_logical)"
-  KERNEL="$(detect_kernel)"
-  OS_DESCRIPTION="$(detect_os_description)"
-  OS_VERSION_ID="$(detect_os_version_id)"
-  OS_CODENAME="$(detect_os_codename)"
+  export PROFILE MODE PERSISTENCE
+  collect_stage1_raw_probes "$@" > "$LATEST_DIR/tier1-hardware.json"
 
-  GPU_TEXT="$(detect_gpu_text)"
-  GPU_ARCH="$(detect_gpu_arch "$GPU_TEXT")"
-  AMDGPU_MODULE="$(detect_amdgpu_module)"
-
-  NPU_MODULE="$(detect_npu_module_text)"
-  NPU_DEVICE="$(detect_npu_device_text)"
-  NPU_PRESENT="$(detect_npu_present "$NPU_MODULE" "$NPU_DEVICE")"
-
-  MEMORY_TOTAL="$(detect_memory_total)"
-  STORAGE_TEXT="$(detect_storage_text)"
-  NVME_TEXT="$(detect_nvme_text)"
-  BIOS_VERSION="$(detect_bios_version)"
-  SYSTEM_PRODUCT="$(detect_system_product)"
-  SYSTEM_VENDOR="$(detect_system_vendor)"
-
-  MISSING_TOOLS="$(collect_missing_tools)"
-
-  # Structured JSON inventory (Tier 1 canonical)
-  MISSING_TOOLS_CSV="$(echo "$MISSING_TOOLS" | tr '\n' ',' | sed 's/,$//')"
-  export PROFILE MODE PERSISTENCE SYSTEM_VENDOR SYSTEM_PRODUCT BIOS_VERSION OS_DESCRIPTION KERNEL CPU_MODEL CPU_VENDOR CPU_CORES GPU_TEXT GPU_ARCH AMDGPU_MODULE NPU_PRESENT NPU_MODULE NPU_DEVICE MEMORY_TOTAL STORAGE_TEXT NVME_TEXT MISSING_TOOLS_CSV
-  python3 - <<'PY' > "$LATEST_DIR/tier1-hardware.json"
+  python3 - "$LATEST_DIR/tier1-hardware.json" > "$LATEST_DIR/tier1-hardware.md" <<'PYSUMMARY'
 import json
-import os
-from datetime import datetime, UTC
+import sys
+from pathlib import Path
 
-
-def as_int(value: str, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
-data = {
-    "tier": 1,
-    "phase": "detect-hardware",
-    "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-    "profile": os.environ.get("PROFILE", "unknown"),
-    "mode": os.environ.get("MODE", "unknown"),
-    "persistence": os.environ.get("PERSISTENCE", "unknown"),
-    "system": {
-        "vendor": os.environ.get("SYSTEM_VENDOR") or "unknown",
-        "product": os.environ.get("SYSTEM_PRODUCT") or "unknown",
-        "bios_version": os.environ.get("BIOS_VERSION") or "unknown",
-        "os": os.environ.get("OS_DESCRIPTION", ""),
-        "kernel": os.environ.get("KERNEL", ""),
-    },
-    "cpu": {
-        "model": os.environ.get("CPU_MODEL", ""),
-        "vendor": os.environ.get("CPU_VENDOR", ""),
-        "logical_cores": as_int(os.environ.get("CPU_CORES", "0")),
-    },
-    "gpu": {
-        "text": os.environ.get("GPU_TEXT", ""),
-        "arch": os.environ.get("GPU_ARCH", ""),
-        "amdgpu_module": "loaded" if os.environ.get("AMDGPU_MODULE", "") else "",
-    },
-    "npu": {
-        "present": os.environ.get("NPU_PRESENT", "false").lower() == "true",
-        "module_text": os.environ.get("NPU_MODULE", ""),
-        "device_text": os.environ.get("NPU_DEVICE", ""),
-    },
-    "memory": {"total": os.environ.get("MEMORY_TOTAL", "")},
-    "storage": {
-        "summary": os.environ.get("STORAGE_TEXT", ""),
-        "nvme": os.environ.get("NVME_TEXT", ""),
-    },
-    "tools": {"missing": os.environ.get("MISSING_TOOLS_CSV", "")},
-}
-
-print(json.dumps(data, indent=2))
-PY
-
-  # Human readable summary
-  {
-    echo "# Tier 1 Hardware Detection"
-    echo
-    echo "**Profile:** $PROFILE | **Mode:** $MODE | **Persistence:** $PERSISTENCE"
-    echo
-    echo "## System"
-    echo "- Product: ${SYSTEM_VENDOR:-unknown} ${SYSTEM_PRODUCT:-unknown}"
-    echo "- BIOS: ${BIOS_VERSION:-unknown}"
-    echo "- OS: $OS_DESCRIPTION ($OS_VERSION_ID / $OS_CODENAME)"
-    echo "- Kernel: $KERNEL"
-    echo
-    echo "## CPU"
-    echo "- Model: $CPU_MODEL"
-    echo "- Vendor: $CPU_VENDOR"
-    echo "- Logical cores: ${CPU_CORES:-unknown}"
-    echo
-    echo "## GPU (iGPU)"
-    echo "- Detected: $GPU_TEXT"
-    echo "- Architecture: $GPU_ARCH"
-    echo "- amdgpu module: ${AMDGPU_MODULE:+loaded (ok)}"
-    echo
-    echo "## NPU (XDNA2)"
-    echo "- Present: $NPU_PRESENT"
-    echo "- Module: ${NPU_MODULE:-none detected}"
-    echo "- Devices: ${NPU_DEVICE:-none detected}"
-    echo
-    echo "## Memory / Storage"
-    echo "- Memory: $MEMORY_TOTAL"
-    echo "- Storage: ${STORAGE_TEXT:-unknown}"
-    echo "- NVMe: ${NVME_TEXT:+present}"
-    echo
-    echo "## Missing tools (best-effort detection)"
-    echo "${MISSING_TOOLS:-none}"
-  } > "$LATEST_DIR/tier1-hardware.md"
+raw = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+def value(probe):
+    return probe.get("value") if isinstance(probe, dict) and probe.get("state") == "observed" else None
+system = raw.get("dmi", {}).get("system", {})
+board = raw.get("dmi", {}).get("board", {})
+firmware = raw.get("firmware", {})
+cpu = raw.get("cpu", {})
+os_info = raw.get("os", {})
+kernel = raw.get("kernel", {})
+gpu = raw.get("gpu", {})
+accel = raw.get("accelerators", {})
+memory = raw.get("memory", {})
+storage = raw.get("storage", {})
+collection = raw.get("collection", {})
+print("# Stage 1 Hardware Detection")
+print()
+inputs = raw.get("inputs", {})
+print(f"**Profile:** {inputs.get('profile', 'unknown')} | **Mode:** {inputs.get('mode', 'unknown')} | **Persistence:** {inputs.get('persistence', 'unknown')}")
+print()
+print("## System facts")
+print(f"- System: {value(system.get('vendor')) or 'unknown'} {value(system.get('product')) or 'unknown'} ({value(system.get('version')) or 'unknown version'})")
+print(f"- Board: {value(board.get('vendor')) or 'unknown'} {value(board.get('product')) or 'unknown'} ({value(board.get('version')) or 'unknown version'})")
+print(f"- BIOS: {value(firmware.get('bios_vendor')) or 'unknown'} {value(firmware.get('bios_version')) or 'unknown'} ({value(firmware.get('bios_date')) or 'unknown date'})")
+print(f"- OS: {os_info.get('pretty_name') or 'unknown'} ({os_info.get('version_id') or 'unknown'} / {os_info.get('version_codename') or 'unknown'})")
+print(f"- Kernel: {kernel.get('release') or 'unknown'} ({kernel.get('architecture') or 'unknown arch'})")
+print(f"- Secure Boot: {firmware.get('secure_boot', {}).get('state', 'unknown')} enabled={firmware.get('secure_boot', {}).get('enabled')}")
+print()
+print("## CPU")
+print(f"- Model string: {cpu.get('model_name') or 'unknown'}")
+print(f"- Vendor/family/model/stepping: {cpu.get('vendor_id') or 'unknown'} / {cpu.get('family') or 'unknown'} / {cpu.get('model') or 'unknown'} / {cpu.get('stepping') or 'unknown'}")
+print(f"- Topology: {cpu.get('topology', {})}")
+print()
+print("## PCI / GPU / accelerators")
+print(f"- PCI probe state: {raw.get('pci', {}).get('state', 'unknown')} ({len(raw.get('pci', {}).get('devices', []))} devices)")
+print(f"- GPU state: {gpu.get('state', 'unknown')} architecture={gpu.get('architecture', {}).get('value') or 'unknown'}")
+print(f"- Accelerator state: {accel.get('state', 'unknown')} nodes={[n.get('path') for n in accel.get('device_nodes', [])]}")
+print()
+print("## Memory / Storage")
+print(f"- Memory total bytes: {memory.get('total_bytes')}")
+print(f"- Storage probe state: {storage.get('state', 'unknown')} ({len(storage.get('devices', []))} devices)")
+print()
+print("## Probe health")
+print("- Missing tools: " + (", ".join(collection.get("missing_tools", [])) or "none"))
+print(f"- Failed probes: {len(collection.get('failed_probes', []))}")
+print(f"- Permission errors: {len(collection.get('permission_errors', []))}")
+PYSUMMARY
 
   # Also keep the legacy artifact names for compatibility with existing reports consumers
-  cp "$LATEST_DIR/tier1-hardware.json" "$LATEST_DIR/hardware-inventory.json" 2>/dev/null || true
-  cp "$LATEST_DIR/tier1-hardware.md" "$LATEST_DIR/hardware-summary.md" 2>/dev/null || true
+  cp "$LATEST_DIR/tier1-hardware.json" "$LATEST_DIR/hardware-inventory.json"
+  cp "$LATEST_DIR/tier1-hardware.md" "$LATEST_DIR/hardware-summary.md"
 
-  # Phase 1 of the Stage 1 profile-builder migration: publish a versioned,
-  # normalized profile alongside the compatibility inventory artifacts.
+  # Publish a versioned normalized profile from the raw Stage 1 probe artifact.
   local generator_version="unknown"
   if [[ -f "$PROJECT_ROOT/VERSION" ]]; then
     generator_version="$(tr -d '[:space:]' < "$PROJECT_ROOT/VERSION")"
@@ -152,6 +89,26 @@ PY
     --input "$LATEST_DIR/tier1-hardware.json" \
     --output "$LATEST_DIR/system-profile.json" \
     --generator-version "$generator_version"
+
+  eval "$(python3 - "$LATEST_DIR/tier1-hardware.json" <<'PYNPUENV'
+import json
+import shlex
+import sys
+from pathlib import Path
+raw = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+accel = raw.get("accelerators", {})
+nodes = "\n".join(node.get("path", "") for node in accel.get("device_nodes", []))
+drivers = sorted({device.get("bound_driver") for device in accel.get("devices", []) if device.get("bound_driver")})
+present = accel.get("state") == "observed"
+values = {
+    "NPU_PRESENT": "true" if present else "false",
+    "NPU_MODULE": "\n".join(drivers),
+    "NPU_DEVICE": nodes,
+}
+for name, value in values.items():
+    print(f"{name}={shlex.quote(value)}")
+PYNPUENV
+)"
 
   # Package C: also emit tier1-npu.* here (formerly scripts/75-detect-npu.sh)
   local xrt_smi xrt_state npu_status
