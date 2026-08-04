@@ -1,0 +1,18 @@
+{
+  "stage": 1,
+  "phase": "detect-hardware",
+  "artifact": "stage1-raw-probes",
+  "timestamp": "2026-01-01T00:00:00Z",
+  "inputs": {"profile": "auto", "mode": "auto", "persistence": "none"},
+  "cpu": {"state": "observed", "vendor_id": "GenuineIntel", "model_name": "Intel Core i7-1365U", "family": 6, "model": 186, "stepping": 2, "architecture": "x86_64", "topology": {"logical_processors": 12}},
+  "dmi": {"system": {"vendor": {"state": "observed", "value": "Dell Inc."}, "product": {"state": "observed", "value": "XPS 13"}, "version": {"state": "observed", "value": "1.0"}}, "board": {"vendor": {"state": "observed", "value": "Dell Inc."}, "product": {"state": "observed", "value": "0ABC"}, "version": {"state": "observed", "value": "A01"}}},
+  "pci": {"state": "observed", "evidence_source": "lspci -Dnnmmk", "devices": []},
+  "gpu": {"state": "observed", "devices": [{"device_name": "Iris Xe Graphics", "bound_driver": "i915", "vendor_id": "8086", "device_id": "46b3"}], "architecture": {"state": "unknown", "value": null, "evidence_source": null, "error": {"code": "not_authoritative", "message": "No authoritative GPU architecture probe"}}},
+  "accelerators": {"state": "not_present", "devices": [], "device_nodes": []},
+  "memory": {"state": "observed", "total_bytes": 17179869184, "evidence_source": "/proc/meminfo"},
+  "storage": {"state": "observed", "evidence_source": "lsblk -J -b -O", "devices": [{"name": "nvme0n1", "size": 512000000000, "type": "disk", "tran": "nvme"}]},
+  "os": {"state": "observed", "id": "ubuntu", "name": "Ubuntu", "pretty_name": "Ubuntu 24.04.2 LTS", "version_id": "24.04", "version_codename": "noble", "evidence_source": "/etc/os-release"},
+  "kernel": {"state": "observed", "release": "6.8.0-generic", "architecture": "x86_64", "evidence_source": "uname"},
+  "firmware": {"bios_vendor": {"state": "observed", "value": "Dell Inc."}, "bios_version": {"state": "observed", "value": "1.0.0"}, "bios_date": {"state": "observed", "value": "01/01/2025"}, "uefi": {"state": "observed", "evidence_source": "/sys/firmware/efi"}, "secure_boot": {"state": "observed", "enabled": true, "evidence_source": "mokutil --sb-state"}},
+  "collection": {"missing_tools": [], "permission_errors": [], "failed_probes": [], "probes": []}
+}

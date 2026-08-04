@@ -1,0 +1,18 @@
+{
+  "stage": 1,
+  "phase": "detect-hardware",
+  "artifact": "stage1-raw-probes",
+  "timestamp": "2026-01-01T00:00:00Z",
+  "inputs": {"profile": "auto", "mode": "auto", "persistence": "none"},
+  "cpu": {"state": "observed", "vendor_id": "AuthenticAMD", "model_name": "AMD Ryzen AI 9 HX 370", "family": 26, "model": 36, "stepping": 0, "architecture": "x86_64", "topology": {"logical_processors": 24}},
+  "dmi": {"system": {"vendor": {"state": "observed", "value": "MINISFORUM"}, "product": {"state": "observed", "value": "EliteMini AI370"}, "version": {"state": "observed", "value": "V1.0"}}, "board": {"vendor": {"state": "observed", "value": "MINISFORUM"}, "product": {"state": "observed", "value": "UM790 Pro"}, "version": {"state": "observed", "value": "V1.0"}}},
+  "pci": {"state": "observed", "evidence_source": "lspci -Dnnmmk", "devices": []},
+  "gpu": {"state": "observed", "devices": [{"device_name": "Radeon 890M", "bound_driver": "amdgpu", "vendor_id": "1002", "device_id": "1900"}], "architecture": {"state": "unknown", "value": null, "evidence_source": null, "error": {"code": "not_authoritative", "message": "No authoritative GPU architecture probe was available in Stage 1"}}},
+  "accelerators": {"state": "observed", "devices": [{"device_name": "AMD XDNA AI Engine", "bound_driver": "amdxdna", "vendor_id": "1022", "device_id": "1502"}], "device_nodes": [{"path": "/dev/accel/accel0", "state": "observed", "evidence_source": "filesystem glob"}]},
+  "memory": {"state": "observed", "total_bytes": 34359738368, "evidence_source": "/proc/meminfo"},
+  "storage": {"state": "observed", "evidence_source": "lsblk -J -b -O", "devices": [{"name": "nvme0n1", "size": 1000000000000, "type": "disk", "tran": "nvme"}]},
+  "os": {"state": "observed", "id": "ubuntu", "name": "Ubuntu", "pretty_name": "Ubuntu 24.04.2 LTS", "version_id": "24.04", "version_codename": "noble", "evidence_source": "/etc/os-release"},
+  "kernel": {"state": "observed", "release": "6.14.0-generic", "architecture": "x86_64", "evidence_source": "uname"},
+  "firmware": {"bios_vendor": {"state": "observed", "value": "AMI"}, "bios_version": {"state": "observed", "value": "2.01"}, "bios_date": {"state": "observed", "value": "01/01/2026"}, "uefi": {"state": "observed", "evidence_source": "/sys/firmware/efi"}, "secure_boot": {"state": "observed", "enabled": true, "evidence_source": "mokutil --sb-state"}},
+  "collection": {"missing_tools": [], "permission_errors": [], "failed_probes": [], "probes": []}
+}

@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/system-profile/v2"
+RAW_FIXTURES = ROOT / "tests/fixtures/raw-probes/v1"
 SPEC = importlib.util.spec_from_file_location("system_profile", ROOT / "scripts/lib/system_profile.py")
 assert SPEC and SPEC.loader
 system_profile = importlib.util.module_from_spec(SPEC)
@@ -80,6 +81,60 @@ class NormalizationTests(unittest.TestCase):
         system_profile.validate_profile(profile)
         self.assertIsNone(profile["classification"]["platform_id"])
         self.assertEqual(profile["classification"]["state"], "unsupported")
+
+
+class RawProbeNormalizationTests(unittest.TestCase):
+    def _load(self, name: str) -> dict:
+        return json.loads((RAW_FIXTURES / name).read_text())
+
+    def test_observed_ai370_is_exactly_classified(self) -> None:
+        raw = self._load("observed-ai370.json")
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["classification"]["platform_id"], "generic-ryzen-ai")
+        xdna_accels = [a for a in profile["accelerators"] if a.get("state") == "observed"]
+        self.assertTrue(xdna_accels, "AMD XDNA accelerator must be observed")
+        self.assertEqual(xdna_accels[0]["driver"]["name"], "amdxdna")
+
+    def test_missing_tool_appears_in_collection(self) -> None:
+        raw = self._load("missing-tool.json")
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        tool_states = {t["name"]: t["state"] for t in profile["collection"]["tools"]}
+        self.assertIn("clinfo", tool_states)
+        self.assertEqual(tool_states["clinfo"], "tool_missing")
+        self.assertIn("rocminfo", tool_states)
+        self.assertEqual(tool_states["rocminfo"], "tool_missing")
+
+    def test_failed_probe_produces_valid_profile_with_unknown_firmware(self) -> None:
+        raw = self._load("failed-probe.json")
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        fw = profile["firmware"]
+        self.assertIsNone(fw["bios_version"])
+
+    def test_unsupported_host_has_unsupported_state(self) -> None:
+        raw = self._load("unsupported-host.json")
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["classification"]["state"], "unsupported")
+        self.assertIsNone(profile["classification"]["platform_id"])
+
+    def test_storage_sata_only_has_no_nvme_in_storage_list(self) -> None:
+        raw = self._load("storage-sata-only.json")
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        storage_names = [d.get("name", "") for d in profile["storage"]]
+        self.assertFalse(any(str(n).startswith("nvme") for n in storage_names),
+                         f"Expected no nvme devices, got: {storage_names}")
+
+    def test_non_xdna_accelerator_does_not_set_npu_present(self) -> None:
+        raw = self._load("accelerator-non-xdna.json")
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        observed_accels = [a for a in profile["accelerators"] if a.get("state") == "observed"]
+        self.assertFalse(observed_accels,
+                         "Non-AMD/XDNA accelerator must not produce an observed accelerator entry")
 
 
 if __name__ == "__main__":
