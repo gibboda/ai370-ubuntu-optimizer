@@ -77,9 +77,20 @@ def _hardware_from_raw_probes(raw: dict[str, Any]) -> dict[str, Any]:
     storage = raw.get("storage", {})
     missing_tools = raw.get("collection", {}).get("missing_tools", [])
     gpu_lines = [device.get("device_name") or device.get("class") or "" for device in gpu.get("devices", [])]
-    npu_present = accelerators.get("state") == "observed"
-    npu_drivers = sorted({device.get("bound_driver") for device in accelerators.get("devices", []) if device.get("bound_driver")})
-    npu_nodes = [node.get("path") for node in accelerators.get("device_nodes", []) if node.get("path")]
+    _AMD_VENDOR_IDS = {"1022", "0x1022"}
+    _XDNA_DRIVER = "amdxdna"
+    accel_devices = accelerators.get("devices", [])
+    accel_nodes = accelerators.get("device_nodes", [])
+    _xdna_devices = [
+        d for d in accel_devices
+        if d.get("bound_driver") == _XDNA_DRIVER
+        or str(d.get("vendor_id", "")).lower() in _AMD_VENDOR_IDS
+        or "xdna" in str(d.get("device_name", "")).lower()
+    ]
+    _xdna_nodes = [n for n in accel_nodes if "xdna" in str(n.get("path", "")).lower()]
+    npu_present = bool(_xdna_devices or _xdna_nodes)
+    npu_drivers = sorted({device.get("bound_driver") for device in _xdna_devices if device.get("bound_driver")})
+    npu_nodes = [node.get("path") for node in accel_nodes if node.get("path")]
     return {
         "_raw_stage1": raw,
         "system": {"vendor": _probe_value(system.get("vendor")), "product": _probe_value(system.get("product")),
@@ -99,7 +110,7 @@ def _hardware_from_raw_probes(raw: dict[str, Any]) -> dict[str, Any]:
         "gpu": {"text": "\n".join(gpu_lines), "arch": gpu.get("architecture", {}).get("value"),
                 "devices": gpu.get("devices", []), "amdgpu_module": "loaded" if any(d.get("bound_driver") == "amdgpu" for d in gpu.get("devices", [])) else ""},
         "npu": {"present": npu_present, "module_text": "\n".join(npu_drivers), "device_text": "\n".join(npu_nodes),
-                "devices": accelerators.get("devices", []), "device_nodes": npu_nodes},
+                "devices": accel_devices, "device_nodes": npu_nodes},
         "memory": {"total_bytes": raw.get("memory", {}).get("total_bytes"), "total": raw.get("memory", {}).get("total_bytes")},
         "storage": {"devices": storage.get("devices", []), "nvme": "\n".join(device.get("name", "") for device in storage.get("devices", []) if str(device.get("name", "")).startswith("nvme"))},
         "tools": {"missing": ",".join(missing_tools)},
