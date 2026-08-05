@@ -17,9 +17,9 @@ system_profile = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(system_profile)
 
 
-def inventory(cpu: str, vendor: str, gpu: str, npu: bool) -> dict:
+def inventory(cpu: str, vendor: str, gpu: str, npu: bool, product: str = "Ryzen AI system") -> dict:
     return {
-        "system": {"vendor": "Sanitized Vendor", "product": "Ryzen AI system", "kernel": "6.14",
+        "system": {"vendor": "Sanitized Vendor", "product": product, "kernel": "6.14",
                    "os": "Ubuntu 24.04", "bios_version": "2.00"},
         "cpu": {"model": cpu, "vendor": vendor, "logical_cores": 24},
         "gpu": {"text": "AMD display controller", "arch": gpu, "amdgpu_module": "loaded"},
@@ -57,7 +57,7 @@ class SchemaContractTests(unittest.TestCase):
 class NormalizationTests(unittest.TestCase):
     def test_complete_profile_is_valid_and_exactly_classified(self) -> None:
         profile = system_profile.build_profile(
-            inventory("AMD Ryzen AI 9 HX 370", "AuthenticAMD", "gfx1150", True), "test"
+            inventory("AMD Ryzen AI 9 HX 370", "AuthenticAMD", "gfx1150", True, "EliteMini AI370"), "test"
         )
         system_profile.validate_profile(profile)
         self.assertEqual(profile["schema"]["version"], 2)
@@ -72,9 +72,26 @@ class NormalizationTests(unittest.TestCase):
             inventory("AMD Ryzen AI 7 PRO 360", "AuthenticAMD", "unknown", False)
         )
         system_profile.validate_profile(profile)
-        self.assertEqual(profile["classification"]["platform_id"], "generic-ryzen-ai")
+        self.assertEqual(profile["classification"]["platform_id"], "strix-point-ryzen-ai")
         self.assertEqual(profile["classification"]["confidence"], "family")
         self.assertEqual(profile["capability_candidates"][1]["state"], "not_present")
+
+    def test_elitemini_identity_survives_unavailable_npu_driver(self) -> None:
+        host = inventory("AMD Ryzen AI 9 HX 370", "AuthenticAMD", "gfx1150", False, "EliteMini AI370")
+        profile = system_profile.build_profile(host, "test")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["classification"]["platform_id"], "ai370")
+        self.assertEqual(profile["capability_candidates"][1]["state"], "not_present")
+
+    def test_degraded_npu_driver_keeps_device_visibility_separate(self) -> None:
+        host = inventory("AMD Ryzen AI 9 HX 370", "AuthenticAMD", "gfx1150", True, "EliteMini AI370")
+        host["npu"] = {"present": True, "module_text": "", "device_text": "/dev/accel/accel0", "devices": []}
+        profile = system_profile.build_profile(host, "test")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["classification"]["platform_id"], "ai370")
+        self.assertEqual(profile["accelerators"][0]["state"], "observed")
+        self.assertEqual(profile["accelerators"][0]["driver"]["state"], "unknown")
+        self.assertEqual(profile["accelerators"][0]["runtime"], "unknown")
 
     def test_unsupported_host_has_explicit_state(self) -> None:
         profile = system_profile.build_profile(inventory("Intel Xeon", "GenuineIntel", "unknown", False))
@@ -91,10 +108,17 @@ class RawProbeNormalizationTests(unittest.TestCase):
         raw = self._load("observed-ai370.json")
         profile = system_profile.build_profile(raw, "test")
         system_profile.validate_profile(profile)
-        self.assertEqual(profile["classification"]["platform_id"], "generic-ryzen-ai")
+        self.assertEqual(profile["classification"]["platform_id"], "ai370")
         xdna_accels = [a for a in profile["accelerators"] if a.get("state") == "observed"]
         self.assertTrue(xdna_accels, "AMD XDNA accelerator must be observed")
         self.assertEqual(xdna_accels[0]["driver"]["name"], "amdxdna")
+
+    def test_non_hx370_ryzen_ai_fixture_matches_family_without_collector_change(self) -> None:
+        raw = self._load("observed-ryzen-ai-pro-360.json")
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["classification"]["platform_id"], "strix-point-ryzen-ai")
+        self.assertEqual(profile["classification"]["confidence"], "family")
 
     def test_missing_tool_appears_in_collection(self) -> None:
         raw = self._load("missing-tool.json")
