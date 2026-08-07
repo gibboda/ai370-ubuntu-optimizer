@@ -133,8 +133,10 @@ PLATFORM_DEFINITIONS: list[dict[str, Any]] = [
             {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
             {"path": "cpu.model", "contains_any": ["Ryzen AI 9 HX 370"]},
         ],
-        "optional": [
+        "requires_if_known": [
             {"path": "system.vendor", "equals_any": ["MINISFORUM", "Micro Computer (HK) Tech Limited"]},
+        ],
+        "optional": [
             {"path": "gpu.arch", "equals_any": ["gfx1150"]},
             {"path": "npu.family", "equals_any": ["xdna2"]},
         ],
@@ -170,8 +172,11 @@ PLATFORM_DEFINITIONS: list[dict[str, Any]] = [
 ]
 
 CPU_FAMILY_PROFILES: list[dict[str, Any]] = [
-    {"id": "ryzen-ai-300", "contains_any": ["Ryzen AI 9 HX 370", "Ryzen AI 7 PRO 360", "Ryzen AI 300"]},
     {"id": "ryzen-ai", "contains_any": ["Ryzen AI"]},
+]
+
+CPU_FAMILY_SIGNATURES: list[dict[str, Any]] = [
+    {"id": "ryzen-ai-300", "cpu_families": [26], "cpu_models": [36]},
 ]
 
 GPU_ARCHITECTURE_MAPPINGS: dict[str, dict[str, Any]] = {
@@ -180,8 +185,10 @@ GPU_ARCHITECTURE_MAPPINGS: dict[str, dict[str, Any]] = {
 }
 
 NPU_FAMILY_MAPPINGS: list[dict[str, Any]] = [
-    {"family": "xdna2", "contains_any": ["xdna", "ai engine"], "vendor_ids": ["1022", "0x1022"]},
-    {"family": "xdna", "contains_any": ["xdna"], "vendor_ids": ["1022", "0x1022"]},
+    {"family": "xdna2", "contains_any": ["xdna2", "ai engine v2"], "vendor_ids": ["1022", "0x1022"],
+     "device_ids": ["17f0"]},
+    {"family": "xdna", "contains_any": ["xdna", "ai engine"], "vendor_ids": ["1022", "0x1022"],
+     "device_ids": ["1502"]},
 ]
 
 
@@ -193,16 +200,37 @@ def _first_match(value: str, mappings: list[dict[str, Any]]) -> str | None:
     return None
 
 
+def _as_int(value: Any) -> int | None:
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.isdigit():
+        return int(value)
+    return None
+
+
+def _cpu_family_profile(cpu: dict[str, Any]) -> str | None:
+    cpu_family = _as_int(cpu.get("family"))
+    cpu_model = _as_int(cpu.get("cpu_model"))
+    for signature in CPU_FAMILY_SIGNATURES:
+        families = {int(v) for v in signature.get("cpu_families", [])}
+        models = {int(v) for v in signature.get("cpu_models", [])}
+        if cpu_family in families and (not models or cpu_model in models):
+            return signature["id"]
+    return _first_match(str(cpu.get("model", "")), CPU_FAMILY_PROFILES)
+
+
 def _npu_family(npu: dict[str, Any]) -> str | None:
     device_text = "\n".join(
         str(device.get("device_name") or device.get("name") or "") for device in npu.get("devices", [])
     )
     device_text = "\n".join([device_text, str(npu.get("module_text", "")), str(npu.get("device_text", ""))])
     vendor_ids = {str(device.get("vendor_id", "")).lower() for device in npu.get("devices", [])}
+    device_ids = {str(device.get("device_id", "")).lower() for device in npu.get("devices", [])}
     for mapping in NPU_FAMILY_MAPPINGS:
         text_match = any(token.casefold() in device_text.casefold() for token in mapping.get("contains_any", []))
+        device_match = bool(device_ids & {device.lower() for device in mapping.get("device_ids", [])})
         vendor_match = bool(vendor_ids & {vendor.lower() for vendor in mapping.get("vendor_ids", [])})
-        if text_match and (vendor_match or npu.get("present") is True):
+        if (device_match or text_match) and (vendor_match or npu.get("present") is True):
             return mapping["family"]
     return "unknown" if npu.get("present") is True else None
 
@@ -213,7 +241,7 @@ def _classification_facts(hardware: dict[str, Any]) -> dict[str, Any]:
     npu = hardware.get("npu", {})
     system = hardware.get("system", {})
     cpu_model = str(cpu.get("model", ""))
-    cpu_family = _first_match(cpu_model, CPU_FAMILY_PROFILES)
+    cpu_family = _cpu_family_profile(cpu)
     gpu_arch = _nullable(gpu.get("arch"))
     gpu_mapping = GPU_ARCHITECTURE_MAPPINGS.get(str(gpu_arch), {}) if gpu_arch else {}
     return {
@@ -253,6 +281,15 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
                 evidence.append(f"required {path} matched {value}")
             else:
                 mismatches.append(f"required {path} did not match; observed {value or 'unknown'}")
+        for requirement in definition.get("requires_if_known", []):
+            path = requirement["path"]
+            value = facts.get(path)
+            if _known(value) and _matches_requirement(value, requirement):
+                evidence.append(f"known {path} matched {value}")
+            elif _known(value):
+                mismatches.append(f"known {path} contradicted identity; observed {value}")
+            else:
+                evidence.append(f"known {path} unavailable; platform identity retained")
         for requirement in definition.get("optional", []):
             path = requirement["path"]
             value = facts.get(path)
@@ -262,7 +299,7 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
                 mismatches.append(f"optional {path} did not match; observed {value}")
             else:
                 evidence.append(f"optional {path} unavailable; platform identity retained")
-        if len([m for m in mismatches if m.startswith("required ")]) == 0:
+        if len([m for m in mismatches if m.startswith("required ") or m.startswith("known ")]) == 0:
             matches.append((definition["priority"], definition, evidence, mismatches))
         all_mismatches.extend(f"{definition['id']}: {message}" for message in mismatches)
 
@@ -322,10 +359,9 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
         "system": {"vendor": _nullable(system.get("vendor")), "product": _nullable(system.get("product"))},
         "cpu": {"vendor": _nullable(cpu.get("vendor")), "model": _nullable(cpu.get("model"))},
         "gpu": {"arch": _nullable(gpu.get("arch"))},
-        "npu": {"present": npu.get("present")},
         "storage": {"nvme": _nullable(storage.get("nvme"))},
     }
-    fingerprint_inputs = ["cpu", "gpu", "npu", "storage", "system"]
+    fingerprint_inputs = ["cpu", "gpu", "storage", "system"]
     digest = hashlib.sha256(
         json.dumps(fingerprint_facts, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
