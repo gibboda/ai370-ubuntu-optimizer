@@ -121,32 +121,200 @@ def _pci() -> dict[str, None]:
             "subsystem_vendor_id": None, "subsystem_device_id": None}
 
 
+
+PLATFORM_DEFINITIONS: list[dict[str, Any]] = [
+    {
+        "id": "ai370",
+        "confidence": "exact",
+        "priority": 100,
+        "description": "Minisforum EliteMini AI370 reference platform",
+        "requires": [
+            {"path": "system.product", "equals_any": ["EliteMini AI370", "AI370"]},
+            {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
+            {"path": "cpu.model", "contains_any": ["Ryzen AI 9 HX 370"]},
+        ],
+        "requires_if_known": [
+            {"path": "system.vendor", "equals_any": ["MINISFORUM", "Micro Computer (HK) Tech Limited"]},
+        ],
+        "optional": [
+            {"path": "gpu.arch", "equals_any": ["gfx1150"]},
+            {"path": "npu.family", "equals_any": ["xdna2"]},
+        ],
+    },
+    {
+        "id": "strix-point-ryzen-ai",
+        "confidence": "family",
+        "priority": 50,
+        "description": "AMD Ryzen AI 300 family platform",
+        "requires": [
+            {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
+            {"path": "cpu.family_profile", "equals_any": ["ryzen-ai-300"]},
+        ],
+        "optional": [
+            {"path": "gpu.family", "equals_any": ["rdna3.5"]},
+            {"path": "npu.family", "equals_any": ["xdna2"]},
+        ],
+    },
+    {
+        "id": "generic-ryzen-ai",
+        "confidence": "family",
+        "priority": 10,
+        "description": "Generic AMD Ryzen AI platform",
+        "requires": [
+            {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
+            {"path": "cpu.family_profile", "equals_any": ["ryzen-ai"]},
+        ],
+        "optional": [
+            {"path": "gpu.family", "equals_any": ["rdna3.5", "unknown"]},
+            {"path": "npu.family", "equals_any": ["xdna", "xdna2", "unknown"]},
+        ],
+    },
+]
+
+CPU_FAMILY_PROFILES: list[dict[str, Any]] = [
+    {"id": "ryzen-ai", "contains_any": ["Ryzen AI"]},
+]
+
+CPU_FAMILY_SIGNATURES: list[dict[str, Any]] = [
+    {"id": "ryzen-ai-300", "cpu_families": [26], "cpu_models": [36]},
+]
+
+GPU_ARCHITECTURE_MAPPINGS: dict[str, dict[str, Any]] = {
+    "gfx1150": {"family": "rdna3.5", "description": "AMD RDNA 3.5 integrated GPU"},
+    "gfx1151": {"family": "rdna3.5", "description": "AMD RDNA 3.5 integrated GPU alternative identifier"},
+}
+
+NPU_FAMILY_MAPPINGS: list[dict[str, Any]] = [
+    {"family": "xdna2", "contains_any": ["xdna2", "ai engine v2"], "vendor_ids": ["1022", "0x1022"],
+     "device_ids": ["17f0"]},
+    {"family": "xdna", "contains_any": ["xdna", "ai engine"], "vendor_ids": ["1022", "0x1022"],
+     "device_ids": ["1502"]},
+]
+
+
+def _first_match(value: str, mappings: list[dict[str, Any]]) -> str | None:
+    folded = value.casefold()
+    for mapping in mappings:
+        if any(token.casefold() in folded for token in mapping.get("contains_any", [])):
+            return mapping["id"]
+    return None
+
+
+def _as_int(value: Any) -> int | None:
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.isdigit():
+        return int(value)
+    return None
+
+
+def _cpu_family_profile(cpu: dict[str, Any]) -> str | None:
+    cpu_family = _as_int(cpu.get("family"))
+    cpu_model = _as_int(cpu.get("cpu_model"))
+    for signature in CPU_FAMILY_SIGNATURES:
+        families = {int(v) for v in signature.get("cpu_families", [])}
+        models = {int(v) for v in signature.get("cpu_models", [])}
+        if cpu_family in families and (not models or cpu_model in models):
+            return signature["id"]
+    return _first_match(str(cpu.get("model", "")), CPU_FAMILY_PROFILES)
+
+
+def _npu_family(npu: dict[str, Any]) -> str | None:
+    device_text = "\n".join(
+        str(device.get("device_name") or device.get("name") or "") for device in npu.get("devices", [])
+    )
+    device_text = "\n".join([device_text, str(npu.get("module_text", "")), str(npu.get("device_text", ""))])
+    vendor_ids = {str(device.get("vendor_id", "")).lower() for device in npu.get("devices", [])}
+    device_ids = {str(device.get("device_id", "")).lower() for device in npu.get("devices", [])}
+    for mapping in NPU_FAMILY_MAPPINGS:
+        text_match = any(token.casefold() in device_text.casefold() for token in mapping.get("contains_any", []))
+        device_match = bool(device_ids & {device.lower() for device in mapping.get("device_ids", [])})
+        vendor_match = bool(vendor_ids & {vendor.lower() for vendor in mapping.get("vendor_ids", [])})
+        if (device_match or text_match) and (vendor_match or npu.get("present") is True):
+            return mapping["family"]
+    return "unknown" if npu.get("present") is True else None
+
+
+def _classification_facts(hardware: dict[str, Any]) -> dict[str, Any]:
+    cpu = hardware.get("cpu", {})
+    gpu = hardware.get("gpu", {})
+    npu = hardware.get("npu", {})
+    system = hardware.get("system", {})
+    cpu_model = str(cpu.get("model", ""))
+    cpu_family = _cpu_family_profile(cpu)
+    gpu_arch = _nullable(gpu.get("arch"))
+    gpu_mapping = GPU_ARCHITECTURE_MAPPINGS.get(str(gpu_arch), {}) if gpu_arch else {}
+    return {
+        "system.vendor": _nullable(system.get("vendor")),
+        "system.product": _nullable(system.get("product")),
+        "cpu.vendor": _nullable(cpu.get("vendor")),
+        "cpu.model": _nullable(cpu_model),
+        "cpu.family_profile": cpu_family,
+        "gpu.arch": gpu_arch,
+        "gpu.family": gpu_mapping.get("family") or ("unknown" if _known(gpu_arch) else None),
+        "npu.present": npu.get("present") is True,
+        "npu.driver": _nullable(npu.get("module_text")),
+        "npu.nodes": _nullable(npu.get("device_text")),
+        "npu.family": _npu_family(npu),
+    }
+
+
+def _matches_requirement(value: Any, requirement: dict[str, Any]) -> bool:
+    if "equals_any" in requirement:
+        return any(str(value).casefold() == str(candidate).casefold() for candidate in requirement["equals_any"])
+    if "contains_any" in requirement:
+        return any(str(candidate).casefold() in str(value).casefold() for candidate in requirement["contains_any"])
+    return bool(value)
+
+
 def classify(hardware: dict[str, Any]) -> dict[str, Any]:
-    cpu_model = str(hardware.get("cpu", {}).get("model", ""))
-    gpu_arch = str(hardware.get("gpu", {}).get("arch", ""))
-    npu_present = hardware.get("npu", {}).get("present") is True
-    evidence, mismatches = [], []
-    checks = (("Ryzen AI 9 HX 370" in cpu_model, "CPU model matches Ryzen AI 9 HX 370",
-               "CPU model does not match Ryzen AI 9 HX 370"),
-              (gpu_arch == "gfx1150", "GPU architecture matches gfx1150",
-               "GPU architecture does not match gfx1150"),
-              (npu_present, "XDNA device or kernel module is visible",
-               "XDNA device and kernel module are not visible"))
-    for matched, positive, negative in checks:
-        (evidence if matched else mismatches).append(positive if matched else negative)
-    cpu_vendor = str(hardware.get("cpu", {}).get("vendor", ""))
-    amd_ryzen_ai = "AMD" in cpu_vendor and "Ryzen AI" in cpu_model
-    cpu_identified = _known(cpu_model) and _known(cpu_vendor)
-    if len(evidence) == 3:
-        platform_id, confidence, state = "ai370", "exact", "observed"
-    elif amd_ryzen_ai:
-        platform_id, confidence, state = "generic-ryzen-ai", "family", "observed"
-    elif not cpu_identified:
-        platform_id, confidence, state = None, "none", "unknown"
-    else:
-        platform_id, confidence, state = None, "none", "unsupported"
-    return {"state": state, "platform_id": platform_id, "confidence": confidence,
-            "evidence": evidence, "mismatches": mismatches}
+    facts = _classification_facts(hardware)
+    matches: list[tuple[int, dict[str, Any], list[str], list[str]]] = []
+    all_mismatches: list[str] = []
+    for definition in PLATFORM_DEFINITIONS:
+        evidence: list[str] = []
+        mismatches: list[str] = []
+        hard_mismatch = False
+        for requirement in definition["requires"]:
+            path = requirement["path"]
+            value = facts.get(path)
+            if _known(value) and _matches_requirement(value, requirement):
+                evidence.append(f"required {path} matched {value}")
+            else:
+                mismatches.append(f"required {path} did not match; observed {value or 'unknown'}")
+                hard_mismatch = True
+        for requirement in definition.get("requires_if_known", []):
+            path = requirement["path"]
+            value = facts.get(path)
+            if _known(value) and _matches_requirement(value, requirement):
+                evidence.append(f"known {path} matched {value}")
+            elif _known(value):
+                mismatches.append(f"known {path} contradicted identity; observed {value}")
+                hard_mismatch = True
+            else:
+                evidence.append(f"known {path} unavailable; platform identity retained")
+        for requirement in definition.get("optional", []):
+            path = requirement["path"]
+            value = facts.get(path)
+            if _known(value) and _matches_requirement(value, requirement):
+                evidence.append(f"optional {path} matched {value}")
+            elif _known(value):
+                mismatches.append(f"optional {path} did not match; observed {value}")
+            else:
+                evidence.append(f"optional {path} unavailable; platform identity retained")
+        if not hard_mismatch:
+            matches.append((definition["priority"], definition, evidence, mismatches))
+        all_mismatches.extend(f"{definition['id']}: {message}" for message in mismatches)
+
+    if matches:
+        _, definition, evidence, mismatches = sorted(matches, key=lambda item: item[0], reverse=True)[0]
+        return {"state": "observed", "platform_id": definition["id"], "confidence": definition["confidence"],
+                "evidence": [definition["description"], *evidence], "mismatches": mismatches}
+
+    cpu_identified = _known(facts.get("cpu.model")) and _known(facts.get("cpu.vendor"))
+    state = "unsupported" if cpu_identified else "unknown"
+    return {"state": state, "platform_id": None, "confidence": "none",
+            "evidence": [], "mismatches": all_mismatches}
 
 
 def _gpu_driver(gpu: dict[str, Any]) -> dict[str, Any]:
@@ -194,10 +362,9 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
         "system": {"vendor": _nullable(system.get("vendor")), "product": _nullable(system.get("product"))},
         "cpu": {"vendor": _nullable(cpu.get("vendor")), "model": _nullable(cpu.get("model"))},
         "gpu": {"arch": _nullable(gpu.get("arch"))},
-        "npu": {"present": npu.get("present")},
         "storage": {"nvme": _nullable(storage.get("nvme"))},
     }
-    fingerprint_inputs = ["cpu", "gpu", "npu", "storage", "system"]
+    fingerprint_inputs = ["cpu", "gpu", "storage", "system"]
     digest = hashlib.sha256(
         json.dumps(fingerprint_facts, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
@@ -349,7 +516,7 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
         "capability_candidates": [
             {"id": "gpu.rocm",
              "state": gpu_candidate_state,
-             "candidate": gpu.get("arch") == "gfx1150" if gpu_candidate_state == "observed" else None,
+             "candidate": str(gpu.get("arch")) in GPU_ARCHITECTURE_MAPPINGS if gpu_candidate_state == "observed" else None,
              "evidence": [str(gpu.get("arch"))] if _known(gpu.get("arch")) else []},
             {"id": "npu.runtime",
              "state": "observed" if npu_present else "not_present",
