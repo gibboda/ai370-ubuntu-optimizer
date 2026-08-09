@@ -274,6 +274,7 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
     for definition in PLATFORM_DEFINITIONS:
         evidence: list[str] = []
         mismatches: list[str] = []
+        hard_mismatch = False
         for requirement in definition["requires"]:
             path = requirement["path"]
             value = facts.get(path)
@@ -281,6 +282,7 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
                 evidence.append(f"required {path} matched {value}")
             else:
                 mismatches.append(f"required {path} did not match; observed {value or 'unknown'}")
+                hard_mismatch = True
         for requirement in definition.get("requires_if_known", []):
             path = requirement["path"]
             value = facts.get(path)
@@ -288,6 +290,7 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
                 evidence.append(f"known {path} matched {value}")
             elif _known(value):
                 mismatches.append(f"known {path} contradicted identity; observed {value}")
+                hard_mismatch = True
             else:
                 evidence.append(f"known {path} unavailable; platform identity retained")
         for requirement in definition.get("optional", []):
@@ -299,7 +302,7 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
                 mismatches.append(f"optional {path} did not match; observed {value}")
             else:
                 evidence.append(f"optional {path} unavailable; platform identity retained")
-        if len([m for m in mismatches if m.startswith("required ") or m.startswith("known ")]) == 0:
+        if not hard_mismatch:
             matches.append((definition["priority"], definition, evidence, mismatches))
         all_mismatches.extend(f"{definition['id']}: {message}" for message in mismatches)
 
