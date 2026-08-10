@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Deterministic contract and publication tests for the Stage 1 profile."""
 
+import copy
 import importlib.util
 import json
 import tempfile
@@ -9,7 +10,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURES = ROOT / "tests/fixtures/system-profile/v2"
+FIXTURES = ROOT / "tests/fixtures/system-profile/v3"
+V2_FIXTURES = ROOT / "tests/fixtures/system-profile/v2"
 RAW_FIXTURES = ROOT / "tests/fixtures/raw-probes/v1"
 SPEC = importlib.util.spec_from_file_location("system_profile", ROOT / "scripts/lib/system_profile.py")
 assert SPEC and SPEC.loader
@@ -36,11 +38,20 @@ class SchemaContractTests(unittest.TestCase):
         profile = json.loads((FIXTURES / "valid-reference.json").read_text())
         system_profile.validate_profile(profile)
 
+    def test_v2_fixture_requires_archived_migration_schema(self) -> None:
+        profile = json.loads((V2_FIXTURES / "valid-reference.json").read_text())
+        with self.assertRaises(system_profile.ProfileValidationError):
+            system_profile.validate_profile(profile)
+        system_profile.validate_profile(
+            profile, ROOT / "configs/schemas/system-profile-v2.schema.json"
+        )
+
     def test_invalid_fixture_reports_all_contract_violations(self) -> None:
         profile = json.loads((FIXTURES / "invalid-contract.json").read_text())
         with self.assertRaises(system_profile.ProfileValidationError) as caught:
             system_profile.validate_profile(profile)
         self.assertIn("fingerprint.value", str(caught.exception))
+        self.assertIn("fingerprint.inputs", str(caught.exception))
         self.assertIn("unexpected property", str(caught.exception))
 
     def test_invalid_candidate_does_not_replace_last_valid_profile(self) -> None:
@@ -62,10 +73,12 @@ class NormalizationTests(unittest.TestCase):
             inventory("AMD Ryzen AI 9 HX 370", "AuthenticAMD", "gfx1150", True, "EliteMini AI370", 26, 36), "test"
         )
         system_profile.validate_profile(profile)
-        self.assertEqual(profile["schema"]["version"], 2)
+        self.assertEqual(profile["schema"]["version"], 3)
         self.assertEqual(profile["classification"]["platform_id"], "ai370")
         self.assertEqual(profile["classification"]["confidence"], "exact")
         self.assertEqual(profile["fingerprint"]["algorithm"], "sha256")
+        self.assertEqual(profile["fingerprint"]["algorithm_version"], 1)
+        self.assertEqual(profile["fingerprint"]["inputs"], ["accelerators", "cpu", "dmi", "pci_devices", "storage"])
         self.assertEqual([tool["state"] for tool in profile["collection"]["tools"]],
                          ["tool_missing", "tool_missing"])
 
@@ -105,6 +118,13 @@ class NormalizationTests(unittest.TestCase):
         self.assertIsNone(profile["classification"]["platform_id"])
         self.assertEqual(profile["classification"]["state"], "unsupported")
 
+    def test_fingerprint_is_null_when_lspci_unavailable(self) -> None:
+        host = inventory("AMD Ryzen AI 9 HX 370", "AuthenticAMD", "gfx1150", True, "EliteMini AI370", 26, 36)
+        host["tools"] = {"missing": "lspci,clinfo"}
+        profile = system_profile.build_profile(host, "test")
+        system_profile.validate_profile(profile)
+        self.assertIsNone(profile["fingerprint"]["value"])
+
     def test_known_non_minisforum_vendor_does_not_match_ai370_exact_identity(self) -> None:
         profile = system_profile.build_profile(
             inventory("AMD Ryzen AI 9 HX 370", "AuthenticAMD", "gfx1150", True, "AI370",
@@ -127,6 +147,34 @@ class RawProbeNormalizationTests(unittest.TestCase):
         xdna_accels = [a for a in profile["accelerators"] if a.get("state") == "observed"]
         self.assertTrue(xdna_accels, "AMD XDNA accelerator must be observed")
         self.assertEqual(xdna_accels[0]["driver"]["name"], "amdxdna")
+
+    def test_fingerprint_ignores_volatile_state_order_and_formatting(self) -> None:
+        raw = self._load("observed-ai370.json")
+        raw["pci"]["devices"] = [
+            {"vendor_id": "1022", "device_id": "1502"},
+            {"vendor_id": "1002", "device_id": "1900"},
+        ]
+        changed = copy.deepcopy(raw)
+        changed["timestamp"] = "2030-12-31T23:59:59Z"
+        changed["kernel"]["release"] = "9.1.0-upgraded"
+        changed["os"]["pretty_name"] = "Ubuntu 30.04 LTS"
+        changed["gpu"]["devices"][0]["bound_driver"] = None
+        changed["accelerators"]["devices"][0]["bound_driver"] = None
+        changed["accelerators"]["device_nodes"] = []
+        changed["cpu"]["model_name"] = "  AMD   Ryzen AI 9 HX 370\n"
+        changed["dmi"]["system"]["vendor"]["value"] = "  MINISFORUM  "
+        changed["gpu"]["devices"] = list(reversed(changed["gpu"]["devices"]))
+        changed["accelerators"]["devices"] = list(reversed(changed["accelerators"]["devices"]))
+        changed["pci"]["devices"] = list(reversed(changed["pci"]["devices"]))
+        self.assertEqual(system_profile.build_profile(raw)["fingerprint"]["value"],
+                         system_profile.build_profile(changed)["fingerprint"]["value"])
+
+    def test_fingerprint_changes_with_device_identity(self) -> None:
+        raw = self._load("observed-ai370.json")
+        changed = copy.deepcopy(raw)
+        changed["gpu"]["devices"][0]["device_id"] = "1901"
+        self.assertNotEqual(system_profile.build_profile(raw)["fingerprint"]["value"],
+                            system_profile.build_profile(changed)["fingerprint"]["value"])
 
     def test_non_hx370_ryzen_ai_fixture_matches_family_without_collector_change(self) -> None:
         raw = self._load("observed-ryzen-ai-pro-360.json")

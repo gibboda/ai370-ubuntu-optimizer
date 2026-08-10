@@ -1,0 +1,204 @@
+{
+  "schema": {
+    "name": "ai370-system-profile",
+    "version": 3,
+    "uri": "https://ai370.local/schemas/system-profile-v3.json"
+  },
+  "generation": {
+    "timestamp": "2026-01-01T00:00:00Z",
+    "generator": {
+      "name": "system_profile.py",
+      "version": "fixture"
+    },
+    "complete": true
+  },
+  "fingerprint": {
+    "algorithm": "sha256",
+    "value": "022d700e39ace1057b4f46f83ee7fc12480adbd6336c576585b3fe1214e4908b",
+    "inputs": [
+      "accelerators",
+      "cpu",
+      "dmi",
+      "pci_devices",
+      "storage"
+    ],
+    "algorithm_version": 1
+  },
+  "system": {
+    "state": "observed",
+    "manufacturer": "Sanitized Vendor",
+    "product": "Reference Ryzen AI",
+    "version": null,
+    "serial": null,
+    "uuid": null,
+    "motherboard": {
+      "state": "unknown",
+      "manufacturer": null,
+      "product": null,
+      "version": null,
+      "serial": null
+    }
+  },
+  "operating_system": {
+    "state": "observed",
+    "id": null,
+    "name": null,
+    "pretty_name": "Ubuntu 24.04",
+    "version_id": null,
+    "version_codename": null
+  },
+  "kernel": {
+    "state": "observed",
+    "release": "6.14.0",
+    "architecture": null,
+    "command_line": null
+  },
+  "cpu": {
+    "state": "observed",
+    "vendor_id": "AuthenticAMD",
+    "model_name": "AMD Ryzen AI 9 HX 370",
+    "architecture": null,
+    "family": null,
+    "model": null,
+    "stepping": null,
+    "topology": {
+      "sockets": null,
+      "physical_cores": null,
+      "logical_processors": 24,
+      "cores_per_socket": null,
+      "threads_per_core": null
+    }
+  },
+  "memory": {
+    "state": "observed",
+    "total_bytes": 34359738368,
+    "available_bytes": null
+  },
+  "storage": [
+    {
+      "state": "observed",
+      "name": "nvme0n1",
+      "device_path": null,
+      "kind": "disk",
+      "transport": "nvme",
+      "size_bytes": null,
+      "removable": null,
+      "model": null,
+      "serial": null,
+      "firmware_version": null
+    }
+  ],
+  "gpus": [
+    {
+      "state": "observed",
+      "id": "gpu0",
+      "name": "AMD display controller",
+      "pci": {
+        "address": null,
+        "vendor_id": null,
+        "device_id": null,
+        "subsystem_vendor_id": null,
+        "subsystem_device_id": null
+      },
+      "driver": {
+        "state": "observed",
+        "name": "amdgpu"
+      },
+      "architecture": "gfx1150",
+      "vram_bytes": null,
+      "runtime": "unknown"
+    }
+  ],
+  "accelerators": [
+    {
+      "state": "observed",
+      "id": "npu0",
+      "kind": "npu",
+      "name": "AMD XDNA",
+      "pci": {
+        "address": null,
+        "vendor_id": null,
+        "device_id": null,
+        "subsystem_vendor_id": null,
+        "subsystem_device_id": null
+      },
+      "device_nodes": [],
+      "driver": {
+        "state": "observed",
+        "name": "amdxdna"
+      },
+      "runtime": "unknown"
+    }
+  ],
+  "firmware": {
+    "state": "observed",
+    "bios_vendor": null,
+    "bios_version": "2.00",
+    "bios_date": null,
+    "uefi": "unknown",
+    "secure_boot": {
+      "state": "unknown",
+      "enabled": null
+    }
+  },
+  "collection": {
+    "tools": [
+      {
+        "name": "clinfo",
+        "state": "tool_missing",
+        "path": null,
+        "version": null,
+        "error": {
+          "code": "not_found",
+          "message": "clinfo was not found in PATH"
+        }
+      }
+    ],
+    "probes": [
+      {
+        "id": "compatibility-inventory",
+        "state": "observed",
+        "source": "tier1-hardware.json",
+        "error": null
+      }
+    ]
+  },
+  "classification": {
+    "state": "observed",
+    "platform_id": "ai370",
+    "confidence": "exact",
+    "evidence": [
+      "CPU model matches Ryzen AI 9 HX 370",
+      "GPU architecture matches gfx1150",
+      "XDNA device or kernel module is visible"
+    ],
+    "mismatches": []
+  },
+  "capability_candidates": [
+    {
+      "id": "gpu.rocm",
+      "state": "observed",
+      "candidate": true,
+      "evidence": [
+        "gfx1150"
+      ]
+    },
+    {
+      "id": "npu.runtime",
+      "state": "observed",
+      "candidate": true,
+      "evidence": [
+        "XDNA device visible"
+      ]
+    },
+    {
+      "id": "storage.nvme",
+      "state": "observed",
+      "candidate": true,
+      "evidence": [
+        "nvme0n1"
+      ]
+    }
+  ],
+  "unknown_facts": []
+}

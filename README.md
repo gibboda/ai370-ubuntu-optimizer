@@ -129,7 +129,10 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   `--strict` / `AI370_STAGE1_STRICT=true` fails missing gfx1150/NPU)
 - Commands: `stage1`, `stage1-inventory`, `stage1-validate` (`--inventory`)
 
-The generated system profile is currently additive: existing `tier1-*`
+The generated system profile uses schema v3. Its algorithm-versioned hardware
+fingerprint is based only on normalized, stable hardware identities, so software
+upgrades, driver state, probe formatting, and device enumeration order do not
+change machine identity. The profile migration is currently additive: existing `tier1-*`
 artifacts and gates remain available while Stage 2 consumers are migrated. Its
 schema is defined in `configs/schemas/system-profile.schema.json`; it records
 normalized hardware facts, classification evidence, derived capability
