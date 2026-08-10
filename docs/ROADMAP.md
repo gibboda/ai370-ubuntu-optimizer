@@ -78,7 +78,15 @@ complete publication intact and return an actionable failure. Stable ordering,
 normalized units, explicit `null`/unavailable values, and removal of volatile
 timestamps or paths from test fixtures are required for deterministic tests.
 
-System-profile schema v2 replaces the provisional v1 shape. It separates the
+System-profile schema v3 replaces v2 for newly published profiles. It retains
+the normalized v2 facts and redefines the hardware fingerprint as algorithm
+version 1 over normalized CPU and DMI identity, sorted PCI and accelerator
+identities, and storage model/serial identity when a serial is available.
+Kernel and OS versions, timestamps, driver/runtime state, transient device
+visibility, command formatting, and free-form tool output are excluded. The v2
+schema remains available for migration validation, but Stage 2 and later must
+consume v3 before relying on the stable fingerprint. Schema v2 replaced the
+provisional v1 shape. It separates the
 fingerprint algorithm and inputs from generation metadata; normalizes system,
 OS, kernel, CPU, memory, storage, GPU, accelerator, and firmware observations;
 and records tools, probes, classification, capability candidates, and unknown

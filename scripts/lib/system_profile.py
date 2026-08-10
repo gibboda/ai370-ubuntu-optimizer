@@ -15,8 +15,9 @@ from typing import Any
 
 
 SCHEMA_NAME = "ai370-system-profile"
-SCHEMA_VERSION = 2
-SCHEMA_URI = "https://ai370.local/schemas/system-profile-v2.json"
+SCHEMA_VERSION = 3
+SCHEMA_URI = "https://ai370.local/schemas/system-profile-v3.json"
+FINGERPRINT_ALGORITHM_VERSION = 1
 DEFAULT_SCHEMA = Path(__file__).resolve().parents[2] / "configs/schemas/system-profile.schema.json"
 
 
@@ -34,6 +35,70 @@ def _nullable(value: Any) -> Any:
 
 def _state(value: Any) -> str:
     return "observed" if _known(value) else "unknown"
+
+
+def _identity_text(value: Any) -> str | None:
+    """Normalize a human-readable hardware identity, never probe formatting."""
+    if not _known(value):
+        return None
+    return " ".join(str(value).split()).casefold()
+
+
+def _identity_id(value: Any) -> str | None:
+    """Normalize hexadecimal identifiers emitted with optional 0x prefixes."""
+    text = _identity_text(value)
+    return text.removeprefix("0x") if text else None
+
+
+def _pci_identity(device: dict[str, Any]) -> dict[str, str | None] | None:
+    identity = {
+        "vendor_id": _identity_id(device.get("vendor_id")),
+        "device_id": _identity_id(device.get("device_id")),
+        "subsystem_vendor_id": _identity_id(device.get("subsystem_vendor_id")),
+        "subsystem_device_id": _identity_id(device.get("subsystem_device_id")),
+    }
+    return identity if identity["vendor_id"] and identity["device_id"] else None
+
+
+def _fingerprint_facts(hardware: dict[str, Any]) -> dict[str, Any]:
+    """Return the versioned, normalized stable-identity fingerprint payload."""
+    system, cpu = hardware.get("system", {}), hardware.get("cpu", {})
+    gpu, npu, storage = hardware.get("gpu", {}), hardware.get("npu", {}), hardware.get("storage", {})
+    raw_pci = hardware.get("_raw_stage1", {}).get("pci", {}).get("devices", [])
+    pci_identities = [
+        identity for device in [*raw_pci, *gpu.get("devices", []), *npu.get("devices", [])]
+        if (identity := _pci_identity(device)) is not None
+    ]
+    # De-duplicate devices that collectors expose in both the general PCI list
+    # and a device-class list, while retaining deterministic sorted ordering.
+    pci_identities = [json.loads(value) for value in sorted({
+        json.dumps(identity, sort_keys=True, separators=(",", ":")) for identity in pci_identities
+    })]
+    accelerators = [identity for device in npu.get("devices", [])
+                    if (identity := _pci_identity(device)) is not None]
+    accelerators = [json.loads(value) for value in sorted({
+        json.dumps(identity, sort_keys=True, separators=(",", ":")) for identity in accelerators
+    })]
+    storage_identities = sorted({
+        "|".join(filter(None, (_identity_text(device.get("model")),
+                               _identity_text(device.get("serial")))))
+        for device in storage.get("devices", []) if _known(device.get("serial"))
+    })
+    return {
+        "cpu": {"vendor_id": _identity_text(cpu.get("vendor")),
+                "family": _as_int(cpu.get("family")), "model": _as_int(cpu.get("cpu_model")),
+                "stepping": _as_int(cpu.get("stepping")),
+                "model_name": _identity_text(cpu.get("model"))},
+        "dmi": {"system_manufacturer": _identity_text(system.get("vendor")),
+                "system_product": _identity_text(system.get("product")),
+                "system_version": _identity_text(system.get("version")),
+                "board_manufacturer": _identity_text(system.get("board_vendor")),
+                "board_product": _identity_text(system.get("board_product")),
+                "board_version": _identity_text(system.get("board_version"))},
+        "pci_devices": pci_identities,
+        "accelerators": accelerators,
+        "storage": storage_identities,
+    }
 
 
 def _bytes(value: Any) -> int | None:
@@ -355,16 +420,10 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
         if not _known(value):
             unknown_paths.append(path)
 
-    # Fingerprint: hash only stable hardware-identity fields; exclude driver
-    # bindings, module states, and runtime observations that change independently
-    # of the physical hardware.
-    fingerprint_facts = {
-        "system": {"vendor": _nullable(system.get("vendor")), "product": _nullable(system.get("product"))},
-        "cpu": {"vendor": _nullable(cpu.get("vendor")), "model": _nullable(cpu.get("model"))},
-        "gpu": {"arch": _nullable(gpu.get("arch"))},
-        "storage": {"nvme": _nullable(storage.get("nvme"))},
-    }
-    fingerprint_inputs = ["cpu", "gpu", "storage", "system"]
+    # The algorithm-versioned payload contains identity only. In particular it
+    # never includes timestamps, software versions, state, paths, or raw output.
+    fingerprint_facts = _fingerprint_facts(hardware)
+    fingerprint_inputs = ["accelerators", "cpu", "dmi", "pci_devices", "storage"]
     digest = hashlib.sha256(
         json.dumps(fingerprint_facts, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
@@ -487,7 +546,8 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
         "generation": {"timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
                        "generator": {"name": "system_profile.py", "version": generator_version},
                        "complete": not unknown_paths},
-        "fingerprint": {"algorithm": "sha256", "value": digest,
+        "fingerprint": {"algorithm": "sha256", "algorithm_version": FINGERPRINT_ALGORITHM_VERSION,
+                        "value": digest,
                         "inputs": fingerprint_inputs},
         "system": {"state": _state(system.get("vendor") or system.get("product")),
                    "manufacturer": _nullable(system.get("vendor")), "product": _nullable(system.get("product")),
