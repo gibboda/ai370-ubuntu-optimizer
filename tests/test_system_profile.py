@@ -51,6 +51,7 @@ class SchemaContractTests(unittest.TestCase):
         with self.assertRaises(system_profile.ProfileValidationError) as caught:
             system_profile.validate_profile(profile)
         self.assertIn("fingerprint.value", str(caught.exception))
+        self.assertIn("fingerprint.inputs", str(caught.exception))
         self.assertIn("unexpected property", str(caught.exception))
 
     def test_invalid_candidate_does_not_replace_last_valid_profile(self) -> None:
@@ -77,6 +78,7 @@ class NormalizationTests(unittest.TestCase):
         self.assertEqual(profile["classification"]["confidence"], "exact")
         self.assertEqual(profile["fingerprint"]["algorithm"], "sha256")
         self.assertEqual(profile["fingerprint"]["algorithm_version"], 1)
+        self.assertEqual(profile["fingerprint"]["inputs"], ["accelerators", "cpu", "dmi", "pci_devices", "storage"])
         self.assertEqual([tool["state"] for tool in profile["collection"]["tools"]],
                          ["tool_missing", "tool_missing"])
 
@@ -115,6 +117,13 @@ class NormalizationTests(unittest.TestCase):
         system_profile.validate_profile(profile)
         self.assertIsNone(profile["classification"]["platform_id"])
         self.assertEqual(profile["classification"]["state"], "unsupported")
+
+    def test_fingerprint_is_null_when_lspci_unavailable(self) -> None:
+        host = inventory("AMD Ryzen AI 9 HX 370", "AuthenticAMD", "gfx1150", True, "EliteMini AI370", 26, 36)
+        host["tools"] = {"missing": "lspci,clinfo"}
+        profile = system_profile.build_profile(host, "test")
+        system_profile.validate_profile(profile)
+        self.assertIsNone(profile["fingerprint"]["value"])
 
     def test_known_non_minisforum_vendor_does_not_match_ai370_exact_identity(self) -> None:
         profile = system_profile.build_profile(

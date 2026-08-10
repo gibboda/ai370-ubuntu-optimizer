@@ -14,13 +14,13 @@
   },
   "fingerprint": {
     "algorithm": "sha256",
-    "value": "211fa562675e52ee4bce96705d667c51f0e7673665bcc6f880c9ce87646208d6",
+    "value": "022d700e39ace1057b4f46f83ee7fc12480adbd6336c576585b3fe1214e4908b",
     "inputs": [
+      "accelerators",
       "cpu",
-      "gpu",
-      "npu",
-      "storage",
-      "system"
+      "dmi",
+      "pci_devices",
+      "storage"
     ],
     "algorithm_version": 1
   },

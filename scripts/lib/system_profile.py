@@ -65,20 +65,28 @@ def _fingerprint_facts(hardware: dict[str, Any]) -> dict[str, Any]:
     system, cpu = hardware.get("system", {}), hardware.get("cpu", {})
     gpu, npu, storage = hardware.get("gpu", {}), hardware.get("npu", {}), hardware.get("storage", {})
     raw_pci = hardware.get("_raw_stage1", {}).get("pci", {}).get("devices", [])
-    pci_identities = [
-        identity for device in [*raw_pci, *gpu.get("devices", []), *npu.get("devices", [])]
+    # Build the canonical PCI identity list from raw_pci, preserving multiplicity.
+    raw_identities = [identity for device in raw_pci
+                      if (identity := _pci_identity(device)) is not None]
+    # Filter class-specific entries (gpu, npu) that are already present in the
+    # canonical raw PCI list to avoid double-counting while preserving exact
+    # device counts from the authoritative source.
+    raw_set = {json.dumps(identity, sort_keys=True, separators=(",", ":")) for identity in raw_identities}
+    extra_identities = [
+        identity for device in [*gpu.get("devices", []), *npu.get("devices", [])]
         if (identity := _pci_identity(device)) is not None
+        and json.dumps(identity, sort_keys=True, separators=(",", ":")) not in raw_set
     ]
-    # De-duplicate devices that collectors expose in both the general PCI list
-    # and a device-class list, while retaining deterministic sorted ordering.
-    pci_identities = [json.loads(value) for value in sorted({
-        json.dumps(identity, sort_keys=True, separators=(",", ":")) for identity in pci_identities
-    })]
+    pci_identities = [json.loads(v) for v in sorted(
+        json.dumps(i, sort_keys=True, separators=(",", ":")) for i in raw_identities + extra_identities
+    )]
     accelerators = [identity for device in npu.get("devices", [])
                     if (identity := _pci_identity(device)) is not None]
-    accelerators = [json.loads(value) for value in sorted({
+    # Sort deterministically while preserving multiplicity (identical accelerator
+    # devices must not be collapsed to a single entry).
+    accelerators = [json.loads(v) for v in sorted(
         json.dumps(identity, sort_keys=True, separators=(",", ":")) for identity in accelerators
-    })]
+    )]
     storage_identities = sorted({
         "|".join(filter(None, (_identity_text(device.get("model")),
                                _identity_text(device.get("serial")))))
@@ -422,15 +430,21 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
 
     # The algorithm-versioned payload contains identity only. In particular it
     # never includes timestamps, software versions, state, paths, or raw output.
+    lspci_tool_present = "lspci" not in missing_tools
     fingerprint_facts = _fingerprint_facts(hardware)
     fingerprint_inputs = ["accelerators", "cpu", "dmi", "pci_devices", "storage"]
-    digest = hashlib.sha256(
-        json.dumps(fingerprint_facts, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    # When the required PCI identity probe is unavailable the fingerprint cannot
+    # be reliably computed: an empty PCI list is indistinguishable from a list
+    # that is empty because the probe failed, so the value is left null.
+    digest: str | None = (
+        hashlib.sha256(
+            json.dumps(fingerprint_facts, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        if lspci_tool_present else None
+    )
 
     # GPU devices: one record per detected lspci line.
     gpu_text = gpu.get("text", "")
-    lspci_tool_present = "lspci" not in missing_tools
     gpu_devices: list[dict[str, Any]] = []
     if _known(gpu_text):
         for idx, line in enumerate(str(gpu_text).splitlines()):
