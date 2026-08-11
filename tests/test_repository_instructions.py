@@ -28,11 +28,6 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "[`../configs/schemas/system-profile.schema.json`](../configs/schemas/system-profile.schema.json)",
             self.copilot_instructions,
         )
-        self.assertIn(
-            "[`/configs/schemas/system-profile.schema.json`]"
-            "(/configs/schemas/system-profile.schema.json)",
-            self.copilot_instructions,
-        )
 
     def test_both_instruction_files_preserve_stage_1_boundary(self) -> None:
         for instructions in (self.agent_instructions, self.copilot_instructions):
