@@ -2,6 +2,7 @@
 
 The `v1/` directory contains sanitized raw probe artifacts used by portable
 system-profile tests. These fixtures intentionally cover the reference
-EliteMini AI370, unsupported hosts, missing probe tools, degraded driver states,
-and a non-HX-370 Ryzen AI platform so hardware classification changes do not
+EliteMini AI370, another Ryzen AI platform, unsupported hosts, missing tools,
+unreadable probes, degraded drivers, and unrelated accelerator nodes. The
+canonical S1-M1 command replays them with `--fixture` so portable tests never
 depend on the executing host.

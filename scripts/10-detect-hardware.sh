@@ -1,39 +1,48 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
+# Compatibility wrapper. Use the canonical S1-M1 stage1-probe command.
 #
-# Tier 1 script: Hardware detection (Radeon 890M, XDNA2 NPU, CPU, memory, storage, etc.)
-# Writes rich inventory artifacts for downstream Tier 1 phases and the tier gate.
-
+# Delegates to s1-m1-probe-system.sh for the raw probe, then publishes the
+# legacy artifacts that downstream callers (90-validate.sh, smoke_tier1.sh,
+# profile consumers) still expect:
+#   tier1-hardware.json, tier1-hardware.md, hardware-inventory.json,
+#   hardware-summary.md, system-profile.json, tier1-npu.*
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+LATEST_DIR="$PROJECT_ROOT/reports/latest"
+
+echo "[WARN] 10-detect-hardware.sh is deprecated; use ./ai370-optimize.sh stage1-probe" >&2
+
+# Strip legacy positional args (PROFILE MODE PERSISTENCE) before forwarding.
 PROFILE="${1:-ai370}"
 MODE="${2:-safe}"
 PERSISTENCE="${3:-runtime}"
+if (($#)) && [[ "$1" != --* ]]; then
+  shift "$(( $# < 3 ? $# : 3 ))"
+fi
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/lib/hardware-detect.sh
-source "$PROJECT_ROOT/scripts/lib/hardware-detect.sh"
+# --- Run the canonical S1-M1 probe ---
+export PROFILE MODE PERSISTENCE
+bash "$SCRIPT_DIR/s1-m1-probe-system.sh" "$@"
 
-LATEST_DIR="$PROJECT_ROOT/reports/latest"
-mkdir -p "$LATEST_DIR"
+# --- Publish legacy artifacts from the raw inventory ---
+RAW="$LATEST_DIR/s1-m1-raw-inventory.json"
 
-main() {
-  echo "[INFO] Tier 1 / 10-detect-hardware.sh"
-  echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
+# tier1-hardware.json (copy of the canonical raw inventory)
+cp "$RAW" "$LATEST_DIR/tier1-hardware.json"
+cp "$RAW" "$LATEST_DIR/hardware-inventory.json"
 
-  export PROFILE MODE PERSISTENCE
-  collect_stage1_raw_probes "$@" > "$LATEST_DIR/tier1-hardware.json"
-
-  python3 - "$LATEST_DIR/tier1-hardware.json" > "$LATEST_DIR/tier1-hardware.md" <<'PYSUMMARY'
-import json
-import sys
+# tier1-hardware.md – human-readable summary
+python3 - "$RAW" > "$LATEST_DIR/tier1-hardware.md" <<'PYSUMMARY'
+import json, sys
 from pathlib import Path
-
 raw = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 def value(probe):
     return probe.get("value") if isinstance(probe, dict) and probe.get("state") == "observed" else None
 system = raw.get("dmi", {}).get("system", {})
-board = raw.get("dmi", {}).get("board", {})
+board = raw.get("dmi", {}).get("motherboard", raw.get("dmi", {}).get("board", {}))
 firmware = raw.get("firmware", {})
 cpu = raw.get("cpu", {})
 os_info = raw.get("os", {})
@@ -43,9 +52,9 @@ accel = raw.get("accelerators", {})
 memory = raw.get("memory", {})
 storage = raw.get("storage", {})
 collection = raw.get("collection", {})
+inputs = raw.get("inputs", {})
 print("# Stage 1 Hardware Detection")
 print()
-inputs = raw.get("inputs", {})
 print(f"**Profile:** {inputs.get('profile', 'unknown')} | **Mode:** {inputs.get('mode', 'unknown')} | **Persistence:** {inputs.get('persistence', 'unknown')}")
 print()
 print("## System facts")
@@ -76,102 +85,73 @@ print(f"- Failed probes: {len(collection.get('failed_probes', []))}")
 print(f"- Permission errors: {len(collection.get('permission_errors', []))}")
 PYSUMMARY
 
-  # Also keep the legacy artifact names for compatibility with existing reports consumers
-  cp "$LATEST_DIR/tier1-hardware.json" "$LATEST_DIR/hardware-inventory.json"
-  cp "$LATEST_DIR/tier1-hardware.md" "$LATEST_DIR/hardware-summary.md"
+cp "$LATEST_DIR/tier1-hardware.md" "$LATEST_DIR/hardware-summary.md"
 
-  # Publish a versioned normalized profile from the raw Stage 1 probe artifact.
-  local generator_version="unknown"
-  if [[ -f "$PROJECT_ROOT/VERSION" ]]; then
-    generator_version="$(tr -d '[:space:]' < "$PROJECT_ROOT/VERSION")"
-  fi
-  python3 "$PROJECT_ROOT/scripts/lib/system_profile.py" \
-    --input "$LATEST_DIR/tier1-hardware.json" \
-    --output "$LATEST_DIR/system-profile.json" \
-    --generator-version "$generator_version"
+# system-profile.json
+generator_version="unknown"
+if [[ -f "$PROJECT_ROOT/VERSION" ]]; then
+  generator_version="$(tr -d '[:space:]' < "$PROJECT_ROOT/VERSION")"
+fi
+python3 "$PROJECT_ROOT/scripts/lib/system_profile.py" \
+  --input "$RAW" \
+  --output "$LATEST_DIR/system-profile.json" \
+  --generator-version "$generator_version"
 
-  eval "$(python3 - "$LATEST_DIR/tier1-hardware.json" <<'PYNPUENV'
-import json
-import shlex
-import sys
+# shellcheck source=scripts/lib/hardware-detect.sh
+source "$PROJECT_ROOT/scripts/lib/hardware-detect.sh"
+
+# tier1-npu.* artifacts
+eval "$(python3 - "$RAW" <<'PYNPUENV'
+import json, shlex, sys
 from pathlib import Path
 raw = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 accel = raw.get("accelerators", {})
 nodes = "\n".join(node.get("path", "") for node in accel.get("device_nodes", []))
-drivers = sorted({device.get("bound_driver") for device in accel.get("devices", []) if device.get("bound_driver")})
+drivers = sorted({d.get("bound_driver") for d in accel.get("devices", []) if d.get("bound_driver")})
 present = accel.get("state") == "observed"
-values = {
-    "NPU_PRESENT": "true" if present else "false",
-    "NPU_MODULE": "\n".join(drivers),
-    "NPU_DEVICE": nodes,
-}
-for name, value in values.items():
+for name, value in {"NPU_PRESENT": "true" if present else "false", "NPU_MODULE": "\n".join(drivers), "NPU_DEVICE": nodes}.items():
     print(f"{name}={shlex.quote(value)}")
 PYNPUENV
 )"
 
-  # Package C: also emit tier1-npu.* here (formerly scripts/75-detect-npu.sh)
-  local xrt_smi xrt_state npu_status
-  xrt_smi="$(capture_command xrt-smi examine)"
-  if [[ "$xrt_smi" == command-not-found:* ]]; then
-    xrt_state="missing"
-  else
-    xrt_state="available"
-  fi
-  npu_status="PASS"
-  if [[ "$NPU_PRESENT" != "true" ]]; then
-    npu_status="WARN"
-  fi
+xrt_smi="$(capture_command xrt-smi examine)"
+if [[ "$xrt_smi" == command-not-found:* ]]; then xrt_state="missing"; else xrt_state="available"; fi
+npu_status="PASS"
+if [[ "$NPU_PRESENT" != "true" ]]; then npu_status="WARN"; fi
 
-  export PROFILE MODE PERSISTENCE NPU_MODULE NPU_DEVICE NPU_PRESENT xrt_state xrt_smi npu_status
-  python3 - <<'PY' > "$LATEST_DIR/tier1-npu.json"
-import json
-import os
+export PROFILE MODE PERSISTENCE NPU_MODULE NPU_DEVICE NPU_PRESENT xrt_state xrt_smi npu_status
+python3 - <<'PY' > "$LATEST_DIR/tier1-npu.json"
+import json, os
 from datetime import datetime, UTC
-
 print(json.dumps({
-    "tier": 1,
-    "phase": "detect-npu",
+    "tier": 1, "phase": "detect-npu",
     "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     "profile": os.environ.get("PROFILE", "ai370"),
     "mode": os.environ.get("MODE", "safe"),
     "persistence": os.environ.get("PERSISTENCE", "runtime"),
-    "offline": False,
-    "status": os.environ.get("npu_status", "WARN"),
-    "amdxdna": {
-        "present": os.environ.get("NPU_PRESENT", "false").lower() == "true",
-        "module_text": os.environ.get("NPU_MODULE", ""),
-        "device_text": os.environ.get("NPU_DEVICE", ""),
-    },
-    "xrt": {
-        "state": os.environ.get("xrt_state", "missing"),
-        "examine_output": os.environ.get("xrt_smi", ""),
-    },
-    "note": "NPU detection is part of 10-detect-hardware.sh (Package C). Missing AMDXDNA/XRT is WARN at Stage 1; Stage 2 NPU owns enablement.",
+    "offline": False, "status": os.environ.get("npu_status", "WARN"),
+    "amdxdna": {"present": os.environ.get("NPU_PRESENT", "false").lower() == "true",
+                "module_text": os.environ.get("NPU_MODULE", ""),
+                "device_text": os.environ.get("NPU_DEVICE", "")},
+    "xrt": {"state": os.environ.get("xrt_state", "missing"),
+            "examine_output": os.environ.get("xrt_smi", "")},
+    "note": "NPU detection is part of 10-detect-hardware.sh (Package C).",
     "source_script": "scripts/10-detect-hardware.sh",
 }, indent=2))
 PY
 
-  {
-    echo "# Tier 1 AMDXDNA / NPU Detection"
-    echo
-    echo "**Status:** $npu_status"
-    echo
-    echo "- AMDXDNA/XDNA present: $NPU_PRESENT"
-    echo "- XRT tools: $xrt_state"
-    echo
-    echo "## Kernel module evidence"
-    printf '%s\n' "${NPU_MODULE:-none detected}"
-    echo
-    echo "## Device node evidence"
-    printf '%s\n' "${NPU_DEVICE:-none detected}"
-    echo
-    echo "Emitted by scripts/10-detect-hardware.sh (Package C fold of 75-detect-npu)."
-  } > "$LATEST_DIR/tier1-npu.md"
-  echo "$npu_status" > "$LATEST_DIR/tier1-npu.txt"
+{
+  echo "# Tier 1 AMDXDNA / NPU Detection"
+  echo; echo "**Status:** $npu_status"; echo
+  echo "- AMDXDNA/XDNA present: $NPU_PRESENT"
+  echo "- XRT tools: $xrt_state"; echo
+  echo "## Kernel module evidence"
+  printf '%s\n' "${NPU_MODULE:-none detected}"; echo
+  echo "## Device node evidence"
+  printf '%s\n' "${NPU_DEVICE:-none detected}"; echo
+  echo "Emitted by scripts/10-detect-hardware.sh (Package C fold of 75-detect-npu)."
+} > "$LATEST_DIR/tier1-npu.md"
+echo "$npu_status" > "$LATEST_DIR/tier1-npu.txt"
 
-  echo "[INFO] Wrote tier1-hardware.json, tier1-hardware.md, system-profile.json, and tier1-npu.*"
-  echo "[INFO] 10-detect-hardware.sh complete."
-}
-
-main "$@"
+echo "[INFO] Wrote tier1-hardware.json, tier1-hardware.md, system-profile.json, and tier1-npu.*"
+echo "[INFO] 10-detect-hardware.sh complete."

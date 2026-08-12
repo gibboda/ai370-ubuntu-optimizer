@@ -62,6 +62,7 @@ last, matching the roadmap operating rules (Package C + E).
 **Canonical commands:**
 
 ```bash
+./ai370-optimize.sh stage1-probe           # S1-M1 read-only raw system inventory
 ./ai370-optimize.sh stage1                 # Platform Stage 1 (no script 80 by default)
 ./ai370-optimize.sh stage1-inventory       # Faster detect + inventory-scope validate
 ./ai370-optimize.sh stage1-validate        # Final Stage 1 gate (full scope)
@@ -72,6 +73,11 @@ last, matching the roadmap operating rules (Package C + E).
 ./ai370-optimize.sh tier1                  # Legacy alias for stage1
 ./ai370-optimize.sh tier1-validate         # Legacy alias for stage1-validate
 ```
+
+`stage1-probe` writes `reports/latest/s1-m1-raw-inventory.json`. Probe
+limitations are facts (`tool_missing`, `permission_denied`, or `probe_failed`),
+not failures against reference-machine expectations. The numbered hardware and
+NPU detection scripts remain compatibility wrappers.
 
 **Execution order (default `stage1`):**
 
@@ -196,7 +202,8 @@ tool permissions, see `docs/openclaw-multi-llm-agent.md`.
 
 ```text
 scripts/
-  10-detect-hardware.sh          # canonical (incl. NPU → tier1-npu.json)
+  s1-m1-probe-system.sh          # canonical S1-M1 raw inventory probe
+  10-detect-hardware.sh          # compatibility wrapper → S1-M1 probe
   20-check-bios.sh               # canonical (BIOS + firmware)
   25-check-firmware.sh           # wrapper → 20
   30-validate-kernel.sh          # canonical
@@ -205,7 +212,7 @@ scripts/
   50-optimize-memory.sh          # wrapper → 40-platform-tuning
   60-optimize-storage.sh         # wrapper → 40-platform-tuning
   70-validate-gpu-stack.sh       # canonical
-  75-detect-npu.sh               # wrapper → 10
+  75-detect-npu.sh               # compatibility wrapper → S1-M1 probe
   80-benchmark-local-ai.sh       # optional (--with-ai-smoke)
   90-validate.sh                 # gate (inventory|full|smoke)
 ```
