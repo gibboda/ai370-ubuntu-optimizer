@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "stage": 1,
+  "milestone": "S1-M1",
+  "dmi": {
+    "system": {
+      "product": {
+        "source": "/sys/class/dmi/id/product_name",
+        "state": "permission_denied",
+        "value": null,
+        "error": {"code": "permission_denied", "message": "fixture is unreadable"}
+      }
+    }
+  },
+  "collection": {
+    "missing_tools": [],
+    "failed_probes": [],
+    "permission_errors": [
+      {"source": "/sys/class/dmi/id/product_name", "state": "permission_denied"}
+    ],
+    "probes": []
+  }
+}

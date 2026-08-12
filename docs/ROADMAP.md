@@ -115,7 +115,7 @@ performance benchmark, or claim that a candidate capability is validated.
 
 | ID | Canonical deliverable | Canonical outputs | Exit evidence | Status |
 | --- | --- | --- | --- | --- |
-| S1-M1 | Raw system probe | `stage1-probe`, `s1-m1-probe-system.sh`, `s1-m1-raw-inventory.json` | Fixture tests for present, absent, and unreadable devices; probe documentation | Planned |
+| S1-M1 | Raw system probe | `stage1-probe`, `s1-m1-probe-system.sh`, `s1-m1-raw-inventory.json` | Fixture tests for present, absent, and unreadable devices; probe documentation | Implemented |
 | S1-M2 | Fact normalization | `s1-m2-normalize-profile.py`, `s1-m2-normalized-facts.json` | Deterministic normalization tests and field documentation | Planned |
 | S1-M3 | Platform classification | `s1-m3-classify-platform.py`, `s1-m3-platform-classification.json` | Table-driven family and unknown-platform tests | Planned |
 | S1-M4 | Capability candidates | `s1-m4-derive-capabilities.py`, `s1-m4-capability-candidates.json` | Rules tests proving candidates are not validation claims | Planned |

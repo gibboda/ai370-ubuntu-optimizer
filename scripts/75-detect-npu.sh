@@ -5,6 +5,5 @@
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo "[INFO] 75-detect-npu.sh → 10-detect-hardware.sh (NPU section included in hardware inventory)"
-# Drop optional 4th OFFLINE arg for hardware script compatibility
-exec bash "$SCRIPT_DIR/10-detect-hardware.sh" "${1:-ai370}" "${2:-safe}" "${3:-runtime}"
+echo "[WARN] 75-detect-npu.sh is deprecated; use ./ai370-optimize.sh stage1-probe" >&2
+exec bash "$SCRIPT_DIR/s1-m1-probe-system.sh"

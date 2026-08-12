@@ -28,6 +28,7 @@ usage() {
 Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
        [--with-ai-smoke] [--apply-tuning] [--strict]
+  ./ai370-optimize.sh stage1-probe
   ./ai370-optimize.sh stage1-inventory [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
        [--strict]
   ./ai370-optimize.sh stage1-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
@@ -72,6 +73,7 @@ Stage 1 (Package C + E):
   Default stage1 skips script 80; pass --with-ai-smoke (or AI370_STAGE1_WITH_AI_SMOKE=true)
   --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing
   --apply-tuning (or AI370_APPLY_TUNING=true): compatibility-only migration path; target Stage 1 contract is read-only
+  stage1-probe = S1-M1 read-only raw hardware and OS inventory
   stage1-inventory = detect + firmware + kernel + GPU + inventory-scope validate
   stage1-validate --inventory re-checks inventory scope only
 
@@ -488,6 +490,10 @@ case "$CMD" in
   # === Roadmap stage commands (primary recommended interface) ===
   stage1|tier1)
     run_stage1
+    ;;
+
+  stage1-probe)
+    bash "$PROJECT_ROOT/scripts/s1-m1-probe-system.sh"
     ;;
 
   stage1-inventory)
