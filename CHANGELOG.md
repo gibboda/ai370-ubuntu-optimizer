@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.15.0...v0.16.0) (2026-08-12)
+
+
+### Features
+
+* **stage1:** Add canonical S1-M1 system probe ([#160](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/160)) ([d17b53c](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/d17b53cf7bba36cf073c86a3d762fa29a1c8951e))
+
 ## [0.15.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.14.0...v0.15.0) (2026-08-10)
 
 
