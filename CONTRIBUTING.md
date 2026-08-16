@@ -47,6 +47,7 @@ Scope narrows the area of change:
 | `acceleration` | `scripts/50-60-*` |
 | `comfyui` | `scripts/70-comfyui-workflows.sh` |
 | `config` | `configs/` |
+| `architecture` | Architecture docs / high-level design     |
 | `workflows` | `workflows/` |
 | `vscode` | VS Code workspace settings |
 | `release` | Release tooling and CI |
