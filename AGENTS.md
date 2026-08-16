@@ -33,6 +33,7 @@ Allowed scopes:
 - `acceleration`
 - `comfyui`
 - `config`
+- `architecture`
 - `workflows`
 - `vscode`
 - `release`
