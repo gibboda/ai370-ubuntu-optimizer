@@ -19,7 +19,7 @@ main() {
     echo "[ERROR] PR title does not follow Conventional Commits: $title" >&2
     echo "[ERROR] Expected: type(optional-scope): Subject" >&2
     echo "[ERROR] Allowed types: feat, fix, chore, refactor, docs, test, ci, perf" >&2
-    echo "[ERROR] Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, workflows, vscode, release, stage, stage1, stage2, stage3, stage4, stage5, tier (deprecated), tier1 (deprecated), tier2 (deprecated)" >&2
+    echo "[ERROR] Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, architecture, workflows, vscode, release, stage, stage1, stage2, stage3, stage4, stage5, tier (deprecated), tier1 (deprecated), tier2 (deprecated)" >&2
     echo "[ERROR] Subject must start with a letter" >&2
     return 1
   fi
