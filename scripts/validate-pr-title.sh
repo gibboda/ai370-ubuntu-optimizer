@@ -12,7 +12,7 @@ main() {
   fi
 
   allowed_types='feat|fix|chore|refactor|docs|test|ci|perf'
-  allowed_scopes='audit|baseline|amd|ai-stack|rocm|npu|acceleration|comfyui|config|workflows|vscode|release|stage|stage1|stage2|stage3|stage4|stage5|tier|tier1|tier2'
+  allowed_scopes='audit|baseline|amd|ai-stack|rocm|npu|acceleration|comfyui|config|architecture|workflows|vscode|release|stage|stage1|stage2|stage3|stage4|stage5|tier|tier1|tier2'
   pattern="^(${allowed_types})(\\((${allowed_scopes})\\))?!?: [A-Za-z].+$"
 
   if [[ ! "$title" =~ $pattern ]]; then
