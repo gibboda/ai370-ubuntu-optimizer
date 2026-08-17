@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.16.0...v0.17.0) (2026-08-17)
+
+
+### Features
+
+* **stage1:** Add canonical S1-M2 through S1-M5 profile pipeline ([#166](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/166)) ([3869974](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/3869974e5dc59b96bf0fd8c13f34dee08517e5b9))
+
 ## [0.16.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.15.0...v0.16.0) (2026-08-12)
 
 
