@@ -144,6 +144,8 @@ class RawProbeNormalizationTests(unittest.TestCase):
         profile = system_profile.build_profile(raw, "test")
         system_profile.validate_profile(profile)
         self.assertEqual(profile["classification"]["platform_id"], "ai370")
+        self.assertEqual(profile["gpus"][0]["architecture"], "gfx1150")
+        self.assertEqual(profile["gpus"][0]["pci"]["device_id"], "1900")
         xdna_accels = [a for a in profile["accelerators"] if a.get("state") == "observed"]
         self.assertTrue(xdna_accels, "AMD XDNA accelerator must be observed")
         self.assertEqual(xdna_accels[0]["driver"]["name"], "amdxdna")

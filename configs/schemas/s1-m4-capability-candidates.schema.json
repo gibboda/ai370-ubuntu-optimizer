@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai370.local/schemas/s1-m4-capability-candidates-v1.json",
+  "title": "S1-M4 Capability Candidates v1",
+  "description": "Derived capability candidates. A candidate is not a validation claim and does not prove runtime execution.",
+  "type": "object",
+  "required": ["schema", "stage", "milestone", "artifact", "consumed_source", "capability_candidates", "notes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "object",
+      "required": ["name", "version", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "s1-m4-capability-candidates"},
+        "version": {"const": 1},
+        "uri": {"const": "https://ai370.local/schemas/s1-m4-capability-candidates-v1.json"}
+      }
+    },
+    "stage": {"const": 1},
+    "milestone": {"const": "S1-M4"},
+    "artifact": {"const": "s1-m4-capability-candidates"},
+    "consumed_source": {"type": ["string", "null"]},
+    "capability_candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "state", "candidate", "evidence", "validation_claim"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "state": {"enum": ["observed", "not_present", "unsupported", "unknown", "tool_missing", "permission_denied", "probe_failed", "unrecognized"]},
+          "candidate": {"type": ["boolean", "null"]},
+          "evidence": {"type": "array", "items": {"type": "string"}},
+          "validation_claim": {"const": false}
+        }
+      }
+    },
+    "notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  }
+}

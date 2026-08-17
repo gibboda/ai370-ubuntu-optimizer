@@ -29,6 +29,7 @@ Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
        [--with-ai-smoke] [--apply-tuning] [--strict]
   ./ai370-optimize.sh stage1-probe
+  ./ai370-optimize.sh stage1-profile
   ./ai370-optimize.sh stage1-inventory [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
        [--strict]
   ./ai370-optimize.sh stage1-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
@@ -74,6 +75,7 @@ Stage 1 (Package C + E):
   --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing
   --apply-tuning (or AI370_APPLY_TUNING=true): compatibility-only migration path; target Stage 1 contract is read-only
   stage1-probe = S1-M1 read-only raw hardware and OS inventory
+  stage1-profile = S1-M2 through S1-M5 read-only normalize/classify/candidates/publish
   stage1-inventory = detect + firmware + kernel + GPU + inventory-scope validate
   stage1-validate --inventory re-checks inventory scope only
 
@@ -202,6 +204,37 @@ export_stage1_env() {
   fi
   # Honor orchestrator --dry-run for optional apply-tuning (40-platform-tuning).
   export DRY_RUN="${DRY_RUN:-false}"
+}
+
+run_stage1_profile() {
+  echo "[INFO] Stage 1 profile – S1-M1 probe if needed, then S1-M2 through S1-M5"
+  local latest="$PROJECT_ROOT/reports/latest"
+  local raw="$latest/s1-m1-raw-inventory.json"
+  mkdir -p "$latest"
+  if [[ ! -f "$raw" ]]; then
+    bash "$PROJECT_ROOT/scripts/s1-m1-probe-system.sh"
+  fi
+  local generator_version="unknown"
+  if [[ -f "$PROJECT_ROOT/VERSION" ]]; then
+    generator_version="$(tr -d '[:space:]' < "$PROJECT_ROOT/VERSION")"
+  fi
+  python3 "$PROJECT_ROOT/scripts/s1-m2-normalize-profile.py" \
+    --input "$raw" \
+    --output "$latest/s1-m2-normalized-facts.json"
+  python3 "$PROJECT_ROOT/scripts/s1-m3-classify-platform.py" \
+    --input "$latest/s1-m2-normalized-facts.json" \
+    --output "$latest/s1-m3-platform-classification.json"
+  python3 "$PROJECT_ROOT/scripts/s1-m4-derive-capabilities.py" \
+    --input "$latest/s1-m2-normalized-facts.json" \
+    --output "$latest/s1-m4-capability-candidates.json"
+  python3 "$PROJECT_ROOT/scripts/s1-m5-publish-profile.py" \
+    --facts "$latest/s1-m2-normalized-facts.json" \
+    --classification "$latest/s1-m3-platform-classification.json" \
+    --capabilities "$latest/s1-m4-capability-candidates.json" \
+    --output "$latest/s1-m5-system-profile.json" \
+    --summary "$latest/s1-m5-inventory-summary.md" \
+    --compat-output "$latest/system-profile.json" \
+    --generator-version "$generator_version"
 }
 
 run_stage1_inventory() {
@@ -494,6 +527,10 @@ case "$CMD" in
 
   stage1-probe)
     bash "$PROJECT_ROOT/scripts/s1-m1-probe-system.sh"
+    ;;
+
+  stage1-profile)
+    run_stage1_profile
     ;;
 
   stage1-inventory)
