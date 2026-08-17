@@ -263,6 +263,9 @@ feature is not treated as implemented unless code exists.
 | `scripts/245-compare-cpu-gpu-npu.sh` | PARTIAL | Heterogeneous comparison; gfx1150 guidance strings |
 | `scripts/250-install-digest-ai.sh`, `255-analyze-model-digest.sh` | PARTIAL | Optional diagnostics; not NPU execution proof |
 | `scripts/lib/npu_ep_verify.py`, `scripts/lib/npu-venv.sh` | PARTIAL | Provider/execution helpers; split visibility vs execution |
+| `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | PARTIAL | Tracked AMD Ryzen AI 1.7.x installer consumed by `scripts/205-install-xrt-ryzen-ai.sh`; requires exact `python3.12`; pins `ryzen-ai>=1.7.0.dev0,<1.8.0.dev0` and `device-essentials-strx`/`device-essentials-phx` ranges; installs into the caller `-p` venv (205 uses `.ai370-ai/ryzen-ai/venv`); wheels must be in the process CWD |
+| `configs/ai-runtime/requirements-offline.txt` | IMPLEMENTED | Pinned offline CPU Python stack (`onnxruntime==1.22.0`, transformers 4.52.4, and related wheels); consumed via `configs/offline/ai-runtime.env` and `scripts/lib/offline-paths.sh`; distinct from Ryzen AI `onnxruntime-vitisai` |
+| `.ai370-ai/tools/llama.cpp` | PARTIAL | Tracked gitlink (mode `160000`, commit `86b94708f22478f900b76ca02e316f4f3418faff`); no `.gitmodules`; canonical checkout path for `scripts/110-install-llama-cpp.sh` |
 | FastFlowLM | PLANNED | Named in the architecture document only |
 
 ### Applications, models, and desktop
@@ -277,7 +280,7 @@ feature is not treated as implemented unless code exists.
 | GAIA, LM Studio | PLANNED | ROADMAP S4-M4/S4-M5 |
 | VS Code / Continue / Aider local coding AI | PLANNED | ROADMAP S5-M1/S5-M2; workspace file is editor config only |
 | `desktop/macos-like/` | PLANNED | No desktop module exists |
-| `configs/models/*`, `scripts/lib/offline-paths.sh` | PARTIAL | Shared model layout under `.ai370-ai/models` |
+| `configs/models/*`, `scripts/lib/offline-paths.sh` | PARTIAL | Shared model layout under `.ai370-ai/models`; offline-paths default requirements file is `configs/ai-runtime/requirements-offline.txt` |
 
 ### Tests and legacy archive
 
@@ -292,7 +295,8 @@ feature is not treated as implemented unless code exists.
 
 ## AI370-specific assumptions
 
-Verified in code, profiles, fixtures, and docs.
+Verified in code, profiles, fixtures, tracked vendor installers, pin
+files, and docs.
 
 | Location | Assumption | Class | Recommended action |
 | --- | --- | --- | --- |
@@ -312,6 +316,13 @@ Verified in code, profiles, fixtures, and docs.
 | `scripts/lib/system_profile.py` | Schema name `ai370-system-profile` | TEMPORARY_COMPATIBILITY_RULE | KEEP until a schema-versioned rename |
 | `ai370-optimize.sh`, most scripts | Default `PROFILE=ai370` | TEMPORARY_COMPATIBILITY_RULE | KEEP default; do not infer capabilities from the name alone |
 | `.ai370-ai/` model and runtime root | AI370-named local artifact tree | TEMPORARY_COMPATIBILITY_RULE | KEEP path until a documented compatibility alias exists |
+| `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | Exact `python3.12` interpreter | TEMPORARY_COMPATIBILITY_RULE | KEEP as a Ryzen AI 1.7.x vendor requirement; do not make Python 3.12 a generic platform gate |
+| `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | `ryzen-ai>=1.7.0.dev0,<1.8.0.dev0` and `device-essentials-strx`/`device-essentials-phx` ranges | TEMPORARY_COMPATIBILITY_RULE | KEEP as vendor package pins; replace only with a newer vendor installer |
+| `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | Installs Strix and Phoenix device-essentials without SoC detection | UNNECESSARY_HARDCODE | KEEP the vendor script; do not copy this into generic collectors |
+| `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | Warns below 8 CPUs, 36 GB RAM, or 50 GB disk; leftover Ubuntu 22.04 `/usr/include/asm` note | REFERENCE_PLATFORM_FACT | KEEP as vendor installer warnings, not Stage 1 success requirements |
+| `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | Venv/C++ install paths via `-p`/`-c`; `scripts/205` defaults to `.ai370-ai/ryzen-ai` | TEMPORARY_COMPATIBILITY_RULE | KEEP the path until a documented alias exists |
+| `configs/ai-runtime/requirements-offline.txt` | Pinned CPU `onnxruntime==1.22.0` and related wheels | TEMPORARY_COMPATIBILITY_RULE | KEEP as the S3 offline CPU pin file; do not treat it as NPU ORT |
+| `.ai370-ai/tools/llama.cpp` | Gitlink commit pin at `.ai370-ai/tools/llama.cpp` with no `.gitmodules` | TEMPORARY_COMPATIBILITY_RULE | KEEP the gitlink; `scripts/110-install-llama-cpp.sh` may clone or update the same path |
 | `README.md` Stage 1/2 "Implemented" summary | Reports canonical Planned milestones as implemented | UNNECESSARY_HARDCODE | REFACTOR status text to match ROADMAP |
 | `TASK_PROPOSALS.md` | Tier 1–5 as current architecture | DEPRECATED | DEPRECATE; do not extend |
 
@@ -342,7 +353,8 @@ abbreviated; see the assumption table for the full class.
 | `configs/tuning/*.env` | Safe/aggressive tuning modes | Platform tuning | Mode names | S2-M5/S2-M6 | KEEP | Plan idempotence tests | Low |
 | `configs/amd-acceleration.env` | ROCm/XRT artifact layout | Ubuntu 26.04 package layout | Distro-specific | S2-M6 / S3-M3/S3-M4 | REFACTOR behind platform abstraction later | Offline missing-artifact tests | Medium |
 | `configs/models/*` | Manifest and storage policy | `.ai370-ai/models` | Path name | S3-M1 | KEEP layout; REFACTOR naming later | `smoke_tier2.sh` layout checks | Low |
-| `configs/offline/ai-runtime.env`, `configs/persistence/runtime.env` | Offline and persistence defaults | Runtime scripts | Runtime-only persistence | Stage 3 / S5-M3 | KEEP | Persistence-refusal tests | Low |
+| `configs/ai-runtime/requirements-offline.txt` | Offline CPU Python pin file | `scripts/lib/offline-paths.sh`, wheelhouse | `onnxruntime==1.22.0` and related pins; not VitisAI ORT | S3 CPU runtime / S3-M2 | KEEP; split NPU pins if added | Offline missing-wheelhouse tests | Medium |
+| `configs/offline/ai-runtime.env`, `configs/persistence/runtime.env` | Offline and persistence defaults | Runtime scripts | Runtime-only persistence; `OFFLINE_REQUIREMENTS` points at the pin file | Stage 3 / S5-M3 | KEEP | Persistence-refusal tests | Low |
 | `scripts/s1-m1-probe-system.sh` | Canonical raw probe | `hardware-detect.sh` | None beyond collector | S1-M1 | KEEP | `test_s1_m1_probe.py` | Low |
 | `scripts/10-detect-hardware.sh` | Legacy inventory publisher | S1-M1, profile builder | `tier1-*` filenames | Compatibility until R1 | DEPRECATE after canonical S1-M5 | Smoke still expects `tier1-npu.json` | Medium |
 | `scripts/75-detect-npu.sh` | NPU wrapper | S1-M1 | None | Compatibility | DEPRECATE/REMOVE at R1 | Probe tests | Low |
@@ -361,10 +373,12 @@ abbreviated; see the assumption table for the full class.
 | `scripts/90-validate.sh` | Mixed hardware aggregate | Prior `tier1-*` artifacts | gfx1150/NPU acceptance | S1-M5 facts plus S2-M7 policy | SPLIT | Gate schema tests | High |
 | `scripts/80-benchmark-local-ai.sh` | Optional AI visibility smoke | Local venv | Called from Stage 1 flag | S3-M6 | MOVE | Benchmark methodology tests | Medium |
 | `scripts/100-install-pytorch-rocm.sh` | PyTorch ROCm runtime | venv, wheel indexes | ROCm indexes | S3-M3 | REFACTOR; prove GPU vs CPU selection | CPU/GPU fallback tests | High |
-| `scripts/110-install-llama-cpp.sh` | llama.cpp build/install | HIP/Vulkan/CPU | Default `gfx1150` target | S3-M2 | REFACTOR backend from profile | Backend-selection fixtures | Medium |
+| `scripts/110-install-llama-cpp.sh` | llama.cpp build/install | HIP/Vulkan/CPU; `.ai370-ai/tools/llama.cpp` gitlink | Default `gfx1150` target; checkout path `.ai370-ai/tools/llama.cpp` | S3-M2 | REFACTOR backend from profile | Backend-selection fixtures | Medium |
+| `.ai370-ai/tools/llama.cpp` | Tracked llama.cpp source gitlink | `scripts/110-install-llama-cpp.sh` | Mode `160000` commit `86b94708f22478f900b76ca02e316f4f3418faff`; no `.gitmodules` | S3-M2 | KEEP gitlink as optional source tree | Offline existing-binary tests | Medium |
 | `scripts/120-install-ollama.sh` | Ollama install/validate | Network or preinstalled binary | None hardware-specific | S3-M2 | KEEP then rename after canonical validation | Offline missing-binary tests | Low |
 | `scripts/200-install-onnxruntime.sh` | ONNX Runtime | venv/wheelhouse | None | S3-M4 | KEEP then canonicalize | Provider tests | Medium |
-| `scripts/205-install-xrt-ryzen-ai.sh` | XRT/Ryzen AI inventory or install | Staged debs | Distro packages | S2-M4 visibility / S3-M4 install | SPLIT | Inventory-only vs approved install | High |
+| `scripts/205-install-xrt-ryzen-ai.sh` | XRT/Ryzen AI inventory or install | Staged debs; tracked `install_ryzen_ai.sh` | Distro packages; python3.12 | S2-M4 visibility / S3-M4 install | SPLIT | Inventory-only vs approved install | High |
+| `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | Vendor Ryzen AI 1.7.x installer | python3.12, local `.whl`, voe tarballs | Exact Python 3.12; `ryzen-ai` 1.7.x; strx/phx device-essentials; 8 CPU / 36 GB / 50 GB warnings; CWD wheels | S3-M4 backend installer consumed by `scripts/205` | KEEP as vendor input; not the NPU architecture | Missing python3.12 and missing-wheel tests | High |
 | `scripts/210-check-ryzen-ai-software.sh` | Ryzen AI software checks | NPU venv | Presence vs execution mixed | S2-M4 / S3-M4 | SPLIT | Visibility vs inference tests | High |
 | `scripts/220-check-vitis-ai-ep.sh` | Vitis AI EP | ONNX Runtime | One backend among several | S3-M4 modular backend | KEEP as a backend, not the architecture | EP selection tests | Medium |
 | `scripts/230-benchmark-npu.sh` | NPU diagnostic/benchmark | Vitis AI EP, XRT | Execution can fall back to CPU | S3-M4/S3-M6 | REFACTOR; record actual accelerator | Fallback-detection tests | High |
@@ -457,6 +471,9 @@ Minimum preserved coverage:
 - XDNA2
 - BIOS 2.01 handling in the `ai370` profile
 - Ubuntu 26.04 reference-platform behavior
+- Tracked AMD `install_ryzen_ai.sh` Python 3.12 and Ryzen AI 1.7.x package contract
+- Offline CPU pin file `configs/ai-runtime/requirements-offline.txt`
+- llama.cpp gitlink path `.ai370-ai/tools/llama.cpp`
 
 Portable CI must keep using versioned fixtures. Physical EliteMini tests stay
 opt-in. Required fixture classes for hardware-classification changes:

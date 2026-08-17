@@ -140,6 +140,20 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("Task 24", self.architecture)
         self.assertIn("HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md", self.plan)
 
+    def test_migration_plan_inventories_tracked_runtime_pins(self) -> None:
+        for path in (
+            ".ai370-ai/ryzen-ai/source/install_ryzen_ai.sh",
+            "configs/ai-runtime/requirements-offline.txt",
+            ".ai370-ai/tools/llama.cpp",
+        ):
+            with self.subTest(path=path):
+                self.assertIn(path, self.plan)
+        self.assertIn("python3.12", self.plan)
+        self.assertIn("ryzen-ai>=1.7.0.dev0,<1.8.0.dev0", self.plan)
+        self.assertIn("onnxruntime==1.22.0", self.plan)
+        self.assertIn("160000", self.plan)
+        self.assertIn("86b94708f22478f900b76ca02e316f4f3418faff", self.plan)
+
 
 if __name__ == "__main__":
     unittest.main()
