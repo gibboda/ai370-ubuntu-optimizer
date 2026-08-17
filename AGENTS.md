@@ -80,13 +80,20 @@ Do not open the PR unless the title validation command passes.
 
 ## Documentation authority
 
-- `docs/ROADMAP.md` is authoritative for architecture, stages, milestones,
-  migration status, and implementation status.
+- `docs/ROADMAP.md` is authoritative for current Stage/Milestone ownership,
+  canonical deliverables, implementation status, and Tier compatibility
+  removal.
+- `docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md` is the target Ryzen AI
+  Linux platform architecture. Its Stages 0 through 11 are platform layers,
+  not public command names, until `docs/ROADMAP.md` is updated.
+- `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md` is the current-to-target
+  inventory, assumption classification, and file-by-file migration map.
 - `README.md` is the user-facing installation and command guide.
 - Documentation must distinguish current behavior from target behavior during
   migration.
 - A milestone is not complete until its canonical outputs and deterministic
   tests exist.
+- Never label planned functionality as implemented.
 
 ## Stage 1 boundary
 

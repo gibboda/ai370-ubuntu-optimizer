@@ -25,6 +25,14 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "[`../docs/ROADMAP.md`](../docs/ROADMAP.md)", self.copilot_instructions
         )
         self.assertIn(
+            "[`../docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md`](../docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md)",
+            self.copilot_instructions,
+        )
+        self.assertIn(
+            "[`../docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`](../docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md)",
+            self.copilot_instructions,
+        )
+        self.assertIn(
             "[`../configs/schemas/system-profile.schema.json`](../configs/schemas/system-profile.schema.json)",
             self.copilot_instructions,
         )
@@ -44,6 +52,93 @@ class RepositoryInstructionsTests(unittest.TestCase):
             with self.subTest(instructions=instructions[:20]):
                 self.assertIn("EliteMini AI370 is", instructions)
                 self.assertIn("not a universal hardware assumption", instructions)
+
+    def test_agent_instructions_preserve_roadmap_authority_and_plan_docs(self) -> None:
+        self.assertIn("`docs/ROADMAP.md` is authoritative", self.agent_instructions)
+        self.assertIn(
+            "HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md", self.agent_instructions
+        )
+        self.assertIn(
+            "RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md", self.agent_instructions
+        )
+        self.assertIn("not public command names", self.agent_instructions)
+        self.assertIn(
+            "Never label planned functionality as implemented", self.agent_instructions
+        )
+
+
+class MigrationPlanTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.plan = (
+            ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md"
+        ).read_text(encoding="utf-8")
+        cls.architecture = (
+            ROOT / "docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md"
+        ).read_text(encoding="utf-8")
+        cls.roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
+
+    def test_migration_plan_exists(self) -> None:
+        self.assertTrue(
+            (ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").is_file()
+        )
+
+    def test_migration_plan_names_current_and_future_repository(self) -> None:
+        self.assertIn("gibboda/ai370-ubuntu-optimizer", self.plan)
+        self.assertIn("gibboda/ryzen-ai-linux-platform", self.plan)
+        self.assertNotIn("gibboda/ryzen-ai-linux\n", self.plan)
+        self.assertIn("Do not rename", self.plan)
+
+    def test_migration_plan_preserves_roadmap_authority(self) -> None:
+        self.assertIn("`docs/ROADMAP.md` remains the implementation authority", self.plan)
+        self.assertIn("not public command names", self.plan)
+        self.assertIn("Do not add `stage6` through", self.plan)
+        self.assertIn("RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md", self.roadmap)
+
+    def test_migration_plan_defines_status_and_capability_terms(self) -> None:
+        for token in (
+            "IMPLEMENTED",
+            "PARTIAL",
+            "PLANNED",
+            "DEPRECATED",
+            "PASS",
+            "WARN",
+            "FAIL",
+            "UNSUPPORTED",
+            "SKIPPED",
+            "SUPPORTED",
+            "TESTED",
+            "EXPERIMENTAL",
+            "DETECTED",
+            "DRIVER_READY",
+            "APPLICATION_READY",
+            "KEEP",
+            "REFACTOR",
+            "MOVE",
+            "SPLIT",
+            "MERGE",
+            "DEPRECATE",
+            "REMOVE",
+            "REFERENCE_PLATFORM_FACT",
+            "CAPABILITY_DETECTION_RULE",
+            "TEMPORARY_COMPATIBILITY_RULE",
+            "UNNECESSARY_HARDCODE",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token, self.plan)
+
+    def test_migration_plan_does_not_claim_planned_work_implemented(self) -> None:
+        self.assertIn("FastFlowLM is PLANNED", self.plan)
+        self.assertIn("`desktop/macos-like/`", self.plan)
+        self.assertIn("| `desktop/macos-like/` | PLANNED |", self.plan)
+        self.assertIn("VS Code / Continue / Aider local coding AI | PLANNED", self.plan)
+        self.assertIn("Never describe `PLANNED` functionality as implemented", self.plan)
+        self.assertIn("mark any ROADMAP milestone Implemented", self.plan)
+
+    def test_architecture_document_remains_the_target_source(self) -> None:
+        self.assertIn("gibboda/ryzen-ai-linux-platform", self.architecture)
+        self.assertIn("Task 24", self.architecture)
+        self.assertIn("HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md", self.plan)
 
 
 if __name__ == "__main__":

@@ -95,7 +95,10 @@ NPU detection scripts remain compatibility wrappers.
 This repository uses `docs/ROADMAP.md` as the canonical roadmap and
 implementation status. `README.md` documents usage and roadmap stage structure;
 consult `docs/ROADMAP.md` for the authoritative list of implemented vs planned
-files, current stage alignment, and contributor guidance.
+files, current stage alignment, and contributor guidance. The target Ryzen AI
+Linux platform architecture is
+`docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md`. The current-to-target
+migration inventory is `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`.
 
 Current high-level status (see `docs/ROADMAP.md` for details):
 
