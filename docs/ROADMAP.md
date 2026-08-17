@@ -6,13 +6,22 @@ This document defines the architecture and naming system that all future
 renames and implementations must follow. It intentionally describes the target
 before code, commands, reports, schemas, or tests are renamed.
 
-**Last reviewed:** 2026-07-25
+**Last reviewed:** 2026-08-17
 
 The project will retain five stages, but their boundaries are replaced by the
 canonical boundaries below. Existing behavior outside its target boundary is
 not precedent: it is migration debt. In particular, **Stage 1 is exclusively
 read-only and profile-oriented**. It must never install, tune, benchmark, or
 apply a system change.
+
+The target Ryzen AI Linux platform architecture is
+[`HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md`](HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md).
+The current-to-target inventory and file mapping is
+[`RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`](RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md).
+This roadmap remains authoritative for Stage/Milestone ownership, canonical
+deliverables, implementation status, and Tier compatibility removal. The
+architecture document's Stages 0 through 11 are target platform layers, not
+public command names.
 
 ## Status vocabulary
 

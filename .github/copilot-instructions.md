@@ -4,9 +4,13 @@ Before changing code, read these sources in order:
 
 1. [`../AGENTS.md`](../AGENTS.md).
 2. [`../docs/ROADMAP.md`](../docs/ROADMAP.md).
-3. The profile schema relevant to the change (the canonical system profile is
+3. [`../docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md`](../docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md)
+   for the target platform architecture.
+4. [`../docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`](../docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md)
+   for the current-to-target inventory and file mapping.
+5. The profile schema relevant to the change (the canonical system profile is
    [`../configs/schemas/system-profile.schema.json`](../configs/schemas/system-profile.schema.json)).
-4. Any more deeply nested `AGENTS.md` that applies to files being changed.
+6. Any more deeply nested `AGENTS.md` that applies to files being changed.
 
 Use the root instructions as the complete policy. In implementation work:
 
@@ -22,7 +26,9 @@ Use the root instructions as the complete policy. In implementation work:
 - The Minisforum EliteMini AI370 is a reference development and physical test
   platform, not a universal hardware assumption. Keep physical EliteMini checks
   in an opt-in integration suite.
-- Use Stage/Milestone terminology; do not introduce new Tier names.
+- Canonical names come from `docs/ROADMAP.md`; do not introduce new Tier names.
+- Do not add public `stage6` through `stage11` commands.
+- Never label planned functionality as implemented.
 - Use deterministic fixtures for portable tests.
 - When the profile contract changes, update schema tests and downstream
   consumer tests.
