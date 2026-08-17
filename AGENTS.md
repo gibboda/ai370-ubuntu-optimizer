@@ -143,5 +143,34 @@ Do not open the PR unless the title validation command passes.
 - Schema changes require schema-version review, migration notes, fixtures, and
   consumer tests.
 - Stage boundary changes require corresponding updates to `docs/ROADMAP.md`,
-  `README.md`, and command help.
+ `README.md`, and command help.
 - Never add `try`/`catch` blocks around imports.
+
+## Cursor Cloud specific instructions
+
+This repository is a Bash CLI toolkit (`./ai370-optimize.sh`), not a
+long-running service or GUI app. There is nothing to "serve"; you run commands
+and inspect the JSON/Markdown artifacts written under `reports/latest/` (that
+directory is gitignored).
+
+- Toolchain: `bash`, `python3`, `jq`, `node`/`npm`, and `shellcheck` are all
+ provided by the base environment. `shellcheck` is a system dependency (apt),
+ not a repo package, so it is baked into the environment rather than the
+ startup update script. The update script only runs `npm ci` for the single
+ `markdownlint-cli2` dev dependency.
+- Lint: `shellcheck` is the CI-authoritative lint. Reproduce CI exactly with
+ `shellcheck --severity=error $(git ls-files '*.sh')` (see
+ `.github/workflows/shellcheck.yml`). `markdownlint-cli2` is available via npm
+ but is NOT wired into CI; running it on all `*.md` reports pre-existing style
+ errors under `workflows/comfyui/`, so scope it to files you actually touch.
+- Tests: portable, hardware-independent tests are
+ `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_repository_instructions`
+ plus the CLI smokes `bash tests/smoke_tier1.sh` and `bash tests/smoke_tier2.sh`
+ (see `tests/README.md`). All run without AI370 hardware and without network.
+- Non-obvious gotcha: on generic hardware (any cloud VM), Stage 1/Stage 2
+ commands report `WARN` for missing Radeon 890M / XDNA2 NPU / ROCm and still
+ exit `0`. Per the Stage 1 boundary rules above, these are recorded facts, not
+ failures — do NOT treat a `WARN` status or missing-hardware messages as a
+ broken environment. Stage 2 scripts exit non-zero only on `status=FAIL`.
+- Before opening a PR, validate the title:
+ `bash scripts/validate-pr-title.sh "$PR_TITLE"`.
