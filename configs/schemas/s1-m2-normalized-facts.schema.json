@@ -158,10 +158,52 @@
     },
     "collection": {
       "type": "object",
-      "required": ["missing_tools"],
+      "required": ["missing_tools", "permission_errors", "failed_probes"],
       "additionalProperties": false,
       "properties": {
-        "missing_tools": {"type": "array", "items": {"type": "string"}}
+        "missing_tools": {"type": "array", "items": {"type": "string"}},
+        "permission_errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source", "state", "error"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {"type": "string", "minLength": 1},
+              "state": {"enum": ["observed", "not_present", "unsupported", "unknown", "tool_missing", "permission_denied", "probe_failed", "unrecognized"]},
+              "error": {
+                "type": "object",
+                "required": ["code", "message"],
+                "additionalProperties": false,
+                "properties": {
+                  "code": {"type": "string", "minLength": 1},
+                  "message": {"type": "string", "minLength": 1}
+                }
+              }
+            }
+          }
+        },
+        "failed_probes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source", "state", "error"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {"type": "string", "minLength": 1},
+              "state": {"enum": ["observed", "not_present", "unsupported", "unknown", "tool_missing", "permission_denied", "probe_failed", "unrecognized"]},
+              "error": {
+                "type": "object",
+                "required": ["code", "message"],
+                "additionalProperties": false,
+                "properties": {
+                  "code": {"type": "string", "minLength": 1},
+                  "message": {"type": "string", "minLength": 1}
+                }
+              }
+            }
+          }
+        }
       }
     },
     "unknown_facts": {

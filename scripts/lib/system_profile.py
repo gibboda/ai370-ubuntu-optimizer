@@ -58,6 +58,86 @@ def _identity_id(value: Any) -> str | None:
     return text.removeprefix("0x") if text else None
 
 
+_COLLECTION_STATES = frozenset({
+    "observed", "not_present", "unsupported", "unknown",
+    "tool_missing", "permission_denied", "probe_failed", "unrecognized",
+})
+
+
+def _normalize_error(value: Any, default_code: str, default_message: str) -> dict[str, str]:
+    if isinstance(value, dict) and value.get("code") and value.get("message"):
+        return {"code": str(value["code"]), "message": str(value["message"])}
+    if isinstance(value, str) and value.strip():
+        return {"code": default_code, "message": value.strip()}
+    return {"code": default_code, "message": default_message}
+
+
+def _normalize_collection_records(records: Any, default_state: str) -> list[dict[str, Any]]:
+    """Preserve S1-M1 permission_errors and failed_probes as structured records."""
+    normalized: list[dict[str, Any]] = []
+    for item in records or []:
+        if isinstance(item, str):
+            source = item.strip() or default_state
+            state = default_state
+            error = _normalize_error(None, default_state, f"{source} {default_state.replace('_', ' ')}")
+        elif isinstance(item, dict):
+            source = str(item.get("source") or item.get("id") or item.get("path") or default_state)
+            raw_state = str(item.get("state") or default_state)
+            state = raw_state if raw_state in _COLLECTION_STATES else default_state
+            error = _normalize_error(
+                item.get("error"),
+                state,
+                f"{source} {state.replace('_', ' ')}",
+            )
+        else:
+            continue
+        normalized.append({"source": source, "state": state, "error": error})
+    return normalized
+
+
+def _probe_from_collection_record(record: dict[str, Any]) -> dict[str, Any]:
+    source = str(record.get("source") or "collection")
+    state = str(record.get("state") or "unknown")
+    if state not in _COLLECTION_STATES:
+        state = "unknown"
+    return {
+        "id": source,
+        "state": state,
+        "source": source,
+        "error": record.get("error") if isinstance(record.get("error"), dict) else {
+            "code": state,
+            "message": f"{source} {state.replace('_', ' ')}",
+        },
+    }
+
+
+def _collection_probes(hardware: dict[str, Any]) -> list[dict[str, Any]]:
+    """Map preserved collection failures into v3 probes without dropping diagnostics."""
+    collection = (hardware.get("_raw_stage1") or {}).get("collection") or {}
+    probes = [
+        _probe_from_collection_record(record)
+        for record in (
+            _normalize_collection_records(collection.get("permission_errors"), "permission_denied")
+            + _normalize_collection_records(collection.get("failed_probes"), "probe_failed")
+        )
+    ]
+    if probes:
+        return probes
+    return [{
+        "id": "compatibility-inventory",
+        "state": "observed",
+        "source": "tier1-hardware.json",
+        "error": None,
+    }]
+
+
+def _is_nvme_device(device: dict[str, Any]) -> bool:
+    transport = str(device.get("transport") or device.get("tran") or "").casefold()
+    name = str(device.get("name") or "").casefold()
+    path = str(device.get("device_path") or device.get("path") or "").casefold()
+    return transport == "nvme" or name.startswith("nvme") or "/nvme" in path
+
+
 def _pci_identity(device: dict[str, Any]) -> dict[str, str | None] | None:
     identity = {
         "vendor_id": _identity_id(device.get("vendor_id")),
@@ -507,11 +587,16 @@ def normalize_facts(raw: dict[str, Any]) -> dict[str, Any]:
     gpu, npu = hardware.get("gpu", {}), hardware.get("npu", {})
     memory, storage = hardware.get("memory", {}), hardware.get("storage", {})
     missing_tools = [name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name]
+    collection = (hardware.get("_raw_stage1") or {}).get("collection") or raw.get("collection") or {}
     gpu_devices = [_normalized_gpu_device(device) for device in gpu.get("devices") or []]
+    raw_pci = (hardware.get("_raw_stage1") or {}).get("pci") or {}
+    pci_probe_state = str(raw_pci.get("state") or "").strip()
     if gpu_devices:
         gpu_state = "observed"
-    elif "lspci" in missing_tools:
+    elif "lspci" in missing_tools or pci_probe_state == "tool_missing":
         gpu_state = "tool_missing"
+    elif pci_probe_state in {"probe_failed", "permission_denied"}:
+        gpu_state = pci_probe_state
     else:
         gpu_state = "not_present"
     unknown_paths: list[str] = []
@@ -524,7 +609,6 @@ def normalize_facts(raw: dict[str, Any]) -> dict[str, Any]:
     ):
         if not _known(value):
             unknown_paths.append(path)
-    raw_pci = hardware.get("_raw_stage1", {}).get("pci", {})
     npu_devices = []
     for device in npu.get("devices") or []:
         npu_devices.append({
@@ -597,7 +681,17 @@ def normalize_facts(raw: dict[str, Any]) -> dict[str, Any]:
             "state": raw_pci.get("state"),
             "devices": raw_pci.get("devices") or [],
         },
-        "collection": {"missing_tools": missing_tools},
+        "collection": {
+            "missing_tools": missing_tools,
+            "permission_errors": _normalize_collection_records(
+                collection.get("permission_errors"),
+                default_state="permission_denied",
+            ),
+            "failed_probes": _normalize_collection_records(
+                collection.get("failed_probes"),
+                default_state="probe_failed",
+            ),
+        },
         "unknown_facts": [{"path": path, "state": "unknown", "reason": "collector returned no recognized value"}
                           for path in unknown_paths],
     }
@@ -638,8 +732,11 @@ def hardware_from_normalized(facts: dict[str, Any]) -> dict[str, Any]:
         })
     missing_tools = facts.get("collection", {}).get("missing_tools", [])
     return {
-        "_raw_stage1": {"pci": facts.get("pci") or {"state": None, "devices": []},
-                        "artifact": facts.get("source_artifact")},
+        "_raw_stage1": {
+            "pci": facts.get("pci") or {"state": None, "devices": []},
+            "artifact": facts.get("source_artifact"),
+            "collection": facts.get("collection") or {},
+        },
         "system": {
             "vendor": system.get("manufacturer"), "product": system.get("product"),
             "version": system.get("version"),
@@ -729,7 +826,7 @@ def _gpu_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
                 "name": device.get("device_name") or device.get("name") or gpu.get("text") or None,
                 "pci": _pci_from_device(device),
                 "driver": driver,
-                "architecture": (mapping["arch"] if mapping else _nullable(gpu.get("arch"))),
+                "architecture": mapping["arch"] if mapping else None,
                 "vram_bytes": None,
                 "runtime": "unknown",
             })
@@ -751,9 +848,16 @@ def _gpu_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
                 "runtime": "unknown",
             })
         return records
-    if not lspci_tool_present:
+    pci_state = str(((hardware.get("_raw_stage1") or {}).get("pci") or {}).get("state") or "").strip()
+    if not lspci_tool_present or pci_state == "tool_missing":
+        unavailable_state = "tool_missing"
+    elif pci_state in {"probe_failed", "permission_denied"}:
+        unavailable_state = pci_state
+    else:
+        unavailable_state = None
+    if unavailable_state:
         return [{
-            "state": "tool_missing",
+            "state": unavailable_state,
             "id": "gpu0",
             "name": None,
             "pci": _pci(),
@@ -840,17 +944,19 @@ def derive_capability_candidates(hardware: dict[str, Any]) -> list[dict[str, Any
     npu = hardware.get("npu", {})
     gpu_devices = _gpu_records(hardware)
     storage_devices = _storage_records(hardware)
+    nvme_devices = [device for device in storage_devices if _is_nvme_device(device)]
     _, npu_evidence = _accelerator_records(hardware)
     npu_present = npu.get("present") is True
-    if gpu_devices and gpu_devices[0]["state"] == "tool_missing":
-        gpu_candidate_state = "tool_missing"
+    first_gpu_state = str(gpu_devices[0]["state"]) if gpu_devices else "not_present"
+    if first_gpu_state in {"tool_missing", "probe_failed", "permission_denied"}:
+        gpu_candidate_state = first_gpu_state
     elif gpu_devices:
         gpu_candidate_state = "observed"
     else:
         gpu_candidate_state = "not_present"
     if storage_devices and storage_devices[0]["state"] == "tool_missing":
         nvme_candidate_state = "tool_missing"
-    elif storage_devices:
+    elif nvme_devices:
         nvme_candidate_state = "observed"
     else:
         nvme_candidate_state = "not_present"
@@ -866,8 +972,8 @@ def derive_capability_candidates(hardware: dict[str, Any]) -> list[dict[str, Any
          "evidence": [npu_evidence] if npu_evidence else []},
         {"id": "storage.nvme",
          "state": nvme_candidate_state,
-         "candidate": bool(storage_devices) if nvme_candidate_state == "observed" else None,
-         "evidence": [storage_devices[0]["name"]] if storage_devices and storage_devices[0]["state"] == "observed" else []},
+         "candidate": bool(nvme_devices) if nvme_candidate_state == "observed" else None,
+         "evidence": [str(device.get("name") or "") for device in nvme_devices if device.get("state") == "observed"]},
     ]
 
 
@@ -970,8 +1076,7 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
         "firmware": {"state": _state(system.get("bios_version")), "bios_vendor": _nullable(system.get("bios_vendor")),
                      "bios_version": _nullable(system.get("bios_version")), "bios_date": _nullable(system.get("bios_date")),
                      "uefi": system.get("uefi", "unknown"), "secure_boot": system.get("secure_boot", {"state": "unknown", "enabled": None})},
-        "collection": {"tools": tools, "probes": [{"id": "compatibility-inventory", "state": "observed",
-                                                       "source": "tier1-hardware.json", "error": None}]},
+        "collection": {"tools": tools, "probes": _collection_probes(hardware)},
         "classification": classify(hardware),
         "capability_candidates": derive_capability_candidates(hardware),
         "unknown_facts": [{"path": path, "state": "unknown", "reason": "collector returned no recognized value"}

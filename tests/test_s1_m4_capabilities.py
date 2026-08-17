@@ -75,6 +75,25 @@ class Stage1CapabilityTests(unittest.TestCase):
         self.assertEqual(by_id["npu.runtime"]["state"], "not_present")
         self.assertIsNone(by_id["npu.runtime"]["candidate"])
 
+    def test_sata_only_storage_is_not_an_nvme_candidate(self) -> None:
+        document = self.derive_cli(load_raw("storage-sata-only.json"))
+        by_id = {item["id"]: item for item in document["capability_candidates"]}
+        self.assertEqual(by_id["storage.nvme"]["state"], "not_present")
+        self.assertIsNone(by_id["storage.nvme"]["candidate"])
+        self.assertEqual(by_id["storage.nvme"]["evidence"], [])
+
+    def test_failed_pci_probe_does_not_claim_gpu_absence(self) -> None:
+        raw = load_raw("failed-probe.json")
+        raw["collection"]["missing_tools"] = [
+            name for name in raw["collection"]["missing_tools"] if name != "lspci"
+        ]
+        raw["pci"]["state"] = "probe_failed"
+        raw["gpu"]["state"] = "probe_failed"
+        document = self.derive_cli(raw)
+        by_id = {item["id"]: item for item in document["capability_candidates"]}
+        self.assertEqual(by_id["gpu.rocm"]["state"], "probe_failed")
+        self.assertIsNone(by_id["gpu.rocm"]["candidate"])
+
 
 if __name__ == "__main__":
     unittest.main()

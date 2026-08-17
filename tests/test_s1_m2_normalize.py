@@ -83,6 +83,53 @@ class Stage1NormalizeTests(unittest.TestCase):
         self.assertEqual(facts["gpu"]["architecture"], "gfx1150")
         self.assertNotEqual(facts["system"]["product"], "EliteMini AI370")
 
+    def test_failed_pci_probe_is_not_recorded_as_absent(self) -> None:
+        raw = load_raw("failed-probe.json")
+        raw["collection"]["missing_tools"] = [
+            name for name in raw["collection"]["missing_tools"] if name != "lspci"
+        ]
+        raw["pci"]["state"] = "probe_failed"
+        raw["gpu"]["state"] = "probe_failed"
+        facts = self.normalize_cli(raw)
+        system_profile.validate_document(facts, system_profile.S1_M2_SCHEMA, "S1-M2")
+        self.assertEqual(facts["gpu"]["state"], "probe_failed")
+        self.assertEqual(facts["pci"]["state"], "probe_failed")
+        self.assertEqual(facts["gpu"]["devices"], [])
+        self.assertNotIn("lspci", facts["collection"]["missing_tools"])
+
+    def test_unreadable_probe_keeps_permission_errors(self) -> None:
+        facts = self.normalize_cli(load_raw("unreadable-probe.json"))
+        system_profile.validate_document(facts, system_profile.S1_M2_SCHEMA, "S1-M2")
+        errors = facts["collection"]["permission_errors"]
+        self.assertTrue(errors)
+        self.assertEqual(errors[0]["state"], "permission_denied")
+        self.assertEqual(errors[0]["source"], "/sys/class/dmi/id/product_name")
+        self.assertEqual(errors[0]["error"]["code"], "permission_denied")
+        self.assertTrue(errors[0]["error"]["message"])
+
+    def test_string_failed_probes_keep_source_and_state(self) -> None:
+        facts = self.normalize_cli(load_raw("failed-probe.json"))
+        system_profile.validate_document(facts, system_profile.S1_M2_SCHEMA, "S1-M2")
+        failed = facts["collection"]["failed_probes"]
+        self.assertEqual(failed[0]["source"], "dmi")
+        self.assertEqual(failed[0]["state"], "probe_failed")
+        self.assertEqual(failed[0]["error"]["code"], "probe_failed")
+
+    def test_unmapped_sibling_gpu_does_not_inherit_mapped_architecture(self) -> None:
+        raw = load_raw("observed-ai370.json")
+        raw["gpu"]["devices"].append({
+            "device_name": "Intel Graphics",
+            "bound_driver": "i915",
+            "vendor_id": "8086",
+            "device_id": "46b3",
+        })
+        facts = self.normalize_cli(raw)
+        system_profile.validate_document(facts, system_profile.S1_M2_SCHEMA, "S1-M2")
+        by_id = {(device["vendor_id"], device["device_id"]): device for device in facts["gpu"]["devices"]}
+        self.assertEqual(by_id[("1002", "1900")]["architecture"], "gfx1150")
+        self.assertIsNone(by_id[("8086", "46b3")]["architecture"])
+        self.assertEqual(facts["gpu"]["architecture"], "gfx1150")
+
 
 class GpuPciTextLookupTests(unittest.TestCase):
     def test_lspci_nn_text_maps_without_marketing_names(self) -> None:

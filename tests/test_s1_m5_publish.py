@@ -110,6 +110,40 @@ class Stage1PublishTests(unittest.TestCase):
             system_profile.validate_document(profile, system_profile.S1_M5_SCHEMA, "S1-M5")
         self.assertIn("fingerprint.value", str(caught.exception))
 
+    def test_unreadable_probe_publishes_permission_denied_collection(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile, _summary = self.publish_cli(load_raw("unreadable-probe.json"), Path(directory))
+        system_profile.validate_profile(profile)
+        probe_states = {item["source"]: item["state"] for item in profile["collection"]["probes"]}
+        self.assertEqual(probe_states["/sys/class/dmi/id/product_name"], "permission_denied")
+        self.assertTrue(profile["collection"]["probes"][0]["error"]["message"])
+
+    def test_unmapped_sibling_gpu_architecture_stays_unknown(self) -> None:
+        raw = load_raw("observed-ai370.json")
+        raw["gpu"]["devices"].append({
+            "device_name": "Intel Graphics",
+            "bound_driver": "i915",
+            "vendor_id": "8086",
+            "device_id": "46b3",
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            profile, _summary = self.publish_cli(raw, Path(directory))
+        system_profile.validate_profile(profile)
+        by_id = {
+            (gpu["pci"]["vendor_id"], gpu["pci"]["device_id"]): gpu
+            for gpu in profile["gpus"]
+        }
+        self.assertEqual(by_id[("1002", "1900")]["architecture"], "gfx1150")
+        self.assertIsNone(by_id[("8086", "46b3")]["architecture"])
+
+    def test_sata_only_profile_does_not_advertise_nvme(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            profile, _summary = self.publish_cli(load_raw("storage-sata-only.json"), Path(directory))
+        system_profile.validate_profile(profile)
+        by_id = {item["id"]: item for item in profile["capability_candidates"]}
+        self.assertEqual(by_id["storage.nvme"]["state"], "not_present")
+        self.assertIsNone(by_id["storage.nvme"]["candidate"])
+
 
 if __name__ == "__main__":
     unittest.main()
