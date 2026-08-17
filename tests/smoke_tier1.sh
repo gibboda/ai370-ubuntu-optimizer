@@ -38,10 +38,11 @@ done
 # 2. Help documents Package E flags
 help_out="$("$PROJECT_ROOT/ai370-optimize.sh" help 2>&1 || true)"
 echo "$help_out" | grep -q "stage1-inventory" || { echo "[FAIL] help missing stage1-inventory"; exit 3; }
+echo "$help_out" | grep -q "stage1-profile" || { echo "[FAIL] help missing stage1-profile"; exit 3; }
 echo "$help_out" | grep -q -- "--with-ai-smoke" || { echo "[FAIL] help missing --with-ai-smoke"; exit 3; }
 echo "$help_out" | grep -q -- "--apply-tuning" || { echo "[FAIL] help missing --apply-tuning"; exit 3; }
 echo "$help_out" | grep -q -- "--strict" || { echo "[FAIL] help missing --strict"; exit 3; }
-echo "[OK] orchestrator help mentions stage1-inventory and Package E flags"
+echo "[OK] orchestrator help mentions stage1-inventory, stage1-profile, and Package E flags"
 
 # 3. Non-mutating Stage 1 pieces
 # Inventory path (no tuning / no script 80) + platform tuning plan + full-scope validate

@@ -171,7 +171,7 @@ directory is gitignored).
  but is NOT wired into CI; running it on all `*.md` reports pre-existing style
  errors under `workflows/comfyui/`, so scope it to files you actually touch.
 - Tests: portable, hardware-independent tests are
- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_repository_instructions`
+ `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_repository_instructions`
  plus the CLI smokes `bash tests/smoke_tier1.sh` and `bash tests/smoke_tier2.sh`
  (see `tests/README.md`). All run without AI370 hardware and without network.
 - Non-obvious gotcha: on generic hardware (any cloud VM), Stage 1/Stage 2

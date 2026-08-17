@@ -216,14 +216,27 @@ feature is not treated as implemented unless code exists.
 | Path | Status | Notes |
 | --- | --- | --- |
 | `scripts/s1-m1-probe-system.sh` | IMPLEMENTED | Canonical S1-M1 read-only probe; fixture replay supported |
-| `scripts/lib/hardware-detect.sh` | PARTIAL | Structured probe collector plus marketing-name GPU arch helper |
-| `scripts/lib/system_profile.py` | PARTIAL | v3 profile builder, classification, capability candidates; canonical S1-M2–M5 split is still Planned |
+| `scripts/s1-m2-normalize-profile.py` | IMPLEMENTED | Canonical S1-M2 fact normalization; GPU architecture from PCI map |
+| `scripts/s1-m3-classify-platform.py` | IMPLEMENTED | Canonical S1-M3 platform classification |
+| `scripts/s1-m4-derive-capabilities.py` | IMPLEMENTED | Canonical S1-M4 capability candidates; not validation claims |
+| `scripts/s1-m5-publish-profile.py` | IMPLEMENTED | Canonical S1-M5 atomic v3 publication and inventory summary |
+| `scripts/lib/hardware-detect.sh` | PARTIAL | Structured probe collector; `detect_gpu_arch()` looks up PCI IDs |
+| `scripts/lib/system_profile.py` | IMPLEMENTED | Shared S1-M2–S1-M5 library behind the canonical CLIs |
 | `scripts/10-detect-hardware.sh` | DEPRECATED | Compatibility wrapper; also publishes legacy `tier1-*` artifacts and `system-profile.json` |
 | `scripts/75-detect-npu.sh` | DEPRECATED | Forwards to S1-M1 probe |
 | `configs/schemas/system-profile*.json` | IMPLEMENTED | v1/v2 retained for migration; v3 is current |
+| `configs/schemas/s1-m2-normalized-facts.schema.json` | IMPLEMENTED | S1-M2 contract |
+| `configs/schemas/s1-m3-platform-classification.schema.json` | IMPLEMENTED | S1-M3 contract |
+| `configs/schemas/s1-m4-capability-candidates.schema.json` | IMPLEMENTED | S1-M4 contract |
+| `configs/schemas/s1-m5-system-profile.schema.json` | IMPLEMENTED | Canonical S1-M5 name for the v3 profile contract |
+| `configs/profiles/gpu-pci-architectures.json` | IMPLEMENTED | Declarative PCI vendor:device to gfx mapping |
 | `configs/profiles/ai370.env` | IMPLEMENTED | Reference-platform profile |
 | `configs/profiles/generic-ryzen-ai.env` | IMPLEMENTED | Broader Ryzen AI profile |
 | `tests/test_s1_m1_probe.py` | IMPLEMENTED | Fixture replay coverage |
+| `tests/test_s1_m2_normalize.py` | IMPLEMENTED | PCI architecture and live artifact-name coverage |
+| `tests/test_s1_m3_classify.py` | IMPLEMENTED | Table-driven family and unknown-platform coverage |
+| `tests/test_s1_m4_capabilities.py` | IMPLEMENTED | Candidates are not validation claims |
+| `tests/test_s1_m5_publish.py` | IMPLEMENTED | Schema pass/fail and interrupted-write coverage |
 | `tests/test_system_profile.py` | IMPLEMENTED | Classification, fingerprint, schema tests |
 | `tests/fixtures/raw-probes/v1/*` | IMPLEMENTED | AI370, Ryzen AI Pro 360, missing-tool, unsupported, unreadable, non-XDNA |
 
@@ -305,10 +318,11 @@ files, and docs.
 | `scripts/lib/system_profile.py` `PLATFORM_DEFINITIONS` `ai370` | Exact DMI/CPU match for EliteMini AI370 | REFERENCE_PLATFORM_FACT | KEEP; unknown hosts must remain valid |
 | `scripts/lib/system_profile.py` `CPU_FAMILY_SIGNATURES` | CPU family 26 / model 36 → `ryzen-ai-300` | CAPABILITY_DETECTION_RULE | KEEP; extend with data, not collector rewrites |
 | `scripts/lib/system_profile.py` `GPU_ARCHITECTURE_MAPPINGS` | `gfx1150`/`gfx1151` → RDNA 3.5 | CAPABILITY_DETECTION_RULE | KEEP and extend |
+| `configs/profiles/gpu-pci-architectures.json` | `1002:1900` → `gfx1150` | CAPABILITY_DETECTION_RULE | KEEP; extend with PCI data, not marketing names |
 | `scripts/lib/system_profile.py` `NPU_FAMILY_MAPPINGS` | PCI `1022:17f0` XDNA2, `1022:1502` XDNA | CAPABILITY_DETECTION_RULE | KEEP; do not treat these IDs as universal PASS |
 | `configs/profiles/generic-ryzen-ai.env` | Broad Ryzen AI / XDNA profile | CAPABILITY_DETECTION_RULE | KEEP |
-| `scripts/lib/hardware-detect.sh` `detect_gpu_arch()` | `890M\|Strix\|gfx1150` → `gfx1150` | UNNECESSARY_HARDCODE | REFACTOR to PCI/sysfs/architecture facts |
-| `scripts/70-validate-gpu-stack.sh` | Same marketing-name GPU arch match | UNNECESSARY_HARDCODE | REFACTOR |
+| `scripts/lib/hardware-detect.sh` `detect_gpu_arch()` | PCI `[vvvv:dddd]` lookup via `gpu-pci-architectures.json` | CAPABILITY_DETECTION_RULE | KEEP; do not restore `890M`/`Strix` greps |
+| `scripts/70-validate-gpu-stack.sh` | Uses `detect_gpu_arch()` PCI lookup | CAPABILITY_DETECTION_RULE | KEEP; full S2-M3 rewrite remains later |
 | `scripts/90-validate.sh` | Missing gfx1150/NPU is acceptance WARN, or FAIL with `--strict` | TEMPORARY_COMPATIBILITY_RULE | SPLIT: facts in S1, policy in S2; `--strict` must not become generic policy |
 | `scripts/110-install-llama-cpp.sh` | `LLAMA_CPP_AMDGPU_TARGETS` defaults to `gfx1150` | UNNECESSARY_HARDCODE | REFACTOR to profile/capability input |
 | `scripts/245-compare-cpu-gpu-npu.sh` | gfx1150/Radeon 890M guidance strings | REFERENCE_PLATFORM_FACT | KEEP as reference advice; do not gate generic hosts |
@@ -344,8 +358,8 @@ abbreviated; see the assumption table for the full class.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ai370-optimize.sh` | Command router | Numbered scripts | Default `ai370` profile | Router only; each branch keeps its ROADMAP owner | SPLIT command owners; KEEP file | Help/smoke tests | Medium |
 | `scripts/lib/common.sh` | Shared shell helpers | Reports dir | `ai370_*` names | Shared infrastructure | KEEP; document consumer milestone per function | ShellCheck; smoke syntax | Low |
-| `scripts/lib/hardware-detect.sh` | Probe helpers and raw collector | `lscpu`, `lspci`, sysfs, DMI | Ubuntu 26.04 defaults; marketing-name GPU arch | Detection modules | SPLIT facts from policy; REFACTOR GPU arch | Probe fixtures | High |
-| `scripts/lib/system_profile.py` | Normalize, classify, publish profile | Raw inventory, schemas | Schema name `ai370-*`; declarative AI370 match | S1-M2 through S1-M5 | SPLIT into canonical scripts after tests exist | `test_system_profile.py` | High |
+| `scripts/lib/hardware-detect.sh` | Probe helpers and raw collector | `lscpu`, `lspci`, sysfs, DMI | Ubuntu 26.04 defaults; GPU arch from PCI map | Detection modules | KEEP PCI lookup; SPLIT facts from policy | Probe fixtures | High |
+| `scripts/lib/system_profile.py` | Normalize, classify, publish profile | Raw inventory, schemas, PCI map | Schema name `ai370-*`; declarative AI370 match | S1-M2 through S1-M5 library | KEEP as shared library behind canonical scripts | `test_system_profile.py` plus owner tests | High |
 | `configs/schemas/system-profile.schema.json` | v3 profile contract | None | Schema id still AI370-named | S1-M5 | KEEP; version before rename | Schema fixtures | High |
 | `configs/schemas/system-profile-v1.schema.json`, `...-v2.schema.json` | Migration validation | v3 publisher | Historical | S1-M5 migration | KEEP until consumers reject v1 and finish v2 | Existing schema tests | Medium |
 | `configs/profiles/ai370.env` | Reference profile | BIOS/GPU/NPU expected values | REFERENCE_PLATFORM_FACT | S1-M3 | KEEP | Classification tests | Low |
@@ -355,8 +369,13 @@ abbreviated; see the assumption table for the full class.
 | `configs/models/*` | Manifest and storage policy | `.ai370-ai/models` | Path name | S3-M1 | KEEP layout; REFACTOR naming later | `smoke_tier2.sh` layout checks | Low |
 | `configs/ai-runtime/requirements-offline.txt` | Offline CPU Python pin file | `scripts/lib/offline-paths.sh`, wheelhouse | `onnxruntime==1.22.0` and related pins; not VitisAI ORT | S3 CPU runtime / S3-M2 | KEEP; split NPU pins if added | Offline missing-wheelhouse tests | Medium |
 | `configs/offline/ai-runtime.env`, `configs/persistence/runtime.env` | Offline and persistence defaults | Runtime scripts | Runtime-only persistence; `OFFLINE_REQUIREMENTS` points at the pin file | Stage 3 / S5-M3 | KEEP | Persistence-refusal tests | Low |
+| `configs/profiles/gpu-pci-architectures.json` | PCI vendor:device to gfx map | None | Fixture identity `1002:1900` | S1-M2 | KEEP; extend with PCI data | `test_s1_m2_normalize.py` | Low |
 | `scripts/s1-m1-probe-system.sh` | Canonical raw probe | `hardware-detect.sh` | None beyond collector | S1-M1 | KEEP | `test_s1_m1_probe.py` | Low |
-| `scripts/10-detect-hardware.sh` | Legacy inventory publisher | S1-M1, profile builder | `tier1-*` filenames | Compatibility until R1 | DEPRECATE after canonical S1-M5 | Smoke still expects `tier1-npu.json` | Medium |
+| `scripts/s1-m2-normalize-profile.py` | Normalize raw inventory | S1-M1 JSON, PCI map | None beyond collector | S1-M2 | KEEP | `test_s1_m2_normalize.py` | Low |
+| `scripts/s1-m3-classify-platform.py` | Platform classification | S1-M2 facts | Declarative AI370 match | S1-M3 | KEEP | `test_s1_m3_classify.py` | Low |
+| `scripts/s1-m4-derive-capabilities.py` | Capability candidates | S1-M2 facts | Candidates are not validation | S1-M4 | KEEP | `test_s1_m4_capabilities.py` | Low |
+| `scripts/s1-m5-publish-profile.py` | Profile publication | S1-M2–M4 artifacts | v3 generator name remains `system_profile.py` | S1-M5 | KEEP | `test_s1_m5_publish.py` | Medium |
+| `scripts/10-detect-hardware.sh` | Legacy inventory publisher | S1-M1 plus S1-M2–S1-M5 pipeline | `tier1-*` filenames | Compatibility until R1 | DEPRECATE after consumers move to `stage1-profile` | Smoke still expects `tier1-npu.json` | Medium |
 | `scripts/75-detect-npu.sh` | NPU wrapper | S1-M1 | None | Compatibility | DEPRECATE/REMOVE at R1 | Probe tests | Low |
 
 ### Validation, optimization, GPU, and NPU
@@ -425,10 +444,11 @@ tests before replacing working code.
 
 Recommended order, using ROADMAP owners rather than new public stage numbers:
 
-1. **Detection facts, not marketing names** — finish canonical S1-M2 through
-   S1-M5; stop treating `890M`/`Strix` string matches as architecture.
+1. **Detection facts, not marketing names** — **done.** Canonical S1-M2 through
+   S1-M5 exist; GPU architecture comes from PCI mappings, not `890M`/`Strix`.
 2. **Capability assessment** — expose GPU/NPU ladders as structured states;
-   candidates must not claim validation.
+   candidates must not claim validation. S1-M4 candidates exist; Stage 2/3
+   ladders remain Planned.
 3. **Stop Stage 1 mutation and mixed validation** — move BIOS/kernel/GPU
    policy and tuning plan/apply to S2-M1 through S2-M6; `stage1` becomes
    read-only profile publication.
@@ -487,7 +507,7 @@ opt-in. Required fixture classes for hardware-classification changes:
 
 Current automated coverage to retain until replaced by owner-specific tests:
 
-- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_repository_instructions`
+- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_repository_instructions`
 - `bash tests/smoke_tier1.sh`
 - `bash tests/smoke_tier2.sh`
 - `shellcheck --severity=error $(git ls-files '*.sh')`
@@ -498,11 +518,13 @@ Do not hide unexpected failures with unconditional `|| true`.
 
 ## Documentation and status drift
 
-`README.md` currently describes Stage 1 and Stage 2 as implemented for a
-broader scope than `docs/ROADMAP.md` allows. ROADMAP is authoritative:
-canonical S1-M2 through S5 milestones remain Planned until their outputs,
-tests, and docs exist. Later documentation PRs must align README status
-language with ROADMAP rather than with historical Tier/Package summaries.
+`README.md` currently describes the mixed `stage1` orchestrator (BIOS, kernel,
+GPU visibility, and tuning) as if it were the canonical Stage 1 contract.
+ROADMAP is authoritative: S1-M1 through S1-M5 are Implemented as the read-only
+profile pipeline (`stage1-probe` and `stage1-profile`). Canonical S2 through S5
+milestones remain Planned until their outputs, tests, and docs exist. Later
+documentation PRs must keep README status language aligned with ROADMAP rather
+than with historical Tier/Package summaries.
 
 The architecture document is target design. Features listed there as local
 coding AI, FastFlowLM, unified master validation, heterogeneous live

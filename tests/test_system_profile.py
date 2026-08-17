@@ -144,6 +144,8 @@ class RawProbeNormalizationTests(unittest.TestCase):
         profile = system_profile.build_profile(raw, "test")
         system_profile.validate_profile(profile)
         self.assertEqual(profile["classification"]["platform_id"], "ai370")
+        self.assertEqual(profile["gpus"][0]["architecture"], "gfx1150")
+        self.assertEqual(profile["gpus"][0]["pci"]["device_id"], "1900")
         xdna_accels = [a for a in profile["accelerators"] if a.get("state") == "observed"]
         self.assertTrue(xdna_accels, "AMD XDNA accelerator must be observed")
         self.assertEqual(xdna_accels[0]["driver"]["name"], "amdxdna")
@@ -217,6 +219,24 @@ class RawProbeNormalizationTests(unittest.TestCase):
         storage_names = [d.get("name", "") for d in profile["storage"]]
         self.assertFalse(any(str(n).startswith("nvme") for n in storage_names),
                          f"Expected no nvme devices, got: {storage_names}")
+        nvme = next(item for item in profile["capability_candidates"] if item["id"] == "storage.nvme")
+        self.assertEqual(nvme["state"], "not_present")
+        self.assertIsNone(nvme["candidate"])
+
+    def test_failed_pci_probe_preserves_probe_failed_gpu_state(self) -> None:
+        raw = self._load("failed-probe.json")
+        raw["collection"]["missing_tools"] = [
+            name for name in raw["collection"]["missing_tools"] if name != "lspci"
+        ]
+        raw["pci"]["state"] = "probe_failed"
+        raw["gpu"]["state"] = "probe_failed"
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["gpus"][0]["state"], "probe_failed")
+        self.assertIsNone(profile["gpus"][0]["architecture"])
+        gpu = next(item for item in profile["capability_candidates"] if item["id"] == "gpu.rocm")
+        self.assertEqual(gpu["state"], "probe_failed")
+        self.assertIsNone(gpu["candidate"])
 
     def test_non_xdna_accelerator_does_not_set_npu_present(self) -> None:
         raw = self._load("accelerator-non-xdna.json")

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Tier 1: GPU stack validation (Radeon 890M / gfx1150, Vulkan, OpenCL, ROCm visibility).
-# This is a read-only validation / smoke phase. No installation of ROCm happens here.
+# GPU stack visibility (AMDGPU, Vulkan, OpenCL, ROCm). Architecture comes from
+# PCI vendor:device lookup, not marketing names. This is a read-only validation
+# / smoke phase. No installation of ROCm happens here.
 
 set -euo pipefail
 
@@ -56,9 +57,7 @@ main() {
     amdgpu_state="loaded"
   fi
 
-  if printf '%s\n' "$gpu_text" | grep -Eiq '890M|gfx1150|Strix'; then
-    gpu_arch="gfx1150"
-  fi
+  gpu_arch="$(detect_gpu_arch "$gpu_text")"
 
   vulkan_summary="$(run_capture vulkaninfo --summary)"
   if [[ "$vulkan_summary" != command-not-found:* ]] && ! printf '%s\n' "$vulkan_summary" | grep -qi 'error'; then

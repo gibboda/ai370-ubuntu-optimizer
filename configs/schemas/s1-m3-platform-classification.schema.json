@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai370.local/schemas/s1-m3-platform-classification-v1.json",
+  "title": "S1-M3 Platform Classification v1",
+  "description": "Table-driven platform family classification consumed by S1-M5. Unknown and unsupported hosts remain valid.",
+  "type": "object",
+  "required": ["schema", "stage", "milestone", "artifact", "consumed_source", "classification"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "object",
+      "required": ["name", "version", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "s1-m3-platform-classification"},
+        "version": {"const": 1},
+        "uri": {"const": "https://ai370.local/schemas/s1-m3-platform-classification-v1.json"}
+      }
+    },
+    "stage": {"const": 1},
+    "milestone": {"const": "S1-M3"},
+    "artifact": {"const": "s1-m3-platform-classification"},
+    "consumed_source": {"type": ["string", "null"]},
+    "classification": {
+      "type": "object",
+      "required": ["state", "platform_id", "confidence", "evidence", "mismatches"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {"enum": ["observed", "not_present", "unsupported", "unknown", "tool_missing", "permission_denied", "probe_failed", "unrecognized"]},
+        "platform_id": {"type": ["string", "null"]},
+        "confidence": {"enum": ["exact", "family", "none"]},
+        "evidence": {"type": "array", "items": {"type": "string"}},
+        "mismatches": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

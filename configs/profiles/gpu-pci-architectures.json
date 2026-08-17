@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "description": "Declarative PCI vendor:device to GPU architecture mapping used by S1-M2. Marketing names such as 890M or Strix are not architecture.",
+  "mappings": {
+    "1002:1900": {
+      "arch": "gfx1150",
+      "family": "rdna3.5",
+      "description": "AMD RDNA 3.5 integrated GPU identity used by the EliteMini AI370 fixtures"
+    }
+  }
+}

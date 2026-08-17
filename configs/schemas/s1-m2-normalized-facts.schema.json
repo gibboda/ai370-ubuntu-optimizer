@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai370.local/schemas/s1-m2-normalized-facts-v1.json",
+  "title": "S1-M2 Normalized Facts v1",
+  "description": "Read-only normalized hardware facts derived from the S1-M1 raw inventory. GPU architecture is derived from PCI vendor:device mappings, never from marketing names.",
+  "type": "object",
+  "required": ["schema", "stage", "milestone", "artifact", "source_artifact", "system", "operating_system", "kernel", "cpu", "memory", "storage", "gpu", "npu", "firmware", "pci", "collection", "unknown_facts"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "object",
+      "required": ["name", "version", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "s1-m2-normalized-facts"},
+        "version": {"const": 1},
+        "uri": {"const": "https://ai370.local/schemas/s1-m2-normalized-facts-v1.json"}
+      }
+    },
+    "stage": {"const": 1},
+    "milestone": {"const": "S1-M2"},
+    "artifact": {"const": "s1-m2-normalized-facts"},
+    "source_artifact": {"type": ["string", "null"]},
+    "system": {
+      "type": "object",
+      "required": ["manufacturer", "product", "version", "motherboard"],
+      "additionalProperties": false,
+      "properties": {
+        "manufacturer": {"type": ["string", "null"], "description": "DMI system vendor"},
+        "product": {"type": ["string", "null"], "description": "DMI system product"},
+        "version": {"type": ["string", "null"], "description": "DMI system version"},
+        "motherboard": {
+          "type": "object",
+          "required": ["manufacturer", "product", "version"],
+          "additionalProperties": false,
+          "properties": {
+            "manufacturer": {"type": ["string", "null"]},
+            "product": {"type": ["string", "null"]},
+            "version": {"type": ["string", "null"]}
+          }
+        }
+      }
+    },
+    "operating_system": {
+      "type": "object",
+      "required": ["id", "name", "pretty_name", "version_id", "version_codename"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": ["string", "null"]},
+        "name": {"type": ["string", "null"]},
+        "pretty_name": {"type": ["string", "null"]},
+        "version_id": {"type": ["string", "null"]},
+        "version_codename": {"type": ["string", "null"]}
+      }
+    },
+    "kernel": {
+      "type": "object",
+      "required": ["release", "architecture"],
+      "additionalProperties": false,
+      "properties": {
+        "release": {"type": ["string", "null"]},
+        "architecture": {"type": ["string", "null"]}
+      }
+    },
+    "cpu": {
+      "type": "object",
+      "required": ["vendor_id", "model_name", "architecture", "family", "model", "stepping", "topology"],
+      "additionalProperties": false,
+      "properties": {
+        "vendor_id": {"type": ["string", "null"]},
+        "model_name": {"type": ["string", "null"]},
+        "architecture": {"type": ["string", "null"]},
+        "family": {"type": ["integer", "null"]},
+        "model": {"type": ["integer", "null"]},
+        "stepping": {"type": ["integer", "null"]},
+        "topology": {"type": "object"}
+      }
+    },
+    "memory": {
+      "type": "object",
+      "required": ["total_bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "total_bytes": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "storage": {
+      "type": "object",
+      "required": ["devices"],
+      "additionalProperties": false,
+      "properties": {
+        "devices": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "gpu": {
+      "type": "object",
+      "required": ["state", "architecture", "architecture_family", "architecture_source", "devices"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {"type": "string"},
+        "architecture": {"type": ["string", "null"], "description": "Derived from PCI vendor:device, never from marketing names"},
+        "architecture_family": {"type": ["string", "null"]},
+        "architecture_source": {"type": ["string", "null"]},
+        "devices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "vendor_id", "device_id", "bound_driver", "architecture"],
+            "properties": {
+              "name": {"type": ["string", "null"]},
+              "address": {"type": ["string", "null"]},
+              "vendor_id": {"type": ["string", "null"]},
+              "device_id": {"type": ["string", "null"]},
+              "subsystem_vendor_id": {"type": ["string", "null"]},
+              "subsystem_device_id": {"type": ["string", "null"]},
+              "bound_driver": {"type": ["string", "null"]},
+              "architecture": {"type": ["string", "null"]},
+              "architecture_family": {"type": ["string", "null"]},
+              "architecture_source": {"type": ["string", "null"]}
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "npu": {
+      "type": "object",
+      "required": ["present", "family", "driver", "device_nodes", "devices"],
+      "additionalProperties": false,
+      "properties": {
+        "present": {"type": "boolean"},
+        "family": {"type": ["string", "null"]},
+        "driver": {"type": ["string", "null"]},
+        "device_nodes": {"type": "array", "items": {"type": "string"}},
+        "devices": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "firmware": {
+      "type": "object",
+      "required": ["bios_vendor", "bios_version", "bios_date", "uefi", "secure_boot"],
+      "additionalProperties": false,
+      "properties": {
+        "bios_vendor": {"type": ["string", "null"]},
+        "bios_version": {"type": ["string", "null"]},
+        "bios_date": {"type": ["string", "null"]},
+        "uefi": {"type": "string"},
+        "secure_boot": {"type": "object"}
+      }
+    },
+    "pci": {
+      "type": "object",
+      "required": ["state", "devices"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {"type": ["string", "null"]},
+        "devices": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "collection": {
+      "type": "object",
+      "required": ["missing_tools", "permission_errors", "failed_probes"],
+      "additionalProperties": false,
+      "properties": {
+        "missing_tools": {"type": "array", "items": {"type": "string"}},
+        "permission_errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source", "state", "error"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {"type": "string", "minLength": 1},
+              "state": {"enum": ["observed", "not_present", "unsupported", "unknown", "tool_missing", "permission_denied", "probe_failed", "unrecognized"]},
+              "error": {
+                "type": "object",
+                "required": ["code", "message"],
+                "additionalProperties": false,
+                "properties": {
+                  "code": {"type": "string", "minLength": 1},
+                  "message": {"type": "string", "minLength": 1}
+                }
+              }
+            }
+          }
+        },
+        "failed_probes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source", "state", "error"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {"type": "string", "minLength": 1},
+              "state": {"enum": ["observed", "not_present", "unsupported", "unknown", "tool_missing", "permission_denied", "probe_failed", "unrecognized"]},
+              "error": {
+                "type": "object",
+                "required": ["code", "message"],
+                "additionalProperties": false,
+                "properties": {
+                  "code": {"type": "string", "minLength": 1},
+                  "message": {"type": "string", "minLength": 1}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "unknown_facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "state", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "path": {"type": "string"},
+          "state": {"enum": ["unknown", "unsupported", "unrecognized"]},
+          "reason": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

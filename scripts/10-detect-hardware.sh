@@ -87,14 +87,27 @@ PYSUMMARY
 
 cp "$LATEST_DIR/tier1-hardware.md" "$LATEST_DIR/hardware-summary.md"
 
-# system-profile.json
+# Canonical S1-M2 through S1-M5 profile pipeline, plus compatibility system-profile.json
 generator_version="unknown"
 if [[ -f "$PROJECT_ROOT/VERSION" ]]; then
   generator_version="$(tr -d '[:space:]' < "$PROJECT_ROOT/VERSION")"
 fi
-python3 "$PROJECT_ROOT/scripts/lib/system_profile.py" \
+python3 "$PROJECT_ROOT/scripts/s1-m2-normalize-profile.py" \
   --input "$RAW" \
-  --output "$LATEST_DIR/system-profile.json" \
+  --output "$LATEST_DIR/s1-m2-normalized-facts.json"
+python3 "$PROJECT_ROOT/scripts/s1-m3-classify-platform.py" \
+  --input "$LATEST_DIR/s1-m2-normalized-facts.json" \
+  --output "$LATEST_DIR/s1-m3-platform-classification.json"
+python3 "$PROJECT_ROOT/scripts/s1-m4-derive-capabilities.py" \
+  --input "$LATEST_DIR/s1-m2-normalized-facts.json" \
+  --output "$LATEST_DIR/s1-m4-capability-candidates.json"
+python3 "$PROJECT_ROOT/scripts/s1-m5-publish-profile.py" \
+  --facts "$LATEST_DIR/s1-m2-normalized-facts.json" \
+  --classification "$LATEST_DIR/s1-m3-platform-classification.json" \
+  --capabilities "$LATEST_DIR/s1-m4-capability-candidates.json" \
+  --output "$LATEST_DIR/s1-m5-system-profile.json" \
+  --summary "$LATEST_DIR/s1-m5-inventory-summary.md" \
+  --compat-output "$LATEST_DIR/system-profile.json" \
   --generator-version "$generator_version"
 
 # shellcheck source=scripts/lib/hardware-detect.sh
@@ -153,5 +166,5 @@ PY
 } > "$LATEST_DIR/tier1-npu.md"
 echo "$npu_status" > "$LATEST_DIR/tier1-npu.txt"
 
-echo "[INFO] Wrote tier1-hardware.json, tier1-hardware.md, system-profile.json, and tier1-npu.*"
+echo "[INFO] Wrote tier1-hardware.json, tier1-hardware.md, s1-m5-system-profile.json, system-profile.json, and tier1-npu.*"
 echo "[INFO] 10-detect-hardware.sh complete."

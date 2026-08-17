@@ -63,7 +63,8 @@ last, matching the roadmap operating rules (Package C + E).
 
 ```bash
 ./ai370-optimize.sh stage1-probe           # S1-M1 read-only raw system inventory
-./ai370-optimize.sh stage1                 # Platform Stage 1 (no script 80 by default)
+./ai370-optimize.sh stage1-profile         # S1-M2 through S1-M5 read-only profile pipeline
+./ai370-optimize.sh stage1                 # Compatibility orchestrator (still invokes BIOS/kernel/tuning)
 ./ai370-optimize.sh stage1-inventory       # Faster detect + inventory-scope validate
 ./ai370-optimize.sh stage1-validate        # Final Stage 1 gate (full scope)
 ./ai370-optimize.sh stage1-validate --inventory  # Re-check inventory scope only
@@ -74,10 +75,22 @@ last, matching the roadmap operating rules (Package C + E).
 ./ai370-optimize.sh tier1-validate         # Legacy alias for stage1-validate
 ```
 
-`stage1-probe` writes `reports/latest/s1-m1-raw-inventory.json`. Probe
-limitations are facts (`tool_missing`, `permission_denied`, or `probe_failed`),
-not failures against reference-machine expectations. The numbered hardware and
-NPU detection scripts remain compatibility wrappers.
+`stage1-probe` writes `reports/latest/s1-m1-raw-inventory.json`. `stage1-profile`
+runs S1-M1 if that inventory is missing, then publishes:
+
+- `reports/latest/s1-m2-normalized-facts.json`
+- `reports/latest/s1-m3-platform-classification.json`
+- `reports/latest/s1-m4-capability-candidates.json`
+- `reports/latest/s1-m5-system-profile.json`
+- `reports/latest/s1-m5-inventory-summary.md`
+- compatibility `reports/latest/system-profile.json`
+
+S1-M2 derives GPU architecture from PCI vendor:device mappings in
+`configs/profiles/gpu-pci-architectures.json`. Marketing names such as `890M`
+or `Strix` are not architecture. Probe limitations are facts (`tool_missing`,
+`permission_denied`, or `probe_failed`), not failures against reference-machine
+expectations. The numbered hardware and NPU detection scripts remain
+compatibility wrappers.
 
 **Execution order (default `stage1`):**
 
@@ -102,53 +115,60 @@ migration inventory is `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`.
 
 Current high-level status (see `docs/ROADMAP.md` for details):
 
-- Stage 1: **Implemented** (hardware detection, BIOS/firmware validation,
-  kernel/driver validation, platform tuning plans). Package C merges platform
-  tuning and firmware steps; Package E demotes script 80 from default
-  `stage1`, adds optional `--strict` / `--apply-tuning` / `--with-ai-smoke`.
-  During migration, `--apply-tuning` remains a compatibility path; the target
-  Stage 1 contract in `docs/ROADMAP.md` and `AGENTS.md` is read-only.
-  Use `stage1-inventory` for a faster detect-only pass.
-- Stage 2: **Implemented** for planned roadmap scope (S2-M1 through S2-M7).
-  Aggregate/runtime/NPU commands: `stage2`, `stage2-runtime`, `stage2-npu`
-  (legacy `tier2` / `tier3`). NPU PASS requires profiled AMD EP execution
-  (`scripts/lib/npu_ep_verify.py`). Optional paths (not Stage 3 gate):
-  RAG S2-M3 (`stage2-rag` / `tier4`), TurnkeyML + Lemonade S2-M6
-  (`stage2-lemonade`), Digest AI S2-M7 (`stage2-digest`). Remaining S2 work is
-  optional polish is tooling-level (Package D: layout staging, smokes docs,
-  tests). See `docs/ROADMAP.md`.
-- Stage 3: **Ongoing / active focus** (benchmarks and workflows exist; ComfyUI
-  install/model scripts and workflow subdirectories remain planned). GAIA and
-  LM Studio are planned Stage 3 applications (not Stage 2 gate runtimes).
+- Stage 1 profile pipeline: **Implemented** (S1-M1 through S1-M5). Use
+  `stage1-probe` and `stage1-profile`. The mixed `stage1` command still runs
+  BIOS, kernel, GPU-visibility, and tuning scripts; that is migration debt,
+  not the canonical Stage 1 contract. `--apply-tuning` remains a compatibility
+  path; the target Stage 1 contract in `docs/ROADMAP.md` and `AGENTS.md` is
+  read-only.
+- Stage 2: **Planned** in ROADMAP (S2-M1 through S2-M7). Current scripts exist
+  as partial compatibility implementations (`stage2`, `stage2-runtime`,
+  `stage2-npu`; legacy `tier2` / `tier3`). NPU PASS requires profiled AMD EP
+  execution (`scripts/lib/npu_ep_verify.py`). Optional paths are not Stage 3
+  gates. See `docs/ROADMAP.md`.
+- Stage 3: **Planned** in ROADMAP. Current runtime/benchmark scripts exist as
+  partial implementations. GAIA and LM Studio remain planned applications.
 
 ### Implemented / Planned (high level)
 
-**Stage 1 — Implemented (Package C + E streamlined):**
+**Stage 1 — Implemented profile pipeline (S1-M1 through S1-M5):**
 
-- `scripts/10-detect-hardware.sh` (includes NPU detect; `75` is a wrapper;
-  also publishes the versioned `reports/latest/system-profile.json`)
-- `scripts/20-check-bios.sh` (BIOS + firmware validation; `25` is a wrapper)
-- `scripts/30-validate-kernel.sh`
-- `scripts/40-platform-tuning.sh` (CPU+memory+storage plan; `40`/`50`/`60`
-  wrappers; `--apply-tuning` / `AI370_APPLY_TUNING=true` runs runtime commands)
-- `scripts/70-validate-gpu-stack.sh`
-- `scripts/80-benchmark-local-ai.sh` (optional; not in default `stage1`;
-  `--with-ai-smoke` / `AI370_STAGE1_WITH_AI_SMOKE=true`; no pip by default)
-- `scripts/90-validate.sh` (scopes: `inventory` | `full` | `smoke`;
-  `--strict` / `AI370_STAGE1_STRICT=true` fails missing gfx1150/NPU)
-- Commands: `stage1`, `stage1-inventory`, `stage1-validate` (`--inventory`)
+- `scripts/s1-m1-probe-system.sh` (`stage1-probe`) writes `s1-m1-raw-inventory.json`
+- `scripts/s1-m2-normalize-profile.py` writes `s1-m2-normalized-facts.json`;
+  GPU architecture is derived from PCI IDs in
+  `configs/profiles/gpu-pci-architectures.json`
+- `scripts/s1-m3-classify-platform.py` writes `s1-m3-platform-classification.json`
+- `scripts/s1-m4-derive-capabilities.py` writes `s1-m4-capability-candidates.json`;
+  candidates are not validation claims
+- `scripts/s1-m5-publish-profile.py` (`stage1-profile`) writes
+  `s1-m5-system-profile.json`, `s1-m5-inventory-summary.md`, and a
+  compatibility `system-profile.json`
+- Compatibility wrappers still present: `scripts/10-detect-hardware.sh`
+  (includes NPU detect; `75` is a wrapper), `scripts/20-check-bios.sh`,
+  `scripts/30-validate-kernel.sh`, `scripts/40-platform-tuning.sh`,
+  `scripts/70-validate-gpu-stack.sh`, `scripts/90-validate.sh`. These are not
+  the canonical Stage 1 contract.
+- Commands: `stage1-probe`, `stage1-profile`; mixed `stage1`,
+  `stage1-inventory`, `stage1-validate` remain compatibility orchestrators
 
-The generated system profile uses schema v3. Its algorithm-versioned hardware
-fingerprint is based only on normalized, stable hardware identities, so software
-upgrades, driver state, probe formatting, and device enumeration order do not
-change machine identity. The profile migration is currently additive: existing `tier1-*`
-artifacts and gates remain available while Stage 2 consumers are migrated. Its
-schema is defined in `configs/schemas/system-profile.schema.json`; it records
-normalized hardware facts, classification evidence, derived capability
-candidates, unknown fields, and missing collection tools. It does not assert
-that a Stage 2 runtime has executed successfully.
+The generated system profile uses schema v3 (`configs/schemas/s1-m5-system-profile.schema.json`,
+same contract as `configs/schemas/system-profile.schema.json`). Its
+algorithm-versioned hardware fingerprint is based only on normalized, stable
+hardware identities, so software upgrades, driver state, probe formatting, and
+device enumeration order do not change machine identity. Existing `tier1-*`
+artifacts and gates remain available while Stage 2 consumers are migrated. The
+profile records normalized hardware facts, classification evidence, derived
+capability candidates, unknown fields, and missing collection tools. It does
+not assert that a Stage 2 runtime has executed successfully.
 
-**Stage 2 — Implemented (S2-M1–S2-M7; optional paths noted):**
+**S1-M2 normalized-fact fields:** `system` (DMI manufacturer/product/board),
+`cpu` (vendor/family/model/topology), `gpu` (PCI identities plus architecture
+derived from the PCI map), `npu` (presence/family/driver/nodes), `pci`,
+`firmware`, `operating_system`, `kernel`, `memory`, `storage`, and
+`collection.missing_tools`. Unknown values stay explicit; they are not filled
+from marketing names.
+
+**Stage 2 — Planned (current scripts are partial compatibility implementations):**
 
 - `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`,
   `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`,

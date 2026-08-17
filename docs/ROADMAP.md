@@ -125,14 +125,12 @@ performance benchmark, or claim that a candidate capability is validated.
 | ID | Canonical deliverable | Canonical outputs | Exit evidence | Status |
 | --- | --- | --- | --- | --- |
 | S1-M1 | Raw system probe | `stage1-probe`, `s1-m1-probe-system.sh`, `s1-m1-raw-inventory.json` | Fixture tests for present, absent, and unreadable devices; probe documentation | Implemented |
-| S1-M2 | Fact normalization | `s1-m2-normalize-profile.py`, `s1-m2-normalized-facts.json` | Deterministic normalization tests and field documentation | Planned |
-| S1-M3 | Platform classification | `s1-m3-classify-platform.py`, `s1-m3-platform-classification.json` | Table-driven family and unknown-platform tests | Planned |
-| S1-M4 | Capability candidates | `s1-m4-derive-capabilities.py`, `s1-m4-capability-candidates.json` | Rules tests proving candidates are not validation claims | Planned |
-| S1-M5 | Profile validation and publication | `stage1-profile`, `s1-m5-publish-profile.py`, `s1-m5-system-profile.schema.json`, `s1-m5-system-profile.json`, `s1-m5-inventory-summary.md` | Schema pass/fail tests, interrupted-write test, command/output documentation | Planned |
+| S1-M2 | Fact normalization | `s1-m2-normalize-profile.py`, `s1-m2-normalized-facts.json` | Deterministic normalization tests and field documentation | Implemented |
+| S1-M3 | Platform classification | `s1-m3-classify-platform.py`, `s1-m3-platform-classification.json` | Table-driven family and unknown-platform tests | Implemented |
+| S1-M4 | Capability candidates | `s1-m4-derive-capabilities.py`, `s1-m4-capability-candidates.json` | Rules tests proving candidates are not validation claims | Implemented |
+| S1-M5 | Profile validation and publication | `stage1-profile`, `s1-m5-publish-profile.py`, `s1-m5-system-profile.schema.json`, `s1-m5-system-profile.json`, `s1-m5-inventory-summary.md` | Schema pass/fail tests, interrupted-write test, command/output documentation | Implemented |
 
-The current `system-profile.json` and schema are useful implementation inputs,
-but are not the complete canonical S1-M5 deliverable set and therefore do not
-make S1-M5 implemented.
+Canonical S1-M5 also writes a compatibility copy at `reports/latest/system-profile.json`. The mixed `stage1` orchestrator still invokes BIOS, kernel, GPU-visibility, and tuning scripts; that remaining behavior is Stage 2 migration debt, not an S1-M5 gap.
 
 ### Stage 2 — Platform Enablement & Validation
 
@@ -210,8 +208,12 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 
 | Target owner | Current implementation | Architectural disposition |
 | --- | --- | --- |
-| S1-M1 | `scripts/10-detect-hardware.sh`, `scripts/75-detect-npu.sh`, `scripts/lib/hardware-detect.sh` | Retain only read-only probing; split policy and validation out |
-| S1-M2–S1-M5 | `scripts/lib/system_profile.py`, `configs/schemas/system-profile.schema.json`, `reports/latest/system-profile.json`, inventory summary outputs | Split normalization/classification/candidate/publication contracts; rename after deterministic publication tests exist |
+| S1-M1 | `scripts/s1-m1-probe-system.sh`, `scripts/lib/hardware-detect.sh` collector, compatibility wrappers `scripts/10-detect-hardware.sh` and `scripts/75-detect-npu.sh` | Retain only read-only probing; split policy and validation out |
+| S1-M2 | `scripts/s1-m2-normalize-profile.py`, `configs/schemas/s1-m2-normalized-facts.schema.json`, `configs/profiles/gpu-pci-architectures.json` | Normalize S1-M1 facts; GPU architecture from PCI map only |
+| S1-M3 | `scripts/s1-m3-classify-platform.py`, `configs/schemas/s1-m3-platform-classification.schema.json`, `configs/profiles/ai370.env`, `configs/profiles/generic-ryzen-ai.env` | Table-driven family classification; unknown hosts remain valid |
+| S1-M4 | `scripts/s1-m4-derive-capabilities.py`, `configs/schemas/s1-m4-capability-candidates.schema.json` | Candidates are not validation claims |
+| S1-M5 | `scripts/s1-m5-publish-profile.py`, `configs/schemas/s1-m5-system-profile.schema.json`, `configs/schemas/system-profile.schema.json`, `stage1-profile` | Atomic v3 publication plus inventory summary; compatibility `system-profile.json` copy |
+| S1-M2–S1-M5 library | `scripts/lib/system_profile.py` | Shared implementation library used by the canonical CLIs |
 | S2-M1 | `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh` | Move all firmware policy judgments here |
 | S2-M2 | `scripts/30-validate-kernel.sh` | Canonicalize under S2-M2 |
 | S2-M3 | `scripts/70-validate-gpu-stack.sh` | Canonicalize under S2-M3 |
@@ -232,7 +234,7 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 | S4-M6 | `scripts/130-install-open-webui.sh` | Move from runtime orchestration to application ownership |
 | S5 milestones | No complete canonical implementation | Do not claim implemented from legacy plans |
 | S5-M6 | `scripts/validate-commit-subject.sh`, `scripts/validate-pr-title.sh` | Release-policy validation tooling |
-| S1–S5 tests | `tests/test_system_profile.py`, `tests/smoke_tier1.sh`, `tests/smoke_tier2.sh` | First maps to S1-M2/S1-M5 and must be split by behavior; smoke tests must be replaced by deterministic owner-specific tests |
+| S1–S5 tests | `tests/test_s1_m1_probe.py`, `tests/test_s1_m2_normalize.py`, `tests/test_s1_m3_classify.py`, `tests/test_s1_m4_capabilities.py`, `tests/test_s1_m5_publish.py`, `tests/test_system_profile.py`, `tests/smoke_tier1.sh`, `tests/smoke_tier2.sh` | Owner-specific Stage 1 tests exist; smoke tests remain compatibility coverage until replaced |
 | Compatibility archive | `scripts/legacy/*` | No architectural ownership; frozen compatibility/archive only, then remove at the target below |
 | Repository orchestrator | `ai370-optimize.sh` | Routes commands; each branch is owned by the milestone it invokes, not by the file as a whole |
 
@@ -242,8 +244,8 @@ behavior.
 
 | Owner | Current commands and aliases |
 | --- | --- |
-| S1-M1 | `hardware`, `inventory`, `audit`, `stage1-inventory` (probe portion only) |
-| S1-M5 | `stage1-profile` (planned); profile-publication portion of `stage1`, `stage1-validate`, and `final-validate`/`validate` |
+| S1-M1 | `stage1-probe`, probe portion of `hardware`, `inventory`, `audit`, and `stage1-inventory` |
+| S1-M5 | `stage1-profile`; profile-publication portion of `stage1`, `stage1-validate`, and `final-validate`/`validate` |
 | S2-M1 | `firmware` |
 | S2-M2 | `kernel-amd` |
 | S2-M3 | `accel-validate`, `gpu` |
@@ -264,7 +266,8 @@ branches currently combine multiple owners. They are compatibility
 orchestrators, not standalone deliverables; each invoked operation retains the
 owner shown above and must be split at the new boundaries.
 
-Configuration ownership follows its consumer: `configs/profiles/*` is S1-M3,
+Configuration ownership follows its consumer: `configs/profiles/gpu-pci-architectures.json`
+is S1-M2; other `configs/profiles/*` files are S1-M3,
 `configs/tuning/*` and `configs/amd-acceleration.env` are S2-M5/S2-M6,
 `configs/ai-runtime/*`, `configs/offline/*`, and `configs/models/*` are Stage 3,
 and `configs/persistence/*` is S5-M3. Shared shell utilities in

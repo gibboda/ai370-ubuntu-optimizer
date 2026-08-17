@@ -80,11 +80,9 @@ detect_pci_text() { run_or_empty lspci -nnk; }
 detect_gpu_text() { detect_pci_text | grep -Ei 'vga|display|3d|radeon|amd/ati' || true; }
 detect_gpu_arch() {
   local gpu_text="${1:-$(detect_gpu_text)}"
-  if printf '%s\n' "$gpu_text" | grep -Eiq '890M|Strix|gfx1150'; then
-    printf 'gfx1150'
-  else
-    printf 'unknown'
-  fi
+  local root
+  root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  python3 "$root/scripts/lib/system_profile.py" --lookup-gpu-arch "$gpu_text"
 }
 detect_amdgpu_module() { run_or_empty lsmod | grep -E '^amdgpu\b' || true; }
 detect_vulkan_summary() { run_or_empty vulkaninfo --summary; }
