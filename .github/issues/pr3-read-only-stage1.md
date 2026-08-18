@@ -47,7 +47,8 @@ PR 3a follow-up: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/184
 - [x] `stage2-optimize-plan` → `40-platform-tuning.sh` plan-only (S2-M5)
 - [x] `stage2-optimize-apply --approve` → tuning apply (S2-M6)
 - [x] `stage2-platform-validate` → S2-M1–M4 + compatibility `90-validate.sh` until PR 3b
-- [ ] `stage2-validate` alias for platform validate until S3 gates split (kept as runtime/NPU cheap gate in PR 3a; do not alias)
+
+`stage2-validate` stays the runtime/NPU cheap gate. The original alias-to-platform-validate item is **superseded**; do not treat it as remaining work (see Non-goals).
 
 ## Workstream C: Split `90-validate.sh` (S2-M7)
 

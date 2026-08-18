@@ -329,8 +329,16 @@ class MigrationPlanTests(unittest.TestCase):
             "- [ ] `tier1-validation.json` compat shim preserves `require_tier123_pass`",
             issue169,
         )
-        self.assertIn(
+        self.assertNotIn(
             "- [ ] `stage2-validate` alias for platform validate until S3 gates split",
+            issue169,
+        )
+        self.assertIn(
+            "The original alias-to-platform-validate item is **superseded**",
+            issue169,
+        )
+        self.assertIn(
+            "Aliasing `stage2-validate` to platform validate (PR 3a kept it as the runtime/NPU cheap gate)",
             issue169,
         )
 
