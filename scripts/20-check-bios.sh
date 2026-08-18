@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Stage 1: BIOS + firmware baseline (Package C merge of former 20 + 25).
-# Detection / validation only – never flashes firmware or changes Secure Boot.
+# Stage 2: BIOS + firmware baseline (Package C merge of former 20 + 25).
+# Consumes s1-m5-system-profile.json for BIOS facts and platform policy.
+# Supplemental fwupd/microcode/Secure Boot checks are live and read-only.
+# Never flashes firmware or changes Secure Boot.
 
 set -euo pipefail
 
@@ -32,69 +34,76 @@ json_array_from_lines() {
 }
 
 main() {
-  echo "[INFO] Stage 1 / 20-check-bios.sh (BIOS + firmware baseline)"
-  echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
+  echo "[INFO] Stage 2 / 20-check-bios.sh (BIOS + firmware baseline)"
+  echo "[INFO] Selected profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
 
-  local BIOS_VERSION BIOS_DATE BIOS_VENDOR SYSTEM_PRODUCT SYSTEM_VENDOR FWUPD_DEVICES EXPECTED_BIOS BIOS_ACCEPTABLE
-  BIOS_VERSION="$(detect_bios_version)"
-  BIOS_DATE="$(detect_bios_release_date)"
-  BIOS_VENDOR="$(detect_bios_vendor)"
-  SYSTEM_PRODUCT="$(detect_system_product)"
-  SYSTEM_VENDOR="$(detect_system_vendor)"
+  local PROFILE_FILE="$LATEST_DIR/s1-m5-system-profile.json"
+  if [[ ! -f "$PROFILE_FILE" ]]; then
+    echo "[ERROR] Stage 2 firmware validation requires the canonical Stage 1 profile:"
+    echo "[ERROR]   $PROFILE_FILE"
+    echo "[ERROR] Run: ./ai370-optimize.sh stage1"
+    exit 2
+  fi
+
+  local FWUPD_DEVICES
   FWUPD_DEVICES="$(detect_fwupd_devices)"
 
-  EXPECTED_BIOS=""
-  local PROFILE_ENV="$PROJECT_ROOT/configs/profiles/$PROFILE.env"
-  if [[ -f "$PROFILE_ENV" ]]; then
-    # shellcheck source=/dev/null
-    source "$PROFILE_ENV"
-    EXPECTED_BIOS="${EXPECTED_BIOS_VERSION:-}"
-  fi
+  PROJECT_ROOT="$PROJECT_ROOT" \
+  PROFILE_FILE="$PROFILE_FILE" \
+  SELECTED_PROFILE="$PROFILE" \
+  TIMESTAMP="$(ai370_utc_now)" \
+  FWUPD_PRESENT="$([[ -n "$FWUPD_DEVICES" ]] && echo true || echo false)" \
+  OUTPUT_JSON="$LATEST_DIR/tier1-firmware.json" \
+  python3 - <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
 
-  if [[ -n "$EXPECTED_BIOS" && -n "${BIOS_VERSION:-}" ]]; then
-    if [[ "$BIOS_VERSION" == "$EXPECTED_BIOS" || "$BIOS_VERSION" == *"$EXPECTED_BIOS"* ]]; then
-      BIOS_ACCEPTABLE="true"
-    else
-      BIOS_ACCEPTABLE="false"
-    fi
-  else
-    BIOS_ACCEPTABLE="unknown"
-  fi
+sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
+import firmware_policy
 
-  cat > "$LATEST_DIR/tier1-firmware.json" <<EOF
-{
-  "tier": 1,
-  "phase": "check-firmware-baseline",
-  "timestamp": "$(ai370_utc_now)",
-  "profile": "$PROFILE",
-  "bios_version": "${BIOS_VERSION:-unknown}",
-  "bios_date": "${BIOS_DATE:-unknown}",
-  "bios_vendor": "${BIOS_VENDOR:-unknown}",
-  "bios_expected": "${EXPECTED_BIOS:-}",
-  "bios_acceptable": "${BIOS_ACCEPTABLE}",
-  "system": {
-    "vendor": "${SYSTEM_VENDOR:-unknown}",
-    "product": "${SYSTEM_PRODUCT:-unknown}"
-  },
-  "fwupd": { "devices_present": $([[ -n "$FWUPD_DEVICES" ]] && echo true || echo false) }
-}
-EOF
+profile = firmware_policy.load_system_profile(Path(os.environ["PROFILE_FILE"]))
+report = firmware_policy.build_firmware_baseline(
+    profile,
+    selected_profile=os.environ.get("SELECTED_PROFILE", "ai370"),
+    timestamp=os.environ["TIMESTAMP"],
+    fwupd_devices_present=os.environ.get("FWUPD_PRESENT", "false") == "true",
+)
+Path(os.environ["OUTPUT_JSON"]).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+PY
+
+  local BIOS_VERSION BIOS_DATE BIOS_VENDOR SYSTEM_PRODUCT SYSTEM_VENDOR EXPECTED_BIOS BIOS_ACCEPTABLE PLATFORM_ID
+  local firmware_json="$LATEST_DIR/tier1-firmware.json"
+  BIOS_VERSION="$(jq -r '.bios_version // "unknown"' "$firmware_json")"
+  BIOS_DATE="$(jq -r '.bios_date // "unknown"' "$firmware_json")"
+  BIOS_VENDOR="$(jq -r '.bios_vendor // "unknown"' "$firmware_json")"
+  SYSTEM_VENDOR="$(jq -r '.system.vendor // "unknown"' "$firmware_json")"
+  SYSTEM_PRODUCT="$(jq -r '.system.product // "unknown"' "$firmware_json")"
+  EXPECTED_BIOS="$(jq -r '.bios_expected // ""' "$firmware_json")"
+  BIOS_ACCEPTABLE="$(jq -r '.bios_acceptable // "unknown"' "$firmware_json")"
+  PLATFORM_ID="$(jq -r '.classified_platform_id // ""' "$firmware_json")"
 
   {
     echo "# Tier 1 Firmware / BIOS Baseline"
     echo
-    echo "- System: ${SYSTEM_VENDOR:-unknown} ${SYSTEM_PRODUCT:-unknown}"
-    echo "- BIOS version: ${BIOS_VERSION:-unknown}"
+    echo "- Selected CLI profile: $PROFILE"
+    echo "- Classified platform_id: ${PLATFORM_ID:-unknown}"
+    echo "- System (from Stage 1 profile): ${SYSTEM_VENDOR:-unknown} ${SYSTEM_PRODUCT:-unknown}"
+    echo "- BIOS version (from Stage 1 profile): ${BIOS_VERSION:-unknown}"
     echo "- BIOS release date: ${BIOS_DATE:-unknown}"
     echo "- BIOS vendor: ${BIOS_VENDOR:-unknown}"
     if [[ -n "$EXPECTED_BIOS" ]]; then
-      echo "- Target BIOS for $PROFILE: $EXPECTED_BIOS (acceptable: $BIOS_ACCEPTABLE)"
+      echo "- Target BIOS for classified platform ${PLATFORM_ID:-unknown}: $EXPECTED_BIOS (acceptable: $BIOS_ACCEPTABLE)"
+    else
+      echo "- No EXPECTED_BIOS_VERSION for classified platform ${PLATFORM_ID:-unknown}"
     fi
     echo "- fwupd devices visible: $([[ -n "$FWUPD_DEVICES" ]] && echo yes || echo "no (or tool missing)")"
     echo
-    echo "Note: This phase only records baseline state. No firmware updates are applied."
+    echo "Note: BIOS policy uses the consumed Stage 1 profile, not CLI --profile alone."
+    echo "This phase only records baseline state. No firmware updates are applied."
     if [[ -n "$EXPECTED_BIOS" ]]; then
-      echo "For Minisforum EliteMini AI370 the recommended BIOS is $EXPECTED_BIOS (or newer compatible). Review vendor notes before flashing."
+      echo "Recommended BIOS for this classified platform is $EXPECTED_BIOS (or newer compatible). Review vendor notes before flashing."
     fi
   } > "$LATEST_DIR/tier1-firmware.md"
 
@@ -154,17 +163,29 @@ EOF
   WARNINGS_JSON="$warnings_json" \
   STATUS="$status" \
   PROFILE="$PROFILE" \
+  PLATFORM_ID="$PLATFORM_ID" \
+  PROJECT_ROOT="$PROJECT_ROOT" \
+  PROFILE_FILE="$PROFILE_FILE" \
   python3 - <<'PY' > "$LATEST_DIR/tier1-firmware-validation.json"
-import json, os, datetime
+import datetime
+import json
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
+import firmware_policy
 
 def lines(name):
     return [x for x in os.environ.get(name, '').splitlines() if x.strip()]
 
+profile = firmware_policy.load_system_profile(Path(os.environ["PROFILE_FILE"]))
 data = {
   "tier": 1,
   "phase": "check-firmware",
   "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),
   "profile": os.environ.get("PROFILE", "ai370"),
+  "classified_platform_id": os.environ.get("PLATFORM_ID") or None,
   "status": os.environ.get("STATUS", "PASS"),
   "checks": {
     "fwupdmgr": {
@@ -184,7 +205,8 @@ data = {
       "packages": lines("MICROCODE_PACKAGES")
     }
   },
-  "warnings": json.loads(os.environ.get("WARNINGS_JSON", "[]"))
+  "warnings": json.loads(os.environ.get("WARNINGS_JSON", "[]")),
+  "consumed_profile": firmware_policy.consumed_profile_block(profile),
 }
 print(json.dumps(data, indent=2))
 PY
@@ -211,7 +233,7 @@ PY
     fi
     echo
     echo "Note: This phase is validation-only. It never flashes firmware or changes Secure Boot state."
-    echo "BIOS baseline: see tier1-firmware.md (same script pass)."
+    echo "BIOS policy and identity come from the consumed Stage 1 profile; see tier1-firmware.md."
   } > "$LATEST_DIR/tier1-firmware-validation.md"
 
   echo "[INFO] Wrote tier1-firmware.* and tier1-firmware-validation.*"

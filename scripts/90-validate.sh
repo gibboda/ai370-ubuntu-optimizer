@@ -186,19 +186,19 @@ notes = []
 if scope == "inventory":
     notes.append(
         "Inventory-only validation: platform-tuning and local-AI smoke (80) not required. "
-        "Run stage1 for platform plans; pass --with-ai-smoke for script 80."
+        "Run stage2-optimize-plan for platform plans; use scripts/80-benchmark-local-ai.sh for script 80."
     )
 elif scope == "full":
     notes.append(
-        "Platform Stage 1 validation: local-AI smoke (80 / tier1-local-ai-benchmark.json) is optional. "
-        "Pass --with-ai-smoke (scope=smoke) to require it. "
+        "Platform validation: local-AI smoke (80 / tier1-local-ai-benchmark.json) is optional. "
+        "Use scripts/80-benchmark-local-ai.sh (scope=smoke) to require it. "
         "Missing gfx1150/NPU is recorded in warnings[] without demoting status to WARN "
         "(gate stays PASS unless --strict)."
     )
 elif scope == "smoke":
     notes.append(
         "Smoke-scope validation: requires tier1-local-ai-benchmark.json from script 80 "
-        "(./ai370-optimize.sh stage1 --with-ai-smoke)."
+        "(./ai370-optimize.sh is read-only Stage 1; use scripts/80-benchmark-local-ai.sh)."
     )
 if strict:
     notes.append("Strict mode: missing gfx1150 or NPU is FAIL (AI370_STAGE1_STRICT / --strict).")

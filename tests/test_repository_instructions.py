@@ -175,7 +175,7 @@ class MigrationPlanTests(unittest.TestCase):
     def test_migration_plan_matches_current_stage1_and_ladder_inventory(self) -> None:
         self.assertNotIn("only S1-M1 is canonically Implemented", self.plan)
         self.assertIn(
-            "S1-M1 through S1-M5 are Implemented; mixed `stage1` remains Stage 2 debt",
+            "S1-M1 through S1-M5 are Implemented; `stage1` is read-only profile publication",
             self.plan,
         )
         for path in (
@@ -188,6 +188,8 @@ class MigrationPlanTests(unittest.TestCase):
             "tests/test_s2_visibility_schemas.py",
             "tests/test_s2_m3_gpu_visibility.py",
             "tests/test_s2_m4_npu_visibility.py",
+            "tests/test_s2_m1_firmware.py",
+            "tests/smoke_stage2_platform.sh",
         ):
             with self.subTest(path=path):
                 self.assertIn(path, self.plan)
@@ -195,6 +197,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("tests.test_s2_visibility_schemas", self.plan)
         self.assertIn("tests.test_s2_m3_gpu_visibility", self.plan)
         self.assertIn("tests.test_s2_m4_npu_visibility", self.plan)
+        self.assertIn("tests.test_s2_m1_firmware", self.plan)
         self.assertIn("issues/168", self.plan)
         self.assertIn("issues/169", self.plan)
         self.assertIn("target_gpu_arch", self.plan)
@@ -229,8 +232,9 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("NPU visibility-only publisher", issue169)
         self.assertIn("`#176`", issue169)
         self.assertIn("`#180`", issue169)
-        self.assertIn("None remaining", issue169)
+        self.assertIn("PR 3a", issue169)
         self.assertIn("do not recreate", issue169)
+        self.assertIn("stage2-platform-validate", issue169)
         self.assertNotIn("landed with GPU publisher", issue169)
 
     def test_orchestrator_help_mentions_visibility_only_npu_path(self) -> None:
@@ -239,30 +243,39 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("stage2-npu-validate is visibility-only (S2-M4)", orchestrator)
         self.assertIn("s2-m4-validate-npu-stack", orchestrator)
         self.assertIn("always refreshes tier3-validation.json", orchestrator)
+        self.assertIn("stage2-platform-validate", orchestrator)
+        self.assertIn("stage2-optimize-apply --approve", orchestrator)
         self.assertIn("s2-m4-npu-runtime-validation.json", readme)
         self.assertIn("visibility-only", readme.casefold())
         self.assertIn("stage2-npu-validate", readme)
         self.assertIn("tier3-validation.json", readme)
 
-    def test_migration_plan_retains_readme_stage2_status_mismatch(self) -> None:
+    def test_stage1_orchestrator_is_read_only_profile(self) -> None:
+        orchestrator = (ROOT / "ai370-optimize.sh").read_text(encoding="utf-8")
+        self.assertIn("Stage 1 is read-only probe + profile", orchestrator)
+        self.assertNotIn("export AI370_APPLY_TUNING=true", orchestrator.split("run_stage2_optimize_apply")[0])
+        self.assertIn("run_stage1_profile", orchestrator)
+        self.assertNotIn("\nrun_stage1()\n", orchestrator)
+        self.assertIn("stage2-validate is a cheap runtime/NPU gate refresh", orchestrator)
+        firmware_case = orchestrator.split("stage2-firmware-validate)", 1)[1].split(
+            "stage2-kernel-validate)", 1
+        )[0]
+        self.assertIn("ensure_stage1_profile", firmware_case)
+        kernel_case = orchestrator.split("stage2-kernel-validate)", 1)[1].split(
+            "stage2-optimize-plan)", 1
+        )[0]
+        self.assertIn("ensure_stage1_profile", kernel_case)
+
+    def test_readme_stage2_status_matches_roadmap(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         issue169 = (ROOT / ".github/issues/pr3-read-only-stage1.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("scope is **implemented** (S2-M1–S2-M7)", readme)
-        self.assertIn(
-            "still claims the planned S2-M1–S2-M7 scope is",
-            self.plan,
-        )
-        self.assertIn("false implementation claim", self.plan)
-        self.assertIn(
-            "claims S2-M1–S2-M7 scope is implemented",
-            issue169,
-        )
-        self.assertIn(
-            "does not label Planned Stage 2 milestones as implemented",
-            issue169,
-        )
+        self.assertNotIn("scope is **implemented** (S2-M1–S2-M7)", readme)
+        self.assertIn("stage2-platform-validate", readme)
+        self.assertIn("S2-M3/S2-M4 In progress", readme)
+        self.assertIn("S3-M5", readme)
+        self.assertIn("does not label Planned Stage 2 milestones as implemented", issue169)
 
 
 if __name__ == "__main__":

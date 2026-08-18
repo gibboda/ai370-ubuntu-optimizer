@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Smoke test for Stage 1 / Tier 1 (Package E). Non-mutating where possible.
-# Runs detection, platform-tuning plan, inventory validate, asserts key artifacts.
+# Smoke test for Stage 1 / Tier 1. Non-mutating where possible.
+# Runs read-only stage1 profile, Stage 2 platform inventory, tuning plan, and 90-validate.
 # Safe to run in CI or without target hardware (expects PASS or WARN status).
 
 set -euo pipefail
@@ -37,26 +37,46 @@ do
   fi
 done
 
-# 2. Help documents Package E flags
+# 2. Help documents read-only Stage 1 and Stage 2 platform commands
 help_out="$("$PROJECT_ROOT/ai370-optimize.sh" help 2>&1 || true)"
-echo "$help_out" | grep -q "stage1-inventory" || { echo "[FAIL] help missing stage1-inventory"; exit 3; }
 echo "$help_out" | grep -q "stage1-profile" || { echo "[FAIL] help missing stage1-profile"; exit 3; }
-echo "$help_out" | grep -q -- "--with-ai-smoke" || { echo "[FAIL] help missing --with-ai-smoke"; exit 3; }
-echo "$help_out" | grep -q -- "--apply-tuning" || { echo "[FAIL] help missing --apply-tuning"; exit 3; }
+echo "$help_out" | grep -q "stage2-platform-validate" || { echo "[FAIL] help missing stage2-platform-validate"; exit 3; }
+echo "$help_out" | grep -q "stage2-platform-inventory" || { echo "[FAIL] help missing stage2-platform-inventory"; exit 3; }
+echo "$help_out" | grep -q "stage1-inventory" || { echo "[FAIL] help missing stage1-inventory alias"; exit 3; }
+echo "$help_out" | grep -q -- "--with-ai-smoke" || { echo "[FAIL] help missing --with-ai-smoke redirect"; exit 3; }
+echo "$help_out" | grep -q -- "--apply-tuning" || { echo "[FAIL] help missing --apply-tuning redirect"; exit 3; }
 echo "$help_out" | grep -q -- "--strict" || { echo "[FAIL] help missing --strict"; exit 3; }
 echo "$help_out" | grep -q "stage2-gpu-validate" || { echo "[FAIL] help missing stage2-gpu-validate"; exit 3; }
 echo "$help_out" | grep -q "stage2-npu-validate is visibility-only" || { echo "[FAIL] help missing visibility-only NPU path"; exit 3; }
-echo "[OK] orchestrator help mentions stage1-inventory, stage1-profile, stage2-gpu-validate, visibility-only NPU, and Package E flags"
+echo "$help_out" | grep -q "stage2-optimize-apply --approve" || { echo "[FAIL] help missing stage2-optimize-apply --approve"; exit 3; }
+echo "[OK] orchestrator help mentions read-only Stage 1, Stage 2 platform commands, visibility-only NPU, and redirected flags"
 
-# 3. Non-mutating Stage 1 pieces
-# Inventory path (no tuning / no script 80) + platform tuning plan + full-scope validate
-"$PROJECT_ROOT/ai370-optimize.sh" stage1-inventory --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
+# 3. stage1 is probe + profile only (no tuning / BIOS / 90-validate)
+rm -f "$LATEST_DIR/tier1-platform-tuning.json" "$LATEST_DIR/tier1-validation.json"
+"$PROJECT_ROOT/ai370-optimize.sh" stage1 --dry-run --apply-tuning --with-ai-smoke \
+  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
+if [[ ! -f "$LATEST_DIR/s1-m5-system-profile.json" ]]; then
+  echo "[FAIL] stage1 must publish s1-m5-system-profile.json"
+  exit 2
+fi
+if [[ -f "$LATEST_DIR/tier1-platform-tuning.json" ]]; then
+  echo "[FAIL] stage1 must not write platform-tuning artifacts"
+  exit 2
+fi
+if [[ -f "$LATEST_DIR/tier1-validation.json" ]]; then
+  echo "[FAIL] stage1 must not write 90-validate artifacts"
+  exit 2
+fi
+echo "[OK] stage1 is read-only profile publication (no tuning / 90-validate)"
+
+# Inventory path lives on Stage 2 (stage1-inventory remains a deprecated alias)
+"$PROJECT_ROOT/ai370-optimize.sh" stage2-platform-inventory --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
 
 # Assert inventory scope on gate artifact
 python3 - "$LATEST_DIR/tier1-validation.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
-assert data.get("scope") == "inventory", f"expected scope=inventory after stage1-inventory, got {data.get('scope')}"
+assert data.get("scope") == "inventory", f"expected scope=inventory after stage2-platform-inventory, got {data.get('scope')}"
 assert data.get("acceptance", {}).get("inventory_only") is True
 assert data.get("acceptance", {}).get("ai_smoke_required") is False
 # Inventory must not require local-AI smoke
@@ -111,8 +131,8 @@ print(f"[OK] platform-tuning zram0 status is single-line: {zram!r}")
 PY
 echo "[OK] platform-tuning plan artifacts present"
 
-# Full-scope validate (default stage1 gate; does not require script 80)
-"$PROJECT_ROOT/ai370-optimize.sh" stage1-validate --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
+# Full-scope 90-validate contract (compatibility aggregate; not invoked by stage1)
+bash "$PROJECT_ROOT/scripts/90-validate.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime full || true
 
 python3 - "$LATEST_DIR/tier1-validation.json" <<'PY'
 import json, sys
@@ -223,20 +243,21 @@ assert ra.get("applied") is False, "commands must not be applied under dry-run"
 print("[OK] dry-run honors AI370_APPLY_TUNING without applying runtime commands")
 PY
 
-# Also verify orchestrator exports DRY_RUN into the apply path
-"$PROJECT_ROOT/ai370-optimize.sh" stage1 --dry-run --apply-tuning --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
+# Also verify orchestrator apply path requires --approve and honors --dry-run
+"$PROJECT_ROOT/ai370-optimize.sh" stage2-optimize-apply --dry-run --approve \
+  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
 python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
 ra = data.get("runtime_apply") or {}
-assert ra.get("requested") is True, "orchestrator --apply-tuning should request apply"
+assert ra.get("requested") is True, "stage2-optimize-apply --approve should request apply"
 assert ra.get("dry_run") is True, "orchestrator --dry-run must reach 40-platform-tuning"
 assert ra.get("applied") is False, "orchestrator dry-run must not apply commands"
-print("[OK] orchestrator --dry-run --apply-tuning is non-mutating")
+print("[OK] stage2-optimize-apply --dry-run --approve is non-mutating")
 PY
 
 # Restore non-strict full validate so latest artifact matches default policy for later steps
-"$PROJECT_ROOT/ai370-optimize.sh" stage1-validate --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
+AI370_STAGE1_STRICT=false bash "$PROJECT_ROOT/scripts/90-validate.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime full || true
 
 # 6. Basic profile / mode presence
 grep -q '"profile": "ai370"' "$LATEST_DIR/tier1-validation.json" || { echo "[FAIL] profile in validation"; exit 3; }
@@ -244,4 +265,4 @@ echo "[OK] profile reflected"
 
 echo "[PASS] Stage 1 smoke test completed successfully."
 echo "[INFO] Note: non-strict acceptance misses (gfx1150/NPU) stay PASS; other soft checks may WARN."
-echo "[INFO] Default stage1 skips script 80; use --with-ai-smoke for smoke-scope validation."
+echo "[INFO] stage1 is read-only; use stage2-platform-validate and scripts/80-benchmark-local-ai.sh for gates/smokes."

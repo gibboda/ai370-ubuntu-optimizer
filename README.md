@@ -42,38 +42,40 @@ are only installed after lower-stage validation passes (especially: **do not
 install Stage 3 image generation until Stage 1 + Stage 2 runtime + Stage 2 NPU
 validation criteria have passed**).
 
-### Stage 1 – Hardware Detection & System Optimization
+### Stage 1 – Hardware Discovery & System Profile
 
-**Purpose:** Establish a validated AI hardware foundation.
+**Purpose:** Read-only hardware and OS probing, fact normalization, platform
+classification, capability-candidate derivation, and publication of the system
+profile. Stage 1 does not install packages, apply tuning, or run benchmarks.
 
 **Key Components:**
 
-- Linux kernel + AMDGPU validation
-- AMDXDNA (XDNA2 NPU) detection
-- Mesa / Vulkan / ROCm validation
-- CPU, memory, and storage optimization
-- Benchmark framework
+- Raw system probe (CPU, DMI, PCI, GPU, NPU, firmware, kernel, storage)
+- Normalized facts and platform-family classification
+- Capability candidates (not validation claims)
+- Canonical `s1-m5-system-profile.json`
 
-**Legacy tier alignment:** Roadmap Stage 1 maps directly to legacy Tier 1.
-Complete this stage before starting any Stage 2 work. The sequence is detection
-first, validation second, platform planning third, and optional local-AI smoke
-last, matching the roadmap operating rules (Package C + E).
+**Legacy tier alignment:** `tier1` remains an alias for `stage1`. BIOS, kernel,
+GPU/NPU visibility, and tuning moved to Stage 2 platform commands.
 
 **Canonical commands:**
 
 ```bash
 ./ai370-optimize.sh stage1-probe           # S1-M1 read-only raw system inventory
 ./ai370-optimize.sh stage1-profile         # S1-M2 through S1-M5 read-only profile pipeline
-./ai370-optimize.sh stage1                 # Compatibility orchestrator (still invokes BIOS/kernel/tuning)
-./ai370-optimize.sh stage1-inventory       # Faster detect + inventory-scope validate
-./ai370-optimize.sh stage1-validate        # Final Stage 1 gate (full scope)
-./ai370-optimize.sh stage1-validate --inventory  # Re-check inventory scope only
-./ai370-optimize.sh stage1 --with-ai-smoke # Include optional local-AI smoke (script 80)
-./ai370-optimize.sh stage1 --apply-tuning  # Compatibility-only migration path; target Stage 1 contract is read-only
-./ai370-optimize.sh stage1 --strict        # FAIL if gfx1150 or NPU missing
+./ai370-optimize.sh stage1                 # Same as stage1-profile (read-only)
 ./ai370-optimize.sh tier1                  # Legacy alias for stage1
-./ai370-optimize.sh tier1-validate         # Legacy alias for stage1-validate
+./ai370-optimize.sh stage2-platform-validate   # Firmware + kernel + GPU + NPU visibility
+./ai370-optimize.sh stage2-optimize-plan       # CPU/memory/storage plan (no mutation)
+./ai370-optimize.sh stage2-optimize-apply --approve
+./ai370-optimize.sh stage1-inventory       # Deprecated alias → stage2-platform-inventory
+./ai370-optimize.sh stage1-validate        # Deprecated alias → stage2-platform-validate
+./ai370-optimize.sh tier1-validate         # Legacy alias → stage2-platform-validate
 ```
+
+`--apply-tuning` and `--with-ai-smoke` are not Stage 1 flags. Use
+`stage2-optimize-apply --approve` and `scripts/80-benchmark-local-ai.sh`.
+`--strict` applies to Stage 2 platform validate (missing gfx1150/NPU → FAIL).
 
 `stage1-probe` writes `reports/latest/s1-m1-raw-inventory.json`. `stage1-profile`
 runs S1-M1 if that inventory is missing, then publishes:
@@ -95,13 +97,15 @@ compatibility wrappers.
 **Execution order (default `stage1`):**
 
 ```text
-10-detect-hardware (incl. NPU; 75 wrapper)
--> 20-check-bios (BIOS + firmware; 25 wrapper)
--> 30-validate-kernel
--> 40-platform-tuning (CPU+memory+storage plan; 40/50/60 wrappers)
--> 70-validate-gpu-stack
--> 90-validate (scope=full; script 80 skipped unless --with-ai-smoke)
+s1-m1-probe-system (if s1-m1-raw-inventory.json is missing)
+-> s1-m2-normalize-profile
+-> s1-m3-classify-platform
+-> s1-m4-derive-capabilities
+-> s1-m5-publish-profile
 ```
+
+Platform firmware, kernel, GPU/NPU visibility, and tuning are Stage 2 commands
+(`stage2-platform-validate`, `stage2-optimize-plan`).
 
 ## Canonical Roadmap and Status
 
@@ -115,18 +119,20 @@ migration inventory is `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`.
 
 Current high-level status (see `docs/ROADMAP.md` for details):
 
-- Stage 1 profile pipeline: **Implemented** (S1-M1 through S1-M5). Use
-  `stage1-probe` and `stage1-profile`. The mixed `stage1` command still runs
-  BIOS, kernel, GPU-visibility, and tuning scripts; that is migration debt,
-  not the canonical Stage 1 contract. `--apply-tuning` remains a compatibility
-  path; the target Stage 1 contract in `docs/ROADMAP.md` and `AGENTS.md` is
-  read-only.
+- Stage 1 profile pipeline: **Implemented** (S1-M1 through S1-M5). `stage1`,
+  `stage1-probe`, and `stage1-profile` are read-only. BIOS, kernel, GPU/NPU
+  visibility, and tuning run from Stage 2 platform commands.
 - Stage 2: **Planned** in ROADMAP except S2-M3/S2-M4, which are **In progress**
   (capability ladder library and visibility schemas; GPU publisher landed in
   [#176](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/176);
   NPU visibility-only publisher is `stage2-npu-validate` / S2-M4).
-  Current scripts exist as partial compatibility implementations (`stage2`,
-  `stage2-runtime`, `stage2-npu`; legacy `tier2` / `tier3`).
+  Platform wrappers (`stage2-firmware-validate`, `stage2-kernel-validate`,
+  `stage2-optimize-plan`, `stage2-optimize-apply --approve`,
+  `stage2-platform-validate`) exist; they do not upgrade S2-M1/M2/M5–M7 to
+  Implemented. Current runtime scripts remain partial compatibility
+  implementations (`stage2`, `stage2-runtime`, `stage2-npu`; legacy `tier2` /
+  `tier3`). `stage2-validate` remains the runtime/NPU cheap gate until the
+  S3 split; it is not the S2-M7 platform aggregate.
   `stage2-npu-validate` is visibility-only by default (writes
   `s2-m4-npu-runtime-validation.json` and refreshes `tier3-validation.json`);
   pass `--bench` for the mixed 230/245 compatibility path until S3-M6.
@@ -150,12 +156,10 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   `s1-m5-system-profile.json`, `s1-m5-inventory-summary.md`, and a
   compatibility `system-profile.json`
 - Compatibility wrappers still present: `scripts/10-detect-hardware.sh`
-  (includes NPU detect; `75` is a wrapper), `scripts/20-check-bios.sh`,
-  `scripts/30-validate-kernel.sh`, `scripts/40-platform-tuning.sh`,
-  `scripts/70-validate-gpu-stack.sh`, `scripts/90-validate.sh`. These are not
-  the canonical Stage 1 contract.
-- Commands: `stage1-probe`, `stage1-profile`; mixed `stage1`,
-  `stage1-inventory`, `stage1-validate` remain compatibility orchestrators
+  (includes NPU detect; `75` is a wrapper). BIOS, kernel, tuning, GPU, and
+  `90-validate.sh` are Stage 2 platform wrappers, not the Stage 1 contract.
+- Commands: `stage1-probe`, `stage1-profile`, and `stage1` (read-only).
+  `stage1-inventory` and `stage1-validate` redirect to Stage 2 platform commands.
 
 The generated system profile uses schema v3 (`configs/schemas/s1-m5-system-profile.schema.json`,
 same contract as `configs/schemas/system-profile.schema.json`). Its
@@ -187,22 +191,22 @@ from marketing names.
   `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`,
   `scripts/140-benchmark-llm.sh`, `scripts/145-write-tier2-validation.sh`,
   `scripts/150-validate-offline-model-storage.sh`,
-  `scripts/155-stage-model-layout.sh` (S2-M1 / S2-M4 / S2-M5; layout polish)
+  `scripts/155-stage-model-layout.sh` (S3-M2 / S3-M3 / S3-M1; layout polish)
 - `scripts/200-install-onnxruntime.sh`,
   `scripts/205-install-xrt-ryzen-ai.sh`,
   `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`,
   `scripts/230-benchmark-npu.sh`, `scripts/240-write-tier3-validation.sh`,
   `scripts/245-compare-cpu-gpu-npu.sh` (reuses 230 NPU results by default),
   `scripts/lib/npu_ep_verify.py`, `scripts/lib/common.sh`, `docs/npu-status.md`
-  (S2-M2 / S2-M4)
+  (S3-M4)
 - `scripts/300-install-anythingllm.sh`,
   `scripts/310-install-embedding-models.sh`, `scripts/320-validate-rag.sh`
-  (S2-M3 offline RAG; optional, not Stage 3 gate)
+  (S4-M3 offline RAG; optional, not Stage 3 gate)
 - `scripts/170-install-turnkeyml.sh`, `scripts/160-install-lemonade.sh`,
   `scripts/165-validate-lemonade.sh`, `scripts/lib/lemonade-env.sh`
-  (S2-M6 TurnkeyML + Lemonade; optional WARN-friendly path)
+  (S3-M5 TurnkeyML + Lemonade; optional WARN-friendly path)
 - `scripts/250-install-digest-ai.sh`, `scripts/255-analyze-model-digest.sh`,
-  `scripts/lib/digest_analyze.py` (S2-M7 Digest AI / ONNX analysis;
+  `scripts/lib/digest_analyze.py` (S3-M4 Digest AI / ONNX analysis;
   diagnostics only)
 
 **Stage 3+ — Planned / not present (or partial):**
@@ -239,48 +243,55 @@ tool permissions, see `docs/openclaw-multi-llm-agent.md`.
 ```text
 scripts/
   s1-m1-probe-system.sh          # canonical S1-M1 raw inventory probe
-  10-detect-hardware.sh          # compatibility wrapper → S1-M1 probe
-  20-check-bios.sh               # canonical (BIOS + firmware)
-  25-check-firmware.sh           # wrapper → 20
-  30-validate-kernel.sh          # canonical
-  40-platform-tuning.sh          # canonical (CPU+memory+storage plan)
-  40-optimize-cpu.sh             # wrapper → 40-platform-tuning
-  50-optimize-memory.sh          # wrapper → 40-platform-tuning
-  60-optimize-storage.sh         # wrapper → 40-platform-tuning
-  70-validate-gpu-stack.sh       # canonical
+  s1-m2-normalize-profile.py
+  s1-m3-classify-platform.py
+  s1-m4-derive-capabilities.py
+  s1-m5-publish-profile.py
+  10-detect-hardware.sh          # compatibility wrapper → S1-M1 probe + legacy artifacts
   75-detect-npu.sh               # compatibility wrapper → S1-M1 probe
-  80-benchmark-local-ai.sh       # optional (--with-ai-smoke)
-  90-validate.sh                 # gate (inventory|full|smoke)
 ```
+
+Stage 2 platform wrappers (not Stage 1): `20-check-bios.sh`, `30-validate-kernel.sh`,
+`40-platform-tuning.sh`, `s2-m3-validate-gpu-stack.sh`, `s2-m4-validate-npu-stack.sh`,
+`90-validate.sh`.
 
 **Acceptance Criteria:**
 
-- `./ai370-optimize.sh stage1` completes the canonical platform sequence
-  (`tier1` remains an alias). Script 80 is optional.
-- Radeon 890M detected, or profile variance is clearly reported (WARN by
-  default; FAIL with `--strict`).
-- AMDGPU kernel driver state recorded.
-- Vulkan available, or missing support is clearly reported.
-- ROCm detected or cleanly reported missing.
-- AMDXDNA / XDNA2 NPU detected or cleanly reported missing (WARN by default;
-  FAIL with `--strict`).
-- BIOS 2.01 validation recorded for EliteMini AI370.
-- Firmware, Secure Boot, and microcode validation recorded.
-- Kernel validation recorded.
-- CPU, memory, and storage platform plans complete without overwriting user
-  data (runtime apply is opt-in via `--apply-tuning`).
-- Local AI smoke output is generated when `--with-ai-smoke` is used.
-- `scripts/90-validate.sh` exits successfully (or FAIL under strict missing
-  hardware) and writes `reports/latest/tier1-validation.json` plus
-  `reports/latest/tier1-summary.md`. Stage 1 `PASS` may still list acceptance
-  WARNs; that is intentional for experimental iteration.
+- `./ai370-optimize.sh stage1` publishes `s1-m5-system-profile.json` and does not
+  apply tuning, run BIOS/kernel policy, or invoke `90-validate.sh`.
+- Probe limitations are recorded as facts, not reference-machine failures.
+- GPU architecture comes from PCI mappings, not marketing names.
+- `tier1` remains an alias for read-only `stage1`.
 
-### Stage 2 – Local AI Runtime & AI Optimization Software
+### Stage 2 – Platform Enablement and Local AI Runtime
 
-Use `stage2` for the roadmap-aligned **core** aggregate command. Stage 2 planned
-scope is **implemented** (S2-M1–S2-M7). Default `stage2` runs runtime/model-storage
-plus NPU checks and always writes `reports/latest/tier3-validation.json` for the
-Stage 3 gate. Optional packs are **not** run by default (not Stage 3 gate inputs):
+ROADMAP status: S2-M3/S2-M4 In progress; S2-M1, S2-M2, and S2-M5–S2-M7 remain
+**Planned**. Wrappers below do not mark those Planned milestones Implemented.
+
+**Platform commands (S2-M1–M7 wrappers):**
+
+```bash
+./ai370-optimize.sh stage2-firmware-validate
+# Consumes reports/latest/s1-m5-system-profile.json (run stage1 first).
+# BIOS policy uses classified platform_id, not CLI --profile alone.
+./ai370-optimize.sh stage2-kernel-validate [--dry-run]
+./ai370-optimize.sh stage2-gpu-validate [--offline]   # S2-M3 GPU visibility ladder report
+./ai370-optimize.sh stage2-npu-validate [--offline]   # S2-M4 NPU visibility ladder report
+./ai370-optimize.sh stage2-optimize-plan              # plan-only; no mutation
+./ai370-optimize.sh stage2-optimize-apply --approve [--dry-run]
+./ai370-optimize.sh stage2-platform-validate [--strict]
+./ai370-optimize.sh stage2-platform-inventory [--strict]
+```
+
+`stage2-platform-validate` runs firmware, kernel, GPU visibility, NPU
+visibility, and the compatibility `90-validate.sh` aggregate. Canonical
+`s2-m7-platform-validation.json` is still Planned. `stage2-validate` remains
+the **runtime/NPU cheap gate** until the Stage 3 split; it is not an alias
+for platform validate.
+
+Use `stage2` for the runtime/model-storage + NPU aggregate. Default `stage2`
+writes `reports/latest/tier3-validation.json` for the Stage 3 gate. Optional
+packs are **not** run by default (not Stage 3 gate inputs):
 
 ```bash
 ./ai370-optimize.sh stage2 [--offline]
@@ -290,7 +301,7 @@ Stage 3 gate. Optional packs are **not** run by default (not Stage 3 gate inputs
 ./ai370-optimize.sh stage2-rag | stage2-lemonade | stage2-digest
 ./ai370-optimize.sh stage2-gpu-validate [--offline]   # S2-M3 GPU visibility ladder report
 ./ai370-optimize.sh stage2-npu-validate [--offline]   # S2-M4 NPU visibility ladder report
-./ai370-optimize.sh stage2-models   # S2-M5 layout + validate (no downloads)
+./ai370-optimize.sh stage2-models   # S3-M1 layout + validate (no downloads)
 # Full-stack optional smokes:
 #   LEMONADE_START=true ./scripts/165-validate-lemonade.sh
 #   ANYTHINGLLM_START=true ./scripts/300-install-anythingllm.sh
@@ -390,8 +401,8 @@ so the Stage 3 gate artifact exists without `--bench`.
 ./ai370-optimize.sh stage2-npu-validate --bench [--with-lemonade]
 ./ai370-optimize.sh stage2-npu [--offline] [--with-lemonade]   # mixed install + bench
 ./ai370-optimize.sh stage2-npu --accept-amd-acceleration-risk   # install staged XRT/Ryzen AI
-./ai370-optimize.sh stage2-lemonade [--offline]    # S2-M6 only
-./ai370-optimize.sh stage2-digest [--offline]      # S2-M7 only
+./ai370-optimize.sh stage2-lemonade [--offline]    # S3-M5 compatibility path
+./ai370-optimize.sh stage2-digest [--offline]      # S3-M4 diagnostics
 ./ai370-optimize.sh tier3 [--offline]              # Legacy alias → stage2-npu
 ./ai370-optimize.sh tier3-validate                 # Legacy alias → stage2-npu-validate
 ```
@@ -478,9 +489,11 @@ acceleration was explicitly installed and re-validated.
 ### Stage Commands (recommended user interface)
 
 ```bash
-./ai370-optimize.sh stage1                 # Platform Stage 1 (plan-only; optional --with-ai-smoke/--strict/--apply-tuning)
-./ai370-optimize.sh stage1-inventory       # Detect-only + inventory-scope validate
-./ai370-optimize.sh stage1-validate        # Gate re-check (add --inventory or --strict)
+./ai370-optimize.sh stage1                 # Read-only S1-M1 through S1-M5 profile
+./ai370-optimize.sh stage2-platform-validate [--strict]
+./ai370-optimize.sh stage2-platform-inventory [--strict]
+./ai370-optimize.sh stage2-optimize-plan
+./ai370-optimize.sh stage2-optimize-apply --approve [--dry-run]
 ./ai370-optimize.sh stage2 [--offline] [--with-lemonade] [--with-digest] [--with-rag]
 ./ai370-optimize.sh stage2-validate [--offline] [--bench] [--with-lemonade]
 ./ai370-optimize.sh stage2-runtime [--offline] [--with-lemonade]
@@ -489,12 +502,12 @@ acceleration was explicitly installed and re-validated.
 ./ai370-optimize.sh stage2-npu-validate [--offline]   # S2-M4 NPU visibility (no 230)
 ./ai370-optimize.sh stage2-npu-validate --bench [--with-lemonade]
 ./ai370-optimize.sh stage2-gpu-validate [--offline]   # S2-M3 GPU/Vulkan/ROCm visibility
-./ai370-optimize.sh stage2-rag             # Optional RAG (S2-M3 offline RAG; not Stage 3 gate)
-./ai370-optimize.sh stage2-lemonade        # Optional Lemonade (S2-M6)
-./ai370-optimize.sh stage2-digest          # Optional Digest AI (S2-M7)
-./ai370-optimize.sh stage2-models          # S2-M5 layout + storage validate (no downloads)
+./ai370-optimize.sh stage2-rag             # Optional RAG (S4-M3; not Stage 3 gate)
+./ai370-optimize.sh stage2-lemonade        # Optional Lemonade (S3-M5)
+./ai370-optimize.sh stage2-digest          # Optional Digest AI (S3-M4 diagnostics)
+./ai370-optimize.sh stage2-models          # S3-M1 layout + storage validate (no downloads)
 ./ai370-optimize.sh stage3-image           # Requires Stage 1 + Stage 2 runtime/NPU validation gate
-./ai370-optimize.sh full-stack --accept-amd-acceleration-risk   # S1 + S2 core + optional packs + accel + S3 workflows
+./ai370-optimize.sh full-stack --accept-amd-acceleration-risk   # S1 profile + S2 platform + runtime + optional packs + accel + S3 workflows
 ```
 
 Legacy `tierN` commands and legacy nine-phase commands remain available for

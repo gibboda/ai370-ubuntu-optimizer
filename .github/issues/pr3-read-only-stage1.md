@@ -18,7 +18,9 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 **Blocks:** R1 Tier removal prep
 
-Verified 2026-08-18: `run_stage1()` still invokes `20-check-bios.sh`, `30-validate-kernel.sh`, `40-platform-tuning.sh`, `70-validate-gpu-stack.sh` (now a wrapper around `s2-m3-validate-gpu-stack.sh`), and `90-validate.sh`. `--apply-tuning` remains a Stage 1 compatibility path.
+**PR 3a status (orchestrator + `stage2-platform-*`):** `stage1` is read-only profile publication. `stage2-platform-validate` invokes existing GPU/NPU commands plus firmware/kernel wrappers and compatibility `90-validate.sh`. `stage2-validate` remains the runtime/NPU cheap gate. Canonical S2-M7 publisher, BIOS/kernel/tuning JSON splits, and remaining fixture work stay in this issue as PR 3b/3c.
+
+Verified 2026-08-18 after PR 3a: `stage1` / `tier1` call `run_stage1_profile` only. `--apply-tuning` on Stage 1 warns toward `stage2-optimize-apply --approve`. `run_stage1_inventory()` is redirected to `stage2-platform-inventory`.
 
 Inventory review: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/175
 Follow-up after GPU publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/179
@@ -28,22 +30,22 @@ NPU publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/180
 
 ## Workstream A: Stage 1 orchestrator
 
-- [ ] Make `stage1` / `tier1` call `run_stage1_profile` only; emit deprecation for old mixed path
-- [ ] Redirect or deprecate `run_stage1_inventory()` → `stage2-platform-inventory`
-- [ ] Remove `AI370_APPLY_TUNING` from Stage 1 env export paths
-- [ ] Remove script 80 / `--with-ai-smoke` from Stage 1 (redirect to Stage 3 benchmark stub)
-- [ ] Update `usage()` — Stage 1 = probe + profile; Stage 2 = platform validate
+- [x] Make `stage1` / `tier1` call `run_stage1_profile` only; emit deprecation for old mixed path
+- [x] Redirect or deprecate `run_stage1_inventory()` → `stage2-platform-inventory`
+- [x] Remove `AI370_APPLY_TUNING` from Stage 1 env export paths
+- [x] Remove script 80 / `--with-ai-smoke` from Stage 1 (redirect to Stage 3 benchmark stub)
+- [x] Update `usage()` — Stage 1 = probe + profile; Stage 2 = platform validate
 
 ## Workstream B: Stage 2 platform commands
 
-- [ ] `stage2-firmware-validate` → wrap `20-check-bios.sh` (S2-M1)
-- [ ] `stage2-kernel-validate` → wrap `30-validate-kernel.sh` (S2-M2)
+- [x] `stage2-firmware-validate` → wrap `20-check-bios.sh` (S2-M1)
+- [x] `stage2-kernel-validate` → wrap `30-validate-kernel.sh` (S2-M2)
 - [x] `stage2-gpu-validate` already exists (`#176` / S2-M3); invoke it from platform validate, do not recreate
 - [x] `stage2-npu-validate` visibility-only already exists (`#180` / S2-M4); invoke it from platform validate, do not recreate
-- [ ] `stage2-optimize-plan` → `40-platform-tuning.sh` plan-only (S2-M5)
-- [ ] `stage2-optimize-apply --approve` → tuning apply (S2-M6)
-- [ ] `stage2-platform-validate` → S2-M1–M4 + S2-M7 aggregate
-- [ ] `stage2-validate` alias for platform validate until S3 gates split
+- [x] `stage2-optimize-plan` → `40-platform-tuning.sh` plan-only (S2-M5)
+- [x] `stage2-optimize-apply --approve` → tuning apply (S2-M6)
+- [x] `stage2-platform-validate` → S2-M1–M4 + compatibility `90-validate.sh` until PR 3b
+- [ ] `stage2-validate` alias for platform validate until S3 gates split (kept as runtime/NPU cheap gate in PR 3a)
 
 ## Workstream C: Split `90-validate.sh` (S2-M7)
 
@@ -80,30 +82,30 @@ This is the canonical `90-validate.sh` split. Do not start it in #168.
 - [ ] `tests/test_s2_m7_platform_validation.py` — aggregate from fixture milestone JSONs
 - [ ] `tests/test_s2_m5_optimization_plan.py` — plan-only, no mutation
 - [ ] `tests/test_s2_m6_optimization_apply.py` — apply requires `--approve`
-- [ ] Update `tests/smoke_tier1.sh` — `stage1` does not require tuning artifacts
-- [ ] Add `tests/smoke_stage2_platform.sh`
-- [ ] Update `tests/test_repository_instructions.py` — Stage 1 read-only
+- [x] Update `tests/smoke_tier1.sh` — `stage1` does not require tuning artifacts
+- [x] Add `tests/smoke_stage2_platform.sh`
+- [x] Update `tests/test_repository_instructions.py` — Stage 1 read-only
 
 ## Documentation and ROADMAP
 
-- [ ] Rewrite README Stage 1 section (probe + profile only)
-- [ ] Add Stage 2 platform command table to README
-- [ ] Correct README Stage 2 header that claims S2-M1–S2-M7 scope is implemented; match ROADMAP (S2-M3/M4 In progress, S2-M1/M2/M5–M7 Planned)
-- [ ] Correct README Lemonade/Digest owners (S3-M5 / S3-M4 diagnostics, not S2-M6/S2-M7)
+- [x] Rewrite README Stage 1 section (probe + profile only)
+- [x] Add Stage 2 platform command table to README
+- [x] Correct README Stage 2 header that claims S2-M1–S2-M7 scope is implemented; match ROADMAP (S2-M3/S2-M4 In progress, S2-M1/M2/M5–M7 Planned)
+- [x] Correct README Lemonade/Digest owners (S3-M5 / S3-M4 diagnostics, not S2-M6/S2-M7)
 - [ ] Update ROADMAP milestone status for S2-M1/M2/M5/M7 only when exit evidence exists
 - [ ] Mark migration plan step 3 done
 - [ ] Deprecate `TASK_PROPOSALS.md` Tier language
 
 ## Definition of done
 
-- [ ] `./ai370-optimize.sh stage1` runs only S1-M1–M5 (read-only)
-- [ ] `./ai370-optimize.sh stage2-platform-validate` runs S2-M1/M2/M3/M4 + S2-M7
-- [ ] `--apply-tuning` only on `stage2-optimize-apply --approve`
+- [x] `./ai370-optimize.sh stage1` runs only S1-M1–M5 (read-only)
+- [x] `./ai370-optimize.sh stage2-platform-validate` runs S2-M1/M2/M3/M4 + compatibility `90-validate.sh` (canonical S2-M7 remains PR 3b)
+- [x] `--apply-tuning` only on `stage2-optimize-apply --approve`
 - [ ] `s2-m7-platform-validation.json` validates against schema
 - [ ] `tier1-validation.json` compat shim preserves `require_tier123_pass`
-- [ ] Portable tests pass on generic CI hardware
-- [ ] README and ROADMAP agree Stage 1 is read-only
-- [ ] README does not label Planned Stage 2 milestones as implemented
+- [x] Portable tests pass on generic CI hardware
+- [x] README and ROADMAP agree Stage 1 is read-only
+- [x] README does not label Planned Stage 2 milestones as implemented
 - [ ] PR title passes `bash scripts/validate-pr-title.sh`
 
 ## Non-goals

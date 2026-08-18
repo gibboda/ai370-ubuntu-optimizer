@@ -147,7 +147,7 @@ performance benchmark, or claim that a candidate capability is validated.
 | S1-M4 | Capability candidates | `s1-m4-derive-capabilities.py`, `s1-m4-capability-candidates.json` | Rules tests proving candidates are not validation claims | Implemented |
 | S1-M5 | Profile validation and publication | `stage1-profile`, `s1-m5-publish-profile.py`, `s1-m5-system-profile.schema.json`, `s1-m5-system-profile.json`, `s1-m5-inventory-summary.md` | Schema pass/fail tests, interrupted-write test, command/output documentation | Implemented |
 
-Canonical S1-M5 also writes a compatibility copy at `reports/latest/system-profile.json`. The mixed `stage1` orchestrator still invokes BIOS, kernel, GPU-visibility, and tuning scripts; that remaining behavior is Stage 2 migration debt, not an S1-M5 gap.
+Canonical S1-M5 also writes a compatibility copy at `reports/latest/system-profile.json`. `stage1` / `tier1` now invoke only the read-only S1-M1 through S1-M5 profile pipeline. BIOS, kernel, GPU/NPU visibility, and tuning run from `stage2-platform-*` and `stage2-optimize-*` wrappers; canonical S2-M1/M2/M5–M7 outputs remain Planned.
 
 ### Stage 2 — Platform Enablement & Validation
 
@@ -231,7 +231,7 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 | S1-M4 | `scripts/s1-m4-derive-capabilities.py`, `configs/schemas/s1-m4-capability-candidates.schema.json` | Candidates are not validation claims |
 | S1-M5 | `scripts/s1-m5-publish-profile.py`, `configs/schemas/s1-m5-system-profile.schema.json`, `configs/schemas/system-profile.schema.json`, `stage1-profile` | Atomic v3 publication plus inventory summary; compatibility `system-profile.json` copy |
 | S1-M2–S1-M5 library | `scripts/lib/system_profile.py` | Shared implementation library used by the canonical CLIs |
-| S2-M1 | `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh` | Move all firmware policy judgments here |
+| S2-M1 | `scripts/20-check-bios.sh`, `scripts/lib/firmware_policy.py`, `scripts/25-check-firmware.sh` | Move all firmware policy judgments here; consume S1-M5 classified platform_id |
 | S2-M2 | `scripts/30-validate-kernel.sh` | Canonicalize under S2-M2 |
 | S2-M3 | `scripts/s2-m3-validate-gpu-stack.sh`, `scripts/s2-m3-publish-gpu-visibility.py`, compatibility wrapper `scripts/70-validate-gpu-stack.sh`, `scripts/lib/capability_ladder.py`, `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` | GPU publisher landed in `#176`; keep S2-M3 In progress until missing driver/Vulkan/ROCm fixtures exist |
 | S2-M4 | `scripts/s2-m4-validate-npu-stack.sh`, `scripts/s2-m4-publish-npu-visibility.py`, visibility portions of `scripts/210-check-ryzen-ai-software.sh` and `scripts/220-check-vitis-ai-ep.sh`, inventory-only `scripts/205-install-xrt-ryzen-ai.sh`, `scripts/lib/capability_ladder.py`, `configs/schemas/s2-m4-npu-runtime-validation.schema.json` | Visibility-only publisher landed in `#180` / `0.21.0`; keep S2-M4 In progress because mixed `stage2-npu` / `--bench` still runs 230 and ROADMAP exit evidence still wants provider-vs-inference tests; move runtime install and performance measurement to Stage 3 |
@@ -251,7 +251,7 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 | S4-M6 | `scripts/130-install-open-webui.sh` | Move from runtime orchestration to application ownership |
 | S5 milestones | No complete canonical implementation | Do not claim implemented from legacy plans |
 | S5-M6 | `scripts/validate-commit-subject.sh`, `scripts/validate-pr-title.sh` | Release-policy validation tooling |
-| S1–S5 tests | `tests/test_s1_m1_probe.py`, `tests/test_s1_m2_normalize.py`, `tests/test_s1_m3_classify.py`, `tests/test_s1_m4_capabilities.py`, `tests/test_s1_m5_publish.py`, `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_system_profile.py`, `tests/smoke_tier1.sh`, `tests/smoke_tier2.sh` | Owner-specific Stage 1 tests exist; S2-M3 library/GPU publisher and S2-M4 NPU publisher tests exist; smoke tests remain compatibility coverage until replaced |
+| S1–S5 tests | `tests/test_s1_m1_probe.py`, `tests/test_s1_m2_normalize.py`, `tests/test_s1_m3_classify.py`, `tests/test_s1_m4_capabilities.py`, `tests/test_s1_m5_publish.py`, `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m1_firmware.py`, `tests/test_system_profile.py`, `tests/smoke_tier1.sh`, `tests/smoke_stage2_platform.sh`, `tests/smoke_tier2.sh` | Owner-specific Stage 1 tests exist; S2-M3 library/GPU publisher and S2-M4 NPU publisher tests exist; `test_s2_m1_firmware.py` covers consumed-profile BIOS policy; `smoke_stage2_platform.sh` is fixture-based platform-wrapper coverage; remaining smokes are compatibility coverage until replaced |
 | Compatibility archive | `scripts/legacy/*` | No architectural ownership; frozen compatibility/archive only, then remove at the target below |
 | Repository orchestrator | `ai370-optimize.sh` | Routes commands; each branch is owned by the milestone it invokes, not by the file as a whole |
 
@@ -261,28 +261,29 @@ behavior.
 
 | Owner | Current commands and aliases |
 | --- | --- |
-| S1-M1 | `stage1-probe`, probe portion of `hardware`, `inventory`, `audit`, and `stage1-inventory` |
-| S1-M5 | `stage1-profile`; profile-publication portion of `stage1`, `stage1-validate`, and `final-validate`/`validate` |
-| S2-M1 | `firmware` |
-| S2-M2 | `kernel-amd` |
+| S1-M1 | `stage1-probe`, probe portion of `hardware`, `inventory`, `audit` |
+| S1-M5 | `stage1`, `stage1-profile`, `tier1` |
+| S2-M1 | `stage2-firmware-validate`, `firmware` |
+| S2-M2 | `stage2-kernel-validate`, `kernel-amd` |
 | S2-M3 | `stage2-gpu-validate`, `gpu-validate`, `gpu` |
 | S2-M4 | Visibility portion of `stage2-npu`, `stage2-npu-validate`, and `npu` |
-| S2-M5 | `tune`, `baseline-plan`, `plan`, `guide` |
-| S2-M6 | `baseline-apply`, `execute`, `amd-accel-install` |
-| S2-M7 | Platform aggregation portions of `stage1-validate`, `stage2-validate`, `baseline-validate`, and `final-validate`/`validate` |
+| S2-M5 | `stage2-optimize-plan`, `tune` |
+| S2-M6 | `stage2-optimize-apply`, `baseline-apply`, `execute`, `amd-accel-install` |
+| S2-M7 | `stage2-platform-validate`, `stage2-platform-inventory`, `stage1-validate`, `tier1-validate`, `baseline-validate`, and `final-validate`/`validate` |
 | S3-M1 | `stage2-models` |
 | S3-M2–S3-M5 | `stage2`, `stage2-runtime`, `stage2-runtime-validate`, `stage2-lemonade`, `stage2-digest`, `ai-runtime`, `llm-validate`, `install`, `full-ai-install` |
 | S3-M6 | `ai-bench` and runtime benchmark portions of current NPU commands |
+| S3-M7 | Runtime/NPU cheap gate `stage2-validate` until the S3 aggregate exists |
 | S4-M1–S4-M2 | `stage3-image`, `comfyui-install`, `comfyui`, `comfyui-bench` |
 | S4-M3 | `stage2-rag` |
 | S4-M7 | Cross-stage orchestration in `full-stack` and `all` |
 | S5-M6 | `help`, `-h`, `--help` (documented command catalog) |
 
-The `stage1`, `stage2`, `full-stack`, `final-validate`/`validate`, `all`,
+The `stage2`, `full-stack`, `final-validate`/`validate`, `all`,
 and `accel-validate` branches currently combine multiple owners. They are
 compatibility orchestrators, not standalone deliverables; each invoked
 operation retains the owner shown above and must be split at the new
-boundaries.
+boundaries. `stage1` now orchestrates only S1-M1 through S1-M5.
 
 Configuration ownership follows its consumer: `configs/profiles/gpu-pci-architectures.json`
 is S1-M2; other `configs/profiles/*` files are S1-M3,
@@ -303,7 +304,9 @@ targets to versions before removal. Compatibility items receive bug fixes only.
 
 | Compatibility-only Tier interface | Kind | Target owner and planned canonical replacement | Removal target |
 | --- | --- | --- | --- |
-| `tier1`, `tier1-validate` | Commands | S1-M5 `stage1-profile` and S2-M7 `stage2-validate` (the old combined behavior must split) | R1 |
+| `tier1`, `tier1-validate` | Commands | S1-M5 `stage1-profile` and S2-M7 `stage2-platform-validate` (the old combined behavior is split) | R1 |
+| `stage1-inventory` | Command | S2-M7 `stage2-platform-inventory` | R1 |
+| `stage1-validate` | Command | S2-M7 `stage2-platform-validate` | R1 |
 | `tier2`, `tier2-validate` | Commands | S3-M7 `stage3-validate` | R2 |
 | `tier3`, `tier3-validate` | Commands | S2-M4 `stage2-npu-validate` and S3-M4 `stage3-npu-runtime` | R2 |
 | `tier4` | Command | S4-M3 `stage4-rag` | R2 |

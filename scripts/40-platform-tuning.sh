@@ -3,7 +3,8 @@
 #
 # Stage 1: combined CPU / memory / storage runtime tuning plans (Package C merge of 40/50/60).
 # Detection + reviewable recommendations by default (no system-persistent changes).
-# Opt-in runtime apply: AI370_APPLY_TUNING=true or ./ai370-optimize.sh stage1 --apply-tuning
+# Opt-in runtime apply: ./ai370-optimize.sh stage2-optimize-apply --approve
+# (AI370_APPLY_TUNING=true is the script-level switch used by that command)
 
 set -euo pipefail
 
@@ -164,7 +165,7 @@ PY
   echo "[INFO] Wrote tier1-platform-tuning.* (+ compatibility cpu/memory/storage reports)"
 
   # Package E: optional runtime apply (power profile / cpupower info only; still non-persistent).
-  # Honor DRY_RUN / AI370_DRY_RUN from orchestrator --dry-run (exported by export_stage1_env).
+  # Honor DRY_RUN / AI370_DRY_RUN from orchestrator --dry-run.
   local apply="${AI370_APPLY_TUNING:-false}"
   local dry="${DRY_RUN:-${AI370_DRY_RUN:-false}}"
   case "$dry" in
@@ -219,7 +220,7 @@ PY
       fi
       ;;
     *)
-      echo "[INFO] Platform tuning is plan-only. Pass --apply-tuning or AI370_APPLY_TUNING=true to run runtime commands."
+      echo "[INFO] Platform tuning is plan-only. Apply with ./ai370-optimize.sh stage2-optimize-apply --approve"
       ;;
   esac
 
