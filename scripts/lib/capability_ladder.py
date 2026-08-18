@@ -392,6 +392,44 @@ def hardware_from_live_gpu_checks(checks: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def hardware_from_live_npu_checks(checks: dict[str, Any]) -> dict[str, Any]:
+    """Build a minimal hardware dict from live Stage 2 NPU visibility probes."""
+    module_present = checks.get("module_present") is True
+    device_nodes_present = checks.get("device_nodes_present") is True
+    module_text = str(checks.get("module_text") or "")
+    device_text = str(checks.get("device_text") or "")
+    if module_present and "amdxdna" not in module_text.lower():
+        module_text = "amdxdna"
+    node_list = [line for line in device_text.splitlines() if line.strip()]
+    if not node_list and device_nodes_present:
+        node_list = [str(node) for node in (checks.get("device_nodes") or []) if node]
+        device_text = "\n".join(node_list)
+    present = module_present or device_nodes_present or bool(node_list) or bool(device_text)
+    devices: list[dict[str, Any]] = []
+    if present:
+        devices.append(
+            {
+                "bound_driver": "amdxdna" if module_present or "amdxdna" in module_text.lower() else None,
+                "device_name": node_list[0] if node_list else (device_text.splitlines()[0] if device_text else None),
+            }
+        )
+    return {
+        "gpu": {
+            "text": "",
+            "arch": None,
+            "devices": [],
+            "amdgpu_module": "",
+        },
+        "npu": {
+            "present": present,
+            "module_text": module_text,
+            "device_text": device_text,
+            "devices": devices,
+            "device_nodes": node_list,
+        },
+    }
+
+
 def target_gpu_arch_from_profile(profile: dict[str, Any] | None) -> str | None:
     """Return the reference GPU architecture from a consumed system profile."""
     if not profile:

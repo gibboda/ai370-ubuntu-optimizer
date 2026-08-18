@@ -122,11 +122,14 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   path; the target Stage 1 contract in `docs/ROADMAP.md` and `AGENTS.md` is
   read-only.
 - Stage 2: **Planned** in ROADMAP except S2-M3/S2-M4, which are **In progress**
-  (capability ladder library and visibility schemas; publisher CLIs are
-  issue [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168)).
+  (capability ladder library and visibility schemas; GPU publisher landed in
+  [#176](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/176);
+  NPU visibility-only publisher is `stage2-npu-validate` / S2-M4).
   Current scripts exist as partial compatibility implementations (`stage2`,
   `stage2-runtime`, `stage2-npu`; legacy `tier2` / `tier3`).
-  `stage2-npu-validate` is still a mixed visibility-plus-benchmark path.
+  `stage2-npu-validate` is visibility-only by default (writes
+  `s2-m4-npu-runtime-validation.json`); pass `--bench` for the mixed
+  230/245/240 compatibility path until S3-M6.
   NPU PASS requires profiled AMD EP execution (`scripts/lib/npu_ep_verify.py`).
   Optional paths are not Stage 3 gates. See `docs/ROADMAP.md`.
 - Stage 3: **Planned** in ROADMAP. Current runtime/benchmark scripts exist as
@@ -176,6 +179,10 @@ from marketing names.
 - `scripts/s2-m3-validate-gpu-stack.sh`, `scripts/s2-m3-publish-gpu-visibility.py`,
   `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` (S2-M3 GPU/Vulkan/ROCm
   visibility; `stage2-gpu-validate`; compat `70-validate-gpu-stack.sh`)
+- `scripts/s2-m4-validate-npu-stack.sh`, `scripts/s2-m4-publish-npu-visibility.py`,
+  `configs/schemas/s2-m4-npu-runtime-validation.schema.json` (S2-M4 NPU visibility;
+  `stage2-npu-validate`; compat `npu-acceleration-status.json` /
+  `npu-capabilities.json`; mixed `--bench` path until S3-M6)
 - `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`,
   `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`,
   `scripts/140-benchmark-llm.sh`, `scripts/145-write-tier2-validation.sh`,
@@ -282,6 +289,7 @@ Stage 3 gate. Optional packs are **not** run by default (not Stage 3 gate inputs
 ./ai370-optimize.sh stage2-validate --bench [--with-lemonade]         # full smokes
 ./ai370-optimize.sh stage2-rag | stage2-lemonade | stage2-digest
 ./ai370-optimize.sh stage2-gpu-validate [--offline]   # S2-M3 GPU visibility ladder report
+./ai370-optimize.sh stage2-npu-validate [--offline]   # S2-M4 NPU visibility ladder report
 ./ai370-optimize.sh stage2-models   # S2-M5 layout + validate (no downloads)
 # Full-stack optional smokes:
 #   LEMONADE_START=true ./scripts/165-validate-lemonade.sh
@@ -353,30 +361,37 @@ scripts/
 
 ### Stage 2 NPU – AMD AI Stack Enablement
 
-**Purpose:** Enable XDNA2 experimentation and benchmarking.
+**Purpose:** Record XDNA2 NPU **visibility** (S2-M4) separately from execution
+proof (S3-M4 / `scripts/230-benchmark-npu.sh`).
 
-**Components:**
+**Canonical visibility path (S2-M4):**
 
-- ONNX + ONNX Runtime
-- Ryzen AI Software (staged artifacts)
-- Vitis AI / NPU Execution Provider support
-- Profiled EP verification (`scripts/lib/npu_ep_verify.py`) — NPU PASS only when
-  kernels run on the AMD EP
-- NPU-specific benchmark suite (ONNX smoke + XRT tools)
-- Implemented (optional WARN path): TurnkeyML + Lemonade Server (S2-M6) for
-  NPU/hybrid LLM serving via `stage2-lemonade` / `stage2-npu` wiring
-- Implemented (diagnostics only): Digest AI (S2-M7) via `stage2-digest`
+- Kernel module and device-node probes
+- Inventory-only XRT / Ryzen AI staging (`scripts/205-install-xrt-ryzen-ai.sh`
+  without `--accept-amd-acceleration-risk`)
+- Runtime tool visibility (`xrt-smi examine`; not `xrt-smi validate`)
+- Backend provider listing (`scripts/220-check-vitis-ai-ep.sh`)
+- Canonical report: `reports/latest/s2-m4-npu-runtime-validation.json`
+- Compatibility reports: `npu-acceleration-status.json`, `npu-capabilities.json`
+
+S2-M4 does **not** run `scripts/230-benchmark-npu.sh` and does not claim
+executed inference. `validation_claim` in the ladder report is always `false`.
+
+**Compatibility mixed path (until S3-M6):** `stage2-npu` and
+`stage2-npu-validate --bench` still run 205/210/220/230/245/240, including
+profiled EP verification (`scripts/lib/npu_ep_verify.py`).
 
 **Commands:**
 
 ```bash
-./ai370-optimize.sh stage2-npu [--offline] [--with-lemonade]
+./ai370-optimize.sh stage2-npu-validate [--offline]            # S2-M4 visibility only
+./ai370-optimize.sh stage2-npu-validate --bench [--with-lemonade]
+./ai370-optimize.sh stage2-npu [--offline] [--with-lemonade]   # mixed install + bench
 ./ai370-optimize.sh stage2-npu --accept-amd-acceleration-risk   # install staged XRT/Ryzen AI
-./ai370-optimize.sh stage2-npu-validate [--bench] [--with-lemonade]
 ./ai370-optimize.sh stage2-lemonade [--offline]    # S2-M6 only
 ./ai370-optimize.sh stage2-digest [--offline]      # S2-M7 only
 ./ai370-optimize.sh tier3 [--offline]              # Legacy alias → stage2-npu
-./ai370-optimize.sh tier3-validate                 # Legacy alias
+./ai370-optimize.sh tier3-validate                 # Legacy alias → stage2-npu-validate
 ```
 
 `stage2-npu` runs `scripts/205-install-xrt-ryzen-ai.sh` first (inventory by default;
@@ -385,12 +400,13 @@ install when `--accept-amd-acceleration-risk` is set and packages are staged und
 
 **Acceptance Criteria:**
 
-- ONNX Runtime installed with NPU-capable execution providers visible
-- NPU execution path validated (device nodes + XRT or provider check)
-- NPU benchmark report generated
+- Visibility-only validate writes schema-valid `s2-m4-npu-runtime-validation.json`
+- ONNX Runtime NPU-capable providers may be visible without proving inference
+- Mixed `--bench` / `stage2-npu` still produces NPU benchmark and
+  `tier3-validation.json` reports
 
-**Important:** Stage 2 NPU validation is required before Stage 3 image
-generation installation.
+**Important:** Stage 2 NPU **execution** validation remains part of the Stage 3
+image-generation gate via the mixed `stage2-npu` / `--bench` path until S3-M6.
 
 ### Stage 2 RAG – Local Knowledge Systems
 
@@ -468,7 +484,8 @@ acceleration was explicitly installed and re-validated.
 ./ai370-optimize.sh stage2-runtime [--offline] [--with-lemonade]
 ./ai370-optimize.sh stage2-runtime-validate [--offline] [--with-lemonade]
 ./ai370-optimize.sh stage2-npu [--offline] [--with-lemonade]
-./ai370-optimize.sh stage2-npu-validate [--bench] [--with-lemonade]
+./ai370-optimize.sh stage2-npu-validate [--offline]   # S2-M4 NPU visibility (no 230)
+./ai370-optimize.sh stage2-npu-validate --bench [--with-lemonade]
 ./ai370-optimize.sh stage2-gpu-validate [--offline]   # S2-M3 GPU/Vulkan/ROCm visibility
 ./ai370-optimize.sh stage2-rag             # Optional RAG (S2-M3 offline RAG; not Stage 3 gate)
 ./ai370-optimize.sh stage2-lemonade        # Optional Lemonade (S2-M6)

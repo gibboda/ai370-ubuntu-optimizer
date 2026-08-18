@@ -22,6 +22,7 @@ for s in \
   scripts/40-platform-tuning.sh \
   scripts/70-validate-gpu-stack.sh \
   scripts/s2-m3-validate-gpu-stack.sh \
+  scripts/s2-m4-validate-npu-stack.sh \
   scripts/80-benchmark-local-ai.sh \
   scripts/90-validate.sh \
   scripts/lib/common.sh \
@@ -44,7 +45,8 @@ echo "$help_out" | grep -q -- "--with-ai-smoke" || { echo "[FAIL] help missing -
 echo "$help_out" | grep -q -- "--apply-tuning" || { echo "[FAIL] help missing --apply-tuning"; exit 3; }
 echo "$help_out" | grep -q -- "--strict" || { echo "[FAIL] help missing --strict"; exit 3; }
 echo "$help_out" | grep -q "stage2-gpu-validate" || { echo "[FAIL] help missing stage2-gpu-validate"; exit 3; }
-echo "[OK] orchestrator help mentions stage1-inventory, stage1-profile, stage2-gpu-validate, and Package E flags"
+echo "$help_out" | grep -q "stage2-npu-validate is visibility-only" || { echo "[FAIL] help missing visibility-only NPU path"; exit 3; }
+echo "[OK] orchestrator help mentions stage1-inventory, stage1-profile, stage2-gpu-validate, visibility-only NPU, and Package E flags"
 
 # 3. Non-mutating Stage 1 pieces
 # Inventory path (no tuning / no script 80) + platform tuning plan + full-scope validate

@@ -18,7 +18,7 @@ Implement migration plan PR 2: expose GPU/NPU **capability ladders** as structur
 
 **Blocks:** PR 3 / [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) (S2-M7 should consume ladder reports)
 
-**Landed on `main`:** workstreams A and B (`0.18.0` / `0.19.0`), plus Workstream C GPU publisher (`#176` / `0.20.0`). Remaining work is the visibility-only NPU publisher.
+**Landed on `main`:** workstreams A and B (`0.18.0` / `0.19.0`), Workstream C GPU publisher (`#176` / `0.20.0`), and Workstream D NPU publisher (`s2-m4-validate-npu-stack.sh`).
 
 Inventory review: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/175
 
@@ -50,14 +50,14 @@ Landed in `#176` / `0.20.0`. Do not re-implement.
 
 ## Workstream D: NPU visibility (S2-M4, visibility only)
 
-`stage2-npu-validate` already exists as a mixed visibility-plus-benchmark path (`205`/`210`/`220`/`230`/`240`). Do not treat the name as missing. Add a visibility-only owner path; keep the bench-heavy path as compatibility until S3-M6.
+Landed as the visibility-only NPU publisher. `stage2-npu-validate` defaults to S2-M4; `--bench` keeps the mixed 230/245/240 compatibility path until S3-M6.
 
-- [ ] Split visibility vs execution in `scripts/210-check-ryzen-ai-software.sh`
-- [ ] Add `scripts/s2-m4-validate-npu-stack.sh` (no `230-benchmark-npu.sh`)
-- [ ] Publish `reports/latest/s2-m4-npu-runtime-validation.json`
-- [ ] Keep compat `npu-acceleration-status.json` / `npu-capabilities.json`
-- [ ] Add visibility-only `stage2-npu-validate` (or a documented flag) distinct from the bench-heavy path
-- [ ] Integrate `205` inventory-only mode into S2-M4 ladder
+- [x] Split visibility vs execution in `scripts/210-check-ryzen-ai-software.sh`
+- [x] Add `scripts/s2-m4-validate-npu-stack.sh` (no `230-benchmark-npu.sh`)
+- [x] Publish `reports/latest/s2-m4-npu-runtime-validation.json`
+- [x] Keep compat `npu-acceleration-status.json` / `npu-capabilities.json`
+- [x] Add visibility-only `stage2-npu-validate` (or a documented flag) distinct from the bench-heavy path
+- [x] Integrate `205` inventory-only mode into S2-M4 ladder
 
 ## Workstream E: Consumers (deferred to #169)
 
@@ -71,25 +71,25 @@ Do not split `scripts/90-validate.sh` here. Issue #169 owns the S2-M7 aggregate.
 - [x] `tests/test_capability_ladder.py` — ladder transitions from fixture dicts
 - [x] `tests/test_s2_visibility_schemas.py` — unpublished report builders validate
 - [x] `tests/test_s2_m3_gpu_visibility.py` — publisher CLI + schema + atomic write (`#176`)
-- [ ] `tests/test_s2_m4_npu_visibility.py` — visibility does not claim inference
-- [ ] Extend `tests/test_s1_m4_capabilities.py` — no new `validation_claim: true`
+- [x] `tests/test_s2_m4_npu_visibility.py` — visibility does not claim inference
+- [x] Extend `tests/test_s1_m4_capabilities.py` — no new `validation_claim: true`
 - [x] Update `tests/smoke_tier1.sh` — assert `s2-m3-gpu-runtime-visibility.json` after GPU validate (`#176`)
-- [ ] Update `tests/test_repository_instructions.py` — help mentions visibility-only NPU path
+- [x] Update `tests/test_repository_instructions.py` — help mentions visibility-only NPU path
 
 ## Documentation
 
 - [x] Add ladder semantics (`docs/ROADMAP.md`)
 - [x] Update `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md` inventory status (review pass 2026-08-18)
 - [x] Document `stage2-gpu-validate` command and S2-M3 output contract in `README.md` (`#176`)
-- [ ] Update `README.md` Stage 2 NPU section (visibility-only path + output contract)
+- [x] Update `README.md` Stage 2 NPU section (visibility-only path + output contract)
 
 ## Definition of done
 
 - [x] `stage2-gpu-validate` writes valid `s2-m3-gpu-runtime-visibility.json` (`#176`)
-- [ ] Visibility-only NPU validate writes valid `s2-m4-npu-runtime-validation.json`
+- [x] Visibility-only NPU validate writes valid `s2-m4-npu-runtime-validation.json`
 - [x] Legacy `tier1-gpu-stack.json` still produced (`#176`)
-- [ ] Portable unit tests pass without AI370 hardware
-- [ ] S1-M4 candidates still have `validation_claim: false` everywhere
+- [x] Portable unit tests pass without AI370 hardware
+- [x] S1-M4 candidates still have `validation_claim: false` everywhere
 - [ ] PR title passes `bash scripts/validate-pr-title.sh`
 
 ## Non-goals

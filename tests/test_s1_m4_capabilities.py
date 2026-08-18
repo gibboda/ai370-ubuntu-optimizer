@@ -94,6 +94,14 @@ class Stage1CapabilityTests(unittest.TestCase):
         self.assertEqual(by_id["gpu.rocm"]["state"], "probe_failed")
         self.assertIsNone(by_id["gpu.rocm"]["candidate"])
 
+    def test_no_fixture_introduces_validation_claim_true(self) -> None:
+        for fixture in sorted(FIXTURES.glob("*.json")):
+            with self.subTest(fixture=fixture.name):
+                document = self.derive_cli(load_raw(fixture.name))
+                for candidate in document["capability_candidates"]:
+                    self.assertIsNot(candidate["validation_claim"], True)
+                    self.assertFalse(candidate.get("validation_claim", False))
+
 
 if __name__ == "__main__":
     unittest.main()
