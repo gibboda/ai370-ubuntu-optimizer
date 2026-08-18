@@ -14,11 +14,13 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 **Suggested PR title:** `refactor(stage1): Make stage1 read-only; move platform validation to stage2`
 
-**Depends on:** PR 2 / [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) remaining publishers (`stage2-gpu-validate` and visibility-only NPU validate). Library and schemas already landed in `0.18.0`/`0.19.0`.
+**Depends on:** PR 2 / [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) remaining NPU visibility-only publisher. GPU publisher `stage2-gpu-validate` already landed in `#176` / `0.20.0`. Library and schemas landed in `0.18.0`/`0.19.0`.
 
 **Blocks:** R1 Tier removal prep
 
-Verified 2026-08-18: `run_stage1()` still invokes `20-check-bios.sh`, `30-validate-kernel.sh`, `40-platform-tuning.sh`, `70-validate-gpu-stack.sh`, and `90-validate.sh`. `--apply-tuning` remains a Stage 1 compatibility path.
+Verified 2026-08-18: `run_stage1()` still invokes `20-check-bios.sh`, `30-validate-kernel.sh`, `40-platform-tuning.sh`, `70-validate-gpu-stack.sh` (now a wrapper around `s2-m3-validate-gpu-stack.sh`), and `90-validate.sh`. `--apply-tuning` remains a Stage 1 compatibility path.
+
+Inventory review: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/175
 
 ---
 
@@ -34,7 +36,7 @@ Verified 2026-08-18: `run_stage1()` still invokes `20-check-bios.sh`, `30-valida
 
 - [ ] `stage2-firmware-validate` → wrap `20-check-bios.sh` (S2-M1)
 - [ ] `stage2-kernel-validate` → wrap `30-validate-kernel.sh` (S2-M2)
-- [ ] `stage2-gpu-validate` (from PR 2 / #168) (S2-M3)
+- [x] `stage2-gpu-validate` already exists (`#176` / S2-M3); invoke it from platform validate, do not recreate
 - [ ] `stage2-npu-validate` visibility-only (from PR 2 / #168) (S2-M4)
 - [ ] `stage2-optimize-plan` → `40-platform-tuning.sh` plan-only (S2-M5)
 - [ ] `stage2-optimize-apply --approve` → tuning apply (S2-M6)
@@ -107,6 +109,7 @@ This is the canonical `90-validate.sh` split. Do not start it in #168.
 - Removing Tier aliases (R1)
 - Full S3 runtime re-orchestration
 - System-profile schema v4 bump
+- Re-implementing `stage2-gpu-validate` (already on `main`)
 
 ## Optional split
 
