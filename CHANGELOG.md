@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.17.0...v0.18.0) (2026-08-18)
+
+
+### Features
+
+* **stage2:** Add capability ladder library for GPU and NPU visibility ([#170](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/170)) ([3c397ca](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/3c397ca5ae9bc93e37fac40543dfdc2e2889f6d3))
+
 ## [0.17.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.16.0...v0.17.0) (2026-08-17)
 
 
