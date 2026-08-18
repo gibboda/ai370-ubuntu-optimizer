@@ -208,7 +208,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/validate-pr-title.sh` | IMPLEMENTED | Conventional Commit title gate |
 | `scripts/validate-commit-subject.sh` | IMPLEMENTED | Commit-subject gate |
 | `.github/workflows/*` | IMPLEMENTED | ShellCheck, PR title lint, release-please |
-| `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 still assigns Lemonade/Digest to S2-M6/S2-M7 |
+| `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 still claims S2-M1–S2-M7 are implemented and assigns Lemonade/Digest to S2-M6/S2-M7 |
 | `TASK_PROPOSALS.md` | DEPRECATED | Still describes Tier 1–5 follow-ups as current work |
 | `.github/issues/pr2-capability-ladders.md`, `.github/issues/pr3-read-only-stage1.md` | IMPLEMENTED | Tracking templates for GitHub issues #168 and #169 |
 
@@ -477,7 +477,8 @@ Recommended order, using ROADMAP owners rather than new public stage numbers:
    split to #169.
 3. **Stop Stage 1 mutation and mixed validation** — issue #169. Move
    BIOS/kernel/GPU policy and tuning plan/apply to S2-M1 through S2-M6;
-   `stage1` becomes read-only profile publication.
+   `stage1` becomes read-only profile publication. Also correct the README
+   Stage 2 header that still claims S2-M1–S2-M7 are implemented.
 4. **Independent GPU module** — S2-M3 visibility plus S3-M3 framework
    execution; package presence is not GPU compute.
 5. **Independent NPU module** — S2-M4 visibility plus S3-M4 execution;
@@ -548,6 +549,11 @@ The high-level README Stage 1 summary now matches ROADMAP: S1-M1 through
 S1-M5 are Implemented as `stage1-probe` / `stage1-profile`, and mixed `stage1`
 is named as Stage 2 migration debt. Remaining README drift:
 
+- Stage 2 command help still claims the planned S2-M1–S2-M7 scope is
+  **implemented**. ROADMAP marks only S2-M3 and S2-M4 **In progress**; S2-M1,
+  S2-M2, and S2-M5 through S2-M7 remain **Planned**. Correcting Lemonade/Digest
+  owner labels does not resolve this false implementation claim. Issue #169
+  must rewrite the README Stage 2 status text to match ROADMAP.
 - Stage 2 command help still documents Lemonade as S2-M6 and Digest as S2-M7.
   ROADMAP owners are S3-M5 (Lemonade) and S3-M4 diagnostics (Digest); S2-M6 is
   approved optimization apply and S2-M7 is the platform validation aggregate.
