@@ -27,9 +27,9 @@ Implement migration plan PR 2: expose GPU/NPU **capability ladders** as structur
 
 ## Workstream B: Schemas and canonical outputs
 
-- [ ] Add `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json`
-- [ ] Add `configs/schemas/s2-m4-npu-runtime-validation.schema.json`
-- [ ] Update `docs/ROADMAP.md` — S2-M3/M4 → **In progress**
+- [x] Add `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json`
+- [x] Add `configs/schemas/s2-m4-npu-runtime-validation.schema.json`
+- [x] Update `docs/ROADMAP.md` — S2-M3/M4 → **In progress**
 
 ## Workstream C: GPU visibility (S2-M3)
 

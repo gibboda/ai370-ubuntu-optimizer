@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai370.local/schemas/s2-m4-npu-runtime-validation-v1.json",
+  "title": "S2-M4 NPU Runtime Validation v1",
+  "description": "Stage 2 NPU visibility assessment. Records ladder progression and runtime/backend visibility; does not prove executed inference.",
+  "type": "object",
+  "required": ["schema", "stage", "milestone", "artifact", "consumed_profile", "status", "checks", "ladder", "notes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"$ref": "#/$defs/schemaIdentity"},
+    "stage": {"const": 2},
+    "milestone": {"const": "S2-M4"},
+    "artifact": {"const": "s2-m4-npu-runtime-validation"},
+    "consumed_profile": {"$ref": "#/$defs/consumedProfile"},
+    "status": {"$ref": "#/$defs/gateStatus"},
+    "checks": {"$ref": "#/$defs/npuChecks"},
+    "ladder": {"$ref": "#/$defs/npuLadder"},
+    "notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "schemaIdentity": {
+      "type": "object",
+      "required": ["name", "version", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "s2-m4-npu-runtime-validation"},
+        "version": {"const": 1},
+        "uri": {"const": "https://ai370.local/schemas/s2-m4-npu-runtime-validation-v1.json"}
+      }
+    },
+    "profileSchemaIdentity": {
+      "type": "object",
+      "required": ["name", "version", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "ai370-system-profile"},
+        "version": {"const": 3},
+        "uri": {"const": "https://ai370.local/schemas/system-profile-v3.json"}
+      }
+    },
+    "fingerprintRef": {
+      "type": "object",
+      "required": ["algorithm", "algorithm_version", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {"const": "sha256"},
+        "algorithm_version": {"const": 1},
+        "value": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "consumedProfile": {
+      "type": "object",
+      "required": ["artifact", "schema", "fingerprint"],
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {"type": ["string", "null"]},
+        "schema": {"$ref": "#/$defs/profileSchemaIdentity"},
+        "fingerprint": {"$ref": "#/$defs/fingerprintRef"}
+      }
+    },
+    "gateStatus": {
+      "enum": ["PASS", "WARN", "FAIL", "UNSUPPORTED", "SKIPPED"]
+    },
+    "npuChecks": {
+      "type": "object",
+      "required": ["module_present", "device_nodes_present", "firmware_ready", "runtime_ready", "backend_ready"],
+      "additionalProperties": false,
+      "properties": {
+        "module_present": {"type": ["boolean", "null"]},
+        "device_nodes_present": {"type": ["boolean", "null"]},
+        "firmware_ready": {"type": ["boolean", "null"]},
+        "runtime_ready": {"type": ["boolean", "null"]},
+        "backend_ready": {"type": ["boolean", "null"]}
+      }
+    },
+    "stepStatus": {
+      "enum": ["satisfied", "not_satisfied", "unknown", "skipped", "unsupported"]
+    },
+    "assessmentState": {
+      "enum": ["AVAILABLE", "READY", "DEGRADED", "UNSUPPORTED", "UNKNOWN"]
+    },
+    "npuLadderStepId": {
+      "enum": [
+        "DETECTED",
+        "DRIVER_READY",
+        "FIRMWARE_READY",
+        "RUNTIME_READY",
+        "BACKEND_READY",
+        "MODEL_READY",
+        "APPLICATION_READY"
+      ]
+    },
+    "ladderStep": {
+      "type": "object",
+      "required": ["id", "status", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "#/$defs/npuLadderStepId"},
+        "status": {"$ref": "#/$defs/stepStatus"},
+        "evidence": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "npuLadder": {
+      "type": "object",
+      "required": ["domain", "current", "assessment", "steps", "validation_claim"],
+      "additionalProperties": false,
+      "properties": {
+        "domain": {"const": "npu"},
+        "current": {"type": ["string", "null"]},
+        "assessment": {"$ref": "#/$defs/assessmentState"},
+        "steps": {
+          "type": "array",
+          "minItems": 7,
+          "items": {"$ref": "#/$defs/ladderStep"}
+        },
+        "validation_claim": {"const": false}
+      }
+    }
+  }
+}

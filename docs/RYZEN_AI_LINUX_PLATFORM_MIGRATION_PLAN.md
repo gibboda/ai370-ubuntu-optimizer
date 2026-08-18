@@ -229,6 +229,8 @@ feature is not treated as implemented unless code exists.
 | `configs/schemas/s1-m3-platform-classification.schema.json` | IMPLEMENTED | S1-M3 contract |
 | `configs/schemas/s1-m4-capability-candidates.schema.json` | IMPLEMENTED | S1-M4 contract |
 | `configs/schemas/s1-m5-system-profile.schema.json` | IMPLEMENTED | Canonical S1-M5 name for the v3 profile contract |
+| `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` | IMPLEMENTED | S2-M3 visibility report contract |
+| `configs/schemas/s2-m4-npu-runtime-validation.schema.json` | IMPLEMENTED | S2-M4 visibility report contract |
 | `configs/profiles/gpu-pci-architectures.json` | IMPLEMENTED | Declarative PCI vendor:device to gfx mapping |
 | `configs/profiles/ai370.env` | IMPLEMENTED | Reference-platform profile |
 | `configs/profiles/generic-ryzen-ai.env` | IMPLEMENTED | Broader Ryzen AI profile |
