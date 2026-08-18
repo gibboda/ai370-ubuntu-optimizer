@@ -534,7 +534,8 @@ firmware                               -> Stage 2 platform BIOS check (stage2-fi
 kernel-amd | baseline-apply            -> Stage 2 kernel validate (stage2-kernel-validate)
 baseline-plan | plan                   -> Stage 1 probe/profile compatibility
 tune                                   -> Stage 2 optimize plan (stage2-optimize-plan)
-accel-validate | gpu | npu             -> Stage 2 GPU/NPU visibility
+accel-validate | gpu                   -> Stage 2 GPU visibility (stage2-gpu-validate)
+npu                                    -> mixed: Stage 2 NPU visibility (210/220) + S3-M6 benchmark (230)
 ai-bench | ai-runtime                  -> Stage 3 runtime benchmark compatibility
 llm-validate                           -> Stage 2 Runtime / legacy Tier 2
 amd-accel-install                      -> Explicit opt-in (used by Stage 2 NPU / Stage 3 image paths)

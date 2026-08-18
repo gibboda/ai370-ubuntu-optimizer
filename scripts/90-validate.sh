@@ -299,7 +299,8 @@ PY
     echo
     echo "## Next steps"
     echo "- Run Stage 2 (runtime + NPU) before Stage 3 (ComfyUI / generative)."
-    echo "- Re-check: ./ai370-optimize.sh stage2-platform-validate  (add --strict as needed; --inventory for the inventory alias)"
+    echo "- Re-check: ./ai370-optimize.sh stage2-platform-validate [--strict]"
+    echo "- Inventory-only re-check: ./ai370-optimize.sh stage2-platform-inventory [--strict]"
   } > "$OUT_MD"
 
   echo "$status" > "$OUT_TXT"

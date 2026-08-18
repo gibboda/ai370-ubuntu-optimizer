@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 #
 # Stage 2: combined CPU / memory / storage runtime tuning plans (Package C merge of 40/50/60).
-# Detection + reviewable recommendations by default (no system-persistent changes).
+# Consumes s1-m5-system-profile.json for CPU/memory identity and consumed_profile.
+# Governor/zram/swap remain live runtime observations.
 # Opt-in runtime apply: ./ai370-optimize.sh stage2-optimize-apply --approve
 # (AI370_APPLY_TUNING=true is the script-level switch used by that command)
 
@@ -20,16 +21,59 @@ ai370_require_runtime_persistence "platform tuning"
 
 main() {
   echo "[INFO] Stage 2 / 40-platform-tuning.sh (CPU + memory + storage)"
-  echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
+  echo "[INFO] Selected profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
+
+  local PROFILE_FILE="$LATEST_DIR/s1-m5-system-profile.json"
+  if [[ ! -f "$PROFILE_FILE" ]]; then
+    echo "[ERROR] Stage 2 optimize plan/apply requires the canonical Stage 1 profile:"
+    echo "[ERROR]   $PROFILE_FILE"
+    echo "[ERROR] Run: ./ai370-optimize.sh stage1"
+    exit 2
+  fi
 
   local cpu_model governor governors target_power mem_total zram_active swap_show storage nvme
-  cpu_model="$(detect_cpu_model)"
+  local platform_id cpu_source mem_source
   governor="$(detect_cpu_current_governor)"
   governors="$(detect_cpu_governors)"
   target_power="balanced"
   [[ "$MODE" == "aggressive" ]] && target_power="performance"
 
-  mem_total="$(detect_memory_total)"
+  # CPU model and memory total come from the consumed Stage 1 profile.
+  # Governor/zram/swap stay live: they are current runtime state, not hardware identity.
+  local identity_json
+  identity_json="$(mktemp "${TMPDIR:-/tmp}/s2-optimize-identity.XXXXXX")"
+  PROJECT_ROOT="$PROJECT_ROOT" PROFILE_FILE="$PROFILE_FILE" \
+  LIVE_CPU="$(detect_cpu_model)" LIVE_MEM="$(detect_memory_total)" \
+  python3 - <<'PY' > "$identity_json"
+import json
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
+import firmware_policy
+
+profile = firmware_policy.load_system_profile(Path(os.environ["PROFILE_FILE"]))
+cpu = firmware_policy.observed_text((profile.get("cpu") or {}).get("model_name"))
+mem_bytes = (profile.get("memory") or {}).get("total_bytes")
+mem = None
+if isinstance(mem_bytes, int) and mem_bytes > 0:
+    gib = mem_bytes / (1024 ** 3)
+    mem = f"{gib:.0f}Gi" if gib >= 1 else f"{mem_bytes}B"
+print(json.dumps({
+    "classified_platform_id": firmware_policy.classified_platform_id(profile),
+    "cpu_model": cpu or os.environ.get("LIVE_CPU") or "",
+    "cpu_source": "s1-m5-system-profile" if cpu else "live",
+    "mem_total": mem or os.environ.get("LIVE_MEM") or "",
+    "mem_source": "s1-m5-system-profile" if mem else "live",
+}))
+PY
+  platform_id="$(jq -r '.classified_platform_id // empty' "$identity_json")"
+  cpu_model="$(jq -r '.cpu_model // empty' "$identity_json")"
+  cpu_source="$(jq -r '.cpu_source // "live"' "$identity_json")"
+  mem_total="$(jq -r '.mem_total // empty' "$identity_json")"
+  mem_source="$(jq -r '.mem_source // "live"' "$identity_json")"
+  rm -f "$identity_json"
   # systemctl is-active prints inactive/failed and exits non-zero; do not append
   # another "inactive" via || echo (that produced "inactive\ninactive").
   zram_active="$(systemctl is-active systemd-zram-setup@zram0.service 2>/dev/null || true)"
@@ -45,8 +89,10 @@ main() {
   {
     echo "# Tier 1 Platform Tuning Plan"
     echo
-    echo "Profile: $PROFILE | Mode: $MODE | Persistence: $PERSISTENCE"
+    echo "Selected CLI profile: $PROFILE | Classified platform_id: ${platform_id:-unknown}"
+    echo "Mode: $MODE | Persistence: $PERSISTENCE"
     echo "Generated: $(ai370_utc_now)"
+    echo "CPU/memory identity from Stage 1 profile (governor/zram/swap are live runtime)."
     echo
     echo "## CPU"
     echo
@@ -133,24 +179,37 @@ CMDS
   PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" \
   TARGET_POWER="$target_power" CPU_MODEL="$cpu_model" GOVERNOR="${governor:-}" \
   MEM_TOTAL="$mem_total" ZRAM_ACTIVE="$zram_active" \
+  CPU_SOURCE="$cpu_source" MEM_SOURCE="$mem_source" \
+  PROJECT_ROOT="$PROJECT_ROOT" PROFILE_FILE="$PROFILE_FILE" \
   python3 - <<'PY' > "$LATEST_DIR/tier1-platform-tuning.json"
-import json, os
-from datetime import datetime, UTC
+import json
+import os
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
+
+sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
+import firmware_policy
+
+profile = firmware_policy.load_system_profile(Path(os.environ["PROFILE_FILE"]))
 print(json.dumps({
   "tier": 1,
   "phase": "platform-tuning",
   "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
   "profile": os.environ.get("PROFILE", "ai370"),
+  "classified_platform_id": firmware_policy.classified_platform_id(profile),
   "mode": os.environ.get("MODE", "safe"),
   "persistence": os.environ.get("PERSISTENCE", "runtime"),
   "cpu": {
     "model": os.environ.get("CPU_MODEL", ""),
     "target_power": os.environ.get("TARGET_POWER", "balanced"),
     "governor": os.environ.get("GOVERNOR", ""),
+    "identity_source": os.environ.get("CPU_SOURCE", "live"),
   },
   "memory": {
     "total": os.environ.get("MEM_TOTAL", ""),
     "zram0": os.environ.get("ZRAM_ACTIVE", ""),
+    "identity_source": os.environ.get("MEM_SOURCE", "live"),
   },
   "storage": {"report": "reports/latest/tier1-storage.md"},
   "compatibility_reports": [
@@ -159,6 +218,7 @@ print(json.dumps({
     "tier1-storage.md",
     "tier1-cpu-runtime-commands.sh",
   ],
+  "consumed_profile": firmware_policy.consumed_profile_block(profile),
 }, indent=2))
 PY
 

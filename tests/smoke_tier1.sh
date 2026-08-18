@@ -127,7 +127,12 @@ data = json.load(open(sys.argv[1]))
 zram = (data.get("memory") or {}).get("zram0", "")
 assert "\n" not in zram, f"zram0 status must be a single token, got {zram!r}"
 assert zram, "zram0 status should not be empty"
+assert "classified_platform_id" in data, "optimize plan must record classified_platform_id"
+consumed = data.get("consumed_profile") or {}
+assert consumed.get("schema", {}).get("version") == 3, consumed
+assert "fingerprint" in consumed, consumed
 print(f"[OK] platform-tuning zram0 status is single-line: {zram!r}")
+print("[OK] platform-tuning recorded consumed Stage 1 profile")
 PY
 echo "[OK] platform-tuning plan artifacts present"
 

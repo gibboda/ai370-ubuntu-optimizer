@@ -189,6 +189,7 @@ class MigrationPlanTests(unittest.TestCase):
             "tests/test_s2_m3_gpu_visibility.py",
             "tests/test_s2_m4_npu_visibility.py",
             "tests/test_s2_m1_firmware.py",
+            "tests/test_s2_optimize_profile.py",
             "tests/smoke_stage2_platform.sh",
         ):
             with self.subTest(path=path):
@@ -198,6 +199,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("tests.test_s2_m3_gpu_visibility", self.plan)
         self.assertIn("tests.test_s2_m4_npu_visibility", self.plan)
         self.assertIn("tests.test_s2_m1_firmware", self.plan)
+        self.assertIn("tests.test_s2_optimize_profile", self.plan)
         self.assertIn("issues/168", self.plan)
         self.assertIn("issues/169", self.plan)
         self.assertIn("target_gpu_arch", self.plan)
@@ -304,9 +306,20 @@ class MigrationPlanTests(unittest.TestCase):
         validate = (ROOT / "scripts/90-validate.sh").read_text(encoding="utf-8")
         self.assertNotIn("stage1 --with-ai-smoke", validate)
         self.assertIn("stage2-platform-validate", validate)
+        self.assertIn("stage2-platform-inventory", validate)
+        self.assertNotIn("--inventory for the inventory alias", validate)
         tuning = (ROOT / "scripts/40-platform-tuning.sh").read_text(encoding="utf-8")
         self.assertNotIn("Stage 1:", tuning)
         self.assertIn("Stage 2 / 40-platform-tuning.sh", tuning)
+        self.assertIn("s1-m5-system-profile.json", tuning)
+        self.assertNotIn(
+            "accel-validate | gpu | npu             -> Stage 2 GPU/NPU visibility",
+            readme,
+        )
+        self.assertIn(
+            "npu                                    -> mixed: Stage 2 NPU visibility (210/220) + S3-M6 benchmark (230)",
+            readme,
+        )
 
 
 if __name__ == "__main__":
