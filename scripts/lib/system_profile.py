@@ -697,6 +697,69 @@ def normalize_facts(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def hardware_from_system_profile(profile: dict[str, Any]) -> dict[str, Any]:
+    """Reconstruct the internal hardware dict from a published v3 system profile."""
+    gpus = profile.get("gpus") or []
+    gpu_devices: list[dict[str, Any]] = []
+    for gpu in gpus:
+        if not isinstance(gpu, dict):
+            continue
+        pci = gpu.get("pci") or {}
+        driver = gpu.get("driver") or {}
+        gpu_devices.append(
+            {
+                "device_name": gpu.get("name"),
+                "name": gpu.get("name"),
+                "slot": pci.get("address"),
+                "address": pci.get("address"),
+                "vendor_id": pci.get("vendor_id"),
+                "device_id": pci.get("device_id"),
+                "subsystem_vendor_id": pci.get("subsystem_vendor_id"),
+                "subsystem_device_id": pci.get("subsystem_device_id"),
+                "bound_driver": driver.get("name"),
+            }
+        )
+
+    npu_devices: list[dict[str, Any]] = []
+    npu_present = False
+    npu_module = ""
+    npu_nodes: list[str] = []
+    for accel in profile.get("accelerators") or []:
+        if not isinstance(accel, dict) or accel.get("kind") != "npu":
+            continue
+        npu_present = True
+        driver = accel.get("driver") or {}
+        npu_module = str(driver.get("name") or "")
+        npu_nodes = list(accel.get("device_nodes") or [])
+        pci = accel.get("pci") or {}
+        npu_devices.append(
+            {
+                "device_name": accel.get("name"),
+                "vendor_id": pci.get("vendor_id"),
+                "device_id": pci.get("device_id"),
+                "bound_driver": driver.get("name"),
+            }
+        )
+
+    gpu_arch = gpus[0].get("architecture") if gpus else None
+    amdgpu_loaded = any(device.get("bound_driver") == "amdgpu" for device in gpu_devices)
+    return {
+        "gpu": {
+            "text": "\n".join(filter(None, (gpu.get("name") for gpu in gpus if isinstance(gpu, dict)))),
+            "arch": gpu_arch,
+            "devices": gpu_devices,
+            "amdgpu_module": "loaded" if amdgpu_loaded else "",
+        },
+        "npu": {
+            "present": npu_present,
+            "module_text": npu_module,
+            "device_text": "\n".join(npu_nodes),
+            "devices": npu_devices,
+            "device_nodes": npu_nodes,
+        },
+    }
+
+
 def hardware_from_normalized(facts: dict[str, Any]) -> dict[str, Any]:
     """Reconstruct the internal hardware dict from S1-M2 normalized facts."""
     system = facts.get("system", {})

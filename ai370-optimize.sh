@@ -46,6 +46,7 @@ Usage (Roadmap stages - recommended):
        [--with-lemonade]
   ./ai370-optimize.sh stage2-npu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
        [--bench] [--with-lemonade]
+  ./ai370-optimize.sh stage2-gpu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage2-rag [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh stage2-lemonade [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage2-digest [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
@@ -82,6 +83,7 @@ Stage 1 (Package C + E):
 Stage 2 core (default stage2 / Stage 3 gate path):
   Runtime: 100, 110, 120, 130, 140, 145, 150
   NPU:     205, 200, 210, 220, 230, 245, 240
+  GPU:     s2-m3-validate-gpu-stack (stage2-gpu-validate; compat 70-validate-gpu-stack)
   (145 writes tier2-validation.json; 245 reuses 230 NPU results by default)
 Optional packs (not Stage 3 gate inputs):
   --with-lemonade / stage2-lemonade  → 170, 160, 165 (S2-M6)
@@ -624,6 +626,12 @@ case "$CMD" in
       run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
     fi
     run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
+    ;;
+
+  stage2-gpu-validate|gpu-validate)
+    echo "[INFO] Stage 2 GPU visibility (S2-M3)"
+    run_script "scripts/s2-m3-validate-gpu-stack.sh" "$OFFLINE"
+    write_report_index
     ;;
 
   stage2-lemonade)

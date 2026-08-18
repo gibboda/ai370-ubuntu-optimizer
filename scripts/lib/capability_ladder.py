@@ -363,6 +363,46 @@ def npu_ladder_from_visibility(
     return build_ladder_document("npu", merged)
 
 
+def hardware_from_live_gpu_checks(checks: dict[str, Any]) -> dict[str, Any]:
+    """Build a minimal hardware dict from live Stage 2 GPU visibility probes."""
+    gpu_text = str(checks.get("gpu_text") or "")
+    gpu_arch = checks.get("gpu_arch")
+    amdgpu_loaded = str(checks.get("amdgpu", "")).lower() == "loaded"
+    devices: list[dict[str, Any]] = []
+    if gpu_text or _known(gpu_arch):
+        vendor_id = "1002" if amdgpu_loaded or "1002" in gpu_text.lower() or "amd" in gpu_text.lower() else None
+        if vendor_id:
+            devices.append({"vendor_id": vendor_id, "device_name": gpu_text.splitlines()[0] if gpu_text else None})
+        elif gpu_text:
+            devices.append({"device_name": gpu_text.splitlines()[0]})
+    return {
+        "gpu": {
+            "text": gpu_text,
+            "arch": gpu_arch,
+            "devices": devices,
+            "amdgpu_module": "loaded" if amdgpu_loaded else "",
+        },
+        "npu": {
+            "present": False,
+            "module_text": "",
+            "device_text": "",
+            "devices": [],
+            "device_nodes": [],
+        },
+    }
+
+
+def target_gpu_arch_from_profile(profile: dict[str, Any] | None) -> str | None:
+    """Return the reference GPU architecture from a consumed system profile."""
+    if not profile:
+        return None
+    gpus = profile.get("gpus") or []
+    if not gpus:
+        return None
+    architecture = gpus[0].get("architecture")
+    return str(architecture) if _known(architecture) else None
+
+
 def consumed_profile_from_system_profile(
     profile: dict[str, Any] | None,
     *,
