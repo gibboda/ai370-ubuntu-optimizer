@@ -84,6 +84,7 @@ This is the canonical `90-validate.sh` split. Do not start it in #168.
 
 - [ ] Rewrite README Stage 1 section (probe + profile only)
 - [ ] Add Stage 2 platform command table to README
+- [ ] Correct README Stage 2 header that claims S2-M1–S2-M7 scope is implemented; match ROADMAP (S2-M3/M4 In progress, S2-M1/M2/M5–M7 Planned)
 - [ ] Correct README Lemonade/Digest owners (S3-M5 / S3-M4 diagnostics, not S2-M6/S2-M7)
 - [ ] Update ROADMAP milestone status for S2-M1/M2/M5/M7 only when exit evidence exists
 - [ ] Mark migration plan step 3 done
@@ -98,6 +99,7 @@ This is the canonical `90-validate.sh` split. Do not start it in #168.
 - [ ] `tier1-validation.json` compat shim preserves `require_tier123_pass`
 - [ ] Portable tests pass on generic CI hardware
 - [ ] README and ROADMAP agree Stage 1 is read-only
+- [ ] README does not label Planned Stage 2 milestones as implemented
 - [ ] PR title passes `bash scripts/validate-pr-title.sh`
 
 ## Non-goals

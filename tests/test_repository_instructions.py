@@ -191,6 +191,26 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("issues/169", self.plan)
         self.assertIn("target_gpu_arch", self.plan)
 
+    def test_migration_plan_retains_readme_stage2_status_mismatch(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        issue169 = (ROOT / ".github/issues/pr3-read-only-stage1.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("scope is **implemented** (S2-M1–S2-M7)", readme)
+        self.assertIn(
+            "still claims the planned S2-M1–S2-M7 scope is",
+            self.plan,
+        )
+        self.assertIn("false implementation claim", self.plan)
+        self.assertIn(
+            "claims S2-M1–S2-M7 scope is implemented",
+            issue169,
+        )
+        self.assertIn(
+            "does not label Planned Stage 2 milestones as implemented",
+            issue169,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
