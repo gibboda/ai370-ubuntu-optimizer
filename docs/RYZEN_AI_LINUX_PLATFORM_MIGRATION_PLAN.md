@@ -42,7 +42,7 @@ documentation matches implementation, and the repository functions as the
 broader platform.
 
 Current CLI entry point: `./ai370-optimize.sh`.
-Current version at plan time: `0.20.0`.
+Current version at plan time: `0.21.0`.
 
 ## Terminology
 
@@ -374,7 +374,7 @@ abbreviated; see the assumption table for the full class.
 | `scripts/lib/common.sh` | Shared shell helpers | Reports dir | `ai370_*` names | Shared infrastructure | KEEP; document consumer milestone per function | ShellCheck; smoke syntax | Low |
 | `scripts/lib/hardware-detect.sh` | Probe helpers and raw collector | `lscpu`, `lspci`, sysfs, DMI | Ubuntu 26.04 defaults; GPU arch from PCI map | Detection modules | KEEP PCI lookup; SPLIT facts from policy | Probe fixtures | High |
 | `scripts/lib/system_profile.py` | Normalize, classify, publish profile | Raw inventory, schemas, PCI map | Schema name `ai370-*`; declarative AI370 match | S1-M2 through S1-M5 library | KEEP as shared library behind canonical scripts | `test_system_profile.py` plus owner tests | High |
-| `scripts/lib/capability_ladder.py` | GPU/NPU ladder states and visibility report builders | S1-M5 profile; Stage 2 visibility checks | Candidates are not validation | S2-M3 / S2-M4 library | KEEP; GPU publisher landed in `#176`; NPU publisher CLI remains issue #168 | `test_capability_ladder.py`, `test_s2_visibility_schemas.py`, `test_s2_m3_gpu_visibility.py` | Medium |
+| `scripts/lib/capability_ladder.py` | GPU/NPU ladder states and visibility report builders | S1-M5 profile; Stage 2 visibility checks | Candidates are not validation | S2-M3 / S2-M4 library | KEEP; GPU publisher landed in `#176` / `0.20.0`; NPU publisher landed in `#180` / `0.21.0` | `test_capability_ladder.py`, `test_s2_visibility_schemas.py`, `test_s2_m3_gpu_visibility.py`, `test_s2_m4_npu_visibility.py` | Medium |
 | `configs/schemas/system-profile.schema.json` | v3 profile contract | None | Schema id still AI370-named | S1-M5 | KEEP; version before rename | Schema fixtures | High |
 | `configs/schemas/system-profile-v1.schema.json`, `...-v2.schema.json` | Migration validation | v3 publisher | Historical | S1-M5 migration | KEEP until consumers reject v1 and finish v2 | Existing schema tests | Medium |
 | `configs/profiles/ai370.env` | Reference profile | BIOS/GPU/NPU expected values | REFERENCE_PLATFORM_FACT | S1-M3 | KEEP | Classification tests | Low |
@@ -465,13 +465,14 @@ The first migration PR from architecture Task 24 landed as
 Later PRs must stay small, keep detection read-only, and add or preserve
 regression tests before replacing working code.
 
-Tracked GitHub issues cover only the next two implementation PRs. Do not file
-issues 4–11 until the prior boundary has tests.
+Tracked GitHub issues: #168 remaining work is none after `#180` / `0.21.0`;
+#169 is the next implementation PR. Do not file issues 4–11 until the prior
+boundary has tests.
 
 | Sequence | Status | Tracked issue |
 | --- | --- | --- |
 | 1 Detection facts | **done** (`#166`, `0.17.0`) | None remaining |
-| 2 Capability assessment | **done** (library `#170`, schemas `#173`, GPU publisher `#176`, NPU publisher S2-M4) | [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) |
+| 2 Capability assessment | **done** (library `#170`, schemas `#173`, GPU publisher `#176` / `0.20.0`, NPU publisher `#180` / `0.21.0`) | None remaining; [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) is complete |
 | 3 Stop Stage 1 mutation | **planned**; GPU command `stage2-gpu-validate` and NPU visibility-only `stage2-npu-validate` already exist | [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) |
 | 4–11 later boundaries | **planned** | Not filed |
 
@@ -483,9 +484,9 @@ Recommended order, using ROADMAP owners rather than new public stage numbers:
    `capability_ladder.py`, S2-M3/S2-M4 schemas, the S2-M3 GPU publisher
    (`s2-m3-validate-gpu-stack.sh`, `stage2-gpu-validate`, `#176` / `0.20.0`),
    and the S2-M4 NPU visibility-only publisher (`s2-m4-validate-npu-stack.sh`,
-   visibility-only `stage2-npu-validate`) exist; ROADMAP marks S2-M3/S2-M4
-   In progress until remaining exit evidence exists. Defer the `90-validate.sh`
-   split to #169.
+   visibility-only `stage2-npu-validate`, `#180` / `0.21.0`) exist; ROADMAP
+   marks S2-M3/S2-M4 In progress until remaining exit evidence exists. Defer
+   the `90-validate.sh` split to #169.
 3. **Stop Stage 1 mutation and mixed validation** — issue #169. Move
    BIOS/kernel/GPU policy and tuning plan/apply to S2-M1 through S2-M6;
    `stage1` becomes read-only profile publication. `stage2-gpu-validate`
@@ -573,10 +574,10 @@ is named as Stage 2 migration debt. Remaining README drift:
 - `stage2-gpu-validate` exists and writes `s2-m3-gpu-runtime-visibility.json`
   (`#176` / `0.20.0`). Do not treat the GPU command as missing.
 - `stage2-npu-validate` is visibility-only by default and writes
-  `s2-m4-npu-runtime-validation.json`. Script 240 always refreshes
-  `tier3-validation.json` on this command. Pass `--bench` for the mixed
-  210/220/230/245 compatibility path until S3-M6. Do not treat the command
-  name as missing.
+  `s2-m4-npu-runtime-validation.json` (`#180` / `0.21.0`). Script 240 always
+  refreshes `tier3-validation.json` on this command. Pass `--bench` for the
+  mixed 210/220/230/245 compatibility path until S3-M6. Do not treat the
+  command name as missing.
 - Canonical S2-M3/S2-M4 are **In progress**, not Implemented. S2-M3 still
   lacks separate missing-driver/Vulkan/ROCm layer fixtures, and mixed
   `stage1` still invokes GPU validation. S2-M4 still shares a mixed
@@ -603,7 +604,8 @@ This plan does not authorize later PRs to:
 - mark any ROADMAP milestone Implemented without canonical outputs, tests, and
   docs
 
-Issue #168 publishers (S2-M3 GPU and S2-M4 NPU visibility) have landed.
+Issue #168 publishers (S2-M3 GPU in `#176` / `0.20.0` and S2-M4 NPU
+visibility in `#180` / `0.21.0`) have landed; remaining #168 work is none.
 Issue #169 may rewire `stage1` to the read-only profile pipeline and may
 invoke the existing `stage2-gpu-validate` and visibility-only
 `stage2-npu-validate` commands. Neither issue upgrades a ROADMAP row to
