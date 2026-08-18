@@ -44,6 +44,23 @@ An existing Tier output, a compatibility wrapper, an ad hoc smoke run, or a
 similarly shaped legacy report does not satisfy that rule. Until all three
 conditions are met, the target milestone remains **Planned** or **In progress**.
 
+### Capability ladder semantics
+
+Stage 2 visibility uses structured GPU/NPU **ladder progression** implemented in
+`scripts/lib/capability_ladder.py`. These are not interchangeable with other
+vocabularies:
+
+| Vocabulary | Owner | Meaning |
+| --- | --- | --- |
+| **Capability candidate** | S1-M4 | A machine might support a domain; `validation_claim` is always false. |
+| **Ladder step** | S2-M3 / S2-M4 visibility | Ordered readiness (`DETECTED` … `APPLICATION_READY`) with per-step status. |
+| **Assessment** | S2 visibility reports | Aggregate view: `AVAILABLE`, `READY`, `DEGRADED`, `UNSUPPORTED`, `UNKNOWN`. |
+| **Runtime validation** | S3-M3 / S3-M4 | Execution proof on the accelerator that actually ran the workload. |
+
+A PCI device or package inventory satisfies at most early ladder steps. Later
+steps remain `unknown` until the owning Stage 2 script performs the visibility
+check. `APPLICATION_READY` is never inferred from package presence alone.
+
 ## Canonical naming and ownership system
 
 ### Identifiers
