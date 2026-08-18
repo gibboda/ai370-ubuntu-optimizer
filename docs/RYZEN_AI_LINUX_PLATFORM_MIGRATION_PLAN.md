@@ -226,7 +226,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/lib/capability_ladder.py` | IMPLEMENTED | GPU/NPU ladder library plus S2-M3/S2-M4 report builders |
 | `scripts/s2-m3-validate-gpu-stack.sh` | IMPLEMENTED | Canonical S2-M3 GPU visibility collector; consumes S1-M5 profile when present |
 | `scripts/s2-m3-publish-gpu-visibility.py` | IMPLEMENTED | Canonical S2-M3 atomic publisher and schema validation |
-| `scripts/s2-m4-validate-npu-stack.sh` | IMPLEMENTED | Canonical S2-M4 NPU visibility collector; no `230-benchmark-npu.sh`; consumes S1-M5 profile when present |
+| `scripts/s2-m4-validate-npu-stack.sh` | IMPLEMENTED | Canonical S2-M4 NPU visibility collector; no `230-benchmark-npu.sh`; requires S1-M5 profile |
 | `scripts/s2-m4-publish-npu-visibility.py` | IMPLEMENTED | Canonical S2-M4 atomic publisher and schema validation |
 | `scripts/10-detect-hardware.sh` | DEPRECATED | Compatibility wrapper; also publishes legacy `tier1-*` artifacts and `system-profile.json` |
 | `scripts/75-detect-npu.sh` | DEPRECATED | Forwards to S1-M1 probe |
@@ -573,8 +573,9 @@ is named as Stage 2 migration debt. Remaining README drift:
 - `stage2-gpu-validate` exists and writes `s2-m3-gpu-runtime-visibility.json`
   (`#176` / `0.20.0`). Do not treat the GPU command as missing.
 - `stage2-npu-validate` is visibility-only by default and writes
-  `s2-m4-npu-runtime-validation.json`. Pass `--bench` for the mixed
-  210/220/230/240 compatibility path until S3-M6. Do not treat the command
+  `s2-m4-npu-runtime-validation.json`. Script 240 always refreshes
+  `tier3-validation.json` on this command. Pass `--bench` for the mixed
+  210/220/230/245 compatibility path until S3-M6. Do not treat the command
   name as missing.
 - Canonical S2-M3/S2-M4 are **In progress**, not Implemented. S2-M3 still
   lacks separate missing-driver/Vulkan/ROCm layer fixtures, and mixed

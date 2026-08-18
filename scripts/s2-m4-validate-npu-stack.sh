@@ -43,6 +43,14 @@ main() {
     exit 2
   fi
 
+  if [[ ! -f "$PROFILE_FILE" ]]; then
+    echo "[ERROR] Stage 1 profile missing: $PROFILE_FILE"
+    echo "[ERROR] Stage 2 NPU visibility requires the canonical Stage 1 profile (schema version + fingerprint)."
+    echo "[ERROR] Run: ./ai370-optimize.sh stage1-probe && ./ai370-optimize.sh stage1-profile"
+    exit 2
+  fi
+  echo "[INFO] Consuming Stage 1 profile: $PROFILE_FILE"
+
   local module_present="false"
   local device_nodes_present="false"
   local device_nodes=""
@@ -127,14 +135,10 @@ payload = {
 checks_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 
-  local publish_args=(--checks "$CHECKS_FILE" --output "$VISIBILITY_FILE")
-  if [[ -f "$PROFILE_FILE" ]]; then
-    publish_args+=(--profile "$PROFILE_FILE")
-    echo "[INFO] Consuming Stage 1 profile: $PROFILE_FILE"
-  else
-    echo "[WARN] Stage 1 profile missing; publishing visibility without consumed fingerprint"
-  fi
-  python3 "$PROJECT_ROOT/scripts/s2-m4-publish-npu-visibility.py" "${publish_args[@]}"
+  python3 "$PROJECT_ROOT/scripts/s2-m4-publish-npu-visibility.py" \
+    --checks "$CHECKS_FILE" \
+    --output "$VISIBILITY_FILE" \
+    --profile "$PROFILE_FILE"
 
   local exit_status=0
   exit_status="$(python3 - "$VISIBILITY_FILE" <<'PY'

@@ -33,6 +33,11 @@ Input mapping (Stage 1 normalized hardware dict)::
     NPU DETECTED       — ``npu.present is True`` or XDNA accelerator device observed.
     NPU DRIVER_READY   — NPU module text contains ``amdxdna`` or accelerator bound driver.
 
+Live Stage 2 NPU visibility (when ``module_present`` / ``device_nodes_present``
+are booleans) overlays DETECTED and DRIVER_READY without discarding Stage 1
+identity. Profile identity with no live module or nodes is ``not_satisfied``,
+not ``unsupported``.
+
 Input mapping (Stage 2 visibility checks dict) extends probe-derived steps:
 
     GPU VULKAN_READY   — ``checks["vulkan"] == "visible"``.
@@ -328,14 +333,65 @@ def npu_ladder_from_hardware(hardware: dict[str, Any]) -> dict[str, Any]:
     return build_ladder_document("npu", steps)
 
 
+def _live_npu_visibility_booleans(checks: dict[str, Any]) -> tuple[bool, bool] | None:
+    """Return live module/device-node booleans when either check is observed."""
+    module_present = checks.get("module_present")
+    device_nodes_present = checks.get("device_nodes_present")
+    if not isinstance(module_present, bool) and not isinstance(device_nodes_present, bool):
+        return None
+    return module_present is True, device_nodes_present is True
+
+
 def npu_ladder_from_visibility(
     hardware: dict[str, Any],
     checks: dict[str, Any],
 ) -> dict[str, Any]:
-    """Merge Stage 1 hardware facts with Stage 2 NPU visibility checks."""
+    """Merge Stage 1 hardware identity with Stage 2 NPU visibility checks.
+
+    Hardware identity (fingerprint consumers) stays on the consumed profile.
+    Live ``module_present`` / ``device_nodes_present`` booleans overlay DETECTED
+    and DRIVER_READY. Omitted live keys keep the hardware-derived steps so unit
+    tests can assess firmware/runtime/backend without fabricating probes.
+    """
     document = npu_ladder_from_hardware(hardware)
     steps = {step["id"]: step for step in document["steps"]}
-    if not _npu_present(hardware)[0]:
+    identity_present = _npu_present(hardware)[0]
+    live = _live_npu_visibility_booleans(checks)
+
+    if live is not None:
+        module_present, device_nodes_present = live
+        live_detected = module_present or device_nodes_present
+        if live_detected:
+            detected_evidence: list[str] = []
+            if module_present:
+                detected_evidence.append("live npu module")
+            if device_nodes_present:
+                detected_evidence.append("live npu device nodes")
+            steps["DETECTED"]["status"] = "satisfied"
+            steps["DETECTED"]["evidence"] = detected_evidence
+            if module_present:
+                steps["DRIVER_READY"]["status"] = "satisfied"
+                steps["DRIVER_READY"]["evidence"] = ["live amdxdna module"]
+            else:
+                steps["DRIVER_READY"]["status"] = "not_satisfied"
+                steps["DRIVER_READY"]["evidence"] = []
+            for step_id in (
+                "FIRMWARE_READY",
+                "RUNTIME_READY",
+                "BACKEND_READY",
+                "MODEL_READY",
+                "APPLICATION_READY",
+            ):
+                if steps[step_id]["status"] == "skipped":
+                    steps[step_id]["status"] = "unknown"
+        elif identity_present:
+            steps["DETECTED"]["status"] = "not_satisfied"
+            steps["DETECTED"]["evidence"] = ["profile identity without live visibility"]
+            steps["DRIVER_READY"]["status"] = "not_satisfied"
+            steps["DRIVER_READY"]["evidence"] = []
+        else:
+            return document
+    elif not identity_present:
         return document
 
     firmware_ready = checks.get("firmware_ready") is True
@@ -503,17 +559,17 @@ def normalize_gpu_checks(checks: dict[str, Any], hardware: dict[str, Any]) -> di
 
 
 def normalize_npu_checks(checks: dict[str, Any], hardware: dict[str, Any]) -> dict[str, Any]:
-    """Normalize NPU visibility checks for the S2-M4 report contract."""
-    npu = hardware.get("npu") or {}
+    """Normalize NPU visibility checks for the S2-M4 report contract.
+
+    ``module_present`` and ``device_nodes_present`` stay live observations or
+    null. Do not copy Stage 1 hardware identity into those fields.
+    """
+    del hardware
     module_present = checks.get("module_present")
-    if module_present is None:
-        module_present = "amdxdna" in str(npu.get("module_text") or "").lower()
     device_nodes_present = checks.get("device_nodes_present")
-    if device_nodes_present is None:
-        device_nodes_present = bool(npu.get("device_nodes") or npu.get("device_text"))
     return {
-        "module_present": module_present if module_present is not None else None,
-        "device_nodes_present": device_nodes_present if device_nodes_present is not None else None,
+        "module_present": module_present if isinstance(module_present, bool) else None,
+        "device_nodes_present": device_nodes_present if isinstance(device_nodes_present, bool) else None,
         "firmware_ready": checks.get("firmware_ready"),
         "runtime_ready": checks.get("runtime_ready"),
         "backend_ready": checks.get("backend_ready"),

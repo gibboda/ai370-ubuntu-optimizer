@@ -153,6 +153,59 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
         self.assertTrue(hardware["npu"]["present"])
         self.assertEqual(hardware["npu"]["devices"][0]["bound_driver"], "amdxdna")
 
+    def test_normalize_npu_checks_does_not_backfill_from_hardware(self) -> None:
+        hardware = hardware_from_fixture("observed-ai370.json")
+        checks = capability_ladder.normalize_npu_checks(
+            {"firmware_ready": True, "runtime_ready": True, "backend_ready": True},
+            hardware,
+        )
+        self.assertIsNone(checks["module_present"])
+        self.assertIsNone(checks["device_nodes_present"])
+
+    def test_profile_identity_with_live_absent_keeps_fingerprint(self) -> None:
+        profile = json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+        checks = {
+            "module_present": False,
+            "device_nodes_present": False,
+            "firmware_ready": False,
+            "runtime_ready": False,
+            "backend_ready": False,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            report = self.publish_cli(checks, PROFILE_FIXTURE, Path(directory) / "report.json")
+        by_id = {step["id"]: step for step in report["ladder"]["steps"]}
+        self.assertEqual(report["consumed_profile"]["fingerprint"]["value"], profile["fingerprint"]["value"])
+        self.assertFalse(report["checks"]["module_present"])
+        self.assertFalse(report["checks"]["device_nodes_present"])
+        self.assertEqual(by_id["DETECTED"]["status"], "not_satisfied")
+        self.assertEqual(by_id["DRIVER_READY"]["status"], "not_satisfied")
+        self.assertNotEqual(report["ladder"]["assessment"], "UNSUPPORTED")
+
+    def test_live_visibility_without_profile_identity_detects(self) -> None:
+        hardware = {
+            "gpu": {"text": "", "arch": None, "devices": [], "amdgpu_module": ""},
+            "npu": {
+                "present": False,
+                "module_text": "",
+                "device_text": "",
+                "devices": [],
+                "device_nodes": [],
+            },
+        }
+        checks = {
+            "module_present": True,
+            "device_nodes_present": True,
+            "firmware_ready": False,
+            "runtime_ready": False,
+            "backend_ready": False,
+        }
+        document = capability_ladder.npu_ladder_from_visibility(hardware, checks)
+        by_id = {step["id"]: step for step in document["steps"]}
+        self.assertEqual(by_id["DETECTED"]["status"], "satisfied")
+        self.assertEqual(by_id["DRIVER_READY"]["status"], "satisfied")
+        self.assertEqual(by_id["FIRMWARE_READY"]["status"], "not_satisfied")
+        self.assertNotEqual(document["assessment"], "UNSUPPORTED")
+
     def test_live_npu_checks_without_profile_detect_module(self) -> None:
         checks = {
             "module_present": True,
@@ -177,6 +230,13 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
         check_210 = CHECK_210.read_text(encoding="utf-8")
         self.assertIn("skipped-visibility-only", check_210)
         self.assertIn("VISIBILITY_ONLY", check_210)
+
+    def test_collector_requires_stage1_profile(self) -> None:
+        source = COLLECTOR.read_text(encoding="utf-8")
+        self.assertIn("Stage 1 profile missing", source)
+        self.assertIn("stage1-probe && ./ai370-optimize.sh stage1-profile", source)
+        self.assertNotIn("publishing visibility without consumed fingerprint", source)
+        self.assertIn('--profile "$PROFILE_FILE"', source)
 
 
 if __name__ == "__main__":

@@ -157,6 +157,9 @@ print("[OK] tier3-validation.json has status")
 PY
 
 # 5b. S2-M4 visibility-only NPU publisher (no 230 / xrt-smi validate)
+# Canonical Stage 1 profile is required before publishing.
+"$PROJECT_ROOT/ai370-optimize.sh" stage1-probe
+"$PROJECT_ROOT/ai370-optimize.sh" stage1-profile
 bash "$PROJECT_ROOT/scripts/s2-m4-validate-npu-stack.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime true
 if [[ ! -f "$LATEST_DIR/s2-m4-npu-runtime-validation.json" ]]; then
   echo "[FAIL] missing artifact: s2-m4-npu-runtime-validation.json (S2-M4)"
@@ -181,6 +184,10 @@ system_profile.validate_document(report, capability_ladder.S2_M4_SCHEMA, "S2-M4"
 assert report.get("milestone") == "S2-M4"
 assert report["ladder"]["validation_claim"] is False
 assert report["ladder"]["current"] != "APPLICATION_READY"
+consumed = report["consumed_profile"]
+assert consumed["artifact"] == "s1-m5-system-profile.json"
+assert consumed["schema"]["version"] == 3
+assert consumed["fingerprint"]["algorithm"] == "sha256"
 print("[OK] s2-m4-npu-runtime-validation.json validates against schema")
 PY
 python3 - "$LATEST_DIR/npu-capabilities.json" <<'PY'

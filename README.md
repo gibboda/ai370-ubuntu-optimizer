@@ -128,8 +128,8 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   Current scripts exist as partial compatibility implementations (`stage2`,
   `stage2-runtime`, `stage2-npu`; legacy `tier2` / `tier3`).
   `stage2-npu-validate` is visibility-only by default (writes
-  `s2-m4-npu-runtime-validation.json`); pass `--bench` for the mixed
-  230/245/240 compatibility path until S3-M6.
+  `s2-m4-npu-runtime-validation.json` and refreshes `tier3-validation.json`);
+  pass `--bench` for the mixed 230/245 compatibility path until S3-M6.
   NPU PASS requires profiled AMD EP execution (`scripts/lib/npu_ep_verify.py`).
   Optional paths are not Stage 3 gates. See `docs/ROADMAP.md`.
 - Stage 3: **Planned** in ROADMAP. Current runtime/benchmark scripts exist as
@@ -378,8 +378,10 @@ S2-M4 does **not** run `scripts/230-benchmark-npu.sh` and does not claim
 executed inference. `validation_claim` in the ladder report is always `false`.
 
 **Compatibility mixed path (until S3-M6):** `stage2-npu` and
-`stage2-npu-validate --bench` still run 205/210/220/230/245/240, including
-profiled EP verification (`scripts/lib/npu_ep_verify.py`).
+`stage2-npu-validate --bench` still run 205/210/220/230/245, including
+profiled EP verification (`scripts/lib/npu_ep_verify.py`). Default
+`stage2-npu-validate` always runs `scripts/240-write-tier3-validation.sh`
+so the Stage 3 gate artifact exists without `--bench`.
 
 **Commands:**
 
@@ -401,9 +403,9 @@ install when `--accept-amd-acceleration-risk` is set and packages are staged und
 **Acceptance Criteria:**
 
 - Visibility-only validate writes schema-valid `s2-m4-npu-runtime-validation.json`
+- Default `stage2-npu-validate` also refreshes `tier3-validation.json`
 - ONNX Runtime NPU-capable providers may be visible without proving inference
-- Mixed `--bench` / `stage2-npu` still produces NPU benchmark and
-  `tier3-validation.json` reports
+- Mixed `--bench` / `stage2-npu` still produces NPU benchmark reports
 
 **Important:** Stage 2 NPU **execution** validation remains part of the Stage 3
 image-generation gate via the mixed `stage2-npu` / `--bench` path until S3-M6.

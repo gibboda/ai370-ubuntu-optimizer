@@ -227,9 +227,11 @@ class MigrationPlanTests(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("stage2-npu-validate is visibility-only (S2-M4)", orchestrator)
         self.assertIn("s2-m4-validate-npu-stack", orchestrator)
+        self.assertIn("always refreshes tier3-validation.json", orchestrator)
         self.assertIn("s2-m4-npu-runtime-validation.json", readme)
         self.assertIn("visibility-only", readme.casefold())
         self.assertIn("stage2-npu-validate", readme)
+        self.assertIn("tier3-validation.json", readme)
 
     def test_migration_plan_retains_readme_stage2_status_mismatch(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")

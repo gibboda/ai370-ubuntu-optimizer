@@ -44,7 +44,7 @@ Or from repo root after making executable:
 - Manifest parse + chat/coding/embedding categories
 - `155` model layout staging (no downloads) + `150` offline storage validate
 - `145` tier2 + `240` tier3 aggregators
-- `s2-m4-validate-npu-stack.sh` visibility-only publisher (no 230)
+- `stage1-probe` + `stage1-profile` then `s2-m4-validate-npu-stack.sh` visibility-only publisher (no 230)
 - Structure checks for gate JSON (`tier2-validation`, `tier3-validation`, offline storage)
 - Orchestrator help mentions `stage1-inventory` and `--with-lemonade`
 

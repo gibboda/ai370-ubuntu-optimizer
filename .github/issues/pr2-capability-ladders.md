@@ -50,7 +50,7 @@ Landed in `#176` / `0.20.0`. Do not re-implement.
 
 ## Workstream D: NPU visibility (S2-M4, visibility only)
 
-Landed as the visibility-only NPU publisher. `stage2-npu-validate` defaults to S2-M4; `--bench` keeps the mixed 230/245/240 compatibility path until S3-M6.
+Landed as the visibility-only NPU publisher. `stage2-npu-validate` defaults to S2-M4 and always refreshes `tier3-validation.json`; `--bench` keeps the mixed 230/245 compatibility path until S3-M6.
 
 - [x] Split visibility vs execution in `scripts/210-check-ryzen-ai-software.sh`
 - [x] Add `scripts/s2-m4-validate-npu-stack.sh` (no `230-benchmark-npu.sh`)

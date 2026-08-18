@@ -83,7 +83,8 @@ Stage 1 (Package C + E):
 Stage 2 core (default stage2 / Stage 3 gate path):
   Runtime: 100, 110, 120, 130, 140, 145, 150
   NPU:     s2-m4-validate-npu-stack (stage2-npu-validate visibility-only; compat 205/210/220)
-           mixed 230/245/240 remaining on stage2-npu and stage2-npu-validate --bench
+           mixed 230/245 remaining on stage2-npu and stage2-npu-validate --bench
+           240 always refreshes tier3-validation.json on stage2-npu-validate
   GPU:     s2-m3-validate-gpu-stack (stage2-gpu-validate; compat 70-validate-gpu-stack)
   (145 writes tier2-validation.json; 245 reuses 230 NPU results by default)
 Optional packs (not Stage 3 gate inputs):
@@ -106,7 +107,8 @@ Notes:
   stage2-validate is a cheap gate refresh by default; pass --bench for LLM smoke
     and NPU MatMul comparison re-runs (140 / 230 / 245).
   stage2-npu-validate is visibility-only (S2-M4) by default; pass --bench for the
-    mixed 210-validate / 230 / 245 / 240 compatibility path until S3-M6.
+    mixed 210-validate / 230 / 245 compatibility path until S3-M6. Script 240
+    always refreshes tier3-validation.json on this command.
   --offline affects Stage 1 (parts), Stage 2 runtime/NPU, and amd-accel-install.
   --accept-amd-acceleration-risk is required for amd-accel-install, full-ai-install,
     full-stack, and for stage2-npu / stage2 to install staged XRT/Ryzen AI packages.
@@ -620,7 +622,7 @@ case "$CMD" in
     echo "[INFO] Stage 2 NPU visibility (S2-M4); writes s2-m4-npu-runtime-validation.json"
     run_script "scripts/s2-m4-validate-npu-stack.sh" "$OFFLINE"
     if [[ "$BENCH" == "true" ]]; then
-      echo "[INFO] Compatibility mixed NPU path (210 execution + 230/245/240) until S3-M6"
+      echo "[INFO] Compatibility mixed NPU path (210 execution + 230/245) until S3-M6"
       run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
       run_script "scripts/220-check-vitis-ai-ep.sh" "$OFFLINE"
       run_script "scripts/230-benchmark-npu.sh" "$OFFLINE"
@@ -628,13 +630,13 @@ case "$CMD" in
       if [[ "$WITH_LEMONADE" == "true" ]]; then
         run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
       fi
-      run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     else
       if [[ "$WITH_LEMONADE" == "true" ]]; then
         run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
       fi
-      echo "[INFO] Skipped NPU execution benches (230/245/240). Re-run with --bench for the mixed compatibility path."
+      echo "[INFO] Skipped NPU execution benches (230/245). Re-run with --bench for the mixed compatibility path."
     fi
+    run_script "scripts/240-write-tier3-validation.sh" "$OFFLINE"
     write_report_index
     ;;
 
