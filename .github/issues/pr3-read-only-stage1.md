@@ -1,0 +1,106 @@
+# PR 3: Make Stage 1 read-only; move platform validation to Stage 2
+
+Copy this body into a GitHub issue, or run:
+
+```bash
+gh issue create --title "PR 3: Make Stage 1 read-only; move platform validation to Stage 2" --body-file .github/issues/pr3-read-only-stage1.md
+```
+
+## Summary
+
+Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIOS, kernel, GPU/NPU visibility, tuning, and platform gates move to Stage 2 commands and reports.
+
+**Suggested PR title:** `refactor(stage1): Make stage1 read-only; move platform validation to stage2`
+
+**Depends on:** PR 2 (recommended — S2-M7 consumes ladder reports)
+
+**Blocks:** R1 Tier removal prep
+
+---
+
+## Workstream A: Stage 1 orchestrator
+
+- [ ] Make `stage1` / `tier1` call `run_stage1_profile` only; emit deprecation for old mixed path
+- [ ] Redirect or deprecate `run_stage1_inventory()` → `stage2-platform-inventory`
+- [ ] Remove `AI370_APPLY_TUNING` from Stage 1 env export paths
+- [ ] Remove script 80 / `--with-ai-smoke` from Stage 1 (redirect to Stage 3 benchmark stub)
+- [ ] Update `usage()` — Stage 1 = probe + profile; Stage 2 = platform validate
+
+## Workstream B: Stage 2 platform commands
+
+- [ ] `stage2-firmware-validate` → wrap `20-check-bios.sh` (S2-M1)
+- [ ] `stage2-kernel-validate` → wrap `30-validate-kernel.sh` (S2-M2)
+- [ ] `stage2-gpu-validate` (from PR 2) (S2-M3)
+- [ ] `stage2-npu-validate` visibility-only (from PR 2) (S2-M4)
+- [ ] `stage2-optimize-plan` → `40-platform-tuning.sh` plan-only (S2-M5)
+- [ ] `stage2-optimize-apply --approve` → tuning apply (S2-M6)
+- [ ] `stage2-platform-validate` → S2-M1–M4 + S2-M7 aggregate
+- [ ] `stage2-validate` alias for platform validate until S3 gates split
+
+## Workstream C: Split `90-validate.sh` (S2-M7)
+
+- [ ] Add `scripts/s2-m7-publish-platform-validation.py`
+- [ ] Add `configs/schemas/s2-m7-platform-validation.schema.json`
+- [ ] Publish `reports/latest/s2-m7-platform-validation.json`
+- [ ] Slim `90-validate.sh` to compat shim writing `tier1-validation.json`
+- [ ] Remove inline gfx1150/NPU re-detection from `90-validate.sh`
+
+## Workstream D: Tuning boundary (S2-M5/S2-M6)
+
+- [ ] Split plan vs apply in `40-platform-tuning.sh`; apply requires `--approve`
+- [ ] Canonical outputs: `s2-m5-optimization-plan.json`, `s2-m6-optimization-application.json`
+- [ ] Keep compat `tier1-platform-tuning.json` until R1
+- [ ] Remove tuning from all Stage 1 / `full-stack` Stage 1 paths
+
+## Workstream E: Firmware/kernel canonical outputs (S2-M1/S2-M2)
+
+- [ ] `s2-m1-firmware-validation.json` from `20-check-bios.sh`; keep `tier1-firmware.json` compat
+- [ ] Split BIOS facts vs policy in `20-check-bios.sh`
+- [ ] `s2-m2-kernel-driver-validation.json` from `30-validate-kernel.sh`
+
+## Workstream F: Compatibility and gates
+
+- [ ] `require_tier123_pass` prefers `s2-m7-platform-validation.json`; fallback `tier1-validation.json`
+- [ ] Switch `10-detect-hardware.sh` callers to `stage1-probe` + `stage1-profile`
+- [ ] Fix `full-stack` / `all` sequence: profile → platform validate → runtime
+- [ ] Legacy commands (`kernel-amd`, `tune`, `firmware`) warn toward `stage2-*`
+
+## Tests
+
+- [ ] `tests/test_s2_m7_platform_validation.py` — aggregate from fixture milestone JSONs
+- [ ] `tests/test_s2_m5_optimization_plan.py` — plan-only, no mutation
+- [ ] `tests/test_s2_m6_optimization_apply.py` — apply requires `--approve`
+- [ ] Update `tests/smoke_tier1.sh` — `stage1` does not require tuning artifacts
+- [ ] Add `tests/smoke_stage2_platform.sh`
+- [ ] Update `tests/test_repository_instructions.py` — Stage 1 read-only
+
+## Documentation and ROADMAP
+
+- [ ] Rewrite README Stage 1 section (probe + profile only)
+- [ ] Add Stage 2 platform command table to README
+- [ ] Update ROADMAP milestone status for S2-M1/M2/M5/M7
+- [ ] Mark migration plan step 3 done
+- [ ] Deprecate `TASK_PROPOSALS.md` Tier language
+
+## Definition of done
+
+- [ ] `./ai370-optimize.sh stage1` runs only S1-M1–M5 (read-only)
+- [ ] `./ai370-optimize.sh stage2-platform-validate` runs S2-M1/M2/M3/M4 + S2-M7
+- [ ] `--apply-tuning` only on `stage2-optimize-apply --approve`
+- [ ] `s2-m7-platform-validation.json` validates against schema
+- [ ] `tier1-validation.json` compat shim preserves `require_tier123_pass`
+- [ ] Portable tests pass on generic CI hardware
+- [ ] README and ROADMAP agree Stage 1 is read-only
+- [ ] PR title passes `bash scripts/validate-pr-title.sh`
+
+## Non-goals
+
+- Removing Tier aliases (R1)
+- Full S3 runtime re-orchestration
+- System-profile schema v4 bump
+
+## Optional split
+
+- **PR 3a** — Orchestrator + `stage2-platform-*` commands
+- **PR 3b** — Split `90-validate.sh` → `s2-m7-publish-platform-validation.py`
+- **PR 3c** — README, smokes, ROADMAP sync
