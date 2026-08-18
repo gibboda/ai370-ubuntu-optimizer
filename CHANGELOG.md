@@ -6,6 +6,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- `stage1` / `tier1` are read-only S1-M1 through S1-M5 profile publication.
+- Platform firmware, kernel, GPU/NPU visibility, and the `90-validate.sh`
+  compatibility aggregate run from `stage2-platform-validate`.
+- Tuning apply requires `stage2-optimize-apply --approve`.
+- `stage2-validate` remains the runtime/NPU cheap gate; it is not the
+  platform aggregate.
+
+### Added
+
+- Stage 2 platform commands: `stage2-firmware-validate`,
+  `stage2-kernel-validate`, `stage2-optimize-plan`,
+  `stage2-optimize-apply`, `stage2-platform-validate`,
+  `stage2-platform-inventory`.
+- `tests/smoke_stage2_platform.sh` for the platform wrappers.
+
 ## [0.21.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.20.0...v0.21.0) (2026-08-18)
 
 

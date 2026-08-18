@@ -168,7 +168,7 @@ side.
 | Platform layer | Target responsibility | Current ROADMAP owner | Current status |
 | --- | --- | --- | --- |
 | 0 Project foundation | Repo structure, logging, status conventions, tests | Repository infrastructure; not a ROADMAP stage | PARTIAL |
-| 1 Hardware detection | Read-only CPU/GPU/NPU/OS/firmware facts | S1-M1 through S1-M5 | PARTIAL; S1-M1 through S1-M5 are Implemented; mixed `stage1` remains Stage 2 debt |
+| 1 Hardware detection | Read-only CPU/GPU/NPU/OS/firmware facts | S1-M1 through S1-M5 | PARTIAL; S1-M1 through S1-M5 are Implemented; `stage1` is read-only profile publication |
 | 2 Platform validation | Distro, kernel, firmware, AMDGPU, AMDXDNA, device nodes | S2-M1, S2-M2, S2-M3 visibility, S2-M4 visibility, S2-M7 | PARTIAL |
 | 3 Hardware optimization | CPU, memory, storage, power; plan then approved apply | S2-M5, S2-M6 | PARTIAL |
 | 4 GPU compute | AMDGPU → Mesa → Vulkan → ROCm → HIP → framework → app | S2-M3 plus S3-M3 | PARTIAL |
@@ -182,9 +182,10 @@ side.
 
 Boundary notes that later PRs must preserve:
 
-- Architecture-layer 1 is read-only. Current `stage1` still invokes BIOS,
-  kernel, GPU validation, and tuning-plan scripts. That is migration debt, not
-  target Stage 1 behavior.
+- Architecture-layer 1 is read-only. `stage1` now publishes the S1-M1 through
+  S1-M5 profile only. BIOS, kernel, GPU validation, and tuning-plan scripts
+  run from `stage2-platform-*` / `stage2-optimize-*`. Canonical S2-M1/M2/M5–M7
+  outputs remain Planned until PR 3b/3c.
 - Architecture-layer 3 belongs in ROADMAP Stage 2, not Stage 1.
 - GPU and NPU remain independent. Current `stage2` installs both in one
   orchestrator path.
@@ -311,7 +312,8 @@ feature is not treated as implemented unless code exists.
 
 | Path | Status | Notes |
 | --- | --- | --- |
-| `tests/smoke_tier1.sh` | PARTIAL | Portable CLI smoke; asserts `tier1-*` artifacts, gfx1150 keys, and `s2-m3-gpu-runtime-visibility.json` |
+| `tests/smoke_tier1.sh` | PARTIAL | Portable CLI smoke; asserts read-only `stage1` plus `tier1-*` artifacts from Stage 2 inventory |
+| `tests/smoke_stage2_platform.sh` | PARTIAL | Portable platform-wrapper smoke; `stage2-platform-validate` and `--approve` apply dry-run |
 | `tests/smoke_tier2.sh` | PARTIAL | Portable runtime/layout smoke |
 | `tests/test_repository_instructions.py` | IMPLEMENTED | Instruction-file contract |
 | `scripts/legacy/*` | DEPRECATED | Frozen archive; no new behavior |
@@ -402,16 +404,16 @@ abbreviated; see the assumption table for the full class.
 | `scripts/20-check-bios.sh` | BIOS/firmware observation and policy | DMI, fwupd, profile `EXPECTED_BIOS_VERSION` | BIOS 2.01 is profile target, not generic gate | S2-M1 | SPLIT facts vs policy | Firmware fixtures | Medium |
 | `scripts/25-check-firmware.sh` | Wrapper | `20-check-bios.sh` | None | Compatibility | DEPRECATE | Existing BIOS tests | Low |
 | `scripts/30-validate-kernel.sh` | Kernel, modules, firmware dirs | `amdgpu` module, linux-firmware | Radeon 890M advice strings | S2-M2 | REFACTOR to capability checks | Supported/unsupported matrix | Medium |
-| `scripts/70-validate-gpu-stack.sh` | Compatibility GPU visibility wrapper | `s2-m3-validate-gpu-stack.sh` | None beyond canonical owner | Compatibility until R1 | DEPRECATE; KEEP wrapper | Smoke still invokes this path from mixed `stage1` | Low |
+| `scripts/70-validate-gpu-stack.sh` | Compatibility GPU visibility wrapper | `s2-m3-validate-gpu-stack.sh` | None beyond canonical owner | Compatibility until R1 | DEPRECATE; KEEP wrapper | Smoke still invokes this path from `stage2-platform-inventory` | Low |
 | `scripts/s2-m3-validate-gpu-stack.sh` | GPU stack visibility collector | lspci, vulkaninfo, clinfo, rocminfo, S1-M5 profile | Target arch from consumed profile | S2-M3 | KEEP; remaining exit evidence is missing driver/Vulkan/ROCm layer fixtures | `test_s2_m3_gpu_visibility.py` | Medium |
 | `scripts/s2-m3-publish-gpu-visibility.py` | Atomic S2-M3 visibility publisher | capability_ladder, S2-M3 schema | Visibility is not compute | S2-M3 | KEEP | `test_s2_m3_gpu_visibility.py` | Low |
 | `scripts/s2-m4-validate-npu-stack.sh` | NPU stack visibility collector | 205 inventory-only, 210 visibility-only, 220, S1-M5 profile | Visibility is not inference | S2-M4 | KEEP | `test_s2_m4_npu_visibility.py` | Medium |
 | `scripts/s2-m4-publish-npu-visibility.py` | Atomic S2-M4 visibility publisher | capability_ladder, S2-M4 schema | Visibility is not inference | S2-M4 | KEEP | `test_s2_m4_npu_visibility.py` | Low |
-| `scripts/40-platform-tuning.sh` | CPU/memory/storage plan and optional apply | governors, zram, NVMe | Invoked from current `stage1` | S2-M5/S2-M6 | SPLIT plan vs `--approve` apply; MOVE out of Stage 1 | No-mutation and idempotence | High |
+| `scripts/40-platform-tuning.sh` | CPU/memory/storage plan and optional apply | governors, zram, NVMe | Invoked from `stage2-optimize-plan` / `stage2-optimize-apply --approve` | S2-M5/S2-M6 | SPLIT plan vs `--approve` apply; canonical JSON still Planned | No-mutation and idempotence | High |
 | `scripts/40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | Wrappers | Platform tuning | None | Compatibility | DEPRECATE | Wrapper smoke | Low |
 | `scripts/65-amd-acceleration-install.sh` | Risk-accepted stack install | `amd-acceleration.env` | Ubuntu package names | S2-M6 | KEEP explicit approval; no Stage 1 caller | Approval/backup tests | High |
 | `scripts/90-validate.sh` | Mixed hardware aggregate | Prior `tier1-*` artifacts | gfx1150/NPU acceptance | S1-M5 facts plus S2-M7 policy | SPLIT | Gate schema tests | High |
-| `scripts/80-benchmark-local-ai.sh` | Optional AI visibility smoke | Local venv | Called from Stage 1 flag | S3-M6 | MOVE | Benchmark methodology tests | Medium |
+| `scripts/80-benchmark-local-ai.sh` | Optional AI visibility smoke | Local venv | No longer called from Stage 1 | S3-M6 | MOVE | Benchmark methodology tests | Medium |
 | `scripts/100-install-pytorch-rocm.sh` | PyTorch ROCm runtime | venv, wheel indexes | ROCm indexes | S3-M3 | REFACTOR; prove GPU vs CPU selection | CPU/GPU fallback tests | High |
 | `scripts/110-install-llama-cpp.sh` | llama.cpp build/install | HIP/Vulkan/CPU; `.ai370-ai/tools/llama.cpp` gitlink | Default `gfx1150` target; checkout path `.ai370-ai/tools/llama.cpp` | S3-M2 | REFACTOR backend from profile | Backend-selection fixtures | Medium |
 | `.ai370-ai/tools/llama.cpp` | Tracked llama.cpp source gitlink | `scripts/110-install-llama-cpp.sh` | Mode `160000` commit `86b94708f22478f900b76ca02e316f4f3418faff`; no `.gitmodules` | S3-M2 | KEEP gitlink as optional source tree | Offline existing-binary tests | Medium |
@@ -440,7 +442,7 @@ abbreviated; see the assumption table for the full class.
 | `scripts/70-comfyui-workflows.sh` | ComfyUI install/workflows | PyTorch/ROCm | Network clone | S4-M1/S4-M2 | REFACTOR above GPU runtime; do not report NPU accel | Offline install/lifecycle | High |
 | `scripts/420-benchmark-comfyui.sh` | ComfyUI benchmark | Workflows | Synthetic timings | S4-M2 / S3-M6 | REFACTOR to live execution | Live API tests | Medium |
 | `workflows/comfyui/*` | SDXL templates | ComfyUI | No NPU assumption | S4-M2 | KEEP | Workflow launch tests | Low |
-| `tests/smoke_tier1.sh`, `tests/smoke_tier2.sh` | Portable CLI smokes | Orchestrator | `tier*` artifacts | Owner-specific `test_sN_mN_*` | REPLACE at R1/R2 | Deterministic fixtures | Medium |
+| `tests/smoke_tier1.sh`, `tests/smoke_stage2_platform.sh`, `tests/smoke_tier2.sh` | Portable CLI smokes | Orchestrator | `tier*` artifacts | Owner-specific `test_sN_mN_*` | REPLACE at R1/R2 | Deterministic fixtures | Medium |
 | `tests/test_s1_m1_probe.py`, `tests/test_system_profile.py` | Profile/probe contracts | Fixtures | AI370 reference plus non-AI370 | S1-M1/S1-M2/S1-M5 | KEEP and split by milestone | Existing plus unknown-host | Low |
 | `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py` | Ladder, unpublished report builders, GPU publisher CLI, and NPU publisher CLI | Probe/profile fixtures | No validation claims | S2-M3 / S2-M4 | KEEP | Existing plus missing-device fixtures | Low |
 | `tests/fixtures/**` | Sanitized hardware evidence | None | Reference and counterexamples | Detection/classification | KEEP; add newer Ryzen AI as data | Classification matrix | Low |
@@ -466,14 +468,15 @@ Later PRs must stay small, keep detection read-only, and add or preserve
 regression tests before replacing working code.
 
 Tracked GitHub issues: #168 remaining work is none after `#180` / `0.21.0`;
-#169 is the next implementation PR. Do not file issues 4–11 until the prior
-boundary has tests.
+#169 PR 3a (orchestrator + `stage2-platform-*`) is the current implementation.
+Canonical S2-M7 publisher and remaining fixture work stay on #169 as PR 3b/3c.
+Do not file issues 4–11 until the prior boundary has tests.
 
 | Sequence | Status | Tracked issue |
 | --- | --- | --- |
 | 1 Detection facts | **done** (`#166`, `0.17.0`) | None remaining |
 | 2 Capability assessment | **done** (library `#170`, schemas `#173`, GPU publisher `#176` / `0.20.0`, NPU publisher `#180` / `0.21.0`) | None remaining; [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) is complete |
-| 3 Stop Stage 1 mutation | **planned**; GPU command `stage2-gpu-validate` and NPU visibility-only `stage2-npu-validate` already exist | [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) |
+| 3 Stop Stage 1 mutation | **in progress**; `stage1` is read-only; `stage2-platform-validate` invokes existing GPU/NPU commands; S2-M7 publisher remains | [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) |
 | 4–11 later boundaries | **planned** | Not filed |
 
 Recommended order, using ROADMAP owners rather than new public stage numbers:
@@ -486,13 +489,13 @@ Recommended order, using ROADMAP owners rather than new public stage numbers:
    and the S2-M4 NPU visibility-only publisher (`s2-m4-validate-npu-stack.sh`,
    visibility-only `stage2-npu-validate`, `#180` / `0.21.0`) exist; ROADMAP
    marks S2-M3/S2-M4 In progress until remaining exit evidence exists. Defer
-   the `90-validate.sh` split to #169.
-3. **Stop Stage 1 mutation and mixed validation** — issue #169. Move
-   BIOS/kernel/GPU policy and tuning plan/apply to S2-M1 through S2-M6;
-   `stage1` becomes read-only profile publication. `stage2-gpu-validate`
-   and visibility-only `stage2-npu-validate` already exist; #169 should
-   invoke them rather than wait for new GPU/NPU command names. Also correct
-   the README Stage 2 header that still claims S2-M1–S2-M7 are implemented.
+   the `90-validate.sh` split to #169 PR 3b.
+3. **Stop Stage 1 mutation and mixed validation** — issue #169. PR 3a makes
+   `stage1` read-only profile publication and adds `stage2-platform-validate`
+   that invokes existing `stage2-gpu-validate` and visibility-only
+   `stage2-npu-validate`. `stage2-validate` remains the runtime/NPU cheap
+   gate. Remaining #169 work is the S2-M7 publisher (PR 3b) and leftover
+   docs/smokes (PR 3c).
 4. **Independent GPU module** — S2-M3 visibility plus S3-M3 framework
    execution; package presence is not GPU compute.
 5. **Independent NPU module** — S2-M4 visibility plus S3-M4 execution;
@@ -550,6 +553,7 @@ Current automated coverage to retain until replaced by owner-specific tests:
 
 - `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_repository_instructions`
 - `bash tests/smoke_tier1.sh`
+- `bash tests/smoke_stage2_platform.sh`
 - `bash tests/smoke_tier2.sh`
 - `shellcheck --severity=error $(git ls-files '*.sh')`
 
@@ -560,17 +564,12 @@ Do not hide unexpected failures with unconditional `|| true`.
 ## Documentation and status drift
 
 The high-level README Stage 1 summary now matches ROADMAP: S1-M1 through
-S1-M5 are Implemented as `stage1-probe` / `stage1-profile`, and mixed `stage1`
-is named as Stage 2 migration debt. Remaining README drift:
+S1-M5 are Implemented as `stage1-probe` / `stage1-profile`, and `stage1`
+is read-only profile publication. Remaining README / #169 drift:
 
-- Stage 2 command help still claims the planned S2-M1–S2-M7 scope is
-  **implemented**. ROADMAP marks only S2-M3 and S2-M4 **In progress**; S2-M1,
-  S2-M2, and S2-M5 through S2-M7 remain **Planned**. Correcting Lemonade/Digest
-  owner labels does not resolve this false implementation claim. Issue #169
-  must rewrite the README Stage 2 status text to match ROADMAP.
-- Stage 2 command help still documents Lemonade as S2-M6 and Digest as S2-M7.
-  ROADMAP owners are S3-M5 (Lemonade) and S3-M4 diagnostics (Digest); S2-M6 is
-  approved optimization apply and S2-M7 is the platform validation aggregate.
+- Canonical S2-M7 (`s2-m7-platform-validation.json`) is still Planned. PR 3a
+  added `stage2-platform-validate` wrapping `90-validate.sh`; the publisher
+  split remains #169 PR 3b.
 - `stage2-gpu-validate` exists and writes `s2-m3-gpu-runtime-visibility.json`
   (`#176` / `0.20.0`). Do not treat the GPU command as missing.
 - `stage2-npu-validate` is visibility-only by default and writes
@@ -579,9 +578,8 @@ is named as Stage 2 migration debt. Remaining README drift:
   mixed 210/220/230/245 compatibility path until S3-M6. Do not treat the
   command name as missing.
 - Canonical S2-M3/S2-M4 are **In progress**, not Implemented. S2-M3 still
-  lacks separate missing-driver/Vulkan/ROCm layer fixtures, and mixed
-  `stage1` still invokes GPU validation. S2-M4 still shares a mixed
-  `stage2-npu` bench path. S2-M1, S2-M2, and S2-M5 through S5
+  lacks separate missing-driver/Vulkan/ROCm layer fixtures. S2-M4 still shares
+  a mixed `stage2-npu` bench path. S2-M1, S2-M2, and S2-M5 through S5
   remain Planned until outputs, tests, and docs exist.
 
 The architecture document is target design. Features listed there as local
@@ -606,7 +604,8 @@ This plan does not authorize later PRs to:
 
 Issue #168 publishers (S2-M3 GPU in `#176` / `0.20.0` and S2-M4 NPU
 visibility in `#180` / `0.21.0`) have landed; remaining #168 work is none.
-Issue #169 may rewire `stage1` to the read-only profile pipeline and may
-invoke the existing `stage2-gpu-validate` and visibility-only
-`stage2-npu-validate` commands. Neither issue upgrades a ROADMAP row to
-Implemented until the exit evidence exists.
+Issue #169 PR 3a rewires `stage1` to the read-only profile pipeline and
+invokes the existing `stage2-gpu-validate` and visibility-only
+`stage2-npu-validate` commands from `stage2-platform-validate`. Remaining
+#169 work is the S2-M7 publisher and leftover canonical outputs. Neither
+issue upgrades a ROADMAP row to Implemented until the exit evidence exists.

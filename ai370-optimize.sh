@@ -17,23 +17,32 @@ WITH_LEMONADE="false"
 WITH_DIGEST="false"
 WITH_RAG="false"
 BENCH="false"
-# Package E Stage 1 options
+# Compatibility flags: --with-ai-smoke and --apply-tuning are not Stage 1.
 WITH_AI_SMOKE="false"
 APPLY_TUNING="false"
+APPROVE="false"
 STRICT="false"
 STAGE1_VALIDATE_SCOPE="full"
 
 usage() {
   cat <<'USAGE'
 Usage (Roadmap stages - recommended):
-  ./ai370-optimize.sh stage1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-       [--with-ai-smoke] [--apply-tuning] [--strict]
+  ./ai370-optimize.sh stage1 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh stage1-probe
   ./ai370-optimize.sh stage1-profile
-  ./ai370-optimize.sh stage1-inventory [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
-       [--strict]
-  ./ai370-optimize.sh stage1-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-       [--inventory] [--strict]
+  ./ai370-optimize.sh stage2-platform-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+       [--offline] [--strict]
+  ./ai370-optimize.sh stage2-platform-inventory [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+       [--offline] [--strict]
+  ./ai370-optimize.sh stage2-firmware-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh stage2-kernel-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+       [--dry-run]
+  ./ai370-optimize.sh stage2-gpu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
+  ./ai370-optimize.sh stage2-npu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+       [--offline] [--bench] [--with-lemonade]
+  ./ai370-optimize.sh stage2-optimize-plan [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+  ./ai370-optimize.sh stage2-optimize-apply --approve [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
+       [--dry-run]
   ./ai370-optimize.sh stage2 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
        [--with-lemonade] [--with-digest] [--with-rag]
   ./ai370-optimize.sh stage2-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
@@ -44,9 +53,6 @@ Usage (Roadmap stages - recommended):
        [--with-lemonade]
   ./ai370-optimize.sh stage2-npu [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
        [--with-lemonade]
-  ./ai370-optimize.sh stage2-npu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
-       [--offline] [--bench] [--with-lemonade]
-  ./ai370-optimize.sh stage2-gpu-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage2-rag [--profile=ai370] [--mode=safe] [--persistence=runtime]
   ./ai370-optimize.sh stage2-lemonade [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
   ./ai370-optimize.sh stage2-digest [--profile=ai370] [--mode=safe] [--persistence=runtime] [--offline]
@@ -54,6 +60,10 @@ Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage3-image [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh full-stack [--profile=ai370] [--mode=safe] [--persistence=runtime]
        --accept-amd-acceleration-risk [--with-lemonade] [--with-digest] [--with-rag]
+
+Compatibility aliases (deprecated; prefer the Stage 2 platform commands):
+  ./ai370-optimize.sh stage1-inventory
+  ./ai370-optimize.sh stage1-validate [--inventory] [--strict]
 
 Legacy tier aliases (still supported):
   ./ai370-optimize.sh tier1 | tier1-validate
@@ -68,30 +78,37 @@ Legacy / detailed phase commands (compat; prefer stage1/stage2):
   ./ai370-optimize.sh comfyui-install | comfyui-bench | final-validate | all
   (Broken root script paths retarget scripts/legacy/ or modern Stage 1/2 scripts.)
 
-Stage 1 (Package C + E):
-  Canonical: 10 (incl. NPU), 20 (BIOS+firmware; 25 wrapper), 30,
-    40-platform-tuning (40/50/60 wrappers; plan-only unless --apply-tuning),
-    70, 90 (scope: inventory|full|smoke)
-  Default stage1 skips script 80; pass --with-ai-smoke (or AI370_STAGE1_WITH_AI_SMOKE=true)
-  --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing
-  --apply-tuning (or AI370_APPLY_TUNING=true): compatibility-only migration path; target Stage 1 contract is read-only
+Stage 1 (read-only, S1-M1 through S1-M5):
+  stage1 / stage1-profile = probe if needed + normalize/classify/candidates/publish
   stage1-probe = S1-M1 read-only raw hardware and OS inventory
-  stage1-profile = S1-M2 through S1-M5 read-only normalize/classify/candidates/publish
-  stage1-inventory = detect + firmware + kernel + GPU + inventory-scope validate
-  stage1-validate --inventory re-checks inventory scope only
+  --apply-tuning is not a Stage 1 flag; use stage2-optimize-apply --approve
+  --with-ai-smoke is not a Stage 1 flag; use scripts/80-benchmark-local-ai.sh (S3-M6)
+  Mixed BIOS/kernel/GPU/tuning/90-validate no longer runs from stage1.
 
-Stage 2 core (default stage2 / Stage 3 gate path):
+Stage 2 platform (wrappers until canonical S2-M1/M2/M5–M7 outputs exist):
+  stage2-firmware-validate = 20-check-bios (S2-M1 Planned)
+  stage2-kernel-validate = 30-validate-kernel (S2-M2 Planned)
+  stage2-gpu-validate = s2-m3-validate-gpu-stack (S2-M3 In progress)
+  stage2-npu-validate is visibility-only (S2-M4) by default; pass --bench for the
+    mixed 210-validate / 230 / 245 compatibility path until S3-M6. Script 240
+    always refreshes tier3-validation.json on this command.
+  stage2-optimize-plan = 40-platform-tuning plan-only (S2-M5 Planned)
+  stage2-optimize-apply --approve = 40-platform-tuning apply (S2-M6 Planned)
+  stage2-platform-validate = firmware + kernel + GPU + NPU visibility + 90-validate
+  --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing (90-validate)
+  stage2-platform-inventory = detect + firmware + kernel + GPU + inventory-scope validate
+
+Stage 2 runtime (default stage2 / Stage 3 gate path; not the platform aggregate):
   Runtime: 100, 110, 120, 130, 140, 145, 150
-  NPU:     s2-m4-validate-npu-stack (stage2-npu-validate visibility-only; compat 205/210/220)
-           mixed 230/245 remaining on stage2-npu and stage2-npu-validate --bench
-           240 always refreshes tier3-validation.json on stage2-npu-validate
-  GPU:     s2-m3-validate-gpu-stack (stage2-gpu-validate; compat 70-validate-gpu-stack)
-  (145 writes tier2-validation.json; 245 reuses 230 NPU results by default)
+  NPU mixed path: remaining on stage2-npu and stage2-npu-validate --bench
+  stage2-validate is a cheap runtime/NPU gate refresh; it is not the S2-M7
+    platform aggregate. Use stage2-platform-validate for firmware/kernel/GPU/NPU
+    visibility. Pass --bench for LLM smoke and NPU MatMul comparison (140 / 230 / 245).
 Optional packs (not Stage 3 gate inputs):
-  --with-lemonade / stage2-lemonade  → 170, 160, 165 (S2-M6)
-  --with-digest / stage2-digest      → 250, 255 (S2-M7)
-  --with-rag / stage2-rag            → 300, 310, 320 (S2-M3)
-  stage2-models                      → 155 layout + 150 validate (S2-M5 polish; no downloads)
+  --with-lemonade / stage2-lemonade  → 170, 160, 165 (S3-M5 compatibility path)
+  --with-digest / stage2-digest      → 250, 255 (S3-M4 diagnostics)
+  --with-rag / stage2-rag            → 300, 310, 320 (S4-M3)
+  stage2-models                      → 155 layout + 150 validate (S3-M1 polish; no downloads)
   Env: LEMONADE_START=true, ANYTHINGLLM_START=true for full serving/UI smokes
 
 Defaults:
@@ -100,16 +117,12 @@ Defaults:
   persistence runtime
 
 Notes:
-  Stage 1 PASS may still include acceptance WARNs (missing optional hardware); that
+  Stage 1 is read-only and does not write platform-validation or tuning artifacts.
+  Platform PASS may still include acceptance WARNs (missing optional hardware); that
     is intentional and experimental-friendly. Use --strict for hard AI370 checks.
   stage2 is core-only by default (runtime + NPU + gate artifacts). Optional AMD
     product packs require --with-lemonade, --with-digest, and/or --with-rag.
-  stage2-validate is a cheap gate refresh by default; pass --bench for LLM smoke
-    and NPU MatMul comparison re-runs (140 / 230 / 245).
-  stage2-npu-validate is visibility-only (S2-M4) by default; pass --bench for the
-    mixed 210-validate / 230 / 245 compatibility path until S3-M6. Script 240
-    always refreshes tier3-validation.json on this command.
-  --offline affects Stage 1 (parts), Stage 2 runtime/NPU, and amd-accel-install.
+  --offline affects Stage 2 platform/runtime/NPU and amd-accel-install.
   --accept-amd-acceleration-risk is required for amd-accel-install, full-ai-install,
     full-stack, and for stage2-npu / stage2 to install staged XRT/Ryzen AI packages.
   Stage 3 image generation is blocked until Stage 1 + Stage 2 runtime + Stage 2 NPU pass.
@@ -131,6 +144,7 @@ for arg in "$@"; do
     --bench|--full) BENCH="true" ;;
     --with-ai-smoke) WITH_AI_SMOKE="true" ;;
     --apply-tuning) APPLY_TUNING="true" ;;
+    --approve) APPROVE="true" ;;
     --strict) STRICT="true" ;;
     --inventory) STAGE1_VALIDATE_SCOPE="inventory" ;;
   esac
@@ -192,25 +206,23 @@ run_script_or_legacy() {
   fi
 }
 
-export_stage1_env() {
-  # Propagate Package E options into Stage 1 scripts via environment.
+export_platform_strict_env() {
+  # Strict mode belongs to the Stage 2 90-validate compatibility aggregate.
   if [[ "$STRICT" == "true" ]]; then
     export AI370_STAGE1_STRICT=true
   else
     export AI370_STAGE1_STRICT=false
   fi
+  export DRY_RUN="${DRY_RUN:-false}"
+}
+
+warn_stage1_removed_flags() {
   if [[ "$APPLY_TUNING" == "true" ]]; then
-    export AI370_APPLY_TUNING=true
-  else
-    export AI370_APPLY_TUNING=false
+    echo "[WARN] --apply-tuning is not a Stage 1 flag. Use: ./ai370-optimize.sh stage2-optimize-apply --approve"
   fi
   if [[ "$WITH_AI_SMOKE" == "true" ]]; then
-    export AI370_STAGE1_WITH_AI_SMOKE=true
-  else
-    export AI370_STAGE1_WITH_AI_SMOKE=false
+    echo "[WARN] --with-ai-smoke is not a Stage 1 flag. Use scripts/80-benchmark-local-ai.sh (S3-M6) until stage3-runtime-benchmark exists."
   fi
-  # Honor orchestrator --dry-run for optional apply-tuning (40-platform-tuning).
-  export DRY_RUN="${DRY_RUN:-false}"
 }
 
 run_stage1_profile() {
@@ -244,40 +256,63 @@ run_stage1_profile() {
     --generator-version "$generator_version"
 }
 
-run_stage1_inventory() {
-  echo "[INFO] Stage 1 inventory – detect + firmware + kernel + GPU + inventory-scope validate (no tuning/smoke)"
-  export_stage1_env
+ensure_stage1_profile() {
+  local profile="$PROJECT_ROOT/reports/latest/s1-m5-system-profile.json"
+  if [[ ! -f "$profile" ]]; then
+    echo "[INFO] No S1-M5 system profile present; running stage1-profile"
+    run_stage1_profile
+  fi
+}
+
+run_stage2_platform_inventory() {
+  echo "[INFO] Stage 2 platform inventory – firmware + kernel + GPU + inventory-scope validate"
+  export_platform_strict_env
+  ensure_stage1_profile
+  # Compatibility collector still publishes tier1-hardware.json / tier1-npu.json for 90-validate.
   run_script "scripts/10-detect-hardware.sh"
-  # 20 writes both BIOS baseline and firmware validation (25 is a wrapper)
   run_script "scripts/20-check-bios.sh"
   run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
-  run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
-  # inventory scope: no platform-tuning / script 80 requirement
+  run_script "scripts/s2-m3-validate-gpu-stack.sh" "$OFFLINE"
   run_script "scripts/90-validate.sh" "inventory"
   write_report_index
 }
 
-run_stage1() {
-  echo "[INFO] Stage 1 – Hardware Detection & System Optimization (platform plan; optional AI smoke)"
-  export_stage1_env
+run_stage2_platform_validate() {
+  echo "[INFO] Stage 2 platform validate – firmware, kernel, GPU, NPU visibility, then 90-validate"
+  echo "[INFO] Canonical S2-M7 publisher is not in this PR; 90-validate remains the compatibility aggregate"
+  export_platform_strict_env
+  ensure_stage1_profile
   run_script "scripts/10-detect-hardware.sh"
-  # Combined BIOS + firmware (Package C); keep 25 as optional no-op path for compat
   run_script "scripts/20-check-bios.sh"
   run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
-  # Plan-only platform recommendations unless --apply-tuning / AI370_APPLY_TUNING=true
-  run_script "scripts/40-platform-tuning.sh"
-  run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
-  # NPU detect is included in 10; 75 remains a thin wrapper if called directly
-  # Package E: script 80 demoted — opt-in via --with-ai-smoke (Stage 2–adjacent readiness)
-  local validate_scope="full"
-  if [[ "$WITH_AI_SMOKE" == "true" ]]; then
-    echo "[INFO] Running optional Stage 1 local-AI smoke (script 80)"
-    run_script "scripts/80-benchmark-local-ai.sh" "$OFFLINE"
-    validate_scope="smoke"
-  else
-    echo "[INFO] Skipping script 80 local-AI smoke (pass --with-ai-smoke to include)"
+  run_script "scripts/s2-m3-validate-gpu-stack.sh" "$OFFLINE"
+  run_script "scripts/s2-m4-validate-npu-stack.sh" "$OFFLINE"
+  # Inventory scope: S2-M5 tuning is a separate command, not required for the platform gate.
+  run_script "scripts/90-validate.sh" "inventory"
+  write_report_index
+}
+
+run_stage2_optimize_plan() {
+  echo "[INFO] Stage 2 optimize plan – 40-platform-tuning plan-only (S2-M5 wrapper)"
+  export DRY_RUN="${DRY_RUN:-false}"
+  export AI370_APPLY_TUNING=false
+  if [[ "$APPLY_TUNING" == "true" ]]; then
+    echo "[WARN] --apply-tuning is ignored on stage2-optimize-plan. Use stage2-optimize-apply --approve"
   fi
-  run_script "scripts/90-validate.sh" "$validate_scope"
+  run_script "scripts/40-platform-tuning.sh"
+  write_report_index
+}
+
+run_stage2_optimize_apply() {
+  if [[ "$APPROVE" != "true" ]]; then
+    echo "[ERROR] stage2-optimize-apply requires --approve (plan first with stage2-optimize-plan)."
+    echo "[ERROR] --apply-tuning is not sufficient; pass --approve to mutate runtime settings."
+    exit 2
+  fi
+  echo "[INFO] Stage 2 optimize apply – 40-platform-tuning with approval (S2-M6 wrapper)"
+  export DRY_RUN="${DRY_RUN:-false}"
+  export AI370_APPLY_TUNING=true
+  run_script "scripts/40-platform-tuning.sh"
   write_report_index
 }
 
@@ -464,8 +499,8 @@ require_tier123_pass() {
     echo "[ERROR]   Stage 2 runtime (tier2-validation): $t2_result  (need PASS|WARN)"
     echo "[ERROR]   Model storage (offline-model-storage): $models_result  (need PASS|WARN)"
     echo "[ERROR]   Stage 2 NPU (tier3-validation):  $t3_result  (need PASS|WARN|EXPERIMENTAL-PASS)"
-    echo "[ERROR] Preferred: ./ai370-optimize.sh stage1 && ./ai370-optimize.sh stage2 && ./ai370-optimize.sh stage2-validate"
-    echo "[ERROR] Or: stage1 + stage2-runtime + stage2-runtime-validate + stage2-npu-validate"
+    echo "[ERROR] Preferred: ./ai370-optimize.sh stage1 && ./ai370-optimize.sh stage2-platform-validate && ./ai370-optimize.sh stage2 && ./ai370-optimize.sh stage2-validate"
+    echo "[ERROR] Or: stage1-profile + stage2-platform-validate + stage2-runtime + stage2-runtime-validate + stage2-npu-validate"
     echo "[ERROR] See docs/ROADMAP.md (Stage gate policy). Then re-run this command."
     exit 3
   fi
@@ -510,16 +545,19 @@ print_context() {
     echo "[INFO] Bench mode: true (full smoke/compare)"
   fi
   if [[ "$WITH_AI_SMOKE" == "true" ]]; then
-    echo "[INFO] Stage 1 AI smoke: true (script 80)"
+    echo "[INFO] --with-ai-smoke set (ignored on Stage 1; use scripts/80-benchmark-local-ai.sh)"
   fi
   if [[ "$APPLY_TUNING" == "true" ]]; then
-    echo "[INFO] Apply runtime tuning: true"
+    echo "[INFO] --apply-tuning set (ignored on Stage 1; use stage2-optimize-apply --approve)"
+  fi
+  if [[ "$APPROVE" == "true" ]]; then
+    echo "[INFO] Approve: true"
   fi
   if [[ "$STRICT" == "true" ]]; then
-    echo "[INFO] Stage 1 strict gate: true (gfx1150 + NPU required)"
+    echo "[INFO] Platform strict gate: true (gfx1150 + NPU required)"
   fi
   if [[ "$STAGE1_VALIDATE_SCOPE" == "inventory" ]]; then
-    echo "[INFO] Stage 1 validate scope: inventory"
+    echo "[INFO] Compatibility validate scope: inventory"
   fi
 }
 
@@ -529,7 +567,10 @@ print_context
 case "$CMD" in
   # === Roadmap stage commands (primary recommended interface) ===
   stage1|tier1)
-    run_stage1
+    echo "[INFO] Stage 1 is read-only probe + profile (S1-M1 through S1-M5)"
+    echo "[INFO] BIOS/kernel/GPU/NPU visibility and tuning moved to stage2-platform-* / stage2-optimize-*"
+    warn_stage1_removed_flags
+    run_stage1_profile
     ;;
 
   stage1-probe)
@@ -541,13 +582,47 @@ case "$CMD" in
     ;;
 
   stage1-inventory)
-    run_stage1_inventory
+    echo "[WARN] stage1-inventory is deprecated; use stage2-platform-inventory"
+    warn_stage1_removed_flags
+    run_stage2_platform_inventory
     ;;
 
   stage1-validate|tier1-validate)
-    export_stage1_env
-    run_script "scripts/90-validate.sh" "$STAGE1_VALIDATE_SCOPE"
+    echo "[WARN] stage1-validate is deprecated; use stage2-platform-validate"
+    warn_stage1_removed_flags
+    if [[ "$STAGE1_VALIDATE_SCOPE" == "inventory" ]]; then
+      run_stage2_platform_inventory
+    else
+      run_stage2_platform_validate
+    fi
+    ;;
+
+  stage2-platform-validate)
+    run_stage2_platform_validate
+    ;;
+
+  stage2-platform-inventory)
+    run_stage2_platform_inventory
+    ;;
+
+  stage2-firmware-validate)
+    echo "[INFO] Stage 2 firmware validate (S2-M1 wrapper around 20-check-bios.sh)"
+    run_script "scripts/20-check-bios.sh"
     write_report_index
+    ;;
+
+  stage2-kernel-validate)
+    echo "[INFO] Stage 2 kernel validate (S2-M2 wrapper around 30-validate-kernel.sh)"
+    run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
+    write_report_index
+    ;;
+
+  stage2-optimize-plan)
+    run_stage2_optimize_plan
+    ;;
+
+  stage2-optimize-apply)
+    run_stage2_optimize_apply
     ;;
 
   stage2)
@@ -678,8 +753,9 @@ case "$CMD" in
       echo "[ERROR] full-stack requires --accept-amd-acceleration-risk."
       exit 2
     fi
-    echo "[INFO] full-stack: Stage 1 + Stage 2 core + optional packs + AMD accel + Stage 3 workflows"
-    run_stage1
+    echo "[INFO] full-stack: Stage 1 profile + Stage 2 platform validate + runtime/NPU core + optional packs + AMD accel + Stage 3 workflows"
+    run_stage1_profile
+    run_stage2_platform_validate
     run_stage2_runtime_core
     run_stage2_npu_core "true"
     run_optional_packs
@@ -703,22 +779,23 @@ case "$CMD" in
     ;;
 
   firmware)
+    echo "[WARN] firmware is legacy; prefer ./ai370-optimize.sh stage2-firmware-validate"
     run_script_or_legacy "scripts/20-check-bios.sh" "scripts/legacy/05-firmware-baseline.sh"
     run_script "scripts/25-check-firmware.sh"
     ;;
 
   kernel-amd)
-    echo "[WARN] kernel-amd is legacy; prefer ./ai370-optimize.sh stage1"
+    echo "[WARN] kernel-amd is legacy; prefer ./ai370-optimize.sh stage2-kernel-validate"
     run_script_or_legacy "scripts/30-validate-kernel.sh" "scripts/legacy/10-amd-baseline.sh" "$DRY_RUN"
     ;;
 
   tune)
-    echo "[WARN] tune is legacy; prefer stage1 platform tuning"
+    echo "[WARN] tune is legacy; prefer stage2-optimize-plan (or stage2-optimize-apply --approve)"
     run_script "scripts/40-platform-tuning.sh"
     ;;
 
   accel-validate)
-    echo "[WARN] accel-validate is legacy; prefer stage1 GPU + stage2-npu-validate"
+    echo "[WARN] accel-validate is legacy; prefer stage2-gpu-validate + stage2-npu-validate"
     run_script "scripts/70-validate-gpu-stack.sh" "$OFFLINE"
     run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"
     ;;
@@ -749,23 +826,23 @@ case "$CMD" in
     ;;
 
   baseline-plan|plan)
-    echo "[WARN] baseline-plan is legacy; prefer stage1 hardware detection"
+    echo "[WARN] baseline-plan is legacy; prefer stage1-probe / stage1-profile"
     run_script_or_legacy "scripts/10-detect-hardware.sh" "scripts/legacy/02-generate-report.sh"
     ;;
 
   baseline-apply)
-    echo "[WARN] baseline-apply is legacy; prefer stage1"
+    echo "[WARN] baseline-apply is legacy; prefer stage2-kernel-validate or stage2-optimize-apply --approve"
     run_script_or_legacy "scripts/30-validate-kernel.sh" "scripts/legacy/10-amd-baseline.sh" "$DRY_RUN"
     ;;
 
   baseline-validate)
-    echo "[WARN] baseline-validate is legacy; prefer stage1-validate"
+    echo "[WARN] baseline-validate is legacy; prefer stage2-platform-validate"
     run_script_or_legacy "scripts/90-validate.sh" "scripts/legacy/03-baseline-validate.sh"
     ;;
 
   install)
-    echo "[WARN] install is legacy; running stage1 + stage2-runtime core"
-    run_stage1
+    echo "[WARN] install is legacy; running stage1-profile + stage2-runtime core"
+    run_stage1_profile
     run_stage2_runtime_core
     ;;
 
@@ -810,8 +887,9 @@ case "$CMD" in
       echo "[ERROR] Command 'all' does not support --offline. Run stage commands individually with --offline."
       exit 2
     fi
-    echo "[WARN] 'all' is legacy; running modern Stage 1 + Stage 2 core + Stage 3 workflows (no forced AMD risk install)"
-    run_stage1
+    echo "[WARN] 'all' is legacy; running Stage 1 profile + Stage 2 platform validate + runtime/NPU + Stage 3 workflows"
+    run_stage1_profile
+    run_stage2_platform_validate
     run_stage2_runtime_core
     # NPU path without requiring risk flag for inventory-only 205
     run_stage2_npu_core "true"
