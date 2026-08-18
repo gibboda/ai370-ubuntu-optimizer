@@ -233,7 +233,7 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 | S1-M2–S1-M5 library | `scripts/lib/system_profile.py` | Shared implementation library used by the canonical CLIs |
 | S2-M1 | `scripts/20-check-bios.sh`, `scripts/25-check-firmware.sh` | Move all firmware policy judgments here |
 | S2-M2 | `scripts/30-validate-kernel.sh` | Canonicalize under S2-M2 |
-| S2-M3 | `scripts/70-validate-gpu-stack.sh`, `scripts/lib/capability_ladder.py`, `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` | Canonicalize under S2-M3; publisher CLI remains issue #168 |
+| S2-M3 | `scripts/s2-m3-validate-gpu-stack.sh`, `scripts/s2-m3-publish-gpu-visibility.py`, compatibility wrapper `scripts/70-validate-gpu-stack.sh`, `scripts/lib/capability_ladder.py`, `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` | GPU publisher landed in `#176`; remaining #168 work is the NPU visibility-only publisher; keep S2-M3 In progress until missing driver/Vulkan/ROCm fixtures exist |
 | S2-M4 | Visibility portions of `scripts/210-check-ryzen-ai-software.sh`, `scripts/220-check-vitis-ai-ep.sh`, `scripts/230-benchmark-npu.sh`, and `scripts/lib/npu_ep_verify.py`; `scripts/lib/capability_ladder.py`; `configs/schemas/s2-m4-npu-runtime-validation.schema.json` | Keep visibility here; move runtime install and performance measurement to Stage 3 |
 | S2-M5–S2-M6 | `scripts/40-platform-tuning.sh` and wrappers `40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | Separate immutable plan from explicitly approved application |
 | S2-M6 | `scripts/65-amd-acceleration-install.sh` | Treat installation as an explicitly approved platform change; retain no Stage 1 caller |
@@ -251,7 +251,7 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 | S4-M6 | `scripts/130-install-open-webui.sh` | Move from runtime orchestration to application ownership |
 | S5 milestones | No complete canonical implementation | Do not claim implemented from legacy plans |
 | S5-M6 | `scripts/validate-commit-subject.sh`, `scripts/validate-pr-title.sh` | Release-policy validation tooling |
-| S1–S5 tests | `tests/test_s1_m1_probe.py`, `tests/test_s1_m2_normalize.py`, `tests/test_s1_m3_classify.py`, `tests/test_s1_m4_capabilities.py`, `tests/test_s1_m5_publish.py`, `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_system_profile.py`, `tests/smoke_tier1.sh`, `tests/smoke_tier2.sh` | Owner-specific Stage 1 tests exist; S2-M3/S2-M4 library tests exist; smoke tests remain compatibility coverage until replaced |
+| S1–S5 tests | `tests/test_s1_m1_probe.py`, `tests/test_s1_m2_normalize.py`, `tests/test_s1_m3_classify.py`, `tests/test_s1_m4_capabilities.py`, `tests/test_s1_m5_publish.py`, `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_system_profile.py`, `tests/smoke_tier1.sh`, `tests/smoke_tier2.sh` | Owner-specific Stage 1 tests exist; S2-M3 library and GPU publisher tests exist; S2-M4 publisher tests remain issue #168; smoke tests remain compatibility coverage until replaced |
 | Compatibility archive | `scripts/legacy/*` | No architectural ownership; frozen compatibility/archive only, then remove at the target below |
 | Repository orchestrator | `ai370-optimize.sh` | Routes commands; each branch is owned by the milestone it invokes, not by the file as a whole |
 
@@ -265,7 +265,7 @@ behavior.
 | S1-M5 | `stage1-profile`; profile-publication portion of `stage1`, `stage1-validate`, and `final-validate`/`validate` |
 | S2-M1 | `firmware` |
 | S2-M2 | `kernel-amd` |
-| S2-M3 | `accel-validate`, `gpu` |
+| S2-M3 | `stage2-gpu-validate`, `gpu-validate`, `gpu` |
 | S2-M4 | Visibility portion of `stage2-npu`, `stage2-npu-validate`, and `npu` |
 | S2-M5 | `tune`, `baseline-plan`, `plan`, `guide` |
 | S2-M6 | `baseline-apply`, `execute`, `amd-accel-install` |
@@ -278,10 +278,11 @@ behavior.
 | S4-M7 | Cross-stage orchestration in `full-stack` and `all` |
 | S5-M6 | `help`, `-h`, `--help` (documented command catalog) |
 
-The `stage1`, `stage2`, `full-stack`, `final-validate`/`validate`, and `all`
-branches currently combine multiple owners. They are compatibility
-orchestrators, not standalone deliverables; each invoked operation retains the
-owner shown above and must be split at the new boundaries.
+The `stage1`, `stage2`, `full-stack`, `final-validate`/`validate`, `all`,
+and `accel-validate` branches currently combine multiple owners. They are
+compatibility orchestrators, not standalone deliverables; each invoked
+operation retains the owner shown above and must be split at the new
+boundaries.
 
 Configuration ownership follows its consumer: `configs/profiles/gpu-pci-architectures.json`
 is S1-M2; other `configs/profiles/*` files are S1-M3,

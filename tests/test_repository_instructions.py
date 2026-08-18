@@ -180,16 +180,41 @@ class MigrationPlanTests(unittest.TestCase):
         )
         for path in (
             "scripts/lib/capability_ladder.py",
+            "scripts/s2-m3-validate-gpu-stack.sh",
+            "scripts/s2-m3-publish-gpu-visibility.py",
             "tests/test_capability_ladder.py",
             "tests/test_s2_visibility_schemas.py",
+            "tests/test_s2_m3_gpu_visibility.py",
         ):
             with self.subTest(path=path):
                 self.assertIn(path, self.plan)
         self.assertIn("tests.test_capability_ladder", self.plan)
         self.assertIn("tests.test_s2_visibility_schemas", self.plan)
+        self.assertIn("tests.test_s2_m3_gpu_visibility", self.plan)
         self.assertIn("issues/168", self.plan)
         self.assertIn("issues/169", self.plan)
         self.assertIn("target_gpu_arch", self.plan)
+        self.assertIn("0.20.0", self.plan)
+        self.assertIn("#176", self.plan)
+        self.assertNotIn(
+            "JSON still hardcodes `target_gpu_arch=gfx1150`",
+            self.plan,
+        )
+        self.assertNotIn("no publisher CLI yet", self.plan)
+
+    def test_open_issue_templates_match_remaining_publisher_work(self) -> None:
+        issue168 = (ROOT / ".github/issues/pr2-capability-ladders.md").read_text(
+            encoding="utf-8"
+        )
+        issue169 = (ROOT / ".github/issues/pr3-read-only-stage1.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Workstream C GPU publisher", issue168)
+        self.assertIn("visibility-only NPU publisher", issue168)
+        self.assertNotIn("command does not exist yet", issue168)
+        self.assertIn("remaining NPU visibility-only publisher", issue169)
+        self.assertIn("already landed in `#176`", issue169)
+        self.assertIn("do not recreate", issue169)
 
     def test_migration_plan_retains_readme_stage2_status_mismatch(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
