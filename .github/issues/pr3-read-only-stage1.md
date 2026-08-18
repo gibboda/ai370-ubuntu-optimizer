@@ -14,7 +14,7 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 **Suggested PR title:** `refactor(stage1): Make stage1 read-only; move platform validation to stage2`
 
-**Depends on:** PR 2 / [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) remaining NPU visibility-only publisher. GPU publisher `stage2-gpu-validate` already landed in `#176` / `0.20.0`. Library and schemas landed in `0.18.0`/`0.19.0`.
+**Depends on:** PR 2 / [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) NPU visibility-only publisher (landed with GPU publisher `stage2-gpu-validate` in `#176` / `0.20.0`). Library and schemas landed in `0.18.0`/`0.19.0`.
 
 **Blocks:** R1 Tier removal prep
 
@@ -37,7 +37,7 @@ Inventory review: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/175
 - [ ] `stage2-firmware-validate` → wrap `20-check-bios.sh` (S2-M1)
 - [ ] `stage2-kernel-validate` → wrap `30-validate-kernel.sh` (S2-M2)
 - [x] `stage2-gpu-validate` already exists (`#176` / S2-M3); invoke it from platform validate, do not recreate
-- [ ] `stage2-npu-validate` visibility-only (from PR 2 / #168) (S2-M4)
+- [x] `stage2-npu-validate` visibility-only (from PR 2 / #168) (S2-M4)
 - [ ] `stage2-optimize-plan` → `40-platform-tuning.sh` plan-only (S2-M5)
 - [ ] `stage2-optimize-apply --approve` → tuning apply (S2-M6)
 - [ ] `stage2-platform-validate` → S2-M1–M4 + S2-M7 aggregate

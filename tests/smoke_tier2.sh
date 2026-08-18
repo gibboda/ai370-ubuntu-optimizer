@@ -32,6 +32,7 @@ scripts=(
   scripts/205-install-xrt-ryzen-ai.sh
   scripts/210-check-ryzen-ai-software.sh
   scripts/220-check-vitis-ai-ep.sh
+  scripts/s2-m4-validate-npu-stack.sh
   scripts/230-benchmark-npu.sh
   scripts/240-write-tier3-validation.sh
   scripts/245-compare-cpu-gpu-npu.sh
@@ -153,6 +154,48 @@ import json, sys
 data = json.load(open(sys.argv[1]))
 assert data.get("status") in ("PASS", "WARN", "FAIL", "EXPERIMENTAL-PASS")
 print("[OK] tier3-validation.json has status")
+PY
+
+# 5b. S2-M4 visibility-only NPU publisher (no 230 / xrt-smi validate)
+# Canonical Stage 1 profile is required before publishing.
+"$PROJECT_ROOT/ai370-optimize.sh" stage1-probe
+"$PROJECT_ROOT/ai370-optimize.sh" stage1-profile
+bash "$PROJECT_ROOT/scripts/s2-m4-validate-npu-stack.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime true
+if [[ ! -f "$LATEST_DIR/s2-m4-npu-runtime-validation.json" ]]; then
+  echo "[FAIL] missing artifact: s2-m4-npu-runtime-validation.json (S2-M4)"
+  exit 2
+fi
+if [[ ! -f "$LATEST_DIR/npu-acceleration-status.json" ]]; then
+  echo "[FAIL] missing compat artifact: npu-acceleration-status.json"
+  exit 2
+fi
+python3 - "$LATEST_DIR/s2-m4-npu-runtime-validation.json" "$PROJECT_ROOT" <<'PY'
+import importlib.util, json, sys
+from pathlib import Path
+root = Path(sys.argv[2])
+spec = importlib.util.spec_from_file_location("system_profile", root / "scripts/lib/system_profile.py")
+ladder_spec = importlib.util.spec_from_file_location("capability_ladder", root / "scripts/lib/capability_ladder.py")
+system_profile = importlib.util.module_from_spec(spec)
+capability_ladder = importlib.util.module_from_spec(ladder_spec)
+spec.loader.exec_module(system_profile)
+ladder_spec.loader.exec_module(capability_ladder)
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+system_profile.validate_document(report, capability_ladder.S2_M4_SCHEMA, "S2-M4")
+assert report.get("milestone") == "S2-M4"
+assert report["ladder"]["validation_claim"] is False
+assert report["ladder"]["current"] != "APPLICATION_READY"
+consumed = report["consumed_profile"]
+assert consumed["artifact"] == "s1-m5-system-profile.json"
+assert consumed["schema"]["version"] == 3
+assert consumed["fingerprint"]["algorithm"] == "sha256"
+print("[OK] s2-m4-npu-runtime-validation.json validates against schema")
+PY
+python3 - "$LATEST_DIR/npu-capabilities.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+assert data.get("visibility_only") is True, "210 visibility-only must skip xrt-smi validate"
+assert data.get("xrt_smi_validate") == "skipped-visibility-only"
+print("[OK] npu-capabilities.json records skipped-visibility-only validate")
 PY
 
 # 6. Orchestrator help exposes Package B/C flags

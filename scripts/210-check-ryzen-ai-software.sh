@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# NPU software visibility and optional execution probe.
+# Visibility (S2-M4): kernel module, device nodes, xrt-smi examine, runtime tools.
+# Execution (S3-M4/S3-M6): xrt-smi validate. Canonical visibility owner is
+# scripts/s2-m4-validate-npu-stack.sh, which passes a 5th argument "true".
 
 set -euo pipefail
 
@@ -7,6 +12,8 @@ PROFILE="${1:-ai370}"
 MODE="${2:-safe}"
 PERSISTENCE="${3:-runtime}"
 OFFLINE="${4:-false}"
+# Visibility-only skips xrt-smi validate (execution). Default mixed path keeps it.
+VISIBILITY_ONLY="${5:-false}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=lib/npu-venv.sh
@@ -52,6 +59,10 @@ detect_npu_stack() {
   local device_nodes=""
   local ort_providers="unknown"
 
+  if [[ "$VISIBILITY_ONLY" == "true" ]]; then
+    xrt_validate="skipped-visibility-only"
+  fi
+
   if npu_kernel_module_loaded; then
     module_state="loaded"
   fi
@@ -67,7 +78,11 @@ detect_npu_stack() {
     xrt_smi_bin="$(command -v xrt-smi 2>/dev/null || true)"
     [[ -z "$xrt_smi_bin" && -x /opt/xilinx/xrt/bin/xrt-smi ]] && xrt_smi_bin="/opt/xilinx/xrt/bin/xrt-smi"
     xrt_examine="$("$xrt_smi_bin" examine 2>&1 || true)"
-    xrt_validate="$("$xrt_smi_bin" validate 2>&1 || true)"
+    if [[ "$VISIBILITY_ONLY" == "true" ]]; then
+      xrt_validate="skipped-visibility-only"
+    else
+      xrt_validate="$("$xrt_smi_bin" validate 2>&1 || true)"
+    fi
   fi
 
   # Package C: ORT provider listing is owned by 220-check-vitis-ai-ep.sh.
@@ -98,6 +113,7 @@ PY
     echo "Mode: $MODE"
     echo "Persistence: $PERSISTENCE"
     echo "Offline: $OFFLINE"
+    echo "Visibility-only: $VISIBILITY_ONLY"
     echo "Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     echo
     echo "kernel_module: $module_state"
@@ -118,10 +134,15 @@ PY
     echo
     echo "## xrt-smi validate"
     echo
-    printf '%s\n' "$xrt_validate"
+    if [[ "$VISIBILITY_ONLY" == "true" ]]; then
+      echo "skipped-visibility-only (S2-M4 does not run xrt-smi validate)"
+    else
+      printf '%s\n' "$xrt_validate"
+    fi
   } > "$XRT_STATUS"
 
   PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" OFFLINE="$OFFLINE" \
+  VISIBILITY_ONLY="$VISIBILITY_ONLY" \
   MODULE_STATE="$module_state" DEVICE_STATE="$device_state" RUNTIME_STATE="$runtime_state" \
   DEVICE_NODES="$device_nodes" ORT_PROVIDERS="$ort_providers" XRT_EXAMINE="$xrt_examine" XRT_VALIDATE="$xrt_validate" \
   VENV_PYTHON="${VENV_PYTHON:-}" VENV_SOURCE="${VENV_SOURCE:-unknown}" \
@@ -142,6 +163,7 @@ status = {
     "onnxruntime_venv": os.environ.get("VENV_PYTHON", ""),
     "onnxruntime_venv_source": os.environ.get("VENV_SOURCE", "unknown"),
     "onnxruntime_providers": os.environ["ORT_PROVIDERS"],
+    "visibility_only": os.environ.get("VISIBILITY_ONLY", "false") == "true",
 }
 capabilities = dict(status)
 capabilities.update({
@@ -220,7 +242,7 @@ PY
 
 main() {
   echo "[INFO] Phase 5: XDNA NPU validation track"
-  echo "[INFO] Offline: $OFFLINE"
+  echo "[INFO] Offline: $OFFLINE  Visibility-only: $VISIBILITY_ONLY"
   require_runtime_persistence
   detect_npu_stack
   echo "[INFO] NPU acceleration track complete."

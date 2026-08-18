@@ -182,15 +182,19 @@ class MigrationPlanTests(unittest.TestCase):
             "scripts/lib/capability_ladder.py",
             "scripts/s2-m3-validate-gpu-stack.sh",
             "scripts/s2-m3-publish-gpu-visibility.py",
+            "scripts/s2-m4-validate-npu-stack.sh",
+            "scripts/s2-m4-publish-npu-visibility.py",
             "tests/test_capability_ladder.py",
             "tests/test_s2_visibility_schemas.py",
             "tests/test_s2_m3_gpu_visibility.py",
+            "tests/test_s2_m4_npu_visibility.py",
         ):
             with self.subTest(path=path):
                 self.assertIn(path, self.plan)
         self.assertIn("tests.test_capability_ladder", self.plan)
         self.assertIn("tests.test_s2_visibility_schemas", self.plan)
         self.assertIn("tests.test_s2_m3_gpu_visibility", self.plan)
+        self.assertIn("tests.test_s2_m4_npu_visibility", self.plan)
         self.assertIn("issues/168", self.plan)
         self.assertIn("issues/169", self.plan)
         self.assertIn("target_gpu_arch", self.plan)
@@ -201,6 +205,7 @@ class MigrationPlanTests(unittest.TestCase):
             self.plan,
         )
         self.assertNotIn("no publisher CLI yet", self.plan)
+        self.assertNotIn("NPU publisher remains", self.plan)
 
     def test_open_issue_templates_match_remaining_publisher_work(self) -> None:
         issue168 = (ROOT / ".github/issues/pr2-capability-ladders.md").read_text(
@@ -210,11 +215,23 @@ class MigrationPlanTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("Workstream C GPU publisher", issue168)
-        self.assertIn("visibility-only NPU publisher", issue168)
+        self.assertIn("Workstream D NPU publisher", issue168)
         self.assertNotIn("command does not exist yet", issue168)
-        self.assertIn("remaining NPU visibility-only publisher", issue169)
-        self.assertIn("already landed in `#176`", issue169)
+        self.assertIn("visibility-only NPU", issue168)
+        self.assertIn("NPU visibility-only publisher", issue169)
+        self.assertIn("`#176`", issue169)
         self.assertIn("do not recreate", issue169)
+
+    def test_orchestrator_help_mentions_visibility_only_npu_path(self) -> None:
+        orchestrator = (ROOT / "ai370-optimize.sh").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("stage2-npu-validate is visibility-only (S2-M4)", orchestrator)
+        self.assertIn("s2-m4-validate-npu-stack", orchestrator)
+        self.assertIn("always refreshes tier3-validation.json", orchestrator)
+        self.assertIn("s2-m4-npu-runtime-validation.json", readme)
+        self.assertIn("visibility-only", readme.casefold())
+        self.assertIn("stage2-npu-validate", readme)
+        self.assertIn("tier3-validation.json", readme)
 
     def test_migration_plan_retains_readme_stage2_status_mismatch(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")

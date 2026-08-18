@@ -7,7 +7,7 @@ Lightweight smoke tests for the ai370-ubuntu-optimizer tier commands and artifac
 ```bash
 bash tests/smoke_tier1.sh
 bash tests/smoke_tier2.sh
-python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_repository_instructions
+python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_repository_instructions
 ```
 
 Or from repo root after making executable:
@@ -22,7 +22,7 @@ Or from repo root after making executable:
 ### Stage 1 (`smoke_tier1.sh` — Package E)
 
 - Syntax (`bash -n`) for canonical Stage 1 scripts, `40-platform-tuning`, `lib/common.sh`, orchestrator
-- Help mentions `stage1-inventory`, `stage1-profile`, `stage2-gpu-validate`, `--with-ai-smoke`, `--apply-tuning`, `--strict`
+- Help mentions `stage1-inventory`, `stage1-profile`, `stage2-gpu-validate`, visibility-only NPU, `--with-ai-smoke`, `--apply-tuning`, `--strict`
 - `stage1-inventory` → asserts `scope == inventory` and no local-AI smoke requirement
 - Asserts `s2-m3-gpu-runtime-visibility.json` from the S2-M3 GPU publisher
 - Runs `40-platform-tuning` plan-only and asserts platform-tuning artifacts
@@ -35,7 +35,8 @@ Or from repo root after making executable:
   `test_s1_m2_normalize.py`, `test_s1_m3_classify.py`,
   `test_s1_m4_capabilities.py`, `test_s1_m5_publish.py`
 - Stage 2 visibility tests: `test_capability_ladder.py`,
-  `test_s2_visibility_schemas.py`, `test_s2_m3_gpu_visibility.py`
+  `test_s2_visibility_schemas.py`, `test_s2_m3_gpu_visibility.py`,
+  `test_s2_m4_npu_visibility.py`
 
 ### Stage 2 (`smoke_tier2.sh` — Package D)
 
@@ -43,6 +44,7 @@ Or from repo root after making executable:
 - Manifest parse + chat/coding/embedding categories
 - `155` model layout staging (no downloads) + `150` offline storage validate
 - `145` tier2 + `240` tier3 aggregators
+- `stage1-probe` + `stage1-profile` then `s2-m4-validate-npu-stack.sh` visibility-only publisher (no 230)
 - Structure checks for gate JSON (`tier2-validation`, `tier3-validation`, offline storage)
 - Orchestrator help mentions `stage1-inventory` and `--with-lemonade`
 

@@ -93,10 +93,27 @@ class CapabilityLadderTests(unittest.TestCase):
         document = capability_ladder.npu_ladder_from_visibility(hardware, checks)
         self.assertFalse(document["validation_claim"])
         by_id = {step["id"]: step for step in document["steps"]}
+        self.assertEqual(by_id["DETECTED"]["status"], "satisfied")
+        self.assertEqual(by_id["DRIVER_READY"]["status"], "satisfied")
         self.assertEqual(by_id["RUNTIME_READY"]["status"], "satisfied")
         self.assertEqual(by_id["BACKEND_READY"]["status"], "satisfied")
         self.assertEqual(by_id["APPLICATION_READY"]["status"], "unknown")
         self.assertNotEqual(document["current"], "APPLICATION_READY")
+
+    def test_npu_live_absent_with_identity_is_not_unsupported(self) -> None:
+        hardware = hardware_from_fixture("observed-ai370.json")
+        checks = {
+            "module_present": False,
+            "device_nodes_present": False,
+            "firmware_ready": False,
+            "runtime_ready": False,
+            "backend_ready": False,
+        }
+        document = capability_ladder.npu_ladder_from_visibility(hardware, checks)
+        by_id = {step["id"]: step for step in document["steps"]}
+        self.assertEqual(by_id["DETECTED"]["status"], "not_satisfied")
+        self.assertEqual(by_id["DRIVER_READY"]["status"], "not_satisfied")
+        self.assertEqual(document["assessment"], "DEGRADED")
 
 
 if __name__ == "__main__":
