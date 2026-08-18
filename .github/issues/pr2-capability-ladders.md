@@ -16,11 +16,13 @@ Implement migration plan PR 2: expose GPU/NPU **capability ladders** as structur
 
 **Depends on:** None
 
-**Blocks:** PR 3 / [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) (S2-M7 should consume ladder reports)
+**Blocks:** None remaining. S2-M7 consumption of ladder reports remains [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169).
 
-**Landed on `main`:** workstreams A and B (`0.18.0` / `0.19.0`), Workstream C GPU publisher (`#176` / `0.20.0`), and Workstream D NPU publisher (`s2-m4-validate-npu-stack.sh`).
+**Landed on `main`:** workstreams A and B (`0.18.0` / `0.19.0`), Workstream C GPU publisher (`#176` / `0.20.0`), and Workstream D NPU publisher (`#180` / `0.21.0`). Remaining GitHub issue work is none; close #168.
 
 Inventory review: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/175
+Follow-up after GPU publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/179
+NPU publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/180
 
 ---
 
@@ -50,7 +52,7 @@ Landed in `#176` / `0.20.0`. Do not re-implement.
 
 ## Workstream D: NPU visibility (S2-M4, visibility only)
 
-Landed as the visibility-only NPU publisher. `stage2-npu-validate` defaults to S2-M4 and always refreshes `tier3-validation.json`; `--bench` keeps the mixed 230/245 compatibility path until S3-M6.
+Landed in `#180` / `0.21.0`. Do not re-implement. `stage2-npu-validate` defaults to S2-M4 and always refreshes `tier3-validation.json`; `--bench` keeps the mixed 230/245 compatibility path until S3-M6.
 
 - [x] Split visibility vs execution in `scripts/210-check-ryzen-ai-software.sh`
 - [x] Add `scripts/s2-m4-validate-npu-stack.sh` (no `230-benchmark-npu.sh`)
@@ -71,7 +73,7 @@ Do not split `scripts/90-validate.sh` here. Issue #169 owns the S2-M7 aggregate.
 - [x] `tests/test_capability_ladder.py` — ladder transitions from fixture dicts
 - [x] `tests/test_s2_visibility_schemas.py` — unpublished report builders validate
 - [x] `tests/test_s2_m3_gpu_visibility.py` — publisher CLI + schema + atomic write (`#176`)
-- [x] `tests/test_s2_m4_npu_visibility.py` — visibility does not claim inference
+- [x] `tests/test_s2_m4_npu_visibility.py` — visibility does not claim inference (`#180`)
 - [x] Extend `tests/test_s1_m4_capabilities.py` — no new `validation_claim: true`
 - [x] Update `tests/smoke_tier1.sh` — assert `s2-m3-gpu-runtime-visibility.json` after GPU validate (`#176`)
 - [x] Update `tests/test_repository_instructions.py` — help mentions visibility-only NPU path
@@ -81,16 +83,16 @@ Do not split `scripts/90-validate.sh` here. Issue #169 owns the S2-M7 aggregate.
 - [x] Add ladder semantics (`docs/ROADMAP.md`)
 - [x] Update `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md` inventory status (review pass 2026-08-18)
 - [x] Document `stage2-gpu-validate` command and S2-M3 output contract in `README.md` (`#176`)
-- [x] Update `README.md` Stage 2 NPU section (visibility-only path + output contract)
+- [x] Update `README.md` Stage 2 NPU section (visibility-only path + output contract) (`#180`)
 
 ## Definition of done
 
 - [x] `stage2-gpu-validate` writes valid `s2-m3-gpu-runtime-visibility.json` (`#176`)
-- [x] Visibility-only NPU validate writes valid `s2-m4-npu-runtime-validation.json`
+- [x] Visibility-only NPU validate writes valid `s2-m4-npu-runtime-validation.json` (`#180`)
 - [x] Legacy `tier1-gpu-stack.json` still produced (`#176`)
 - [x] Portable unit tests pass without AI370 hardware
 - [x] S1-M4 candidates still have `validation_claim: false` everywhere
-- [ ] PR title passes `bash scripts/validate-pr-title.sh`
+- [x] PR title passes `bash scripts/validate-pr-title.sh`
 
 ## Non-goals
 

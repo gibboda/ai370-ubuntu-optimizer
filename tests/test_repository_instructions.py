@@ -199,13 +199,18 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("issues/169", self.plan)
         self.assertIn("target_gpu_arch", self.plan)
         self.assertIn("0.20.0", self.plan)
+        self.assertIn("0.21.0", self.plan)
         self.assertIn("#176", self.plan)
+        self.assertIn("#180", self.plan)
+        self.assertIn("tests/test_s2_m4_npu_visibility.py", self.roadmap)
+        self.assertNotIn("S2-M4 publisher tests remain issue #168", self.roadmap)
         self.assertNotIn(
             "JSON still hardcodes `target_gpu_arch=gfx1150`",
             self.plan,
         )
         self.assertNotIn("no publisher CLI yet", self.plan)
         self.assertNotIn("NPU publisher remains", self.plan)
+        self.assertNotIn("NPU publisher CLI remains issue #168", self.plan)
 
     def test_open_issue_templates_match_remaining_publisher_work(self) -> None:
         issue168 = (ROOT / ".github/issues/pr2-capability-ladders.md").read_text(
@@ -216,11 +221,17 @@ class MigrationPlanTests(unittest.TestCase):
         )
         self.assertIn("Workstream C GPU publisher", issue168)
         self.assertIn("Workstream D NPU publisher", issue168)
+        self.assertIn("`#180`", issue168)
+        self.assertIn("0.21.0", issue168)
         self.assertNotIn("command does not exist yet", issue168)
         self.assertIn("visibility-only NPU", issue168)
+        self.assertIn("Remaining GitHub issue work is none", issue168)
         self.assertIn("NPU visibility-only publisher", issue169)
         self.assertIn("`#176`", issue169)
+        self.assertIn("`#180`", issue169)
+        self.assertIn("None remaining", issue169)
         self.assertIn("do not recreate", issue169)
+        self.assertNotIn("landed with GPU publisher", issue169)
 
     def test_orchestrator_help_mentions_visibility_only_npu_path(self) -> None:
         orchestrator = (ROOT / "ai370-optimize.sh").read_text(encoding="utf-8")
