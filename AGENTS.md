@@ -1,5 +1,14 @@
 # AGENTS.md
 
+## Contributor commit policy
+
+All contributors and co-contributors, including humans, AI agents, and
+automation, must follow this repository's Conventional Commit standard. The
+person or automation creating a commit and opening its pull request is
+responsible for ensuring that the shared commit subject and PR title comply on
+behalf of every contributor and `Co-authored-by` identity credited in the
+change.
+
 ## Codex PR creation policy
 
 When Codex creates commits or pull requests in this repository, it must use this

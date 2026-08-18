@@ -11,8 +11,14 @@ appending `(#PR)` on merge) **must** follow this format:
 type(scope): Subject
 ```
 
-The subject must begin with a letter and describe the change concisely.
-Commit subjects pushed to a PR should follow the same convention so the branch
+The subject must begin with a letter and describe the change concisely. All
+contributors and co-contributors, including humans, AI agents, and automation,
+must follow this policy. The person or automation creating a commit and opening
+its pull request is responsible for ensuring that the shared commit subject and
+PR title comply on behalf of every contributor and `Co-authored-by` identity
+credited in the change.
+
+Commit subjects pushed to a PR must follow the same convention so the branch
 history and final squash-merge commit stay consistent. CI enforces this for
 multi-commit PRs; single-commit PRs rely on title lint.
 

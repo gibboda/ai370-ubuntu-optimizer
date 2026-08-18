@@ -12,12 +12,30 @@ class RepositoryInstructionsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.agent_instructions = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        cls.contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        cls.pull_request_template = (
+            ROOT / ".github/PULL_REQUEST_TEMPLATE.md"
+        ).read_text(encoding="utf-8")
         cls.copilot_instructions = (
             ROOT / ".github/copilot-instructions.md"
         ).read_text(encoding="utf-8")
 
     def test_copilot_instructions_exist(self) -> None:
         self.assertTrue((ROOT / ".github/copilot-instructions.md").is_file())
+
+    def test_all_contributors_must_follow_commit_policy(self) -> None:
+        for policy in (
+            self.agent_instructions,
+            self.contributing,
+            self.pull_request_template,
+        ):
+            with self.subTest(policy=policy[:20]):
+                self.assertIn("contributors and co-contributors", policy)
+                self.assertIn("Conventional Commit", policy)
+
+        self.assertIn("must follow this policy", self.contributing)
+        self.assertIn("Co-authored-by", self.agent_instructions)
+        self.assertIn("Co-authored-by", self.contributing)
 
     def test_copilot_instructions_link_to_authoritative_documents(self) -> None:
         self.assertIn("[`../AGENTS.md`](../AGENTS.md)", self.copilot_instructions)
