@@ -250,6 +250,7 @@ feature is not treated as implemented unless code exists.
 | `tests/test_s2_visibility_schemas.py` | IMPLEMENTED | S2-M3/S2-M4 report builders validate against schemas |
 | `tests/test_s2_m3_gpu_visibility.py` | IMPLEMENTED | GPU publisher CLI, schema, atomic write, and missing-device fixture |
 | `tests/test_s2_m4_npu_visibility.py` | IMPLEMENTED | NPU publisher CLI, schema, atomic write; visibility does not claim inference |
+| `tests/test_s2_m1_firmware.py` | IMPLEMENTED | Firmware policy from classified `platform_id` and consumed Stage 1 fingerprint |
 | `tests/test_system_profile.py` | IMPLEMENTED | Classification, fingerprint, schema tests |
 | `tests/fixtures/raw-probes/v1/*` | IMPLEMENTED | AI370, Ryzen AI Pro 360, missing-tool, unsupported, unreadable, non-XDNA |
 
@@ -257,9 +258,9 @@ feature is not treated as implemented unless code exists.
 
 | Path | Status | Notes |
 | --- | --- | --- |
-| `scripts/20-check-bios.sh` | PARTIAL | BIOS/firmware facts and policy; target S2-M1 |
+| `scripts/lib/firmware_policy.py` | PARTIAL | BIOS policy from classified Stage 1 platform_id; consumed fingerprint |
 | `scripts/25-check-firmware.sh` | DEPRECATED | Wrapper around `20-check-bios.sh` |
-| `scripts/30-validate-kernel.sh` | PARTIAL | Kernel/module/firmware checks; target S2-M2 |
+| `scripts/30-validate-kernel.sh` | PARTIAL | Kernel/module/firmware checks; records consumed Stage 1 profile; target S2-M2 |
 | `scripts/70-validate-gpu-stack.sh` | DEPRECATED | Compatibility wrapper that execs `s2-m3-validate-gpu-stack.sh` |
 | `scripts/40-platform-tuning.sh` | PARTIAL | Combined CPU/memory/storage plan; `--apply-tuning` mutates; target S2-M5/S2-M6 |
 | `scripts/40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | DEPRECATED | Wrappers around platform tuning |
@@ -313,7 +314,7 @@ feature is not treated as implemented unless code exists.
 | Path | Status | Notes |
 | --- | --- | --- |
 | `tests/smoke_tier1.sh` | PARTIAL | Portable CLI smoke; asserts read-only `stage1` plus `tier1-*` artifacts from Stage 2 inventory |
-| `tests/smoke_stage2_platform.sh` | PARTIAL | Portable platform-wrapper smoke; `stage2-platform-validate` and `--approve` apply dry-run |
+| `tests/smoke_stage2_platform.sh` | PARTIAL | Fixture-based firmware-wrapper smoke; no live `stage1` / `stage2-platform-validate` |
 | `tests/smoke_tier2.sh` | PARTIAL | Portable runtime/layout smoke |
 | `tests/test_repository_instructions.py` | IMPLEMENTED | Instruction-file contract |
 | `scripts/legacy/*` | DEPRECATED | Frozen archive; no new behavior |
@@ -401,7 +402,8 @@ abbreviated; see the assumption table for the full class.
 
 | Current path | Responsibility | Dependencies | Assumptions | Target | Action | Required tests | Risk |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `scripts/20-check-bios.sh` | BIOS/firmware observation and policy | DMI, fwupd, profile `EXPECTED_BIOS_VERSION` | BIOS 2.01 is profile target, not generic gate | S2-M1 | SPLIT facts vs policy | Firmware fixtures | Medium |
+| `scripts/20-check-bios.sh` | BIOS/firmware policy from consumed S1-M5 profile | `s1-m5-system-profile.json`, classified `platform_id` `.env`, supplemental fwupd | BIOS 2.01 is classified-platform target, not CLI `--profile` or a generic gate | S2-M1 | SPLIT facts vs policy | `test_s2_m1_firmware.py` | Medium |
+| `scripts/lib/firmware_policy.py` | Classified-platform BIOS policy and consumed-profile block | S1-M5 profile, `configs/profiles/*.env` | Policy is not a flash/update claim | S2-M1 | KEEP until canonical S2-M1 JSON | `test_s2_m1_firmware.py` | Low |
 | `scripts/25-check-firmware.sh` | Wrapper | `20-check-bios.sh` | None | Compatibility | DEPRECATE | Existing BIOS tests | Low |
 | `scripts/30-validate-kernel.sh` | Kernel, modules, firmware dirs | `amdgpu` module, linux-firmware | Radeon 890M advice strings | S2-M2 | REFACTOR to capability checks | Supported/unsupported matrix | Medium |
 | `scripts/70-validate-gpu-stack.sh` | Compatibility GPU visibility wrapper | `s2-m3-validate-gpu-stack.sh` | None beyond canonical owner | Compatibility until R1 | DEPRECATE; KEEP wrapper | Smoke still invokes this path from `stage2-platform-inventory` | Low |
@@ -444,7 +446,7 @@ abbreviated; see the assumption table for the full class.
 | `workflows/comfyui/*` | SDXL templates | ComfyUI | No NPU assumption | S4-M2 | KEEP | Workflow launch tests | Low |
 | `tests/smoke_tier1.sh`, `tests/smoke_stage2_platform.sh`, `tests/smoke_tier2.sh` | Portable CLI smokes | Orchestrator | `tier*` artifacts | Owner-specific `test_sN_mN_*` | REPLACE at R1/R2 | Deterministic fixtures | Medium |
 | `tests/test_s1_m1_probe.py`, `tests/test_system_profile.py` | Profile/probe contracts | Fixtures | AI370 reference plus non-AI370 | S1-M1/S1-M2/S1-M5 | KEEP and split by milestone | Existing plus unknown-host | Low |
-| `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py` | Ladder, unpublished report builders, GPU publisher CLI, and NPU publisher CLI | Probe/profile fixtures | No validation claims | S2-M3 / S2-M4 | KEEP | Existing plus missing-device fixtures | Low |
+| `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m1_firmware.py` | Ladder, unpublished report builders, GPU/NPU publisher CLI, and firmware profile consumption | Probe/profile fixtures | No validation claims | S2-M1 / S2-M3 / S2-M4 | KEEP | Existing plus missing-device and classified-platform fixtures | Low |
 | `tests/fixtures/**` | Sanitized hardware evidence | None | Reference and counterexamples | Detection/classification | KEEP; add newer Ryzen AI as data | Classification matrix | Low |
 | `scripts/legacy/*` | Frozen archive | Historical | Tier/phase names | Compatibility archive | KEEP frozen; REMOVE at R1/R2 | No new tests | Low |
 | `docs/ROADMAP.md` | Implementation authority | All deliverables | Five stages | Current authority | KEEP; update when boundaries change | Instruction tests | High |
@@ -551,7 +553,7 @@ opt-in. Required fixture classes for hardware-classification changes:
 
 Current automated coverage to retain until replaced by owner-specific tests:
 
-- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_repository_instructions`
+- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m1_firmware tests.test_repository_instructions`
 - `bash tests/smoke_tier1.sh`
 - `bash tests/smoke_stage2_platform.sh`
 - `bash tests/smoke_tier2.sh`

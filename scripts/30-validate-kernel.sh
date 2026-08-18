@@ -16,7 +16,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/lib/hardware-detect.sh
 source "$PROJECT_ROOT/scripts/lib/hardware-detect.sh"
 
-LATEST_DIR="$PROJECT_ROOT/reports/latest"
+LATEST_DIR="${LATEST_DIR:-$PROJECT_ROOT/reports/latest}"
 STATUS_JSON="$LATEST_DIR/tier1-kernel-plan.json"
 SUMMARY_MD="$LATEST_DIR/tier1-kernel-plan.md"
 STATUS_TXT="$LATEST_DIR/tier1-kernel-plan.txt"
@@ -41,6 +41,14 @@ PY
 main() {
   echo "[INFO] Tier 1 / 30-validate-kernel.sh"
   echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE  Dry run: $DRY_RUN"
+
+  local PROFILE_FILE="$LATEST_DIR/s1-m5-system-profile.json"
+  if [[ ! -f "$PROFILE_FILE" ]]; then
+    echo "[ERROR] Stage 2 kernel validation requires the canonical Stage 1 profile:"
+    echo "[ERROR]   $PROFILE_FILE"
+    echo "[ERROR] Run: ./ai370-optimize.sh stage1"
+    exit 2
+  fi
 
   if [[ "$PERSISTENCE" == "system" ]]; then
     echo "[ERROR] Persistent kernel tuning is not implemented. Use --persistence=runtime."
@@ -96,19 +104,27 @@ main() {
   fi
 
   export PROFILE MODE PERSISTENCE DRY_RUN kernel os_description os_version os_codename target_kernel kernel_ok amdgpu_ok amdxdna_seen linux_firmware_state status
+  export PROFILE_FILE PROJECT_ROOT
   RECOMMENDATIONS="$(printf '%s\n' "${recommendations[@]:-}")"
   export RECOMMENDATIONS
   python3 - <<'PY' > "$STATUS_JSON"
 import json
 import os
-from datetime import datetime, UTC
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
+
+sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
+import firmware_policy
 
 recommendations = [line for line in os.environ.get("RECOMMENDATIONS", "").splitlines() if line.strip()]
+profile = firmware_policy.load_system_profile(Path(os.environ["PROFILE_FILE"]))
 print(json.dumps({
     "tier": 1,
     "phase": "validate-kernel",
     "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
     "profile": os.environ.get("PROFILE", "ai370"),
+    "classified_platform_id": firmware_policy.classified_platform_id(profile),
     "mode": os.environ.get("MODE", "safe"),
     "persistence": os.environ.get("PERSISTENCE", "runtime"),
     "dry_run": os.environ.get("DRY_RUN", "false") == "true",
@@ -131,6 +147,7 @@ print(json.dumps({
         "amdgpu_directory": os.environ.get("linux_firmware_state", "unknown"),
     },
     "recommendations": recommendations,
+    "consumed_profile": firmware_policy.consumed_profile_block(profile),
 }, indent=2))
 PY
 

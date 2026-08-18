@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Smoke test for Stage 2 platform commands (PR 3a). Non-mutating.
+# Portable smoke for Stage 2 platform command wiring (PR 3a + profile contract).
+# Uses versioned S1-M5 fixtures. Does not probe host /sys, PCI, or modules.
 # Safe without AI370 hardware and without network.
 
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
-SMOKE_PROFILE="ai370"
+PROFILE_FIXTURE="$PROJECT_ROOT/tests/fixtures/system-profile/v3/valid-reference.json"
+SMOKE_PROFILE="generic-ryzen-ai"
 SMOKE_MODE="safe"
 
-echo "[INFO] Stage 2 platform smoke test starting (profile=$SMOKE_PROFILE)"
+echo "[INFO] Stage 2 platform smoke test starting (selected profile=$SMOKE_PROFILE)"
 
 for s in \
   ai370-optimize.sh \
@@ -44,69 +46,41 @@ if "$PROJECT_ROOT/ai370-optimize.sh" stage2-optimize-apply --profile="$SMOKE_PRO
 fi
 echo "[OK] stage2-optimize-apply without --approve is rejected"
 
-"$PROJECT_ROOT/ai370-optimize.sh" stage1 --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
-if [[ ! -f "$LATEST_DIR/s1-m5-system-profile.json" ]]; then
-  echo "[FAIL] stage1 must publish s1-m5-system-profile.json"
+if [[ ! -f "$PROFILE_FIXTURE" ]]; then
+  echo "[FAIL] missing versioned profile fixture: $PROFILE_FIXTURE"
   exit 2
 fi
-echo "[OK] stage1 published s1-m5-system-profile.json"
 
-"$PROJECT_ROOT/ai370-optimize.sh" stage2-platform-validate --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
+mkdir -p "$LATEST_DIR"
+rm -f \
+  "$LATEST_DIR/tier1-firmware.json" \
+  "$LATEST_DIR/tier1-firmware-validation.json" \
+  "$LATEST_DIR/s1-m1-raw-inventory.json"
+cp "$PROFILE_FIXTURE" "$LATEST_DIR/s1-m5-system-profile.json"
 
-for f in \
-  s1-m5-system-profile.json \
-  tier1-firmware.json \
-  s2-m3-gpu-runtime-visibility.json \
-  s2-m4-npu-runtime-validation.json \
-  tier1-validation.json
+"$PROJECT_ROOT/ai370-optimize.sh" stage2-firmware-validate \
+  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE"
+
+for f in s1-m5-system-profile.json tier1-firmware.json tier1-firmware-validation.json
 do
   if [[ ! -f "$LATEST_DIR/$f" ]]; then
-    echo "[FAIL] missing artifact after stage2-platform-validate: $f"
+    echo "[FAIL] missing artifact after stage2-firmware-validate: $f"
     exit 2
   fi
   echo "[OK] artifact present: $f"
 done
 
-python3 - "$LATEST_DIR/tier1-validation.json" <<'PY'
+python3 - "$LATEST_DIR/tier1-firmware.json" "$PROFILE_FIXTURE" <<'PY'
 import json, sys
-data = json.load(open(sys.argv[1]))
-assert data.get("scope") == "inventory", f"platform-validate uses inventory-scope 90-validate, got {data.get('scope')}"
-assert data.get("acceptance", {}).get("ai_smoke_required") is False
-print("[OK] platform-validate compatibility aggregate is inventory-scope (no tuning/smoke required)")
-PY
-
-python3 - "$LATEST_DIR/s2-m4-npu-runtime-validation.json" "$PROJECT_ROOT" <<'PY'
-import importlib.util, json, sys
-from pathlib import Path
-root = Path(sys.argv[2])
-spec = importlib.util.spec_from_file_location("system_profile", root / "scripts/lib/system_profile.py")
-ladder_spec = importlib.util.spec_from_file_location("capability_ladder", root / "scripts/lib/capability_ladder.py")
-system_profile = importlib.util.module_from_spec(spec)
-capability_ladder = importlib.util.module_from_spec(ladder_spec)
-spec.loader.exec_module(system_profile)
-ladder_spec.loader.exec_module(capability_ladder)
 report = json.load(open(sys.argv[1], encoding="utf-8"))
-system_profile.validate_document(report, capability_ladder.S2_M4_SCHEMA, "S2-M4")
-assert report["ladder"]["validation_claim"] is False
-print("[OK] platform-validate NPU report is visibility-only")
-PY
-
-"$PROJECT_ROOT/ai370-optimize.sh" stage2-optimize-plan --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
-if [[ ! -f "$LATEST_DIR/tier1-platform-tuning.json" ]]; then
-  echo "[FAIL] missing artifact: tier1-platform-tuning.json"
-  exit 2
-fi
-
-"$PROJECT_ROOT/ai370-optimize.sh" stage2-optimize-apply --dry-run --approve \
-  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
-python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY'
-import json, sys
-data = json.load(open(sys.argv[1]))
-ra = data.get("runtime_apply") or {}
-assert ra.get("requested") is True, "approved apply should request apply"
-assert ra.get("dry_run") is True, "dry-run must be recorded"
-assert ra.get("applied") is False, "dry-run must not apply commands"
-print("[OK] stage2-optimize-apply --approve --dry-run is non-mutating")
+fixture = json.load(open(sys.argv[2], encoding="utf-8"))
+assert report.get("profile") == "generic-ryzen-ai", report.get("profile")
+assert report.get("classified_platform_id") == "ai370", report.get("classified_platform_id")
+assert report.get("bios_expected") == "2.01", report.get("bios_expected")
+consumed = report.get("consumed_profile") or {}
+assert consumed.get("schema", {}).get("version") == 3, consumed
+assert consumed.get("fingerprint", {}).get("value") == fixture["fingerprint"]["value"], consumed
+print("[OK] firmware validate consumed classified ai370 policy and Stage 1 fingerprint")
 PY
 
 echo "[PASS] Stage 2 platform smoke test completed successfully."

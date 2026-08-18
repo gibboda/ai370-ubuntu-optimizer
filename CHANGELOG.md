@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tuning apply requires `stage2-optimize-apply --approve`.
 - `stage2-validate` remains the runtime/NPU cheap gate; it is not the
   platform aggregate.
+- `stage2-firmware-validate` consumes `s1-m5-system-profile.json`. BIOS
+  policy uses classified `platform_id`, not CLI `--profile` alone, and
+  records the consumed schema version plus hardware fingerprint.
+- `tests/smoke_stage2_platform.sh` is fixture-based: it seeds a versioned
+  Stage 1 profile and does not probe host `/sys` or run live
+  `stage2-platform-validate`.
 
 ### Added
 
@@ -23,7 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `stage2-kernel-validate`, `stage2-optimize-plan`,
   `stage2-optimize-apply`, `stage2-platform-validate`,
   `stage2-platform-inventory`.
-- `tests/smoke_stage2_platform.sh` for the platform wrappers.
 
 ## [0.21.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.20.0...v0.21.0) (2026-08-18)
 

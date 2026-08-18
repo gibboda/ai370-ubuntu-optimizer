@@ -272,6 +272,8 @@ ROADMAP status: S2-M3/S2-M4 In progress; S2-M1, S2-M2, and S2-M5–S2-M7 remain
 
 ```bash
 ./ai370-optimize.sh stage2-firmware-validate
+# Consumes reports/latest/s1-m5-system-profile.json (run stage1 first).
+# BIOS policy uses classified platform_id, not CLI --profile alone.
 ./ai370-optimize.sh stage2-kernel-validate [--dry-run]
 ./ai370-optimize.sh stage2-gpu-validate [--offline]   # S2-M3 GPU visibility ladder report
 ./ai370-optimize.sh stage2-npu-validate [--offline]   # S2-M4 NPU visibility ladder report

@@ -86,8 +86,8 @@ Stage 1 (read-only, S1-M1 through S1-M5):
   Mixed BIOS/kernel/GPU/tuning/90-validate no longer runs from stage1.
 
 Stage 2 platform (wrappers until canonical S2-M1/M2/M5–M7 outputs exist):
-  stage2-firmware-validate = 20-check-bios (S2-M1 Planned)
-  stage2-kernel-validate = 30-validate-kernel (S2-M2 Planned)
+  stage2-firmware-validate = 20-check-bios (S2-M1 Planned); requires S1-M5 profile
+  stage2-kernel-validate = 30-validate-kernel (S2-M2 Planned); requires S1-M5 profile
   stage2-gpu-validate = s2-m3-validate-gpu-stack (S2-M3 In progress)
   stage2-npu-validate is visibility-only (S2-M4) by default; pass --bench for the
     mixed 210-validate / 230 / 245 compatibility path until S3-M6. Script 240
@@ -231,7 +231,12 @@ run_stage1_profile() {
   local raw="$latest/s1-m1-raw-inventory.json"
   mkdir -p "$latest"
   if [[ ! -f "$raw" ]]; then
-    bash "$PROJECT_ROOT/scripts/s1-m1-probe-system.sh"
+    if [[ -n "${AI370_S1_M1_FIXTURE:-}" ]]; then
+      echo "[INFO] Replaying S1-M1 from fixture: $AI370_S1_M1_FIXTURE"
+      bash "$PROJECT_ROOT/scripts/s1-m1-probe-system.sh" --fixture "$AI370_S1_M1_FIXTURE"
+    else
+      bash "$PROJECT_ROOT/scripts/s1-m1-probe-system.sh"
+    fi
   fi
   local generator_version="unknown"
   if [[ -f "$PROJECT_ROOT/VERSION" ]]; then
@@ -607,12 +612,15 @@ case "$CMD" in
 
   stage2-firmware-validate)
     echo "[INFO] Stage 2 firmware validate (S2-M1 wrapper around 20-check-bios.sh)"
+    echo "[INFO] Consumes s1-m5-system-profile.json (classified platform_id, not CLI --profile alone)"
+    ensure_stage1_profile
     run_script "scripts/20-check-bios.sh"
     write_report_index
     ;;
 
   stage2-kernel-validate)
     echo "[INFO] Stage 2 kernel validate (S2-M2 wrapper around 30-validate-kernel.sh)"
+    ensure_stage1_profile
     run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
     write_report_index
     ;;
@@ -780,12 +788,14 @@ case "$CMD" in
 
   firmware)
     echo "[WARN] firmware is legacy; prefer ./ai370-optimize.sh stage2-firmware-validate"
+    ensure_stage1_profile
     run_script_or_legacy "scripts/20-check-bios.sh" "scripts/legacy/05-firmware-baseline.sh"
     run_script "scripts/25-check-firmware.sh"
     ;;
 
   kernel-amd)
     echo "[WARN] kernel-amd is legacy; prefer ./ai370-optimize.sh stage2-kernel-validate"
+    ensure_stage1_profile
     run_script_or_legacy "scripts/30-validate-kernel.sh" "scripts/legacy/10-amd-baseline.sh" "$DRY_RUN"
     ;;
 
@@ -832,6 +842,7 @@ case "$CMD" in
 
   baseline-apply)
     echo "[WARN] baseline-apply is legacy; prefer stage2-kernel-validate or stage2-optimize-apply --approve"
+    ensure_stage1_profile
     run_script_or_legacy "scripts/30-validate-kernel.sh" "scripts/legacy/10-amd-baseline.sh" "$DRY_RUN"
     ;;
 

@@ -188,6 +188,7 @@ class MigrationPlanTests(unittest.TestCase):
             "tests/test_s2_visibility_schemas.py",
             "tests/test_s2_m3_gpu_visibility.py",
             "tests/test_s2_m4_npu_visibility.py",
+            "tests/test_s2_m1_firmware.py",
             "tests/smoke_stage2_platform.sh",
         ):
             with self.subTest(path=path):
@@ -196,6 +197,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("tests.test_s2_visibility_schemas", self.plan)
         self.assertIn("tests.test_s2_m3_gpu_visibility", self.plan)
         self.assertIn("tests.test_s2_m4_npu_visibility", self.plan)
+        self.assertIn("tests.test_s2_m1_firmware", self.plan)
         self.assertIn("issues/168", self.plan)
         self.assertIn("issues/169", self.plan)
         self.assertIn("target_gpu_arch", self.plan)
@@ -255,6 +257,14 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("run_stage1_profile", orchestrator)
         self.assertNotIn("\nrun_stage1()\n", orchestrator)
         self.assertIn("stage2-validate is a cheap runtime/NPU gate refresh", orchestrator)
+        firmware_case = orchestrator.split("stage2-firmware-validate)", 1)[1].split(
+            "stage2-kernel-validate)", 1
+        )[0]
+        self.assertIn("ensure_stage1_profile", firmware_case)
+        kernel_case = orchestrator.split("stage2-kernel-validate)", 1)[1].split(
+            "stage2-optimize-plan)", 1
+        )[0]
+        self.assertIn("ensure_stage1_profile", kernel_case)
 
     def test_readme_stage2_status_matches_roadmap(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
