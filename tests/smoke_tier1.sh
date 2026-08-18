@@ -38,7 +38,7 @@ do
 done
 
 # 2. Help documents read-only Stage 1 and Stage 2 platform commands
-help_out="$("$PROJECT_ROOT/ai370-optimize.sh" help 2>&1 || true)"
+help_out="$("$PROJECT_ROOT/ai370-optimize.sh" help 2>&1)"
 echo "$help_out" | grep -q "stage1-profile" || { echo "[FAIL] help missing stage1-profile"; exit 3; }
 echo "$help_out" | grep -q "stage2-platform-validate" || { echo "[FAIL] help missing stage2-platform-validate"; exit 3; }
 echo "$help_out" | grep -q "stage2-platform-inventory" || { echo "[FAIL] help missing stage2-platform-inventory"; exit 3; }
@@ -54,7 +54,7 @@ echo "[OK] orchestrator help mentions read-only Stage 1, Stage 2 platform comman
 # 3. stage1 is probe + profile only (no tuning / BIOS / 90-validate)
 rm -f "$LATEST_DIR/tier1-platform-tuning.json" "$LATEST_DIR/tier1-validation.json"
 "$PROJECT_ROOT/ai370-optimize.sh" stage1 --dry-run --apply-tuning --with-ai-smoke \
-  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
+  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE"
 if [[ ! -f "$LATEST_DIR/s1-m5-system-profile.json" ]]; then
   echo "[FAIL] stage1 must publish s1-m5-system-profile.json"
   exit 2
@@ -70,7 +70,7 @@ fi
 echo "[OK] stage1 is read-only profile publication (no tuning / 90-validate)"
 
 # Inventory path lives on Stage 2 (stage1-inventory remains a deprecated alias)
-"$PROJECT_ROOT/ai370-optimize.sh" stage2-platform-inventory --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
+"$PROJECT_ROOT/ai370-optimize.sh" stage2-platform-inventory --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE"
 
 # Assert inventory scope on gate artifact
 python3 - "$LATEST_DIR/tier1-validation.json" <<'PY'
@@ -113,7 +113,7 @@ print("[OK] s2-m3-gpu-runtime-visibility.json validates against schema")
 PY
 
 # Platform tuning plan (default: no AI370_APPLY_TUNING — plan only)
-bash "$PROJECT_ROOT/scripts/40-platform-tuning.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime || true
+bash "$PROJECT_ROOT/scripts/40-platform-tuning.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime
 if [[ ! -f "$LATEST_DIR/tier1-platform-tuning.json" ]]; then
   echo "[FAIL] missing artifact: tier1-platform-tuning.json"; exit 2
 fi
@@ -127,12 +127,17 @@ data = json.load(open(sys.argv[1]))
 zram = (data.get("memory") or {}).get("zram0", "")
 assert "\n" not in zram, f"zram0 status must be a single token, got {zram!r}"
 assert zram, "zram0 status should not be empty"
+assert "classified_platform_id" in data, "optimize plan must record classified_platform_id"
+consumed = data.get("consumed_profile") or {}
+assert consumed.get("schema", {}).get("version") == 3, consumed
+assert "fingerprint" in consumed, consumed
 print(f"[OK] platform-tuning zram0 status is single-line: {zram!r}")
+print("[OK] platform-tuning recorded consumed Stage 1 profile")
 PY
 echo "[OK] platform-tuning plan artifacts present"
 
 # Full-scope 90-validate contract (compatibility aggregate; not invoked by stage1)
-bash "$PROJECT_ROOT/scripts/90-validate.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime full || true
+bash "$PROJECT_ROOT/scripts/90-validate.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime full
 
 python3 - "$LATEST_DIR/tier1-validation.json" <<'PY'
 import json, sys
@@ -200,7 +205,7 @@ PY
 # 5b. Non-strict acceptance misses must not demote overall status from PASS→WARN
 # (other soft checks may still WARN; force a pure acceptance-only path by re-running
 # after a normal full validate and asserting the helper contract via acceptance fields).
-AI370_STAGE1_STRICT=false bash "$PROJECT_ROOT/scripts/90-validate.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime full || true
+AI370_STAGE1_STRICT=false bash "$PROJECT_ROOT/scripts/90-validate.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime full
 python3 - "$LATEST_DIR/tier1-validation.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
@@ -232,7 +237,7 @@ PY
 
 # 5c. Dry-run must not apply tuning commands even when AI370_APPLY_TUNING=true
 DRY_RUN=true AI370_APPLY_TUNING=true bash "$PROJECT_ROOT/scripts/40-platform-tuning.sh" \
-  "$SMOKE_PROFILE" "$SMOKE_MODE" runtime || true
+  "$SMOKE_PROFILE" "$SMOKE_MODE" runtime
 python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
@@ -245,7 +250,7 @@ PY
 
 # Also verify orchestrator apply path requires --approve and honors --dry-run
 "$PROJECT_ROOT/ai370-optimize.sh" stage2-optimize-apply --dry-run --approve \
-  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE" || true
+  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE"
 python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
@@ -257,7 +262,7 @@ print("[OK] stage2-optimize-apply --dry-run --approve is non-mutating")
 PY
 
 # Restore non-strict full validate so latest artifact matches default policy for later steps
-AI370_STAGE1_STRICT=false bash "$PROJECT_ROOT/scripts/90-validate.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime full || true
+AI370_STAGE1_STRICT=false bash "$PROJECT_ROOT/scripts/90-validate.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime full
 
 # 6. Basic profile / mode presence
 grep -q '"profile": "ai370"' "$LATEST_DIR/tier1-validation.json" || { echo "[FAIL] profile in validation"; exit 3; }

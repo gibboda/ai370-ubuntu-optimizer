@@ -285,10 +285,10 @@ PY
     case "$SCOPE" in
       inventory)
         echo "- Inventory-only: platform-tuning and local-AI smoke not required."
-        echo "- Run \`stage1\` for platform plans; \`stage1 --with-ai-smoke\` for script 80."
+        echo "- Run \`stage2-optimize-plan\` for platform plans; \`scripts/80-benchmark-local-ai.sh\` for script 80."
         ;;
       full)
-        echo "- Platform Stage 1: local-AI smoke (script 80) is optional."
+        echo "- Platform aggregate: local-AI smoke (script 80) is optional."
         echo "- Missing gfx1150/NPU is listed under Warnings without demoting status to WARN;"
         echo "  overall PASS still opens the Stage 3 gate. Use --strict for hard AI370 checks."
         ;;
@@ -299,7 +299,8 @@ PY
     echo
     echo "## Next steps"
     echo "- Run Stage 2 (runtime + NPU) before Stage 3 (ComfyUI / generative)."
-    echo "- Re-check: ./ai370-optimize.sh stage1-validate  (add --inventory or --strict as needed)"
+    echo "- Re-check: ./ai370-optimize.sh stage2-platform-validate [--strict]"
+    echo "- Inventory-only re-check: ./ai370-optimize.sh stage2-platform-inventory [--strict]"
   } > "$OUT_MD"
 
   echo "$status" > "$OUT_TXT"

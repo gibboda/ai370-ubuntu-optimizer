@@ -22,7 +22,7 @@ def load_system_profile(path: Path) -> dict[str, Any]:
     """Load and return a Stage 1 system profile document."""
     if not path.is_file():
         raise FileNotFoundError(
-            f"Stage 2 firmware validation requires {path}. "
+            f"Stage 2 requires the canonical Stage 1 profile {path}. "
             "Run ./ai370-optimize.sh stage1 first."
         )
     return json.loads(path.read_text(encoding="utf-8"))

@@ -304,6 +304,7 @@ run_stage2_optimize_plan() {
   if [[ "$APPLY_TUNING" == "true" ]]; then
     echo "[WARN] --apply-tuning is ignored on stage2-optimize-plan. Use stage2-optimize-apply --approve"
   fi
+  ensure_stage1_profile
   run_script "scripts/40-platform-tuning.sh"
   write_report_index
 }
@@ -317,6 +318,7 @@ run_stage2_optimize_apply() {
   echo "[INFO] Stage 2 optimize apply – 40-platform-tuning with approval (S2-M6 wrapper)"
   export DRY_RUN="${DRY_RUN:-false}"
   export AI370_APPLY_TUNING=true
+  ensure_stage1_profile
   run_script "scripts/40-platform-tuning.sh"
   write_report_index
 }
@@ -328,7 +330,7 @@ write_report_index() {
 }
 
 run_stage2_runtime_core() {
-  echo "[INFO] Stage 2 runtime core (S2-M1 / S2-M4 / S2-M5)"
+  echo "[INFO] Stage 2 runtime core (PyTorch/llama.cpp/Ollama/WebUI + model storage)"
   run_script "scripts/100-install-pytorch-rocm.sh" "$OFFLINE"
   run_script "scripts/110-install-llama-cpp.sh" "$OFFLINE"
   run_script "scripts/120-install-ollama.sh" "$OFFLINE"
@@ -364,20 +366,20 @@ run_stage2_npu_core() {
 }
 
 run_optional_lemonade() {
-  echo "[INFO] Optional S2-M6 TurnkeyML + Lemonade"
+  echo "[INFO] Optional S3-M5 TurnkeyML + Lemonade"
   run_script "scripts/170-install-turnkeyml.sh" "$OFFLINE"
   run_script "scripts/160-install-lemonade.sh" "$OFFLINE"
   run_script "scripts/165-validate-lemonade.sh" "$OFFLINE"
 }
 
 run_optional_digest() {
-  echo "[INFO] Optional S2-M7 Digest AI model analysis"
+  echo "[INFO] Optional S3-M4 Digest AI model analysis"
   run_script "scripts/250-install-digest-ai.sh" "$OFFLINE"
   run_script "scripts/255-analyze-model-digest.sh" "$OFFLINE"
 }
 
 run_optional_rag() {
-  echo "[INFO] Optional S2-M3 Offline RAG"
+  echo "[INFO] Optional S4-M3 Offline RAG"
   run_script "scripts/300-install-anythingllm.sh" "$OFFLINE"
   run_script "scripts/310-install-embedding-models.sh" "$OFFLINE"
   run_script "scripts/320-validate-rag.sh" "$OFFLINE"
@@ -538,13 +540,13 @@ print_context() {
     echo "[INFO] AMD acceleration risk accepted: true"
   fi
   if [[ "$WITH_LEMONADE" == "true" ]]; then
-    echo "[INFO] Optional pack: lemonade (S2-M6)"
+    echo "[INFO] Optional pack: lemonade (S3-M5)"
   fi
   if [[ "$WITH_DIGEST" == "true" ]]; then
-    echo "[INFO] Optional pack: digest (S2-M7)"
+    echo "[INFO] Optional pack: digest (S3-M4 diagnostics)"
   fi
   if [[ "$WITH_RAG" == "true" ]]; then
-    echo "[INFO] Optional pack: rag (S2-M3)"
+    echo "[INFO] Optional pack: rag (S4-M3)"
   fi
   if [[ "$BENCH" == "true" ]]; then
     echo "[INFO] Bench mode: true (full smoke/compare)"
@@ -640,7 +642,7 @@ case "$CMD" in
     run_stage2_npu_core "true"
     run_optional_packs
     if [[ "$WITH_LEMONADE" != "true" && "$WITH_DIGEST" != "true" && "$WITH_RAG" != "true" ]]; then
-      echo "[INFO] Skipped optional S2-M3/M6/M7 packs (not required for Stage 3 gate)."
+      echo "[INFO] Skipped optional Lemonade/Digest/RAG packs (not required for Stage 3 gate)."
     fi
     ;;
 
@@ -801,7 +803,7 @@ case "$CMD" in
 
   tune)
     echo "[WARN] tune is legacy; prefer stage2-optimize-plan (or stage2-optimize-apply --approve)"
-    run_script "scripts/40-platform-tuning.sh"
+    run_stage2_optimize_plan
     ;;
 
   accel-validate)

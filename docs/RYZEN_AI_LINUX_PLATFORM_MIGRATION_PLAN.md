@@ -251,6 +251,7 @@ feature is not treated as implemented unless code exists.
 | `tests/test_s2_m3_gpu_visibility.py` | IMPLEMENTED | GPU publisher CLI, schema, atomic write, and missing-device fixture |
 | `tests/test_s2_m4_npu_visibility.py` | IMPLEMENTED | NPU publisher CLI, schema, atomic write; visibility does not claim inference |
 | `tests/test_s2_m1_firmware.py` | IMPLEMENTED | Firmware policy from classified `platform_id` and consumed Stage 1 fingerprint |
+| `tests/test_s2_optimize_profile.py` | IMPLEMENTED | Optimize plan wrapper records classified identity and consumed fingerprint |
 | `tests/test_system_profile.py` | IMPLEMENTED | Classification, fingerprint, schema tests |
 | `tests/fixtures/raw-probes/v1/*` | IMPLEMENTED | AI370, Ryzen AI Pro 360, missing-tool, unsupported, unreadable, non-XDNA |
 
@@ -262,7 +263,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/25-check-firmware.sh` | DEPRECATED | Wrapper around `20-check-bios.sh` |
 | `scripts/30-validate-kernel.sh` | PARTIAL | Kernel/module/firmware checks; records consumed Stage 1 profile; target S2-M2 |
 | `scripts/70-validate-gpu-stack.sh` | DEPRECATED | Compatibility wrapper that execs `s2-m3-validate-gpu-stack.sh` |
-| `scripts/40-platform-tuning.sh` | PARTIAL | Combined CPU/memory/storage plan; `--apply-tuning` mutates; target S2-M5/S2-M6 |
+| `scripts/40-platform-tuning.sh` | PARTIAL | Combined CPU/memory/storage plan; consumes S1-M5 identity + fingerprint; apply requires `--approve`; target S2-M5/S2-M6 |
 | `scripts/40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | DEPRECATED | Wrappers around platform tuning |
 | `scripts/65-amd-acceleration-install.sh` | PARTIAL | Explicit-risk ROCm/XRT install; target S2-M6 |
 | `scripts/90-validate.sh` | PARTIAL | Mixed S1/S2 aggregate; writes `tier1-validation.json`; gfx1150/NPU acceptance |
@@ -553,7 +554,7 @@ opt-in. Required fixture classes for hardware-classification changes:
 
 Current automated coverage to retain until replaced by owner-specific tests:
 
-- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m1_firmware tests.test_repository_instructions`
+- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m1_firmware tests.test_s2_optimize_profile tests.test_repository_instructions`
 - `bash tests/smoke_tier1.sh`
 - `bash tests/smoke_stage2_platform.sh`
 - `bash tests/smoke_tier2.sh`
