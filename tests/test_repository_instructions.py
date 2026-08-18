@@ -238,6 +238,101 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("do not recreate", issue169)
         self.assertIn("stage2-platform-validate", issue169)
         self.assertNotIn("landed with GPU publisher", issue169)
+        self.assertIn("#183", issue169)
+        self.assertIn("#184", issue169)
+        self.assertIn("This issue is **not complete**", issue169)
+        self.assertIn(
+            "- [x] Make `stage1` / `tier1` call `run_stage1_profile` only",
+            issue169,
+        )
+        self.assertIn(
+            "- [x] Fix `full-stack` / `all` sequence: profile → platform validate → runtime",
+            issue169,
+        )
+        self.assertIn(
+            "- [x] Legacy commands (`kernel-amd`, `tune`, `firmware`) warn toward `stage2-*`",
+            issue169,
+        )
+        self.assertIn(
+            "- [x] Keep compat `tier1-platform-tuning.json` until R1",
+            issue169,
+        )
+        self.assertIn(
+            "- [x] Remove tuning from all Stage 1 / `full-stack` Stage 1 paths",
+            issue169,
+        )
+        self.assertIn(
+            "- [x] PR title passes `bash scripts/validate-pr-title.sh`",
+            issue169,
+        )
+        self.assertIn("- [ ] Add `scripts/s2-m7-publish-platform-validation.py`", issue169)
+        self.assertIn(
+            "- [ ] Add `configs/schemas/s2-m7-platform-validation.schema.json`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] Publish `reports/latest/s2-m7-platform-validation.json`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] Slim `90-validate.sh` to compat shim writing `tier1-validation.json`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] Remove inline gfx1150/NPU re-detection from `90-validate.sh`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] Split plan vs apply in `40-platform-tuning.sh`; apply requires `--approve`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] Canonical outputs: `s2-m5-optimization-plan.json`, `s2-m6-optimization-application.json`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] `s2-m1-firmware-validation.json` from `20-check-bios.sh`; keep `tier1-firmware.json` compat",
+            issue169,
+        )
+        self.assertIn("- [ ] Split BIOS facts vs policy in `20-check-bios.sh`", issue169)
+        self.assertIn(
+            "- [ ] `s2-m2-kernel-driver-validation.json` from `30-validate-kernel.sh`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] `require_tier123_pass` prefers `s2-m7-platform-validation.json`; fallback `tier1-validation.json`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] Switch `10-detect-hardware.sh` callers to `stage1-probe` + `stage1-profile`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] `tests/test_s2_m7_platform_validation.py` — aggregate from fixture milestone JSONs",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] `tests/test_s2_m5_optimization_plan.py` — plan-only, no mutation",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] `tests/test_s2_m6_optimization_apply.py` — apply requires `--approve`",
+            issue169,
+        )
+        self.assertIn("- [ ] Mark migration plan step 3 done", issue169)
+        self.assertIn("- [ ] Deprecate `TASK_PROPOSALS.md` Tier language", issue169)
+        self.assertIn(
+            "- [ ] `s2-m7-platform-validation.json` validates against schema",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] `tier1-validation.json` compat shim preserves `require_tier123_pass`",
+            issue169,
+        )
+        self.assertIn(
+            "- [ ] `stage2-validate` alias for platform validate until S3 gates split",
+            issue169,
+        )
 
     def test_orchestrator_help_mentions_visibility_only_npu_path(self) -> None:
         orchestrator = (ROOT / "ai370-optimize.sh").read_text(encoding="utf-8")
