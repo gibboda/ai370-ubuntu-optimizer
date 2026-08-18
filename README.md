@@ -173,6 +173,9 @@ from marketing names.
 
 **Stage 2 — Planned (current scripts are partial compatibility implementations):**
 
+- `scripts/s2-m3-validate-gpu-stack.sh`, `scripts/s2-m3-publish-gpu-visibility.py`,
+  `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` (S2-M3 GPU/Vulkan/ROCm
+  visibility; `stage2-gpu-validate`; compat `70-validate-gpu-stack.sh`)
 - `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`,
   `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`,
   `scripts/140-benchmark-llm.sh`, `scripts/145-write-tier2-validation.sh`,
@@ -278,6 +281,7 @@ Stage 3 gate. Optional packs are **not** run by default (not Stage 3 gate inputs
 ./ai370-optimize.sh stage2-validate [--offline]                       # cheap gate refresh
 ./ai370-optimize.sh stage2-validate --bench [--with-lemonade]         # full smokes
 ./ai370-optimize.sh stage2-rag | stage2-lemonade | stage2-digest
+./ai370-optimize.sh stage2-gpu-validate [--offline]   # S2-M3 GPU visibility ladder report
 ./ai370-optimize.sh stage2-models   # S2-M5 layout + validate (no downloads)
 # Full-stack optional smokes:
 #   LEMONADE_START=true ./scripts/165-validate-lemonade.sh
@@ -465,7 +469,8 @@ acceleration was explicitly installed and re-validated.
 ./ai370-optimize.sh stage2-runtime-validate [--offline] [--with-lemonade]
 ./ai370-optimize.sh stage2-npu [--offline] [--with-lemonade]
 ./ai370-optimize.sh stage2-npu-validate [--bench] [--with-lemonade]
-./ai370-optimize.sh stage2-rag             # Optional RAG (S2-M3; not Stage 3 gate)
+./ai370-optimize.sh stage2-gpu-validate [--offline]   # S2-M3 GPU/Vulkan/ROCm visibility
+./ai370-optimize.sh stage2-rag             # Optional RAG (S2-M3 offline RAG; not Stage 3 gate)
 ./ai370-optimize.sh stage2-lemonade        # Optional Lemonade (S2-M6)
 ./ai370-optimize.sh stage2-digest          # Optional Digest AI (S2-M7)
 ./ai370-optimize.sh stage2-models          # S2-M5 layout + storage validate (no downloads)

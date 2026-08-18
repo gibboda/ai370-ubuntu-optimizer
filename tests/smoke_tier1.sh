@@ -21,6 +21,7 @@ for s in \
   scripts/30-validate-kernel.sh \
   scripts/40-platform-tuning.sh \
   scripts/70-validate-gpu-stack.sh \
+  scripts/s2-m3-validate-gpu-stack.sh \
   scripts/80-benchmark-local-ai.sh \
   scripts/90-validate.sh \
   scripts/lib/common.sh \
@@ -42,7 +43,8 @@ echo "$help_out" | grep -q "stage1-profile" || { echo "[FAIL] help missing stage
 echo "$help_out" | grep -q -- "--with-ai-smoke" || { echo "[FAIL] help missing --with-ai-smoke"; exit 3; }
 echo "$help_out" | grep -q -- "--apply-tuning" || { echo "[FAIL] help missing --apply-tuning"; exit 3; }
 echo "$help_out" | grep -q -- "--strict" || { echo "[FAIL] help missing --strict"; exit 3; }
-echo "[OK] orchestrator help mentions stage1-inventory, stage1-profile, and Package E flags"
+echo "$help_out" | grep -q "stage2-gpu-validate" || { echo "[FAIL] help missing stage2-gpu-validate"; exit 3; }
+echo "[OK] orchestrator help mentions stage1-inventory, stage1-profile, stage2-gpu-validate, and Package E flags"
 
 # 3. Non-mutating Stage 1 pieces
 # Inventory path (no tuning / no script 80) + platform tuning plan + full-scope validate
@@ -66,6 +68,27 @@ if [[ ! -f "$LATEST_DIR/tier1-npu.json" ]]; then
   exit 2
 fi
 echo "[OK] artifact present: tier1-npu.json (from 10-detect-hardware)"
+
+if [[ ! -f "$LATEST_DIR/s2-m3-gpu-runtime-visibility.json" ]]; then
+  echo "[FAIL] missing artifact after inventory: s2-m3-gpu-runtime-visibility.json (S2-M3)"
+  exit 2
+fi
+python3 - "$LATEST_DIR/s2-m3-gpu-runtime-visibility.json" "$PROJECT_ROOT" <<'PY'
+import importlib.util, json, sys
+from pathlib import Path
+root = Path(sys.argv[2])
+spec = importlib.util.spec_from_file_location("system_profile", root / "scripts/lib/system_profile.py")
+ladder_spec = importlib.util.spec_from_file_location("capability_ladder", root / "scripts/lib/capability_ladder.py")
+system_profile = importlib.util.module_from_spec(spec)
+capability_ladder = importlib.util.module_from_spec(ladder_spec)
+spec.loader.exec_module(system_profile)
+ladder_spec.loader.exec_module(capability_ladder)
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+system_profile.validate_document(report, capability_ladder.S2_M3_SCHEMA, "S2-M3")
+assert report.get("milestone") == "S2-M3"
+assert report["ladder"]["validation_claim"] is False
+print("[OK] s2-m3-gpu-runtime-visibility.json validates against schema")
+PY
 
 # Platform tuning plan (default: no AI370_APPLY_TUNING — plan only)
 bash "$PROJECT_ROOT/scripts/40-platform-tuning.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime || true
