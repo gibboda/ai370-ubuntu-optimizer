@@ -172,6 +172,25 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("160000", self.plan)
         self.assertIn("86b94708f22478f900b76ca02e316f4f3418faff", self.plan)
 
+    def test_migration_plan_matches_current_stage1_and_ladder_inventory(self) -> None:
+        self.assertNotIn("only S1-M1 is canonically Implemented", self.plan)
+        self.assertIn(
+            "S1-M1 through S1-M5 are Implemented; mixed `stage1` remains Stage 2 debt",
+            self.plan,
+        )
+        for path in (
+            "scripts/lib/capability_ladder.py",
+            "tests/test_capability_ladder.py",
+            "tests/test_s2_visibility_schemas.py",
+        ):
+            with self.subTest(path=path):
+                self.assertIn(path, self.plan)
+        self.assertIn("tests.test_capability_ladder", self.plan)
+        self.assertIn("tests.test_s2_visibility_schemas", self.plan)
+        self.assertIn("issues/168", self.plan)
+        self.assertIn("issues/169", self.plan)
+        self.assertIn("target_gpu_arch", self.plan)
+
 
 if __name__ == "__main__":
     unittest.main()

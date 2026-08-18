@@ -34,6 +34,8 @@ Or from repo root after making executable:
 - Canonical Stage 1 owner tests: `test_s1_m1_probe.py`,
   `test_s1_m2_normalize.py`, `test_s1_m3_classify.py`,
   `test_s1_m4_capabilities.py`, `test_s1_m5_publish.py`
+- Stage 2 visibility library tests: `test_capability_ladder.py`,
+  `test_s2_visibility_schemas.py`
 
 ### Stage 2 (`smoke_tier2.sh` — Package D)
 

@@ -121,11 +121,14 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   not the canonical Stage 1 contract. `--apply-tuning` remains a compatibility
   path; the target Stage 1 contract in `docs/ROADMAP.md` and `AGENTS.md` is
   read-only.
-- Stage 2: **Planned** in ROADMAP (S2-M1 through S2-M7). Current scripts exist
-  as partial compatibility implementations (`stage2`, `stage2-runtime`,
-  `stage2-npu`; legacy `tier2` / `tier3`). NPU PASS requires profiled AMD EP
-  execution (`scripts/lib/npu_ep_verify.py`). Optional paths are not Stage 3
-  gates. See `docs/ROADMAP.md`.
+- Stage 2: **Planned** in ROADMAP except S2-M3/S2-M4, which are **In progress**
+  (capability ladder library and visibility schemas; publisher CLIs are
+  issue [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168)).
+  Current scripts exist as partial compatibility implementations (`stage2`,
+  `stage2-runtime`, `stage2-npu`; legacy `tier2` / `tier3`).
+  `stage2-npu-validate` is still a mixed visibility-plus-benchmark path.
+  NPU PASS requires profiled AMD EP execution (`scripts/lib/npu_ep_verify.py`).
+  Optional paths are not Stage 3 gates. See `docs/ROADMAP.md`.
 - Stage 3: **Planned** in ROADMAP. Current runtime/benchmark scripts exist as
   partial implementations. GAIA and LM Studio remain planned applications.
 
