@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Stage 1: combined CPU / memory / storage runtime tuning plans (Package C merge of 40/50/60).
+# Stage 2: combined CPU / memory / storage runtime tuning plans (Package C merge of 40/50/60).
 # Detection + reviewable recommendations by default (no system-persistent changes).
 # Opt-in runtime apply: ./ai370-optimize.sh stage2-optimize-apply --approve
 # (AI370_APPLY_TUNING=true is the script-level switch used by that command)
@@ -19,7 +19,7 @@ ai370_init_latest_dir
 ai370_require_runtime_persistence "platform tuning"
 
 main() {
-  echo "[INFO] Stage 1 / 40-platform-tuning.sh (CPU + memory + storage)"
+  echo "[INFO] Stage 2 / 40-platform-tuning.sh (CPU + memory + storage)"
   echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
 
   local cpu_model governor governors target_power mem_total zram_active swap_show storage nvme

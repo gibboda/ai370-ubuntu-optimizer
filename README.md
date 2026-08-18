@@ -518,8 +518,9 @@ compatibility (see below).
 The roadmap stage model is the primary user-facing structure. Under the hood the
 implementation still uses (and you can invoke) the detailed audit-first phases:
 
-- Stage 1 / legacy Tier 1 roughly covers the old Phases 1–6 + final core
-  validation.
+- Stage 1 / legacy Tier 1 is now read-only probe + profile. BIOS, kernel,
+  GPU/NPU visibility, tuning, and `90-validate.sh` moved to Stage 2 platform
+  commands.
 - Stage 2 Runtime / legacy Tier 2 covers old Phase 7 (LLM) + AI runtime.
 - Stage 2 NPU / legacy Tier 3 covers NPU half of acceleration + ONNX work.
 - Stage 3 Image / legacy Tier 5 covers old Phase 8–9 (ComfyUI).
@@ -528,17 +529,18 @@ You can still run the classic commands (they continue to work and write the same
 rich `reports/latest/` artifacts):
 
 ```text
-hardware | inventory | audit          -> Stage 1 / legacy Tier 1 hardware detection
-firmware                               -> Stage 1 / legacy Tier 1 BIOS check
-kernel-amd | baseline-plan | plan      -> Stage 1 / legacy Tier 1 kernel + AMD baseline (with --dry-run)
-tune                                   -> Stage 1 / legacy Tier 1 CPU/RAM/storage optimization
-accel-validate | gpu | npu             -> Stage 1 / legacy Tier 1 GPU stack + Stage 2 NPU / legacy Tier 3 NPU visibility
-ai-bench | ai-runtime                  -> Stage 1 / legacy Tier 1 local AI benchmark (Stage 2 runtime overlap)
+hardware | inventory | audit          -> Stage 1 probe/profile compatibility (10-detect-hardware)
+firmware                               -> Stage 2 platform BIOS check (stage2-firmware-validate)
+kernel-amd | baseline-apply            -> Stage 2 kernel validate (stage2-kernel-validate)
+baseline-plan | plan                   -> Stage 1 probe/profile compatibility
+tune                                   -> Stage 2 optimize plan (stage2-optimize-plan)
+accel-validate | gpu | npu             -> Stage 2 GPU/NPU visibility
+ai-bench | ai-runtime                  -> Stage 3 runtime benchmark compatibility
 llm-validate                           -> Stage 2 Runtime / legacy Tier 2
 amd-accel-install                      -> Explicit opt-in (used by Stage 2 NPU / Stage 3 image paths)
 comfyui-install | comfyui              -> Stage 3 Image / legacy Tier 5 (gated)
 comfyui-bench                          -> Stage 3 Image / legacy Tier 5
-final-validate | validate              -> Stage 1 / legacy Tier 1 + overall
+final-validate | validate              -> Stage 2 platform compatibility aggregate (90-validate.sh)
 install | full-ai-install              -> Multi-stage flows (full-ai-install still requires --accept-amd-acceleration-risk)
 ```
 

@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/smoke_stage2_platform.sh` is fixture-based: it seeds a versioned
   Stage 1 profile and does not probe host `/sys` or run live
   `stage2-platform-validate`.
+- Legacy README mappings, ROADMAP S2-M7 command name, optional-pack
+  milestone IDs, and `90-validate.sh` next-steps no longer describe
+  firmware/kernel/tuning as Stage 1. `stage2-optimize-plan` /
+  `stage2-optimize-apply` consume the Stage 1 profile.
 
 ### Added
 

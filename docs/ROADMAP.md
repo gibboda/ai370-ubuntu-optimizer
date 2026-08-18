@@ -168,7 +168,7 @@ execution.
 | S2-M4 | NPU visibility and execution validation | `stage2-npu-validate`, `s2-m4-validate-npu-stack.sh`, `s2-m4-npu-runtime-validation.json`, `s2-m4-npu-runtime-validation.schema.json` | Tests distinguishing visibility, provider selection, and executed inference | In progress |
 | S2-M5 | Safe optimization plan | `stage2-optimize-plan`, `s2-m5-plan-optimization.sh`, `s2-m5-optimization-plan.json`, `s2-m5-optimization-plan.md` | Idempotence and no-mutation tests plus plan docs | Planned |
 | S2-M6 | Approved optimization application | `stage2-optimize-apply --approve`, `s2-m6-apply-optimization.sh`, `s2-m6-optimization-application.json` | Approval, backup, rollback, idempotence, and failure-path tests | Planned |
-| S2-M7 | Platform validation aggregate | `stage2-validate`, `s2-m7-publish-platform-validation.py`, `s2-m7-platform-validation.schema.json`, `s2-m7-platform-validation.json` | Schema and gate tests plus status-semantics docs | Planned |
+| S2-M7 | Platform validation aggregate | `stage2-platform-validate`, `s2-m7-publish-platform-validation.py`, `s2-m7-platform-validation.schema.json`, `s2-m7-platform-validation.json` | Schema and gate tests plus status-semantics docs | Planned |
 
 ### Stage 3 — AI Runtime Foundation
 

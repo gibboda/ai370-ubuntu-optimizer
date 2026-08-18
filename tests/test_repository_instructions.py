@@ -265,6 +265,19 @@ class MigrationPlanTests(unittest.TestCase):
             "stage2-optimize-plan)", 1
         )[0]
         self.assertIn("ensure_stage1_profile", kernel_case)
+        plan_fn = orchestrator.split("run_stage2_optimize_plan()", 1)[1].split(
+            "run_stage2_optimize_apply()", 1
+        )[0]
+        self.assertIn("ensure_stage1_profile", plan_fn)
+        apply_fn = orchestrator.split("run_stage2_optimize_apply()", 1)[1].split(
+            "run_stage2_runtime_core()", 1
+        )[0]
+        self.assertIn("ensure_stage1_profile", apply_fn)
+        self.assertIn("Optional pack: lemonade (S3-M5)", orchestrator)
+        self.assertIn("Optional pack: digest (S3-M4 diagnostics)", orchestrator)
+        self.assertIn("Optional pack: rag (S4-M3)", orchestrator)
+        self.assertNotIn("Optional pack: lemonade (S2-M6)", orchestrator)
+        self.assertNotIn("Optional pack: digest (S2-M7)", orchestrator)
 
     def test_readme_stage2_status_matches_roadmap(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -276,6 +289,24 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("S2-M3/S2-M4 In progress", readme)
         self.assertIn("S3-M5", readme)
         self.assertIn("does not label Planned Stage 2 milestones as implemented", issue169)
+        self.assertNotIn(
+            "firmware                               -> Stage 1",
+            readme,
+        )
+        self.assertIn(
+            "firmware                               -> Stage 2 platform BIOS check",
+            readme,
+        )
+        self.assertIn(
+            "| S2-M7 | Platform validation aggregate | `stage2-platform-validate`",
+            self.roadmap,
+        )
+        validate = (ROOT / "scripts/90-validate.sh").read_text(encoding="utf-8")
+        self.assertNotIn("stage1 --with-ai-smoke", validate)
+        self.assertIn("stage2-platform-validate", validate)
+        tuning = (ROOT / "scripts/40-platform-tuning.sh").read_text(encoding="utf-8")
+        self.assertNotIn("Stage 1:", tuning)
+        self.assertIn("Stage 2 / 40-platform-tuning.sh", tuning)
 
 
 if __name__ == "__main__":
