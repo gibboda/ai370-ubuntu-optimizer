@@ -1,5 +1,7 @@
 # PR 3: Make Stage 1 read-only; move platform validation to Stage 2
 
+**GitHub issue:** [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169)
+
 Copy this body into a GitHub issue, or run:
 
 ```bash
@@ -12,9 +14,11 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 **Suggested PR title:** `refactor(stage1): Make stage1 read-only; move platform validation to stage2`
 
-**Depends on:** PR 2 (recommended — S2-M7 consumes ladder reports)
+**Depends on:** PR 2 / [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) remaining publishers (`stage2-gpu-validate` and visibility-only NPU validate). Library and schemas already landed in `0.18.0`/`0.19.0`.
 
 **Blocks:** R1 Tier removal prep
+
+Verified 2026-08-18: `run_stage1()` still invokes `20-check-bios.sh`, `30-validate-kernel.sh`, `40-platform-tuning.sh`, `70-validate-gpu-stack.sh`, and `90-validate.sh`. `--apply-tuning` remains a Stage 1 compatibility path.
 
 ---
 
@@ -30,14 +34,16 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 - [ ] `stage2-firmware-validate` → wrap `20-check-bios.sh` (S2-M1)
 - [ ] `stage2-kernel-validate` → wrap `30-validate-kernel.sh` (S2-M2)
-- [ ] `stage2-gpu-validate` (from PR 2) (S2-M3)
-- [ ] `stage2-npu-validate` visibility-only (from PR 2) (S2-M4)
+- [ ] `stage2-gpu-validate` (from PR 2 / #168) (S2-M3)
+- [ ] `stage2-npu-validate` visibility-only (from PR 2 / #168) (S2-M4)
 - [ ] `stage2-optimize-plan` → `40-platform-tuning.sh` plan-only (S2-M5)
 - [ ] `stage2-optimize-apply --approve` → tuning apply (S2-M6)
 - [ ] `stage2-platform-validate` → S2-M1–M4 + S2-M7 aggregate
 - [ ] `stage2-validate` alias for platform validate until S3 gates split
 
 ## Workstream C: Split `90-validate.sh` (S2-M7)
+
+This is the canonical `90-validate.sh` split. Do not start it in #168.
 
 - [ ] Add `scripts/s2-m7-publish-platform-validation.py`
 - [ ] Add `configs/schemas/s2-m7-platform-validation.schema.json`
@@ -78,7 +84,8 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 - [ ] Rewrite README Stage 1 section (probe + profile only)
 - [ ] Add Stage 2 platform command table to README
-- [ ] Update ROADMAP milestone status for S2-M1/M2/M5/M7
+- [ ] Correct README Lemonade/Digest owners (S3-M5 / S3-M4 diagnostics, not S2-M6/S2-M7)
+- [ ] Update ROADMAP milestone status for S2-M1/M2/M5/M7 only when exit evidence exists
 - [ ] Mark migration plan step 3 done
 - [ ] Deprecate `TASK_PROPOSALS.md` Tier language
 
