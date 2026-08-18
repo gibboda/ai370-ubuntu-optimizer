@@ -47,7 +47,14 @@ Steps above RUNTIME/BACKEND visibility without explicit checks remain ``UNKNOWN`
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Literal
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+S2_M3_SCHEMA = PROJECT_ROOT / "configs/schemas/s2-m3-gpu-runtime-visibility.schema.json"
+S2_M4_SCHEMA = PROJECT_ROOT / "configs/schemas/s2-m4-npu-runtime-validation.schema.json"
+
+GateStatus = Literal["PASS", "WARN", "FAIL", "UNSUPPORTED", "SKIPPED"]
 
 GpuLadderStep = Literal[
     "DETECTED",
@@ -354,3 +361,144 @@ def npu_ladder_from_visibility(
     steps["APPLICATION_READY"]["status"] = "unknown"
     merged = [steps[step_id] for step_id in NPU_LADDER_STEPS]
     return build_ladder_document("npu", merged)
+
+
+def consumed_profile_from_system_profile(
+    profile: dict[str, Any] | None,
+    *,
+    artifact: str | None = "s1-m5-system-profile.json",
+) -> dict[str, Any]:
+    """Build the consumed-profile reference block for Stage 2 visibility reports."""
+    if not profile:
+        return {
+            "artifact": artifact,
+            "schema": {
+                "name": "ai370-system-profile",
+                "version": 3,
+                "uri": "https://ai370.local/schemas/system-profile-v3.json",
+            },
+            "fingerprint": {"algorithm": "sha256", "algorithm_version": 1, "value": None},
+        }
+    fingerprint = profile.get("fingerprint") or {}
+    schema = profile.get("schema") or {}
+    return {
+        "artifact": artifact,
+        "schema": {
+            "name": schema.get("name", "ai370-system-profile"),
+            "version": schema.get("version", 3),
+            "uri": schema.get("uri", "https://ai370.local/schemas/system-profile-v3.json"),
+        },
+        "fingerprint": {
+            "algorithm": fingerprint.get("algorithm", "sha256"),
+            "algorithm_version": fingerprint.get("algorithm_version", 1),
+            "value": fingerprint.get("value"),
+        },
+    }
+
+
+def visibility_status_from_ladder(ladder: dict[str, Any]) -> GateStatus:
+    """Map ladder assessment to Stage 2 gate vocabulary without claiming execution."""
+    assessment = str(ladder.get("assessment", "UNKNOWN"))
+    if assessment == "UNSUPPORTED":
+        return "UNSUPPORTED"
+    if assessment == "READY":
+        return "PASS"
+    if assessment in {"AVAILABLE", "DEGRADED", "UNKNOWN"}:
+        return "WARN"
+    return "WARN"
+
+
+def normalize_gpu_checks(checks: dict[str, Any], hardware: dict[str, Any]) -> dict[str, Any]:
+    """Normalize GPU visibility checks for the S2-M3 report contract."""
+    gpu = hardware.get("gpu") or {}
+    amdgpu_loaded = gpu.get("amdgpu_module") == "loaded" or any(
+        device.get("bound_driver") == "amdgpu" for device in _gpu_devices(hardware)
+    )
+    gpu_arch = checks.get("gpu_arch", gpu.get("arch"))
+    return {
+        "amdgpu": "loaded" if amdgpu_loaded else ("missing" if _gpu_detected(hardware)[0] else "unknown"),
+        "gpu_arch": str(gpu_arch) if _known(gpu_arch) else None,
+        "vulkan": checks.get("vulkan", "unknown"),
+        "opencl": checks.get("opencl", "unknown"),
+        "rocm": checks.get("rocm", "unknown"),
+    }
+
+
+def normalize_npu_checks(checks: dict[str, Any], hardware: dict[str, Any]) -> dict[str, Any]:
+    """Normalize NPU visibility checks for the S2-M4 report contract."""
+    npu = hardware.get("npu") or {}
+    module_present = checks.get("module_present")
+    if module_present is None:
+        module_present = "amdxdna" in str(npu.get("module_text") or "").lower()
+    device_nodes_present = checks.get("device_nodes_present")
+    if device_nodes_present is None:
+        device_nodes_present = bool(npu.get("device_nodes") or npu.get("device_text"))
+    return {
+        "module_present": module_present if module_present is not None else None,
+        "device_nodes_present": device_nodes_present if device_nodes_present is not None else None,
+        "firmware_ready": checks.get("firmware_ready"),
+        "runtime_ready": checks.get("runtime_ready"),
+        "backend_ready": checks.get("backend_ready"),
+    }
+
+
+def build_s2_m3_visibility_report(
+    hardware: dict[str, Any],
+    checks: dict[str, Any],
+    consumed_profile: dict[str, Any] | None = None,
+    *,
+    notes: list[str] | None = None,
+) -> dict[str, Any]:
+    """Build the canonical S2-M3 GPU runtime visibility report document."""
+    normalized_checks = normalize_gpu_checks(checks, hardware)
+    ladder = gpu_ladder_from_visibility(hardware, normalized_checks)
+    return {
+        "schema": {
+            "name": "s2-m3-gpu-runtime-visibility",
+            "version": 1,
+            "uri": "https://ai370.local/schemas/s2-m3-gpu-runtime-visibility-v1.json",
+        },
+        "stage": 2,
+        "milestone": "S2-M3",
+        "artifact": "s2-m3-gpu-runtime-visibility",
+        "consumed_profile": consumed_profile or consumed_profile_from_system_profile(None),
+        "status": visibility_status_from_ladder(ladder),
+        "checks": normalized_checks,
+        "ladder": ladder,
+        "notes": notes
+        or [
+            "Visibility assessment only; package presence is not workload execution.",
+            "Ladder steps above HIP remain unknown until Stage 3 runtime validation.",
+        ],
+    }
+
+
+def build_s2_m4_visibility_report(
+    hardware: dict[str, Any],
+    checks: dict[str, Any],
+    consumed_profile: dict[str, Any] | None = None,
+    *,
+    notes: list[str] | None = None,
+) -> dict[str, Any]:
+    """Build the canonical S2-M4 NPU runtime visibility report document."""
+    normalized_checks = normalize_npu_checks(checks, hardware)
+    ladder = npu_ladder_from_visibility(hardware, normalized_checks)
+    return {
+        "schema": {
+            "name": "s2-m4-npu-runtime-validation",
+            "version": 1,
+            "uri": "https://ai370.local/schemas/s2-m4-npu-runtime-validation-v1.json",
+        },
+        "stage": 2,
+        "milestone": "S2-M4",
+        "artifact": "s2-m4-npu-runtime-validation",
+        "consumed_profile": consumed_profile or consumed_profile_from_system_profile(None),
+        "status": visibility_status_from_ladder(ladder),
+        "checks": normalized_checks,
+        "ladder": ladder,
+        "notes": notes
+        or [
+            "Visibility assessment only; backend registration is not executed inference.",
+            "MODEL_READY and APPLICATION_READY remain unknown in Stage 2 visibility.",
+        ],
+    }
