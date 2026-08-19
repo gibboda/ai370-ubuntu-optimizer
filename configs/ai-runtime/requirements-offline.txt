@@ -4,7 +4,7 @@ wheel==0.45.1
 numpy==2.3.0
 scipy==1.15.3
 pandas==2.3.0
-pillow==11.2.1
+pillow==12.3.0
 psutil==7.0.0
 py-cpuinfo==9.0.0
 onnx==1.18.0
