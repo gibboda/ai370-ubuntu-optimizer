@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.22.0...v0.23.0) (2026-08-22)
+
+
+### Features
+
+* **stage2:** Publish S2-M5 plan and S2-M6 apply reports ([#199](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/199)) ([2cf508a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/2cf508a5533c586958b4f6b4c1ba1b4a1e25d70e))
+
 ## [Unreleased]
 
 ### Added
