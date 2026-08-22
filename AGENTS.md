@@ -9,10 +9,83 @@ responsible for ensuring that the shared commit subject and PR title comply on
 behalf of every contributor and `Co-authored-by` identity credited in the
 change.
 
+## Multi-agent development policy
+
+This file is the shared instruction surface for every implementation agent
+that works in this repository. Nested `AGENTS.md` files,
+`.github/copilot-instructions.md`, and `CONTRIBUTING.md` remain in force.
+Do not treat this repository as Cursor-exclusive.
+
+### Roles
+
+- Cursor Agent is the primary/default implementation agent.
+- GitHub remains the source of truth and control plane for repositories,
+  Issues and Projects, branches and pull requests, GitHub Actions, rulesets
+  and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
+  and releases.
+- GitHub Copilot, Claude, Codex, and other paid or cloud agents are
+  secondary/specialist agents. They follow the same repository policies when
+  used.
+
+### Default work for the primary agent
+
+Cursor should handle routine:
+
+- repository analysis
+- planning
+- implementation
+- refactoring
+- debugging
+- testing
+- CI failure remediation
+- documentation
+- commit preparation
+- pull-request preparation
+
+### When to use a secondary agent
+
+Use a secondary/specialist agent only when:
+
+- Cursor cannot reliably complete the task
+- an independent second opinion has substantial value
+- security or architecture changes warrant additional review
+- specialized reasoning is needed
+- the developer explicitly requests it
+
+Do not invoke multiple AI agents for the same routine task.
+
+### Cost and capacity
+
+Optimize AI usage for an independent-developer budget. Do not assume
+unlimited tokens, premium requests, AI credits, or paid-agent capacity.
+
+### Deterministic validation over AI review
+
+Prefer deterministic validation over AI review:
+
+- builds
+- tests
+- linters
+- formatters
+- type checking
+- GitHub Actions
+- CodeQL
+- dependency scanning
+- secret scanning
+- repository validation scripts
+
+AI reviews are advisory. They are not required merge gates. Exhaustion of an
+optional AI agent's quota must not block development when required
+deterministic validation passes.
+
+The Testing, Change discipline, and Cursor Cloud sections below remain the
+authoritative detail for what this repository requires those checks to cover.
+
 ## Codex PR creation policy
 
-When Codex creates commits or pull requests in this repository, it must use this
-repository's Conventional Commit standard before opening the PR.
+Codex is a secondary/specialist agent. When Codex creates commits or pull
+requests in this repository, it must use this repository's Conventional Commit
+standard before opening the PR.
 
 Commit subjects and PR titles must use this format:
 
@@ -164,6 +237,10 @@ Do not open the PR unless the title validation command passes.
 - Never add `try`/`catch` blocks around imports.
 
 ## Cursor Cloud specific instructions
+
+These notes apply when the agent is running in Cursor Cloud. They do not
+require other agents to use Cursor, and they do not replace GitHub as the
+source of truth.
 
 This repository is a Bash CLI toolkit (`./ai370-optimize.sh`), not a
 long-running service or GUI app. There is nothing to "serve"; you run commands
