@@ -184,8 +184,9 @@ Boundary notes that later PRs must preserve:
 
 - Architecture-layer 1 is read-only. `stage1` now publishes the S1-M1 through
   S1-M5 profile only. BIOS, kernel, GPU validation, and tuning-plan scripts
-  run from `stage2-platform-*` / `stage2-optimize-*`. Canonical S2-M5/S2-M6/S2-M7
-  JSON is In progress. Canonical S2-M1/M2 outputs remain Planned until PR 3c.
+  run from `stage2-platform-*` / `stage2-optimize-*`. Canonical S2-M1/S2-M2/S2-M5/S2-M6/S2-M7
+  JSON is In progress. Remaining S2-M1/S2-M2 work is remediation docs and the
+  kernel/driver matrix.
 - Architecture-layer 3 belongs in ROADMAP Stage 2, not Stage 1.
 - GPU and NPU remain independent. Current `stage2` installs both in one
   orchestrator path.
@@ -209,7 +210,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/validate-pr-title.sh` | IMPLEMENTED | Conventional Commit title gate |
 | `scripts/validate-commit-subject.sh` | IMPLEMENTED | Commit-subject gate |
 | `.github/workflows/*` | IMPLEMENTED | ShellCheck, PR title lint, release-please |
-| `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 tracks ROADMAP In progress vs Planned (S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress; S2-M1/M2 Planned) |
+| `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 tracks ROADMAP In progress vs Planned (S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress) |
 | `TASK_PROPOSALS.md` | DEPRECATED | Still describes Tier 1–5 follow-ups as current work |
 | `.github/issues/pr2-capability-ladders.md`, `.github/issues/pr3-read-only-stage1.md` | IMPLEMENTED | Tracking templates for GitHub issues #168 and #169 |
 
@@ -246,6 +247,8 @@ feature is not treated as implemented unless code exists.
 | `configs/schemas/s2-m7-platform-validation.schema.json` | IMPLEMENTED | S2-M7 platform aggregate contract |
 | `configs/schemas/s2-m5-optimization-plan.schema.json` | IMPLEMENTED | S2-M5 plan-only contract |
 | `configs/schemas/s2-m6-optimization-application.schema.json` | IMPLEMENTED | S2-M6 approved-apply contract; `backup.status` is `not-implemented` |
+| `configs/schemas/s2-m1-firmware-validation.schema.json` | IMPLEMENTED | S2-M1 firmware validation contract; facts vs policy |
+| `configs/schemas/s2-m2-kernel-driver-validation.schema.json` | IMPLEMENTED | S2-M2 kernel/driver validation contract |
 | `configs/profiles/gpu-pci-architectures.json` | IMPLEMENTED | Declarative PCI vendor:device to gfx mapping |
 | `configs/profiles/ai370.env` | IMPLEMENTED | Reference-platform profile |
 | `configs/profiles/generic-ryzen-ai.env` | IMPLEMENTED | Broader Ryzen AI profile |
@@ -259,7 +262,8 @@ feature is not treated as implemented unless code exists.
 | `tests/test_s2_m3_gpu_visibility.py` | IMPLEMENTED | GPU publisher CLI, schema, atomic write, and missing-device fixture |
 | `tests/test_s2_m4_npu_visibility.py` | IMPLEMENTED | NPU publisher CLI, schema, atomic write; visibility does not claim inference |
 | `tests/test_s2_m7_platform_validation.py` | IMPLEMENTED | S2-M7 aggregate from fixture milestone JSONs; required profile, stale fingerprint, and firmware-validation status coverage |
-| `tests/test_s2_m1_firmware.py` | IMPLEMENTED | Firmware policy from classified `platform_id` and consumed Stage 1 fingerprint |
+| `tests/test_s2_m1_firmware.py` | IMPLEMENTED | Firmware policy from classified `platform_id`, facts vs policy, and canonical publisher |
+| `tests/test_s2_m2_kernel_driver.py` | IMPLEMENTED | Canonical S2-M2 JSON plus compatibility `tier1-kernel-plan.json` |
 | `tests/test_s2_optimize_profile.py` | IMPLEMENTED | Optimize plan wrapper records classified identity and consumed fingerprint |
 | `tests/test_s2_m5_optimization_plan.py` | IMPLEMENTED | Plan-only publisher; no mutation; `AI370_APPLY_TUNING` is not sufficient |
 | `tests/test_s2_m6_optimization_apply.py` | IMPLEMENTED | Apply requires `--approve`; dry-run does not execute commands |
@@ -270,9 +274,13 @@ feature is not treated as implemented unless code exists.
 
 | Path | Status | Notes |
 | --- | --- | --- |
-| `scripts/lib/firmware_policy.py` | PARTIAL | BIOS policy from classified Stage 1 platform_id; consumed fingerprint |
+| `scripts/lib/firmware_policy.py` | PARTIAL | BIOS facts vs classified-platform policy; publishes canonical S2-M1 JSON |
+| `scripts/s2-m1-publish-firmware-validation.py` | PARTIAL | Canonical S2-M1 publisher; remaining S2-M1 work is remediation docs |
+| `scripts/20-check-bios.sh` | PARTIAL | BIOS/firmware collector; writes `s2-m1-firmware-validation.json` and compat `tier1-firmware.json` |
 | `scripts/25-check-firmware.sh` | DEPRECATED | Wrapper around `20-check-bios.sh` |
-| `scripts/30-validate-kernel.sh` | PARTIAL | Kernel/module/firmware checks; records consumed Stage 1 profile; target S2-M2 |
+| `scripts/30-validate-kernel.sh` | PARTIAL | Kernel/module/firmware collector; writes `s2-m2-kernel-driver-validation.json` and compat `tier1-kernel-plan.json` |
+| `scripts/s2-m2-publish-kernel-driver-validation.py` | PARTIAL | Canonical S2-M2 publisher; remaining S2-M2 work is the supported/unsupported matrix |
+| `scripts/lib/kernel_validation.py` | PARTIAL | S2-M2 kernel/driver report builder |
 | `scripts/70-validate-gpu-stack.sh` | DEPRECATED | Compatibility wrapper that execs `s2-m3-validate-gpu-stack.sh` |
 | `scripts/40-platform-tuning.sh` | PARTIAL | Combined CPU/memory/storage plan/apply; consumes S1-M5 identity + fingerprint; writes canonical S2-M5/S2-M6 JSON; apply requires `--approve`; backup/rollback remain Planned |
 | `scripts/40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | DEPRECATED | Wrappers around platform tuning |
@@ -326,7 +334,7 @@ feature is not treated as implemented unless code exists.
 | Path | Status | Notes |
 | --- | --- | --- |
 | `tests/smoke_tier1.sh` | PARTIAL | Portable CLI smoke; asserts read-only `stage1` plus `tier1-*` artifacts from Stage 2 inventory |
-| `tests/smoke_stage2_platform.sh` | PARTIAL | Fixture-based firmware-wrapper smoke; no live `stage1` / `stage2-platform-validate` |
+| `tests/smoke_stage2_platform.sh` | PARTIAL | Fixture-based firmware/kernel/optimize-wrapper smoke; no live `stage1` / `stage2-platform-validate` |
 | `tests/smoke_tier2.sh` | PARTIAL | Portable runtime/layout smoke |
 | `tests/test_repository_instructions.py` | IMPLEMENTED | Instruction-file contract |
 | `scripts/legacy/*` | DEPRECATED | Frozen archive; no new behavior |
@@ -402,6 +410,8 @@ abbreviated; see the assumption table for the full class.
 | `configs/profiles/gpu-pci-architectures.json` | PCI vendor:device to gfx map | None | Fixture identity `1002:1900` | S1-M2 | KEEP; extend with PCI data | `test_s1_m2_normalize.py` | Low |
 | `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` | S2-M3 visibility JSON contract | Consumed S1-M5 profile | Visibility is not compute | S2-M3 | KEEP | `test_s2_visibility_schemas.py` | Low |
 | `configs/schemas/s2-m4-npu-runtime-validation.schema.json` | S2-M4 visibility JSON contract | Consumed S1-M5 profile | Visibility is not inference | S2-M4 | KEEP; execution proof stays S3-M4 | `test_s2_visibility_schemas.py` | Low |
+| `configs/schemas/s2-m1-firmware-validation.schema.json` | S2-M1 firmware validation contract | Consumed S1-M5 profile | Facts are not flash/update claims | S2-M1 | KEEP | `test_s2_m1_firmware.py` | Low |
+| `configs/schemas/s2-m2-kernel-driver-validation.schema.json` | S2-M2 kernel/driver validation contract | Consumed S1-M5 profile | Observations are not package changes | S2-M2 | KEEP | `test_s2_m2_kernel_driver.py` | Low |
 | `scripts/s1-m1-probe-system.sh` | Canonical raw probe | `hardware-detect.sh` | None beyond collector | S1-M1 | KEEP | `test_s1_m1_probe.py` | Low |
 | `scripts/s1-m2-normalize-profile.py` | Normalize raw inventory | S1-M1 JSON, PCI map | None beyond collector | S1-M2 | KEEP | `test_s1_m2_normalize.py` | Low |
 | `scripts/s1-m3-classify-platform.py` | Platform classification | S1-M2 facts | Declarative AI370 match | S1-M3 | KEEP | `test_s1_m3_classify.py` | Low |
@@ -414,10 +424,13 @@ abbreviated; see the assumption table for the full class.
 
 | Current path | Responsibility | Dependencies | Assumptions | Target | Action | Required tests | Risk |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `scripts/20-check-bios.sh` | BIOS/firmware policy from consumed S1-M5 profile | `s1-m5-system-profile.json`, classified `platform_id` `.env`, supplemental fwupd | BIOS 2.01 is classified-platform target, not CLI `--profile` or a generic gate | S2-M1 | SPLIT facts vs policy | `test_s2_m1_firmware.py` | Medium |
-| `scripts/lib/firmware_policy.py` | Classified-platform BIOS policy and consumed-profile block | S1-M5 profile, `configs/profiles/*.env` | Policy is not a flash/update claim | S2-M1 | KEEP until canonical S2-M1 JSON | `test_s2_m1_firmware.py` | Low |
+| `scripts/20-check-bios.sh` | BIOS/firmware collector; publishes canonical S2-M1 JSON | `s1-m5-system-profile.json`, classified `platform_id` `.env`, supplemental fwupd | BIOS 2.01 is classified-platform target, not CLI `--profile` or a generic gate | S2-M1 | KEEP facts vs policy split; remaining work is remediation docs | `test_s2_m1_firmware.py` | Medium |
+| `scripts/lib/firmware_policy.py` | Classified-platform BIOS policy, facts object, and S2-M1 publisher helpers | S1-M5 profile, `configs/profiles/*.env` | Policy is not a flash/update claim | S2-M1 | KEEP | `test_s2_m1_firmware.py` | Low |
+| `scripts/s2-m1-publish-firmware-validation.py` | Atomic S2-M1 publisher | Required S1-M5 profile | Never flashes firmware | S2-M1 | KEEP | `test_s2_m1_firmware.py` | Low |
 | `scripts/25-check-firmware.sh` | Wrapper | `20-check-bios.sh` | None | Compatibility | DEPRECATE | Existing BIOS tests | Low |
-| `scripts/30-validate-kernel.sh` | Kernel, modules, firmware dirs | `amdgpu` module, linux-firmware | Radeon 890M advice strings | S2-M2 | REFACTOR to capability checks | Supported/unsupported matrix | Medium |
+| `scripts/30-validate-kernel.sh` | Kernel, modules, firmware dirs; publishes canonical S2-M2 JSON | `amdgpu` module, linux-firmware, S1-M5 profile | Radeon 890M advice strings | S2-M2 | KEEP collector; remaining work is the supported/unsupported matrix | `test_s2_m2_kernel_driver.py` | Medium |
+| `scripts/s2-m2-publish-kernel-driver-validation.py` | Atomic S2-M2 publisher | Required S1-M5 profile | Validation-only | S2-M2 | KEEP | `test_s2_m2_kernel_driver.py` | Low |
+| `scripts/lib/kernel_validation.py` | S2-M2 kernel/driver report builder | S1-M5 profile | Does not change kernel parameters | S2-M2 | KEEP | `test_s2_m2_kernel_driver.py` | Low |
 | `scripts/70-validate-gpu-stack.sh` | Compatibility GPU visibility wrapper | `s2-m3-validate-gpu-stack.sh` | None beyond canonical owner | Compatibility until R1 | DEPRECATE; KEEP wrapper | Smoke still invokes this path from `stage2-platform-inventory` | Low |
 | `scripts/s2-m3-validate-gpu-stack.sh` | GPU stack visibility collector | lspci, vulkaninfo, clinfo, rocminfo, S1-M5 profile | Target arch from consumed profile | S2-M3 | KEEP; remaining exit evidence is missing driver/Vulkan/ROCm layer fixtures | `test_s2_m3_gpu_visibility.py` | Medium |
 | `scripts/s2-m3-publish-gpu-visibility.py` | Atomic S2-M3 visibility publisher | capability_ladder, S2-M3 schema | Visibility is not compute | S2-M3 | KEEP | `test_s2_m3_gpu_visibility.py` | Low |
@@ -462,7 +475,7 @@ abbreviated; see the assumption table for the full class.
 | `workflows/comfyui/*` | SDXL templates | ComfyUI | No NPU assumption | S4-M2 | KEEP | Workflow launch tests | Low |
 | `tests/smoke_tier1.sh`, `tests/smoke_stage2_platform.sh`, `tests/smoke_tier2.sh` | Portable CLI smokes | Orchestrator | `tier*` artifacts | Owner-specific `test_sN_mN_*` | REPLACE at R1/R2 | Deterministic fixtures | Medium |
 | `tests/test_s1_m1_probe.py`, `tests/test_system_profile.py` | Profile/probe contracts | Fixtures | AI370 reference plus non-AI370 | S1-M1/S1-M2/S1-M5 | KEEP and split by milestone | Existing plus unknown-host | Low |
-| `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m7_platform_validation.py`, `tests/test_s2_m1_firmware.py`, `tests/test_s2_m5_optimization_plan.py`, `tests/test_s2_m6_optimization_apply.py` | Ladder, unpublished report builders, GPU/NPU publisher CLI, S2-M7 aggregate, firmware profile consumption, and S2-M5/S2-M6 plan/apply | Probe/profile fixtures | No validation claims | S2-M1 / S2-M3 / S2-M4 / S2-M5 / S2-M6 / S2-M7 | KEEP | Existing plus missing-device and classified-platform fixtures | Low |
+| `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m7_platform_validation.py`, `tests/test_s2_m1_firmware.py`, `tests/test_s2_m2_kernel_driver.py`, `tests/test_s2_m5_optimization_plan.py`, `tests/test_s2_m6_optimization_apply.py` | Ladder, unpublished report builders, GPU/NPU publisher CLI, S2-M7 aggregate, firmware/kernel publishers, and S2-M5/S2-M6 plan/apply | Probe/profile fixtures | No validation claims | S2-M1 / S2-M2 / S2-M3 / S2-M4 / S2-M5 / S2-M6 / S2-M7 | KEEP | Existing plus missing-device and classified-platform fixtures | Low |
 | `tests/fixtures/**` | Sanitized hardware evidence | None | Reference and counterexamples | Detection/classification | KEEP; add newer Ryzen AI as data | Classification matrix | Low |
 | `scripts/legacy/*` | Frozen archive | Historical | Tier/phase names | Compatibility archive | KEEP frozen; REMOVE at R1/R2 | No new tests | Low |
 | `docs/ROADMAP.md` | Implementation authority | All deliverables | Five stages | Current authority | KEEP; update when boundaries change | Instruction tests | High |
@@ -570,7 +583,7 @@ opt-in. Required fixture classes for hardware-classification changes:
 
 Current automated coverage to retain until replaced by owner-specific tests:
 
-- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m1_firmware tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions`
+- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions`
 - `bash tests/smoke_tier1.sh`
 - `bash tests/smoke_stage2_platform.sh`
 - `bash tests/smoke_tier2.sh`
@@ -598,10 +611,11 @@ is read-only profile publication. Remaining README / #169 drift:
   command name as missing.
 - Canonical S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 are **In progress**, not Implemented. S2-M3 still
   lacks separate missing-driver/Vulkan/ROCm layer fixtures. S2-M4 still shares
-  a mixed `stage2-npu` bench path. S2-M7 still uses compatibility firmware and
-  kernel JSON. S2-M5/S2-M6 have canonical plan/apply JSON; backup/rollback remain
-  Planned. S2-M1, S2-M2, and S3 through S5 remain Planned until outputs, tests,
-  and docs exist.
+  a mixed `stage2-npu` bench path. S2-M7 still uses `require_tier123_pass` on
+  compatibility `tier1-validation.json`. S2-M5/S2-M6 have canonical plan/apply JSON; backup/rollback remain
+  Planned. S2-M1 and S2-M2 are **In progress** (canonical JSON exists; remaining
+  work is remediation docs and the kernel/driver matrix). S3 through S5 remain
+  Planned until outputs, tests, and docs exist.
 
 The architecture document is target design. Features listed there as local
 coding AI, FastFlowLM, unified master validation, heterogeneous live

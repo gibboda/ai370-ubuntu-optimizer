@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Stage 2: BIOS + firmware baseline (Package C merge of former 20 + 25).
-# Consumes s1-m5-system-profile.json for BIOS facts and platform policy.
-# Supplemental fwupd/microcode/Secure Boot checks are live and read-only.
+# Stage 2 / S2-M1: BIOS + firmware validation (Package C merge of former 20 + 25).
+# Identity facts come from s1-m5-system-profile.json. Policy uses classified
+# platform_id. Supplemental fwupd/microcode/Secure Boot checks are live.
 # Never flashes firmware or changes Secure Boot.
 
 set -euo pipefail
@@ -34,7 +34,7 @@ json_array_from_lines() {
 }
 
 main() {
-  echo "[INFO] Stage 2 / 20-check-bios.sh (BIOS + firmware baseline)"
+  echo "[INFO] Stage 2 / 20-check-bios.sh (BIOS facts + firmware policy)"
   echo "[INFO] Selected profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
 
   local PROFILE_FILE="$LATEST_DIR/s1-m5-system-profile.json"
@@ -45,80 +45,20 @@ main() {
     exit 2
   fi
 
-  local FWUPD_DEVICES
-  FWUPD_DEVICES="$(detect_fwupd_devices)"
-
-  PROJECT_ROOT="$PROJECT_ROOT" \
-  PROFILE_FILE="$PROFILE_FILE" \
-  SELECTED_PROFILE="$PROFILE" \
-  TIMESTAMP="$(ai370_utc_now)" \
-  FWUPD_PRESENT="$([[ -n "$FWUPD_DEVICES" ]] && echo true || echo false)" \
-  OUTPUT_JSON="$LATEST_DIR/tier1-firmware.json" \
-  python3 - <<'PY'
-import json
-import os
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
-import firmware_policy
-
-profile = firmware_policy.load_system_profile(Path(os.environ["PROFILE_FILE"]))
-report = firmware_policy.build_firmware_baseline(
-    profile,
-    selected_profile=os.environ.get("SELECTED_PROFILE", "ai370"),
-    timestamp=os.environ["TIMESTAMP"],
-    fwupd_devices_present=os.environ.get("FWUPD_PRESENT", "false") == "true",
-)
-Path(os.environ["OUTPUT_JSON"]).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-PY
-
-  local BIOS_VERSION BIOS_DATE BIOS_VENDOR SYSTEM_PRODUCT SYSTEM_VENDOR EXPECTED_BIOS BIOS_ACCEPTABLE PLATFORM_ID
-  local firmware_json="$LATEST_DIR/tier1-firmware.json"
-  BIOS_VERSION="$(jq -r '.bios_version // "unknown"' "$firmware_json")"
-  BIOS_DATE="$(jq -r '.bios_date // "unknown"' "$firmware_json")"
-  BIOS_VENDOR="$(jq -r '.bios_vendor // "unknown"' "$firmware_json")"
-  SYSTEM_VENDOR="$(jq -r '.system.vendor // "unknown"' "$firmware_json")"
-  SYSTEM_PRODUCT="$(jq -r '.system.product // "unknown"' "$firmware_json")"
-  EXPECTED_BIOS="$(jq -r '.bios_expected // ""' "$firmware_json")"
-  BIOS_ACCEPTABLE="$(jq -r '.bios_acceptable // "unknown"' "$firmware_json")"
-  PLATFORM_ID="$(jq -r '.classified_platform_id // ""' "$firmware_json")"
-
-  {
-    echo "# Tier 1 Firmware / BIOS Baseline"
-    echo
-    echo "- Selected CLI profile: $PROFILE"
-    echo "- Classified platform_id: ${PLATFORM_ID:-unknown}"
-    echo "- System (from Stage 1 profile): ${SYSTEM_VENDOR:-unknown} ${SYSTEM_PRODUCT:-unknown}"
-    echo "- BIOS version (from Stage 1 profile): ${BIOS_VERSION:-unknown}"
-    echo "- BIOS release date: ${BIOS_DATE:-unknown}"
-    echo "- BIOS vendor: ${BIOS_VENDOR:-unknown}"
-    if [[ -n "$EXPECTED_BIOS" ]]; then
-      echo "- Target BIOS for classified platform ${PLATFORM_ID:-unknown}: $EXPECTED_BIOS (acceptable: $BIOS_ACCEPTABLE)"
-    else
-      echo "- No EXPECTED_BIOS_VERSION for classified platform ${PLATFORM_ID:-unknown}"
-    fi
-    echo "- fwupd devices visible: $([[ -n "$FWUPD_DEVICES" ]] && echo yes || echo "no (or tool missing)")"
-    echo
-    echo "Note: BIOS policy uses the consumed Stage 1 profile, not CLI --profile alone."
-    echo "This phase only records baseline state. No firmware updates are applied."
-    if [[ -n "$EXPECTED_BIOS" ]]; then
-      echo "Recommended BIOS for this classified platform is $EXPECTED_BIOS (or newer compatible). Review vendor notes before flashing."
-    fi
-  } > "$LATEST_DIR/tier1-firmware.md"
-
-  cp "$LATEST_DIR/tier1-firmware.json" "$LATEST_DIR/firmware-baseline.json" 2>/dev/null || true
-
-  # --- Former 25-check-firmware validation ---
-  local status="PASS"
   local warnings=()
-  record_warn() { [[ "$status" == "PASS" ]] && status="WARN"; warnings+=("$1"); }
+  record_warn() { warnings+=("$1"); }
 
   local fwupd_version fwupd_devices fwupdmgr_status linux_firmware_version microcode_packages secure_boot_state kernel_firmware_dir
+  local fwupd_devices_rc=0
   fwupd_version="$(capture_or_status fwupdmgr --version | head -n 20)"
-  fwupd_devices="$(capture_or_status fwupdmgr get-devices)"
   fwupdmgr_status="available"
   [[ "$fwupd_version" == command-not-found:* ]] && fwupdmgr_status="missing"
+  if [[ "$fwupdmgr_status" == "missing" ]]; then
+    fwupd_devices="command-not-found: fwupdmgr"
+    fwupd_devices_rc=127
+  else
+    fwupd_devices="$(fwupdmgr get-devices 2>&1)" && fwupd_devices_rc=0 || fwupd_devices_rc=$?
+  fi
 
   if command_exists dpkg-query; then
     linux_firmware_version="$(dpkg-query -W -f='${Version}' linux-firmware 2>/dev/null || true)"
@@ -136,6 +76,8 @@ PY
   fi
   if [[ "$fwupdmgr_status" == "missing" ]]; then
     record_warn "fwupdmgr is not installed or not in PATH; firmware device inventory is unavailable."
+  elif [[ "$fwupd_devices_rc" -ne 0 ]]; then
+    record_warn "fwupdmgr get-devices failed (exit ${fwupd_devices_rc}); firmware device inventory is unavailable."
   fi
 
   if command_exists mokutil; then
@@ -150,93 +92,116 @@ PY
     record_warn "/lib/firmware is missing; kernel firmware files are unavailable."
   fi
 
-  local warnings_json
-  warnings_json="$(printf '%s\n' "${warnings[@]:-}" | json_array_from_lines)"
+  local devices_visible="false"
+  if [[ "$fwupdmgr_status" == "available" && "$fwupd_devices_rc" -eq 0 && -n "$fwupd_devices" ]]; then
+    devices_visible="true"
+  fi
 
-  FWUPD_VERSION="$fwupd_version" \
-  FWUPD_DEVICES="$fwupd_devices" \
-  FWUPDMGR_STATUS="$fwupdmgr_status" \
-  LINUX_FIRMWARE_VERSION="$linux_firmware_version" \
-  MICROCODE_PACKAGES="$microcode_packages" \
-  SECURE_BOOT_STATE="$secure_boot_state" \
-  KERNEL_FIRMWARE_DIR="$kernel_firmware_dir" \
-  WARNINGS_JSON="$warnings_json" \
-  STATUS="$status" \
-  PROFILE="$PROFILE" \
-  PLATFORM_ID="$PLATFORM_ID" \
-  PROJECT_ROOT="$PROJECT_ROOT" \
-  PROFILE_FILE="$PROFILE_FILE" \
-  python3 - <<'PY' > "$LATEST_DIR/tier1-firmware-validation.json"
-import datetime
-import json
-import os
-import sys
+  local checks_json warnings_json
+  checks_json="$(mktemp "${TMPDIR:-/tmp}/s2-m1-checks.XXXXXX")"
+  warnings_json="$(printf '%s\n' "${warnings[@]:-}" | json_array_from_lines)"
+  python3 - "$checks_json" "$fwupdmgr_status" "$devices_visible" \
+    "$linux_firmware_version" "$kernel_firmware_dir" "$secure_boot_state" \
+    "$warnings_json" "$fwupd_version" "$microcode_packages" <<'PY'
+import json, os, sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
-import firmware_policy
+def lines(text):
+    return [x for x in (text or "").splitlines() if x.strip()]
 
-def lines(name):
-    return [x for x in os.environ.get(name, '').splitlines() if x.strip()]
-
-profile = firmware_policy.load_system_profile(Path(os.environ["PROFILE_FILE"]))
-data = {
-  "tier": 1,
-  "phase": "check-firmware",
-  "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),
-  "profile": os.environ.get("PROFILE", "ai370"),
-  "classified_platform_id": os.environ.get("PLATFORM_ID") or None,
-  "status": os.environ.get("STATUS", "PASS"),
-  "checks": {
-    "fwupdmgr": {
-      "status": os.environ.get("FWUPDMGR_STATUS", "unknown"),
-      "version_output": lines("FWUPD_VERSION"),
-      "devices_visible": bool(lines("FWUPD_DEVICES")) and not os.environ.get("FWUPD_DEVICES", "").startswith("command-not-found:")
-    },
-    "linux_firmware": {
-      "package_version": os.environ.get("LINUX_FIRMWARE_VERSION", "") or "unknown",
-      "firmware_root_present": os.path.isdir("/lib/firmware"),
-      "kernel_firmware_dir": os.environ.get("KERNEL_FIRMWARE_DIR", "unknown")
-    },
-    "secure_boot": {
-      "state": os.environ.get("SECURE_BOOT_STATE", "unknown")
-    },
-    "microcode": {
-      "packages": lines("MICROCODE_PACKAGES")
-    }
-  },
-  "warnings": json.loads(os.environ.get("WARNINGS_JSON", "[]")),
-  "consumed_profile": firmware_policy.consumed_profile_block(profile),
+payload = {
+    "fwupdmgr_status": sys.argv[2],
+    "fwupd_devices_visible": sys.argv[3] == "true",
+    "linux_firmware_version": sys.argv[4],
+    "firmware_root_present": os.path.isdir("/lib/firmware"),
+    "kernel_firmware_dir": sys.argv[5],
+    "secure_boot_state": sys.argv[6],
+    "warnings": json.loads(sys.argv[7] or "[]"),
+    "fwupd_version_output": lines(sys.argv[8]),
+    "microcode_packages": lines(sys.argv[9]),
 }
-print(json.dumps(data, indent=2))
+Path(sys.argv[1]).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 
+  python3 "$PROJECT_ROOT/scripts/s2-m1-publish-firmware-validation.py" \
+    --profile "$PROFILE_FILE" \
+    --checks "$checks_json" \
+    --output "$LATEST_DIR/s2-m1-firmware-validation.json" \
+    --compat-baseline "$LATEST_DIR/tier1-firmware.json" \
+    --compat-validation "$LATEST_DIR/tier1-firmware-validation.json" \
+    --cli-profile "$PROFILE"
+  rm -f "$checks_json"
+
+  local firmware_json="$LATEST_DIR/s2-m1-firmware-validation.json"
+  local BIOS_VERSION BIOS_DATE BIOS_VENDOR SYSTEM_PRODUCT SYSTEM_VENDOR EXPECTED_BIOS BIOS_ACCEPTABLE PLATFORM_ID status
+  BIOS_VERSION="$(jq -r '.facts.bios.version // "unknown"' "$firmware_json")"
+  BIOS_DATE="$(jq -r '.facts.bios.date // "unknown"' "$firmware_json")"
+  BIOS_VENDOR="$(jq -r '.facts.bios.vendor // "unknown"' "$firmware_json")"
+  SYSTEM_VENDOR="$(jq -r '.facts.system.vendor // "unknown"' "$firmware_json")"
+  SYSTEM_PRODUCT="$(jq -r '.facts.system.product // "unknown"' "$firmware_json")"
+  EXPECTED_BIOS="$(jq -r '.policy.bios_expected // ""' "$firmware_json")"
+  BIOS_ACCEPTABLE="$(jq -r '.policy.bios_acceptable // "unknown"' "$firmware_json")"
+  PLATFORM_ID="$(jq -r '.classified_platform_id // empty' "$firmware_json")"
+  status="$(jq -r '.status // "WARN"' "$firmware_json")"
+
   {
-    echo "# Tier 1 Firmware Validation"
+    echo "# Stage 2 / S2-M1 Firmware Facts"
+    echo
+    echo "- Selected CLI profile: $PROFILE"
+    echo "- Classified platform_id: ${PLATFORM_ID:-unknown}"
+    echo "- System (from Stage 1 profile): ${SYSTEM_VENDOR:-unknown} ${SYSTEM_PRODUCT:-unknown}"
+    echo "- BIOS version (from Stage 1 profile): ${BIOS_VERSION:-unknown}"
+    echo "- BIOS release date: ${BIOS_DATE:-unknown}"
+    echo "- BIOS vendor: ${BIOS_VENDOR:-unknown}"
+    echo "- fwupd devices visible: $([[ "$devices_visible" == "true" ]] && echo yes || echo "no (or tool missing)")"
+    echo
+    echo "This section records identity facts only. Policy is in s2-m1-firmware-validation.json."
+    echo "This phase only records baseline state. No firmware updates are applied."
+  } > "$LATEST_DIR/tier1-firmware.md"
+
+  {
+    echo "# Stage 2 / S2-M1 Firmware Policy"
     echo
     echo "**Status:** $status"
     echo "Profile: $PROFILE | Mode: $MODE | Persistence: $PERSISTENCE"
+    echo "- Classified platform_id: ${PLATFORM_ID:-unknown}"
+    if [[ -n "$EXPECTED_BIOS" ]]; then
+      echo "- Target BIOS for classified platform ${PLATFORM_ID:-unknown}: $EXPECTED_BIOS (acceptable: $BIOS_ACCEPTABLE)"
+    else
+      echo "- No EXPECTED_BIOS_VERSION for classified platform ${PLATFORM_ID:-unknown}"
+    fi
     echo
-    echo "## Checks"
+    echo "## Supplemental checks"
     echo "- fwupdmgr: $fwupdmgr_status"
     echo "- linux-firmware package: ${linux_firmware_version:-unknown}"
     echo "- Secure Boot: ${secure_boot_state:-unknown}"
     echo "- Microcode packages: $([[ -n "$microcode_packages" ]] && echo "detected" || echo "not detected")"
     echo "- /lib/firmware present: $([[ -d /lib/firmware ]] && echo yes || echo no)"
-    if (( ${#warnings[@]} > 0 )); then
+    declare -a published_warnings=()
+    mapfile -t published_warnings < <(jq -r '.warnings[]?' "$firmware_json" 2>/dev/null || true)
+    if (( ${#published_warnings[@]} > 0 )); then
       echo
       echo "## Warnings"
-      local warning
-      for warning in "${warnings[@]}"; do
+      for warning in "${published_warnings[@]}"; do
         echo "- $warning"
       done
     fi
     echo
     echo "Note: This phase is validation-only. It never flashes firmware or changes Secure Boot state."
-    echo "BIOS policy and identity come from the consumed Stage 1 profile; see tier1-firmware.md."
+    echo "BIOS identity facts come from the consumed Stage 1 profile; policy uses classified platform_id."
+    echo "Canonical report: reports/latest/s2-m1-firmware-validation.json"
   } > "$LATEST_DIR/tier1-firmware-validation.md"
 
-  echo "[INFO] Wrote tier1-firmware.* and tier1-firmware-validation.*"
+  cp "$LATEST_DIR/tier1-firmware.json" "$LATEST_DIR/firmware-baseline.json" 2>/dev/null || true
+  {
+    echo "# Stage 2 / S2-M1 Firmware Validation"
+    echo
+    cat "$LATEST_DIR/tier1-firmware.md"
+    echo
+    cat "$LATEST_DIR/tier1-firmware-validation.md"
+  } > "$LATEST_DIR/s2-m1-firmware-validation.md"
+
+  echo "[INFO] Wrote s2-m1-firmware-validation.json and compatibility tier1-firmware*"
   echo "[INFO] Firmware validation status: $status"
   echo "[INFO] 20-check-bios.sh complete."
 }

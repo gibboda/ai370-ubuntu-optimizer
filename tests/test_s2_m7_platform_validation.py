@@ -545,6 +545,34 @@ class Stage2PlatformValidationTests(unittest.TestCase):
             self.assertEqual(fail_report["status"], "FAIL")
             self.assertTrue(any("S2-M1" in item for item in fail_report["failures"]))
 
+    def test_s2_m1_canonical_json_is_preferred_and_policy_feeds_bios(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            reports_dir = Path(directory)
+            profile_path = self.seed_reference_dir(reports_dir)
+            write_json(
+                reports_dir / "s2-m1-firmware-validation.json",
+                {
+                    "status": "WARN",
+                    "consumed_profile": capability_ladder.consumed_profile_from_system_profile(
+                        json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+                    ),
+                    "policy": {"bios_acceptable": "false", "bios_expected": "2.01", "source": "configs/profiles/ai370.env"},
+                },
+            )
+            write_json(
+                reports_dir / "tier1-firmware-validation.json", {"status": "PASS"}
+            )
+            write_json(reports_dir / "tier1-firmware.json", {"bios_acceptable": "true"})
+            output = reports_dir / "report.json"
+            result = self.publish_cli(reports_dir, output, profile_path=profile_path)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(output.read_text(encoding="utf-8"))
+            by_id = {entry["id"]: entry for entry in report["milestones"]}
+            self.assertEqual(by_id["S2-M1"]["status"], "WARN")
+            self.assertEqual(by_id["S2-M1"]["artifact"], "s2-m1-firmware-validation.json")
+            self.assertTrue(by_id["S2-M1"]["canonical"])
+            self.assertEqual(report["acceptance"]["bios_version_acceptable"], "false")
+
 
 if __name__ == "__main__":
     unittest.main()

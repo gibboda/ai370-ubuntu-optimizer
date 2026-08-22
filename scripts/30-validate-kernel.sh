@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Tier 1: Kernel and firmware validation for AI370 hardware enablement.
+# Stage 2 / S2-M2: Kernel and driver validation.
 # This is a read-only validation phase; it records facts and recommendations
 # without changing kernel parameters, packages, or firmware files.
 
@@ -17,6 +17,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$PROJECT_ROOT/scripts/lib/hardware-detect.sh"
 
 LATEST_DIR="${LATEST_DIR:-$PROJECT_ROOT/reports/latest}"
+CANONICAL_JSON="$LATEST_DIR/s2-m2-kernel-driver-validation.json"
 STATUS_JSON="$LATEST_DIR/tier1-kernel-plan.json"
 SUMMARY_MD="$LATEST_DIR/tier1-kernel-plan.md"
 STATUS_TXT="$LATEST_DIR/tier1-kernel-plan.txt"
@@ -39,7 +40,7 @@ PY
 }
 
 main() {
-  echo "[INFO] Tier 1 / 30-validate-kernel.sh"
+  echo "[INFO] Stage 2 / 30-validate-kernel.sh (S2-M2 kernel and driver validation)"
   echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE  Dry run: $DRY_RUN"
 
   local PROFILE_FILE="$LATEST_DIR/s1-m5-system-profile.json"
@@ -55,20 +56,35 @@ main() {
     exit 2
   fi
 
-  local kernel os_description os_version os_codename amdgpu_module npu_module firmware_dir linux_firmware_state status
+  local kernel os_description os_version os_codename firmware_dir linux_firmware_state status
   local target_kernel="6.11"
   local kernel_ok="unknown"
-  local amdgpu_ok="false"
-  local amdxdna_seen="false"
+  local amdgpu_ok="unknown"
+  local amdxdna_seen="unknown"
   local recommendations=()
+  local module_inventory=""
+  local module_probe="missing"
 
   kernel="$(detect_kernel)"
   os_description="$(detect_os_description)"
   os_version="$(detect_os_version_id)"
   os_codename="$(detect_os_codename)"
-  amdgpu_module="$(detect_amdgpu_module)"
-  npu_module="$(detect_npu_module_text)"
   firmware_dir="/lib/firmware/amdgpu"
+
+  if [[ -r /proc/modules ]]; then
+    if module_inventory="$(cat /proc/modules 2>/dev/null)"; then
+      module_probe="ok"
+    else
+      module_probe="failed"
+    fi
+  fi
+  if [[ "$module_probe" != "ok" ]] && command_exists lsmod; then
+    if module_inventory="$(lsmod 2>/dev/null)"; then
+      module_probe="ok"
+    else
+      module_probe="failed"
+    fi
+  fi
 
   if [[ -n "$kernel" ]]; then
     if version_ge "$kernel" "$target_kernel"; then
@@ -79,16 +95,23 @@ main() {
     fi
   fi
 
-  if [[ -n "$amdgpu_module" ]]; then
-    amdgpu_ok="true"
+  if [[ "$module_probe" != "ok" ]]; then
+    amdgpu_ok="unknown"
+    amdxdna_seen="unknown"
+    recommendations+=("Kernel module inventory is unavailable (probe ${module_probe}); cannot confirm amdgpu or AMDXDNA load state.")
   else
-    recommendations+=("amdgpu is not currently loaded; verify kernel config, firmware, and Secure Boot/module policy.")
-  fi
-
-  if [[ -n "$npu_module" ]]; then
-    amdxdna_seen="true"
-  else
-    recommendations+=("AMDXDNA/XDNA module not loaded; this is acceptable at Tier 1 if reported cleanly and Tier 3 handles NPU enablement.")
+    if printf '%s\n' "$module_inventory" | grep -Eq '^amdgpu[[:space:]]'; then
+      amdgpu_ok="true"
+    else
+      amdgpu_ok="false"
+      recommendations+=("amdgpu is not currently loaded; verify kernel config, firmware, and Secure Boot/module policy.")
+    fi
+    if printf '%s\n' "$module_inventory" | grep -Eq '^(amdxdna|xrt|xdna)[[:space:]]'; then
+      amdxdna_seen="true"
+    else
+      amdxdna_seen="false"
+      recommendations+=("AMDXDNA/XDNA module not loaded; this is acceptable at Tier 1 if reported cleanly and Tier 3 handles NPU enablement.")
+    fi
   fi
 
   if [[ -d "$firmware_dir" ]]; then
@@ -103,56 +126,44 @@ main() {
     status="WARN"
   fi
 
-  export PROFILE MODE PERSISTENCE DRY_RUN kernel os_description os_version os_codename target_kernel kernel_ok amdgpu_ok amdxdna_seen linux_firmware_state status
-  export PROFILE_FILE PROJECT_ROOT
-  RECOMMENDATIONS="$(printf '%s\n' "${recommendations[@]:-}")"
-  export RECOMMENDATIONS
-  python3 - <<'PY' > "$STATUS_JSON"
-import json
-import os
-import sys
-from datetime import UTC, datetime
+  local facts_json recommendations_json
+  facts_json="$(mktemp "${TMPDIR:-/tmp}/s2-m2-facts.XXXXXX")"
+  recommendations_json="$(printf '%s\n' "${recommendations[@]:-}" | python3 -c 'import json,sys; print(json.dumps([x for x in sys.stdin.read().splitlines() if x.strip()]))')"
+  python3 - "$facts_json" "$kernel" "$target_kernel" "$kernel_ok" "$amdgpu_ok" \
+    "$amdxdna_seen" "$linux_firmware_state" "$status" \
+    "$os_description" "$os_version" "$os_codename" "$recommendations_json" <<'PY'
+import json, sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
-import firmware_policy
-
-recommendations = [line for line in os.environ.get("RECOMMENDATIONS", "").splitlines() if line.strip()]
-profile = firmware_policy.load_system_profile(Path(os.environ["PROFILE_FILE"]))
-print(json.dumps({
-    "tier": 1,
-    "phase": "validate-kernel",
-    "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-    "profile": os.environ.get("PROFILE", "ai370"),
-    "classified_platform_id": firmware_policy.classified_platform_id(profile),
-    "mode": os.environ.get("MODE", "safe"),
-    "persistence": os.environ.get("PERSISTENCE", "runtime"),
-    "dry_run": os.environ.get("DRY_RUN", "false") == "true",
-    "status": os.environ.get("status", "WARN"),
-    "kernel": {
-        "version": os.environ.get("kernel", "unknown"),
-        "target_minimum": os.environ.get("target_kernel", "6.11"),
-        "acceptable": None if os.environ.get("kernel_ok", "unknown") == "unknown" else os.environ.get("kernel_ok") == "true",
-    },
-    "os": {
-        "description": os.environ.get("os_description", "unknown"),
-        "version_id": os.environ.get("os_version", "unknown"),
-        "codename": os.environ.get("os_codename", "unknown"),
-    },
-    "modules": {
-        "amdgpu_loaded": os.environ.get("amdgpu_ok", "false") == "true",
-        "amdxdna_seen": os.environ.get("amdxdna_seen", "false") == "true",
-    },
-    "firmware": {
-        "amdgpu_directory": os.environ.get("linux_firmware_state", "unknown"),
-    },
-    "recommendations": recommendations,
-    "consumed_profile": firmware_policy.consumed_profile_block(profile),
-}, indent=2))
+Path(sys.argv[1]).write_text(json.dumps({
+    "kernel": sys.argv[2],
+    "target_kernel": sys.argv[3],
+    "kernel_ok": sys.argv[4],
+    "amdgpu_ok": sys.argv[5],
+    "amdxdna_seen": sys.argv[6],
+    "linux_firmware_state": sys.argv[7],
+    "status": sys.argv[8],
+    "os_description": sys.argv[9],
+    "os_version": sys.argv[10],
+    "os_codename": sys.argv[11],
+    "recommendations": json.loads(sys.argv[12] or "[]"),
+}, indent=2) + "\n", encoding="utf-8")
 PY
 
+  python3 "$PROJECT_ROOT/scripts/s2-m2-publish-kernel-driver-validation.py" \
+    --profile "$PROFILE_FILE" \
+    --facts "$facts_json" \
+    --output "$CANONICAL_JSON" \
+    --compat-output "$STATUS_JSON" \
+    --cli-profile "$PROFILE" \
+    --mode "$MODE" \
+    --persistence "$PERSISTENCE" \
+    --dry-run "$DRY_RUN"
+  rm -f "$facts_json"
+
+  status="$(jq -r '.status // "WARN"' "$CANONICAL_JSON")"
+
   {
-    echo "# Tier 1 Kernel and Firmware Validation"
+    echo "# Stage 2 / S2-M2 Kernel and Driver Validation"
     echo
     echo "**Status:** $status"
     echo
@@ -166,14 +177,17 @@ PY
     echo
     echo "## Recommendations"
     if (( ${#recommendations[@]} == 0 )); then
-      echo "- No Tier 1 kernel or firmware recommendations."
+      echo "- No S2-M2 kernel or firmware recommendations."
     else
       printf -- '- %s\n' "${recommendations[@]}"
     fi
+    echo
+    echo "Canonical report: reports/latest/s2-m2-kernel-driver-validation.json"
   } > "$SUMMARY_MD"
+  cp "$SUMMARY_MD" "$LATEST_DIR/s2-m2-kernel-driver-validation.md"
 
   echo "$status" > "$STATUS_TXT"
-  echo "[INFO] Wrote tier1-kernel-plan.*"
+  echo "[INFO] Wrote s2-m2-kernel-driver-validation.json and compatibility tier1-kernel-plan.*"
   echo "[INFO] 30-validate-kernel.sh complete."
 }
 

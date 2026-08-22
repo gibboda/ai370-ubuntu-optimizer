@@ -336,12 +336,16 @@ class MigrationPlanTests(unittest.TestCase):
             "scripts/s2-m5-publish-optimization-plan.py",
             "scripts/s2-m6-publish-optimization-application.py",
             "scripts/lib/optimization_plan.py",
+            "scripts/s2-m1-publish-firmware-validation.py",
+            "scripts/s2-m2-publish-kernel-driver-validation.py",
+            "scripts/lib/kernel_validation.py",
             "tests/test_capability_ladder.py",
             "tests/test_s2_visibility_schemas.py",
             "tests/test_s2_m3_gpu_visibility.py",
             "tests/test_s2_m4_npu_visibility.py",
             "tests/test_s2_m7_platform_validation.py",
             "tests/test_s2_m1_firmware.py",
+            "tests/test_s2_m2_kernel_driver.py",
             "tests/test_s2_optimize_profile.py",
             "tests/test_s2_m5_optimization_plan.py",
             "tests/test_s2_m6_optimization_apply.py",
@@ -355,6 +359,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("tests.test_s2_m4_npu_visibility", self.plan)
         self.assertIn("tests.test_s2_m7_platform_validation", self.plan)
         self.assertIn("tests.test_s2_m1_firmware", self.plan)
+        self.assertIn("tests.test_s2_m2_kernel_driver", self.plan)
         self.assertIn("tests.test_s2_optimize_profile", self.plan)
         self.assertIn("tests.test_s2_m5_optimization_plan", self.plan)
         self.assertIn("tests.test_s2_m6_optimization_apply", self.plan)
@@ -369,6 +374,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("tests/test_s2_m7_platform_validation.py", self.roadmap)
         self.assertIn("tests/test_s2_m5_optimization_plan.py", self.roadmap)
         self.assertIn("tests/test_s2_m6_optimization_apply.py", self.roadmap)
+        self.assertIn("tests/test_s2_m2_kernel_driver.py", self.roadmap)
         self.assertNotIn("S2-M4 publisher tests remain issue #168", self.roadmap)
         self.assertNotIn(
             "JSON still hardcodes `target_gpu_arch=gfx1150`",
@@ -403,6 +409,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("#184", issue169)
         self.assertIn("#197", issue169)
         self.assertIn("#199", issue169)
+        self.assertIn("#201", issue169)
         self.assertIn("This issue is **not complete**", issue169)
         self.assertIn(
             "- [x] Make `stage1` / `tier1` call `run_stage1_profile` only",
@@ -454,12 +461,12 @@ class MigrationPlanTests(unittest.TestCase):
             issue169,
         )
         self.assertIn(
-            "- [ ] `s2-m1-firmware-validation.json` from `20-check-bios.sh`; keep `tier1-firmware.json` compat",
+            "- [x] `s2-m1-firmware-validation.json` from `20-check-bios.sh`; keep `tier1-firmware.json` compat",
             issue169,
         )
-        self.assertIn("- [ ] Split BIOS facts vs policy in `20-check-bios.sh`", issue169)
+        self.assertIn("- [x] Split BIOS facts vs policy in `20-check-bios.sh`", issue169)
         self.assertIn(
-            "- [ ] `s2-m2-kernel-driver-validation.json` from `30-validate-kernel.sh`",
+            "- [x] `s2-m2-kernel-driver-validation.json` from `30-validate-kernel.sh`",
             issue169,
         )
         self.assertIn(
@@ -480,6 +487,10 @@ class MigrationPlanTests(unittest.TestCase):
         )
         self.assertIn(
             "- [x] `tests/test_s2_m6_optimization_apply.py` — apply requires `--approve`",
+            issue169,
+        )
+        self.assertIn(
+            "- [x] `tests/test_s2_m2_kernel_driver.py` — canonical S2-M2 JSON",
             issue169,
         )
         self.assertIn("- [ ] Mark migration plan step 3 done", issue169)
@@ -554,7 +565,7 @@ class MigrationPlanTests(unittest.TestCase):
         )
         self.assertNotIn("scope is **implemented** (S2-M1–S2-M7)", readme)
         self.assertIn("stage2-platform-validate", readme)
-        self.assertIn("S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress", readme)
+        self.assertIn("S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress", readme)
         self.assertIn("S3-M5", readme)
         self.assertIn("does not label Planned Stage 2 milestones as implemented", issue169)
         self.assertNotIn(

@@ -55,13 +55,15 @@ mkdir -p "$LATEST_DIR"
 rm -f \
   "$LATEST_DIR/tier1-firmware.json" \
   "$LATEST_DIR/tier1-firmware-validation.json" \
+  "$LATEST_DIR/s2-m1-firmware-validation.json" \
+  "$LATEST_DIR/s2-m2-kernel-driver-validation.json" \
   "$LATEST_DIR/s1-m1-raw-inventory.json"
 cp "$PROFILE_FIXTURE" "$LATEST_DIR/s1-m5-system-profile.json"
 
 "$PROJECT_ROOT/ai370-optimize.sh" stage2-firmware-validate \
   --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE"
 
-for f in s1-m5-system-profile.json tier1-firmware.json tier1-firmware-validation.json
+for f in s1-m5-system-profile.json tier1-firmware.json tier1-firmware-validation.json s2-m1-firmware-validation.json
 do
   if [[ ! -f "$LATEST_DIR/$f" ]]; then
     echo "[FAIL] missing artifact after stage2-firmware-validate: $f"
@@ -70,17 +72,50 @@ do
   echo "[OK] artifact present: $f"
 done
 
-python3 - "$LATEST_DIR/tier1-firmware.json" "$PROFILE_FIXTURE" <<'PY'
+python3 - "$LATEST_DIR/s2-m1-firmware-validation.json" "$LATEST_DIR/tier1-firmware.json" "$PROFILE_FIXTURE" <<'PY'
 import json, sys
-report = json.load(open(sys.argv[1], encoding="utf-8"))
-fixture = json.load(open(sys.argv[2], encoding="utf-8"))
+canonical = json.load(open(sys.argv[1], encoding="utf-8"))
+report = json.load(open(sys.argv[2], encoding="utf-8"))
+fixture = json.load(open(sys.argv[3], encoding="utf-8"))
+assert canonical.get("milestone") == "S2-M1", canonical.get("milestone")
+assert "bios_expected" not in canonical["facts"]["bios"], canonical["facts"]["bios"]
+assert "bios_version" not in canonical["policy"], canonical["policy"]
+assert canonical["policy"]["bios_expected"] == "2.01", canonical["policy"]
+assert canonical["facts"]["bios"]["identity_source"] == "s1-m5-system-profile"
 assert report.get("profile") == "generic-ryzen-ai", report.get("profile")
 assert report.get("classified_platform_id") == "ai370", report.get("classified_platform_id")
 assert report.get("bios_expected") == "2.01", report.get("bios_expected")
-consumed = report.get("consumed_profile") or {}
+consumed = canonical.get("consumed_profile") or {}
 assert consumed.get("schema", {}).get("version") == 3, consumed
 assert consumed.get("fingerprint", {}).get("value") == fixture["fingerprint"]["value"], consumed
-print("[OK] firmware validate consumed classified ai370 policy and Stage 1 fingerprint")
+print("[OK] firmware validate wrote canonical S2-M1 JSON with facts vs policy split")
+PY
+
+"$PROJECT_ROOT/ai370-optimize.sh" stage2-kernel-validate \
+  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE"
+
+if [[ ! -f "$LATEST_DIR/s2-m2-kernel-driver-validation.json" ]]; then
+  echo "[FAIL] missing canonical artifact after stage2-kernel-validate: s2-m2-kernel-driver-validation.json"
+  exit 2
+fi
+if [[ ! -f "$LATEST_DIR/tier1-kernel-plan.json" ]]; then
+  echo "[FAIL] missing compat artifact after stage2-kernel-validate: tier1-kernel-plan.json"
+  exit 2
+fi
+
+python3 - "$LATEST_DIR/s2-m2-kernel-driver-validation.json" "$LATEST_DIR/tier1-kernel-plan.json" "$PROFILE_FIXTURE" <<'PY'
+import json, sys
+canonical = json.load(open(sys.argv[1], encoding="utf-8"))
+compat = json.load(open(sys.argv[2], encoding="utf-8"))
+fixture = json.load(open(sys.argv[3], encoding="utf-8"))
+assert canonical.get("milestone") == "S2-M2", canonical.get("milestone")
+assert canonical.get("cli_profile") == "generic-ryzen-ai", canonical.get("cli_profile")
+assert canonical.get("classified_platform_id") == "ai370", canonical.get("classified_platform_id")
+assert canonical.get("status") in {"PASS", "WARN"}, canonical.get("status")
+consumed = canonical.get("consumed_profile") or {}
+assert consumed.get("fingerprint", {}).get("value") == fixture["fingerprint"]["value"], consumed
+assert compat.get("canonical_artifact") == "reports/latest/s2-m2-kernel-driver-validation.json"
+print("[OK] kernel validate wrote canonical S2-M2 JSON and compat tier1-kernel-plan.json")
 PY
 
 "$PROJECT_ROOT/ai370-optimize.sh" stage2-optimize-plan \

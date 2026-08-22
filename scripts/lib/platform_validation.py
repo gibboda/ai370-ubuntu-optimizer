@@ -359,13 +359,14 @@ def bios_acceptable_from_inputs(
     for document in (s2_m1, firmware_compat):
         if not document:
             continue
-        value = document.get("bios_acceptable")
-        if value in {"true", "false", "unknown", True, False}:
-            if value is True:
-                return "true"
-            if value is False:
-                return "false"
-            return str(value)
+        policy = document.get("policy") if isinstance(document.get("policy"), dict) else {}
+        for value in (document.get("bios_acceptable"), policy.get("bios_acceptable")):
+            if value in {"true", "false", "unknown", True, False}:
+                if value is True:
+                    return "true"
+                if value is False:
+                    return "false"
+                return str(value)
     return "unknown"
 
 

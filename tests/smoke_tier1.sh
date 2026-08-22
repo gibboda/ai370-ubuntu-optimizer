@@ -91,6 +91,42 @@ if [[ ! -f "$LATEST_DIR/tier1-npu.json" ]]; then
 fi
 echo "[OK] artifact present: tier1-npu.json (from 10-detect-hardware)"
 
+if [[ ! -f "$LATEST_DIR/s2-m1-firmware-validation.json" ]]; then
+  echo "[FAIL] missing artifact after inventory: s2-m1-firmware-validation.json (S2-M1)"
+  exit 2
+fi
+python3 - "$LATEST_DIR/s2-m1-firmware-validation.json" "$PROJECT_ROOT" <<'PY'
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[2])
+sys.path.insert(0, str(root / "scripts/lib"))
+import firmware_policy
+import system_profile
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+system_profile.validate_document(report, firmware_policy.S2_M1_SCHEMA, "S2-M1")
+assert report.get("milestone") == "S2-M1"
+assert "bios_expected" not in report["facts"]["bios"]
+assert "bios_version" not in report["policy"]
+print("[OK] s2-m1-firmware-validation.json validates against schema")
+PY
+
+if [[ ! -f "$LATEST_DIR/s2-m2-kernel-driver-validation.json" ]]; then
+  echo "[FAIL] missing artifact after inventory: s2-m2-kernel-driver-validation.json (S2-M2)"
+  exit 2
+fi
+python3 - "$LATEST_DIR/s2-m2-kernel-driver-validation.json" "$PROJECT_ROOT" <<'PY'
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[2])
+sys.path.insert(0, str(root / "scripts/lib"))
+import kernel_validation
+import system_profile
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+system_profile.validate_document(report, kernel_validation.S2_M2_SCHEMA, "S2-M2")
+assert report.get("milestone") == "S2-M2"
+print("[OK] s2-m2-kernel-driver-validation.json validates against schema")
+PY
+
 if [[ ! -f "$LATEST_DIR/s2-m3-gpu-runtime-visibility.json" ]]; then
   echo "[FAIL] missing artifact after inventory: s2-m3-gpu-runtime-visibility.json (S2-M3)"
   exit 2

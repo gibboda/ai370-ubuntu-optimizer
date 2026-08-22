@@ -17,6 +17,7 @@ PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
 BIOS_SCRIPT = ROOT / "scripts/20-check-bios.sh"
 sys.path.insert(0, str(ROOT / "scripts/lib"))
 import firmware_policy  # noqa: E402
+import system_profile  # noqa: E402
 
 
 def load_reference_profile() -> dict:
@@ -107,6 +108,13 @@ class FirmwareScriptTests(unittest.TestCase):
             validation = json.loads(
                 (latest / "tier1-firmware-validation.json").read_text(encoding="utf-8")
             )
+            canonical = json.loads(
+                (latest / "s2-m1-firmware-validation.json").read_text(encoding="utf-8")
+            )
+            facts_md = (latest / "tier1-firmware.md").read_text(encoding="utf-8")
+            policy_md = (latest / "tier1-firmware-validation.md").read_text(
+                encoding="utf-8"
+            )
         self.assertEqual(report["profile"], "generic-ryzen-ai")
         self.assertEqual(report["classified_platform_id"], "ai370")
         self.assertEqual(report["bios_expected"], "2.01")
@@ -119,6 +127,114 @@ class FirmwareScriptTests(unittest.TestCase):
             validation["consumed_profile"]["fingerprint"]["value"],
             report["consumed_profile"]["fingerprint"]["value"],
         )
+        system_profile.validate_document(
+            canonical, firmware_policy.S2_M1_SCHEMA, "S2-M1"
+        )
+        self.assertEqual(canonical["milestone"], "S2-M1")
+        self.assertNotIn("bios_expected", canonical["facts"]["bios"])
+        self.assertNotIn("bios_version", canonical["policy"])
+        self.assertEqual(canonical["policy"]["bios_expected"], "2.01")
+        self.assertEqual(canonical["policy"]["bios_acceptable"], "false")
+        self.assertEqual(canonical["facts"]["bios"]["version"], "2.00")
+        self.assertEqual(canonical["facts"]["bios"]["identity_source"], "s1-m5-system-profile")
+        self.assertEqual(
+            canonical["consumed_profile"]["fingerprint"]["value"],
+            report["consumed_profile"]["fingerprint"]["value"],
+        )
+        self.assertIn("Firmware Facts", facts_md)
+        self.assertNotIn("Target BIOS", facts_md)
+        self.assertIn("Firmware Policy", policy_md)
+        self.assertIn("acceptable:", policy_md)
+
+    def test_failed_fwupd_get_devices_is_not_visible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            bindir = latest / "bin"
+            bindir.mkdir()
+            stub = bindir / "fwupdmgr"
+            stub.write_text(
+                "#!/bin/bash\n"
+                "if [[ \"$1\" == \"--version\" ]]; then echo 'fwupd 1.9'; exit 0; fi\n"
+                "if [[ \"$1\" == \"get-devices\" ]]; then\n"
+                "  echo 'Failed to connect to daemon' >&2\n"
+                "  exit 1\n"
+                "fi\n"
+                "exit 2\n",
+                encoding="utf-8",
+            )
+            stub.chmod(0o755)
+            (latest / "s1-m5-system-profile.json").write_text(
+                PROFILE_FIXTURE.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            env = dict(os.environ)
+            env["LATEST_DIR"] = str(latest)
+            env["PATH"] = f"{bindir}:{env['PATH']}"
+            completed = subprocess.run(
+                ["bash", str(BIOS_SCRIPT), "generic-ryzen-ai", "safe", "runtime"],
+                check=False,
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            canonical = json.loads(
+                (latest / "s2-m1-firmware-validation.json").read_text(encoding="utf-8")
+            )
+        self.assertEqual(canonical["facts"]["fwupd"]["status"], "available")
+        self.assertFalse(canonical["facts"]["fwupd"]["devices_visible"])
+        self.assertTrue(
+            any("get-devices failed" in warning for warning in canonical["warnings"]),
+            canonical["warnings"],
+        )
+
+
+class FirmwareCanonicalPublisherTests(unittest.TestCase):
+    def test_facts_exclude_policy_fields(self) -> None:
+        profile = load_reference_profile()
+        facts = firmware_policy.firmware_facts(profile)
+        self.assertNotIn("bios_expected", facts)
+        self.assertNotIn("bios_acceptable", facts)
+        policy = firmware_policy.firmware_policy_verdict(profile, facts)
+        self.assertNotIn("bios_version", policy)
+        self.assertEqual(policy["bios_expected"], "2.01")
+        self.assertEqual(policy["bios_acceptable"], "false")
+
+    def test_publisher_requires_stage1_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "s2-m1-firmware-validation.json"
+            completed = subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "scripts/s2-m1-publish-firmware-validation.py"),
+                    "--profile",
+                    str(Path(directory) / "missing.json"),
+                    "--output",
+                    str(output),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 2, completed.stderr + completed.stdout)
+            self.assertFalse(output.exists())
+
+    def test_invalid_report_does_not_replace_last_valid_publication(self) -> None:
+        profile = load_reference_profile()
+        valid = firmware_policy.build_s2_m1_firmware_validation(profile)
+        invalid = json.loads(json.dumps(valid))
+        invalid["stage"] = 1
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "s2-m1-firmware-validation.json"
+            system_profile.atomic_write_document(
+                destination, valid, firmware_policy.S2_M1_SCHEMA, "S2-M1"
+            )
+            before = destination.read_bytes()
+            with self.assertRaises(system_profile.ProfileValidationError):
+                system_profile.atomic_write_document(
+                    destination, invalid, firmware_policy.S2_M1_SCHEMA, "S2-M1"
+                )
+            self.assertEqual(destination.read_bytes(), before)
 
 
 if __name__ == "__main__":

@@ -85,9 +85,9 @@ Stage 1 (read-only, S1-M1 through S1-M5):
   --with-ai-smoke is not a Stage 1 flag; use scripts/80-benchmark-local-ai.sh (S3-M6)
   Mixed BIOS/kernel/GPU/tuning/90-validate no longer runs from stage1.
 
-Stage 2 platform (S2-M7 aggregate via 90-validate shim; S2-M1/M2 canonical JSON still Planned):
-  stage2-firmware-validate = 20-check-bios (S2-M1 Planned); requires S1-M5 profile
-  stage2-kernel-validate = 30-validate-kernel (S2-M2 Planned); requires S1-M5 profile
+Stage 2 platform (S2-M7 aggregate via 90-validate shim; S2-M1/M2 canonical JSON In progress):
+  stage2-firmware-validate = 20-check-bios (S2-M1 In progress); requires S1-M5 profile
+  stage2-kernel-validate = 30-validate-kernel (S2-M2 In progress); requires S1-M5 profile
   stage2-gpu-validate = s2-m3-validate-gpu-stack (S2-M3 In progress)
   stage2-npu-validate is visibility-only (S2-M4) by default; pass --bench for the
     mixed 210-validate / 230 / 245 compatibility path until S3-M6. Script 240

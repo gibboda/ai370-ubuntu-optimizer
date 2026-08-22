@@ -122,14 +122,15 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 - Stage 1 profile pipeline: **Implemented** (S1-M1 through S1-M5). `stage1`,
   `stage1-probe`, and `stage1-profile` are read-only. BIOS, kernel, GPU/NPU
   visibility, and tuning run from Stage 2 platform commands.
-- Stage 2: **Planned** in ROADMAP except S2-M3/S2-M4/S2-M5/S2-M6/S2-M7, which
+- Stage 2: **Planned** in ROADMAP except S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7, which
   are **In progress** (capability ladder library and visibility schemas; GPU
   publisher landed in
   [#176](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/176);
   NPU visibility-only publisher is `stage2-npu-validate` / S2-M4;
   S2-M7 publisher landed in
   [#197](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/197);
-  S2-M5/S2-M6 canonical plan/apply JSON exists).
+  S2-M5/S2-M6 canonical plan/apply JSON exists; S2-M1/S2-M2 canonical
+  firmware and kernel JSON exists).
   Platform wrappers (`stage2-firmware-validate`, `stage2-kernel-validate`,
   `stage2-optimize-plan`, `stage2-optimize-apply --approve`,
   `stage2-platform-validate`) exist; they do not upgrade S2-M1/M2 to
@@ -282,9 +283,11 @@ Stage 2 platform wrappers (not Stage 1): `20-check-bios.sh`, `30-validate-kernel
 
 ### Stage 2 – Platform Enablement and Local AI Runtime
 
-ROADMAP status: S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress; S2-M1 and S2-M2
-remain **Planned**. Canonical S2-M5/S2-M6 JSON exists; backup/rollback remain
-Planned. Wrappers below do not mark Planned milestones Implemented.
+ROADMAP status: S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress.
+Canonical S2-M1/S2-M2 JSON exists; remaining S2-M1/S2-M2 work is remediation
+docs and the kernel/driver matrix. Canonical S2-M5/S2-M6 JSON exists;
+backup/rollback remain Planned. Wrappers below do not mark Planned milestones
+Implemented.
 
 **Platform commands (S2-M1–M7 wrappers):**
 

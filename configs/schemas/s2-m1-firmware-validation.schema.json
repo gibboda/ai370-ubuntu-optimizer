@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai370.local/schemas/s2-m1-firmware-validation-v1.json",
+  "title": "S2-M1 Firmware Validation v1",
+  "description": "Stage 2 firmware policy validation. BIOS identity facts come from the consumed Stage 1 profile. Policy (expected BIOS / acceptable) is a separate classified-platform verdict. Supplemental fwupd/microcode/Secure Boot checks are live observations. Does not flash firmware.",
+  "type": "object",
+  "required": [
+    "schema",
+    "stage",
+    "milestone",
+    "artifact",
+    "consumed_profile",
+    "status",
+    "cli_profile",
+    "classified_platform_id",
+    "facts",
+    "policy",
+    "warnings",
+    "notes",
+    "compatibility_reports"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"$ref": "#/$defs/schemaIdentity"},
+    "stage": {"const": 2},
+    "milestone": {"const": "S2-M1"},
+    "artifact": {"const": "s2-m1-firmware-validation"},
+    "consumed_profile": {"$ref": "#/$defs/consumedProfile"},
+    "status": {"$ref": "#/$defs/gateStatus"},
+    "cli_profile": {"type": "string", "minLength": 1},
+    "classified_platform_id": {"type": ["string", "null"]},
+    "facts": {"$ref": "#/$defs/firmwareFacts"},
+    "policy": {"$ref": "#/$defs/firmwarePolicy"},
+    "warnings": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "compatibility_reports": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    }
+  },
+  "$defs": {
+    "schemaIdentity": {
+      "type": "object",
+      "required": ["name", "version", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "s2-m1-firmware-validation"},
+        "version": {"const": 1},
+        "uri": {"const": "https://ai370.local/schemas/s2-m1-firmware-validation-v1.json"}
+      }
+    },
+    "profileSchemaIdentity": {
+      "type": "object",
+      "required": ["name", "version", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "ai370-system-profile"},
+        "version": {"const": 3},
+        "uri": {"const": "https://ai370.local/schemas/system-profile-v3.json"}
+      }
+    },
+    "fingerprintRef": {
+      "type": "object",
+      "required": ["algorithm", "algorithm_version", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {"const": "sha256"},
+        "algorithm_version": {"const": 1},
+        "value": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "consumedProfile": {
+      "type": "object",
+      "required": ["artifact", "schema", "fingerprint"],
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {"type": ["string", "null"]},
+        "schema": {"$ref": "#/$defs/profileSchemaIdentity"},
+        "fingerprint": {"$ref": "#/$defs/fingerprintRef"}
+      }
+    },
+    "gateStatus": {
+      "enum": ["PASS", "WARN", "FAIL", "UNSUPPORTED", "SKIPPED"]
+    },
+    "identitySource": {
+      "enum": ["s1-m5-system-profile"]
+    },
+    "firmwareFacts": {
+      "type": "object",
+      "required": ["bios", "system", "fwupd", "linux_firmware", "secure_boot", "microcode"],
+      "additionalProperties": false,
+      "properties": {
+        "bios": {
+          "type": "object",
+          "required": ["version", "date", "vendor", "identity_source"],
+          "additionalProperties": false,
+          "properties": {
+            "version": {"type": "string"},
+            "date": {"type": "string"},
+            "vendor": {"type": "string"},
+            "identity_source": {"$ref": "#/$defs/identitySource"}
+          }
+        },
+        "system": {
+          "type": "object",
+          "required": ["vendor", "product", "identity_source"],
+          "additionalProperties": false,
+          "properties": {
+            "vendor": {"type": "string"},
+            "product": {"type": "string"},
+            "identity_source": {"$ref": "#/$defs/identitySource"}
+          }
+        },
+        "fwupd": {
+          "type": "object",
+          "required": ["status", "devices_visible"],
+          "additionalProperties": false,
+          "properties": {
+            "status": {"enum": ["available", "missing", "unknown"]},
+            "devices_visible": {"type": "boolean"}
+          }
+        },
+        "linux_firmware": {
+          "type": "object",
+          "required": ["package_version", "firmware_root_present", "kernel_firmware_dir"],
+          "additionalProperties": false,
+          "properties": {
+            "package_version": {"type": "string"},
+            "firmware_root_present": {"type": "boolean"},
+            "kernel_firmware_dir": {"type": "string"}
+          }
+        },
+        "secure_boot": {
+          "type": "object",
+          "required": ["state"],
+          "additionalProperties": false,
+          "properties": {
+            "state": {"type": "string"}
+          }
+        },
+        "microcode": {
+          "type": "object",
+          "required": ["packages"],
+          "additionalProperties": false,
+          "properties": {
+            "packages": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "firmwarePolicy": {
+      "type": "object",
+      "required": ["source", "bios_expected", "bios_acceptable"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {"type": ["string", "null"]},
+        "bios_expected": {"type": "string"},
+        "bios_acceptable": {"enum": ["true", "false", "unknown"]}
+      }
+    }
+  }
+}
