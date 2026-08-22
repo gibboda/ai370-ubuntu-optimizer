@@ -86,6 +86,41 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "Never label planned functionality as implemented", self.agent_instructions
         )
 
+    def test_agent_instructions_define_cost_efficient_multi_agent_policy(
+        self,
+    ) -> None:
+        self.assertIn(
+            "Cursor Agent is the primary/default implementation agent",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "GitHub remains the source of truth and control plane",
+            self.agent_instructions,
+        )
+        self.assertIn("secondary/specialist agents", self.agent_instructions)
+        self.assertIn(
+            "Do not treat this repository as Cursor-exclusive",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "Do not invoke multiple AI agents for the same routine task",
+            self.agent_instructions,
+        )
+        self.assertIn("independent-developer budget", self.agent_instructions)
+        self.assertIn(
+            "Prefer deterministic validation over AI review",
+            self.agent_instructions,
+        )
+        self.assertIn("AI reviews are advisory", self.agent_instructions)
+        self.assertIn("not required merge gates", self.agent_instructions)
+        self.assertIn(
+            "Codex is a secondary/specialist agent", self.agent_instructions
+        )
+        self.assertIn(
+            "These notes apply when the agent is running in Cursor Cloud",
+            self.agent_instructions,
+        )
+
 
 class MigrationPlanTests(unittest.TestCase):
     @classmethod
