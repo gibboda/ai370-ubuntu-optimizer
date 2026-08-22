@@ -54,11 +54,12 @@ Do not open the PR unless the title validation command passes.
 ### Roles
 
 - Cursor Agent is the primary/default implementation agent.
-- Grok Build is the preferred secondary agent when Cursor cannot complete the
-  work and a second implementation path is still warranted.
+- Grok Build is the preferred secondary agent when available, if Cursor cannot
+  complete the work and a second implementation path is still warranted.
 - GitHub Copilot, Codex, Claude, and other metered cloud agents are
   specialist/escalation resources. They must not be invoked automatically for
-  routine work.
+  routine work. If Grok Build is unavailable, an available specialist agent
+  may be used for a narrowly scoped escalation need.
 - GitHub remains the source of truth and control plane for repositories,
   Issues and Projects, branches and pull requests, GitHub Actions, rulesets
   and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
@@ -95,15 +96,17 @@ Escalate only when at least one of the following is true:
 
 Preferred order when escalation is justified:
 
-1. Stay with Cursor and reuse existing findings, logs, PR discussion, and
+1. Stay with Cursor and reuse existing findings, logs, issue/PR discussion, and
    deterministic check output.
-2. Use Grok Build as the preferred secondary implementation agent.
-3. Use GitHub Copilot, Codex, Claude, or another metered cloud agent only as a
-   specialist/escalation resource for a narrowly scoped need.
+2. Use Grok Build as the preferred secondary implementation agent when
+   available.
+3. If Grok Build is unavailable, use an available specialist agent such as
+   GitHub Copilot, Codex, Claude, or another explicitly approved agent for the
+   narrowly scoped escalation need.
 
 Do not invoke multiple paid or cloud agents for the same routine task. Before
-starting a new paid-agent analysis, reuse prior agent findings, issue/PR
-comments, CI results, and local validation output.
+starting a new paid-agent analysis, reuse prior agent findings, logs, issue/PR
+discussion, CI results, tests, and local validation output.
 Minimize duplicate paid-agent analysis across the same change.
 
 ### Cost and capacity
