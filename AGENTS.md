@@ -46,6 +46,7 @@ Allowed scopes:
 - `workflows`
 - `vscode`
 - `release`
+- `deps`
 - `stage`
 - `stage1`
 - `stage2`

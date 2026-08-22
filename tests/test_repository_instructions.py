@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Contract tests for repository implementation instructions."""
 
+import re
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -423,6 +425,107 @@ class MigrationPlanTests(unittest.TestCase):
             "npu                                    -> mixed: Stage 2 NPU visibility (210/220) + S3-M6 benchmark (230)",
             readme,
         )
+
+
+class ConventionalCommitScopeTests(unittest.TestCase):
+    """Keep Conventional Commit allowlists aligned, including Dependabot `deps`."""
+
+    ALLOWED_SCOPES = (
+        "audit",
+        "baseline",
+        "amd",
+        "ai-stack",
+        "rocm",
+        "npu",
+        "acceleration",
+        "comfyui",
+        "config",
+        "architecture",
+        "workflows",
+        "vscode",
+        "release",
+        "deps",
+        "stage",
+        "stage1",
+        "stage2",
+        "stage3",
+        "stage4",
+        "stage5",
+        "tier",
+        "tier1",
+        "tier2",
+    )
+
+    def test_validate_pr_title_accepts_dependabot_deps_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "chore(deps): bump setuptools from 80.9.0 to 83.0.0 in /configs/ai-runtime",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_commit_subject_accepts_dependabot_deps_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "chore(deps): bump pillow from 11.2.1 to 12.3.0 in /configs/ai-runtime",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_pr_title_rejects_unknown_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "chore(unknown): Bump a package",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Allowed scopes:", result.stderr)
+        self.assertIn("deps", result.stderr)
+
+    def test_policy_and_validators_list_the_same_scopes(self) -> None:
+        pr_title = (ROOT / "scripts/validate-pr-title.sh").read_text(encoding="utf-8")
+        commit_subject = (ROOT / "scripts/validate-commit-subject.sh").read_text(
+            encoding="utf-8"
+        )
+        workflow = (ROOT / ".github/workflows/pr-title-lint.yml").read_text(
+            encoding="utf-8"
+        )
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        template = (ROOT / ".github/PULL_REQUEST_TEMPLATE.md").read_text(
+            encoding="utf-8"
+        )
+
+        pr_scopes = re.search(r"allowed_scopes='([^']+)'", pr_title)
+        commit_scopes = re.search(r"allowed_scopes='([^']+)'", commit_subject)
+        self.assertIsNotNone(pr_scopes)
+        self.assertIsNotNone(commit_scopes)
+        self.assertEqual(tuple(pr_scopes.group(1).split("|")), self.ALLOWED_SCOPES)
+        self.assertEqual(tuple(commit_scopes.group(1).split("|")), self.ALLOWED_SCOPES)
+
+        for scope in self.ALLOWED_SCOPES:
+            with self.subTest(scope=scope):
+                self.assertIn(f"- `{scope}`", agents)
+                self.assertIn(f"`{scope}`", contributing)
+                self.assertRegex(workflow, rf"(?m)^\s+{re.escape(scope)}$")
+                self.assertIn(scope, template)
 
 
 if __name__ == "__main__":
