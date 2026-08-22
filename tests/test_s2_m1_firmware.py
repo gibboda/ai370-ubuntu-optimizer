@@ -146,6 +146,48 @@ class FirmwareScriptTests(unittest.TestCase):
         self.assertIn("Firmware Policy", policy_md)
         self.assertIn("acceptable:", policy_md)
 
+    def test_failed_fwupd_get_devices_is_not_visible(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            bindir = latest / "bin"
+            bindir.mkdir()
+            stub = bindir / "fwupdmgr"
+            stub.write_text(
+                "#!/bin/bash\n"
+                "if [[ \"$1\" == \"--version\" ]]; then echo 'fwupd 1.9'; exit 0; fi\n"
+                "if [[ \"$1\" == \"get-devices\" ]]; then\n"
+                "  echo 'Failed to connect to daemon' >&2\n"
+                "  exit 1\n"
+                "fi\n"
+                "exit 2\n",
+                encoding="utf-8",
+            )
+            stub.chmod(0o755)
+            (latest / "s1-m5-system-profile.json").write_text(
+                PROFILE_FIXTURE.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            env = dict(os.environ)
+            env["LATEST_DIR"] = str(latest)
+            env["PATH"] = f"{bindir}:{env['PATH']}"
+            completed = subprocess.run(
+                ["bash", str(BIOS_SCRIPT), "generic-ryzen-ai", "safe", "runtime"],
+                check=False,
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            canonical = json.loads(
+                (latest / "s2-m1-firmware-validation.json").read_text(encoding="utf-8")
+            )
+        self.assertEqual(canonical["facts"]["fwupd"]["status"], "available")
+        self.assertFalse(canonical["facts"]["fwupd"]["devices_visible"])
+        self.assertTrue(
+            any("get-devices failed" in warning for warning in canonical["warnings"]),
+            canonical["warnings"],
+        )
+
 
 class FirmwareCanonicalPublisherTests(unittest.TestCase):
     def test_facts_exclude_policy_fields(self) -> None:

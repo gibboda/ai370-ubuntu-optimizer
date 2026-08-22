@@ -6,26 +6,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.23.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.22.0...v0.23.0) (2026-08-22)
-
-
-### Features
-
-* **stage2:** Publish S2-M5 plan and S2-M6 apply reports ([#199](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/199)) ([2cf508a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/2cf508a5533c586958b4f6b4c1ba1b4a1e25d70e))
-
 ## [Unreleased]
 
 ### Added
 
-- S2-M5 optimization plan publisher
-  (`scripts/s2-m5-publish-optimization-plan.py`) writes
-  `s2-m5-optimization-plan.json` against
-  `configs/schemas/s2-m5-optimization-plan.schema.json`.
-- S2-M6 optimization application publisher
-  (`scripts/s2-m6-publish-optimization-application.py`) writes
-  `s2-m6-optimization-application.json` after `--approve`.
-- `tests/test_s2_m5_optimization_plan.py` proves plan-only does not mutate.
-- `tests/test_s2_m6_optimization_apply.py` proves apply requires `--approve`.
 - S2-M1 firmware validation publisher
   (`scripts/s2-m1-publish-firmware-validation.py`) writes
   `s2-m1-firmware-validation.json` with BIOS facts vs policy split.
@@ -37,20 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `scripts/40-platform-tuning.sh` splits plan vs apply. Apply requires
-  `--approve`; `AI370_APPLY_TUNING` alone does not apply.
-- Compatibility `tier1-platform-tuning.json` remains until R1 and records
-  `runtime_apply` only after an approved apply.
-- ROADMAP marks S2-M5/S2-M6 **In progress** (not Implemented): canonical
-  JSON and the `--approve` split exist; backup/rollback remain Planned.
 - `scripts/20-check-bios.sh` publishes canonical S2-M1 JSON and keeps
   `tier1-firmware.json` until R1. BIOS identity facts stay separate from
-  classified-platform policy.
+  classified-platform policy. Failed `fwupdmgr get-devices` probes are
+  warnings, not visible devices.
 - `scripts/30-validate-kernel.sh` publishes canonical S2-M2 JSON and keeps
-  `tier1-kernel-plan.json` until R1.
+  `tier1-kernel-plan.json` until R1. Module inventory probe failures stay
+  `unknown` (`null`) instead of false "not loaded".
 - ROADMAP marks S2-M1/S2-M2 **In progress** (not Implemented): canonical
   JSON exists; remaining work is remediation docs and the kernel/driver
   matrix.
+
+## [0.23.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.22.0...v0.23.0) (2026-08-22)
+
+
+### Features
+
+* **stage2:** Publish S2-M5 plan and S2-M6 apply reports ([#199](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/199)) ([2cf508a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/2cf508a5533c586958b4f6b4c1ba1b4a1e25d70e))
 
 ## [0.22.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.21.1...v0.22.0) (2026-08-22)
 

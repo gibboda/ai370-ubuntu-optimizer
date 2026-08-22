@@ -56,20 +56,35 @@ main() {
     exit 2
   fi
 
-  local kernel os_description os_version os_codename amdgpu_module npu_module firmware_dir linux_firmware_state status
+  local kernel os_description os_version os_codename firmware_dir linux_firmware_state status
   local target_kernel="6.11"
   local kernel_ok="unknown"
-  local amdgpu_ok="false"
-  local amdxdna_seen="false"
+  local amdgpu_ok="unknown"
+  local amdxdna_seen="unknown"
   local recommendations=()
+  local module_inventory=""
+  local module_probe="missing"
 
   kernel="$(detect_kernel)"
   os_description="$(detect_os_description)"
   os_version="$(detect_os_version_id)"
   os_codename="$(detect_os_codename)"
-  amdgpu_module="$(detect_amdgpu_module)"
-  npu_module="$(detect_npu_module_text)"
   firmware_dir="/lib/firmware/amdgpu"
+
+  if [[ -r /proc/modules ]]; then
+    if module_inventory="$(cat /proc/modules 2>/dev/null)"; then
+      module_probe="ok"
+    else
+      module_probe="failed"
+    fi
+  fi
+  if [[ "$module_probe" != "ok" ]] && command_exists lsmod; then
+    if module_inventory="$(lsmod 2>/dev/null)"; then
+      module_probe="ok"
+    else
+      module_probe="failed"
+    fi
+  fi
 
   if [[ -n "$kernel" ]]; then
     if version_ge "$kernel" "$target_kernel"; then
@@ -80,16 +95,23 @@ main() {
     fi
   fi
 
-  if [[ -n "$amdgpu_module" ]]; then
-    amdgpu_ok="true"
+  if [[ "$module_probe" != "ok" ]]; then
+    amdgpu_ok="unknown"
+    amdxdna_seen="unknown"
+    recommendations+=("Kernel module inventory is unavailable (probe ${module_probe}); cannot confirm amdgpu or AMDXDNA load state.")
   else
-    recommendations+=("amdgpu is not currently loaded; verify kernel config, firmware, and Secure Boot/module policy.")
-  fi
-
-  if [[ -n "$npu_module" ]]; then
-    amdxdna_seen="true"
-  else
-    recommendations+=("AMDXDNA/XDNA module not loaded; this is acceptable at Tier 1 if reported cleanly and Tier 3 handles NPU enablement.")
+    if printf '%s\n' "$module_inventory" | grep -Eq '^amdgpu[[:space:]]'; then
+      amdgpu_ok="true"
+    else
+      amdgpu_ok="false"
+      recommendations+=("amdgpu is not currently loaded; verify kernel config, firmware, and Secure Boot/module policy.")
+    fi
+    if printf '%s\n' "$module_inventory" | grep -Eq '^(amdxdna|xrt|xdna)[[:space:]]'; then
+      amdxdna_seen="true"
+    else
+      amdxdna_seen="false"
+      recommendations+=("AMDXDNA/XDNA module not loaded; this is acceptable at Tier 1 if reported cleanly and Tier 3 handles NPU enablement.")
+    fi
   fi
 
   if [[ -d "$firmware_dir" ]]; then
@@ -116,8 +138,8 @@ Path(sys.argv[1]).write_text(json.dumps({
     "kernel": sys.argv[2],
     "target_kernel": sys.argv[3],
     "kernel_ok": sys.argv[4],
-    "amdgpu_ok": sys.argv[5] == "true",
-    "amdxdna_seen": sys.argv[6] == "true",
+    "amdgpu_ok": sys.argv[5],
+    "amdxdna_seen": sys.argv[6],
     "linux_firmware_state": sys.argv[7],
     "status": sys.argv[8],
     "os_description": sys.argv[9],

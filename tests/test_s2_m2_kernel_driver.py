@@ -147,6 +147,83 @@ class Stage2KernelDriverTests(unittest.TestCase):
                 )
             self.assertEqual(destination.read_bytes(), before)
 
+    def test_unknown_module_probe_is_not_false(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.14.0",
+                "target_kernel": "6.11",
+                "kernel_ok": True,
+                "amdgpu_ok": "unknown",
+                "amdxdna_seen": None,
+                "linux_firmware_state": "present",
+                "status": "WARN",
+                "os_description": "Ubuntu",
+                "os_version": "24.04",
+                "os_codename": "noble",
+                "recommendations": [
+                    "Kernel module inventory is unavailable (probe missing); cannot confirm amdgpu or AMDXDNA load state."
+                ],
+            },
+        )
+        system_profile.validate_document(report, kernel_validation.S2_M2_SCHEMA, "S2-M2")
+        self.assertIsNone(report["modules"]["amdgpu_loaded"])
+        self.assertIsNone(report["modules"]["amdxdna_seen"])
+        self.assertEqual(report["status"], "WARN")
+        self.assertTrue(
+            any("inventory is unavailable" in item for item in report["recommendations"])
+        )
+
+    def test_failed_module_inventory_probe_is_not_false(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            bindir = latest / "bin"
+            bindir.mkdir()
+            cat_stub = bindir / "cat"
+            cat_stub.write_text(
+                "#!/bin/bash\n"
+                "if [[ \"$1\" == \"/proc/modules\" ]]; then\n"
+                "  echo 'cat: /proc/modules: Permission denied' >&2\n"
+                "  exit 1\n"
+                "fi\n"
+                "exec /bin/cat \"$@\"\n",
+                encoding="utf-8",
+            )
+            cat_stub.chmod(0o755)
+            lsmod_stub = bindir / "lsmod"
+            lsmod_stub.write_text(
+                "#!/bin/bash\necho 'lsmod: failed' >&2\nexit 1\n",
+                encoding="utf-8",
+            )
+            lsmod_stub.chmod(0o755)
+            (latest / "s1-m5-system-profile.json").write_text(
+                PROFILE_FIXTURE.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            env = dict(os.environ)
+            env["LATEST_DIR"] = str(latest)
+            env["PATH"] = f"{bindir}:{env['PATH']}"
+            completed = subprocess.run(
+                ["bash", str(KERNEL_SCRIPT), "generic-ryzen-ai", "safe", "runtime"],
+                check=False,
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            canonical = json.loads(
+                (latest / "s2-m2-kernel-driver-validation.json").read_text(encoding="utf-8")
+            )
+            compat = json.loads((latest / "tier1-kernel-plan.json").read_text(encoding="utf-8"))
+        self.assertIsNone(canonical["modules"]["amdgpu_loaded"])
+        self.assertIsNone(canonical["modules"]["amdxdna_seen"])
+        self.assertEqual(canonical["status"], "WARN")
+        self.assertIsNone(compat["modules"]["amdgpu_loaded"])
+        self.assertTrue(
+            any("inventory is unavailable" in item for item in canonical["recommendations"]),
+            canonical["recommendations"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

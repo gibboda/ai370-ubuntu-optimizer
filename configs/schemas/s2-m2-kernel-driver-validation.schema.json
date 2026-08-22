@@ -119,8 +119,8 @@
       "required": ["amdgpu_loaded", "amdxdna_seen"],
       "additionalProperties": false,
       "properties": {
-        "amdgpu_loaded": {"type": "boolean"},
-        "amdxdna_seen": {"type": "boolean"}
+        "amdgpu_loaded": {"type": ["boolean", "null"]},
+        "amdxdna_seen": {"type": ["boolean", "null"]}
       }
     },
     "kernelFirmwareFacts": {

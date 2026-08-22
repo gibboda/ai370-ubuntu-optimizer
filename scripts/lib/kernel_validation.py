@@ -52,16 +52,19 @@ def build_s2_m2_kernel_driver_validation(
     ]
     warnings = [str(item) for item in (facts.get("warnings") or []) if str(item).strip()]
     kernel_ok = _bool_or_none(facts.get("kernel_ok"))
-    amdgpu_ok = bool(facts.get("amdgpu_ok"))
+    amdgpu_ok = _bool_or_none(facts.get("amdgpu_ok"))
+    amdxdna_seen = _bool_or_none(facts.get("amdxdna_seen"))
     firmware_state = str(facts.get("linux_firmware_state") or "unknown")
     if firmware_state not in {"present", "missing", "unknown"}:
         firmware_state = "unknown"
     status = str(facts.get("status") or "").strip().upper()
     if status not in {"PASS", "WARN", "FAIL", "UNSUPPORTED", "SKIPPED"}:
         status = "WARN"
-        if kernel_ok is True and amdgpu_ok and firmware_state == "present":
+        if kernel_ok is True and amdgpu_ok is True and firmware_state == "present":
             status = "PASS"
-        elif kernel_ok is False or not amdgpu_ok or firmware_state == "missing":
+        elif kernel_ok is False or amdgpu_ok is False or firmware_state == "missing":
+            status = "WARN"
+        elif amdgpu_ok is None:
             status = "WARN"
     if status == "WARN" and not warnings and recommendations:
         warnings = list(recommendations)
@@ -93,7 +96,7 @@ def build_s2_m2_kernel_driver_validation(
         },
         "modules": {
             "amdgpu_loaded": amdgpu_ok,
-            "amdxdna_seen": bool(facts.get("amdxdna_seen")),
+            "amdxdna_seen": amdxdna_seen,
         },
         "firmware": {"amdgpu_directory": firmware_state},
         "recommendations": recommendations,

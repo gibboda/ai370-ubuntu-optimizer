@@ -49,10 +49,16 @@ main() {
   record_warn() { warnings+=("$1"); }
 
   local fwupd_version fwupd_devices fwupdmgr_status linux_firmware_version microcode_packages secure_boot_state kernel_firmware_dir
+  local fwupd_devices_rc=0
   fwupd_version="$(capture_or_status fwupdmgr --version | head -n 20)"
-  fwupd_devices="$(capture_or_status fwupdmgr get-devices)"
   fwupdmgr_status="available"
   [[ "$fwupd_version" == command-not-found:* ]] && fwupdmgr_status="missing"
+  if [[ "$fwupdmgr_status" == "missing" ]]; then
+    fwupd_devices="command-not-found: fwupdmgr"
+    fwupd_devices_rc=127
+  else
+    fwupd_devices="$(fwupdmgr get-devices 2>&1)" && fwupd_devices_rc=0 || fwupd_devices_rc=$?
+  fi
 
   if command_exists dpkg-query; then
     linux_firmware_version="$(dpkg-query -W -f='${Version}' linux-firmware 2>/dev/null || true)"
@@ -70,6 +76,8 @@ main() {
   fi
   if [[ "$fwupdmgr_status" == "missing" ]]; then
     record_warn "fwupdmgr is not installed or not in PATH; firmware device inventory is unavailable."
+  elif [[ "$fwupd_devices_rc" -ne 0 ]]; then
+    record_warn "fwupdmgr get-devices failed (exit ${fwupd_devices_rc}); firmware device inventory is unavailable."
   fi
 
   if command_exists mokutil; then
@@ -85,7 +93,7 @@ main() {
   fi
 
   local devices_visible="false"
-  if [[ -n "$fwupd_devices" && "$fwupd_devices" != command-not-found:* ]]; then
+  if [[ "$fwupdmgr_status" == "available" && "$fwupd_devices_rc" -eq 0 && -n "$fwupd_devices" ]]; then
     devices_visible="true"
   fi
 
