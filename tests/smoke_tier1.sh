@@ -253,6 +253,7 @@ print("[OK] non-strict acceptance policy exercised")
 PY
 
 # 5c. AI370_APPLY_TUNING without apply --approve stays plan-only
+rm -f "$LATEST_DIR/s2-m6-optimization-application.json"
 DRY_RUN=true AI370_APPLY_TUNING=true bash "$PROJECT_ROOT/scripts/40-platform-tuning.sh" \
   "$SMOKE_PROFILE" "$SMOKE_MODE" runtime
 python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY'
