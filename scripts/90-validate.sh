@@ -5,8 +5,9 @@
 # Canonical report: reports/latest/s2-m7-platform-validation.json
 # Compatibility report: reports/latest/tier1-validation.json (require_tier123_pass until R2)
 #
-# Does not re-detect gfx1150 or NPU from live PCI/sysfs. Facts come from the
-# consumed Stage 1 profile and Stage 2 milestone reports.
+# Requires reports/latest/s1-m5-system-profile.json. Does not re-detect
+# gfx1150 or NPU from live PCI/sysfs. Facts come from the consumed Stage 1
+# profile and fingerprint-matched Stage 2 milestone reports.
 
 set -euo pipefail
 
@@ -64,11 +65,14 @@ main() {
     --strict "$STRICT"
     --cli-profile "$PROFILE"
   )
-  if [[ -f "$PROFILE_FILE" ]]; then
-    publish_args+=(--profile "$PROFILE_FILE")
-  else
-    echo "[WARN] Stage 1 profile missing; publishing S2-M7 without consumed fingerprint"
+  if [[ ! -f "$PROFILE_FILE" ]]; then
+    echo "[ERROR] Stage 1 profile missing: $PROFILE_FILE"
+    echo "[ERROR] Stage 2 platform validation requires the canonical Stage 1 profile (schema version + fingerprint)."
+    echo "[ERROR] Run: ./ai370-optimize.sh stage1-probe && ./ai370-optimize.sh stage1-profile"
+    exit 2
   fi
+  echo "[INFO] Consuming Stage 1 profile: $PROFILE_FILE"
+  publish_args+=(--profile "$PROFILE_FILE")
 
   python3 "$PROJECT_ROOT/scripts/s2-m7-publish-platform-validation.py" "${publish_args[@]}"
 }

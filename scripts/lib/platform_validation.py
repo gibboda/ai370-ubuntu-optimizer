@@ -1,8 +1,11 @@
 """S2-M7 platform validation aggregate.
 
 S2-M7 consumes Stage 1 profile facts and Stage 2 milestone reports. It does
-not re-probe PCI, sysfs, or modules. Reference-platform gfx1150/NPU acceptance
-is policy here; ``--strict`` is the opt-in that elevates those misses to FAIL.
+not re-probe PCI, sysfs, or modules. The canonical Stage 1 profile is
+required; leftover ``tier1-*`` reports are not an unbound PASS. Milestone
+reports that carry ``consumed_profile`` must match the current fingerprint or
+they are treated as missing. Reference-platform gfx1150/NPU acceptance is
+policy here; ``--strict`` is the opt-in that elevates those misses to FAIL.
 Generic hosts are not required to match the EliteMini AI370 identity unless
 that flag is set.
 
@@ -31,7 +34,7 @@ MILESTONE_SPECS: tuple[dict[str, Any], ...] = (
     {
         "id": "S2-M1",
         "canonical": "s2-m1-firmware-validation.json",
-        "compat": "tier1-firmware.json",
+        "compat": "tier1-firmware-validation.json",
         "required_scopes": ("inventory", "full", "smoke"),
     },
     {
@@ -112,10 +115,66 @@ def _document_status(document: dict[str, Any] | None) -> str | None:
     return text or None
 
 
+def _fingerprint_value(source: Any) -> str | None:
+    """Return a fingerprint string, or None when unset, empty, or unknown."""
+    if source is None:
+        return None
+    if isinstance(source, str):
+        text = source.strip()
+        if not text or text.lower() in {"unknown", "none", "null"}:
+            return None
+        return text
+    if isinstance(source, dict):
+        return _fingerprint_value(source.get("value"))
+    return None
+
+
+def document_is_stale_for_profile(
+    profile: dict[str, Any],
+    document: dict[str, Any],
+) -> bool:
+    """True when a report's consumed fingerprint does not match the current profile.
+
+    Documents without ``consumed_profile`` are compatibility files and are not
+    treated as stale here. Fingerprint-bearing reports must match:
+
+    - both non-null and equal → accept
+    - profile non-null and child different or null → stale
+    - profile null → accept only when the child fingerprint is also null
+    """
+    consumed = document.get("consumed_profile")
+    if not isinstance(consumed, dict):
+        return False
+    child_fp = _fingerprint_value(consumed.get("fingerprint"))
+    profile_fp = _fingerprint_value(profile.get("fingerprint"))
+    if profile_fp is None:
+        return child_fp is not None
+    return child_fp != profile_fp
+
+
+def _stale_missing_entry(
+    spec: dict[str, Any],
+    *,
+    artifact: str,
+    warning: str,
+    rejected_canonical: bool,
+) -> dict[str, Any]:
+    return {
+        "id": spec["id"],
+        "artifact": artifact,
+        "status": "MISSING",
+        "canonical": False,
+        "document": None,
+        "stale_warning": warning,
+        "rejected_canonical": rejected_canonical,
+    }
+
+
 def collect_milestone(
     reports_dir: Path,
     spec: dict[str, Any],
     scope: str,
+    profile: dict[str, Any],
 ) -> dict[str, Any]:
     """Resolve one Stage 2 milestone from canonical JSON, else compatibility JSON."""
     canonical_path = reports_dir / spec["canonical"]
@@ -123,7 +182,21 @@ def collect_milestone(
     canonical = load_optional_json(canonical_path)
     compat = load_optional_json(compat_path)
     required = scope in spec["required_scopes"]
+    empty = {
+        "stale_warning": None,
+        "rejected_canonical": False,
+    }
     if canonical:
+        if document_is_stale_for_profile(profile, canonical):
+            return _stale_missing_entry(
+                spec,
+                artifact=spec["canonical"],
+                warning=(
+                    f"{spec['id']} report fingerprint does not match the current "
+                    f"Stage 1 profile; treating {spec['canonical']} as missing."
+                ),
+                rejected_canonical=True,
+            )
         status = _document_status(canonical) or "PASS"
         return {
             "id": spec["id"],
@@ -131,6 +204,7 @@ def collect_milestone(
             "status": status,
             "canonical": True,
             "document": canonical,
+            **empty,
         }
     if not required:
         return {
@@ -139,8 +213,19 @@ def collect_milestone(
             "status": "SKIPPED",
             "canonical": False,
             "document": None,
+            **empty,
         }
     if compat:
+        if document_is_stale_for_profile(profile, compat):
+            return _stale_missing_entry(
+                spec,
+                artifact=spec["compat"],
+                warning=(
+                    f"{spec['id']} report fingerprint does not match the current "
+                    f"Stage 1 profile; treating {spec['compat']} as missing."
+                ),
+                rejected_canonical=False,
+            )
         status = _document_status(compat) or "PASS"
         return {
             "id": spec["id"],
@@ -148,6 +233,7 @@ def collect_milestone(
             "status": status,
             "canonical": False,
             "document": compat,
+            **empty,
         }
     return {
         "id": spec["id"],
@@ -155,6 +241,7 @@ def collect_milestone(
         "status": "MISSING",
         "canonical": False,
         "document": None,
+        **empty,
     }
 
 
@@ -285,7 +372,7 @@ def bios_acceptable_from_inputs(
 def build_s2_m7_platform_validation_report(
     reports_dir: Path,
     *,
-    profile: dict[str, Any] | None,
+    profile: dict[str, Any],
     scope: str = "full",
     strict: bool = False,
     cli_profile: str = "ai370",
@@ -295,25 +382,39 @@ def build_s2_m7_platform_validation_report(
     strict = normalize_strict(strict)
     reports_dir = Path(reports_dir)
 
-    collected = [collect_milestone(reports_dir, spec, scope) for spec in MILESTONE_SPECS]
+    collected = [
+        collect_milestone(reports_dir, spec, scope, profile) for spec in MILESTONE_SPECS
+    ]
     by_id = {entry["id"]: entry for entry in collected}
     s2_m1 = by_id["S2-M1"]["document"]
-    s2_m3 = by_id["S2-M3"]["document"] if by_id["S2-M3"]["canonical"] else None
-    s2_m4 = by_id["S2-M4"]["document"] if by_id["S2-M4"]["canonical"] else None
+    s2_m3_entry = by_id["S2-M3"]
+    s2_m4_entry = by_id["S2-M4"]
+    s2_m3 = s2_m3_entry["document"] if s2_m3_entry["canonical"] else None
+    s2_m4 = s2_m4_entry["document"] if s2_m4_entry["canonical"] else None
     gpu_stack = load_optional_json(reports_dir / "tier1-gpu-stack.json")
     npu_compat = load_optional_json(reports_dir / "tier1-npu.json")
     firmware_compat = load_optional_json(reports_dir / "tier1-firmware.json")
-    if s2_m3 is None and gpu_stack:
-        s2_m3_checks_source = gpu_stack
+    gpu_stack_for_facts = None if s2_m3_entry["rejected_canonical"] else gpu_stack
+    npu_compat_for_facts = None if s2_m4_entry["rejected_canonical"] else npu_compat
+    if s2_m3 is None and gpu_stack_for_facts:
+        s2_m3_checks_source = gpu_stack_for_facts
     else:
         s2_m3_checks_source = s2_m3
 
-    gpu_arch = gpu_arch_from_inputs(s2_m3=s2_m3, profile=profile, gpu_stack=gpu_stack)
-    npu_present = npu_present_from_inputs(s2_m4=s2_m4, profile=profile, npu_compat=npu_compat)
-    vulkan = vulkan_state_from_inputs(s2_m3=s2_m3_checks_source, gpu_stack=gpu_stack)
-    amdgpu = amdgpu_state_from_inputs(s2_m3=s2_m3_checks_source, gpu_stack=gpu_stack)
+    gpu_arch = gpu_arch_from_inputs(
+        s2_m3=s2_m3, profile=profile, gpu_stack=gpu_stack_for_facts
+    )
+    npu_present = npu_present_from_inputs(
+        s2_m4=s2_m4, profile=profile, npu_compat=npu_compat_for_facts
+    )
+    vulkan = vulkan_state_from_inputs(
+        s2_m3=s2_m3_checks_source, gpu_stack=gpu_stack_for_facts
+    )
+    amdgpu = amdgpu_state_from_inputs(
+        s2_m3=s2_m3_checks_source, gpu_stack=gpu_stack_for_facts
+    )
     bios_acc = bios_acceptable_from_inputs(s2_m1=s2_m1, firmware_compat=firmware_compat)
-    classified = firmware_policy.classified_platform_id(profile) if profile else None
+    classified = firmware_policy.classified_platform_id(profile)
 
     gfx_ok = gpu_arch == "gfx1150"
     npu_ok = npu_present is True
@@ -363,6 +464,8 @@ def build_s2_m7_platform_validation_report(
             record_warn(f"Expected Tier 1 artifact missing: {name}")
 
     for entry in collected:
+        if entry.get("stale_warning"):
+            warnings.append(entry["stale_warning"])
         if entry["status"] == "FAIL":
             record_fail(f"{entry['id']} status is FAIL ({entry['artifact']})")
 
@@ -433,7 +536,9 @@ def build_s2_m7_platform_validation_report(
 def _notes_for_scope(scope: str, strict: bool) -> list[str]:
     notes: list[str] = [
         "S2-M7 aggregates Stage 2 milestone reports and Stage 1 profile facts; "
-        "it does not re-detect GPU architecture or NPU presence from sysfs/PCI.",
+        "it does not re-detect GPU architecture or NPU presence from sysfs/PCI. "
+        "The Stage 1 profile is required. Milestone reports whose consumed "
+        "fingerprint does not match the current profile are treated as missing.",
         "Child GPU/NPU visibility UNSUPPORTED or WARN does not fail this aggregate. "
         "Missing gfx1150/NPU is reference-platform acceptance, not generic policy, "
         "unless --strict / AI370_STAGE1_STRICT is set.",
@@ -576,7 +681,7 @@ def publish_s2_m7_platform_validation(
     reports_dir: Path,
     output: Path,
     *,
-    profile: dict[str, Any] | None,
+    profile: dict[str, Any],
     scope: str = "full",
     strict: bool = False,
     cli_profile: str = "ai370",

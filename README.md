@@ -291,6 +291,8 @@ Implemented.
 `stage2-platform-validate` runs firmware, kernel, GPU visibility, NPU
 visibility, and the S2-M7 aggregate (`90-validate.sh` compatibility shim
 writes `s2-m7-platform-validation.json` plus `tier1-validation.json`).
+S2-M7 requires `s1-m5-system-profile.json` and ignores milestone reports
+whose consumed fingerprint does not match that profile.
 `require_tier123_pass` still reads the compatibility file. `stage2-validate`
 remains the **runtime/NPU cheap gate** until the Stage 3 split; it is not an
 alias for platform validate.

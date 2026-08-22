@@ -9,13 +9,24 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import firmware_policy  # noqa: E402
 import platform_validation  # noqa: E402
 
 
-def _load_profile(path: Path | None) -> dict | None:
-    if path is None or not path.is_file():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+def _load_required_profile(path: Path) -> dict:
+    """Load the canonical Stage 1 profile or exit 2 without publishing."""
+    try:
+        profile = firmware_policy.load_system_profile(path)
+    except FileNotFoundError as exc:
+        print(f"[ERROR] {exc}", file=sys.stderr)
+        raise SystemExit(2) from exc
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        print(f"[ERROR] Stage 1 profile unreadable: {path}: {exc}", file=sys.stderr)
+        raise SystemExit(2) from exc
+    if not isinstance(profile, dict):
+        print(f"[ERROR] Stage 1 profile is not a JSON object: {path}", file=sys.stderr)
+        raise SystemExit(2)
+    return profile
 
 
 def main() -> None:
@@ -30,8 +41,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--profile",
+        required=True,
         type=Path,
-        help="Optional consumed s1-m5-system-profile.json (schema version + fingerprint)",
+        help="Required consumed s1-m5-system-profile.json (schema version + fingerprint)",
     )
     parser.add_argument(
         "--output",
@@ -73,11 +85,8 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    profile = _load_profile(args.profile)
-    if args.profile and profile is None:
-        print(f"[WARN] Stage 1 profile missing; publishing S2-M7 without consumed fingerprint: {args.profile}")
-    elif profile:
-        print(f"[INFO] Consuming Stage 1 profile: {args.profile}")
+    profile = _load_required_profile(args.profile)
+    print(f"[INFO] Consuming Stage 1 profile: {args.profile}")
 
     report = platform_validation.publish_s2_m7_platform_validation(
         args.reports_dir,

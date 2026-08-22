@@ -28,6 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tests, and status-semantics docs exist; the Stage 3 gate still reads
   compatibility `tier1-validation.json`.
 
+### Fixed
+
+- S2-M7 requires `s1-m5-system-profile.json` before publishing (exit 2 when
+  missing or unreadable).
+- S2-M7 treats fingerprint-mismatched S2-M3/S2-M4 reports as missing and does
+  not overlay their GPU/NPU checks.
+- S2-M1 aggregate status comes from `tier1-firmware-validation.json`, not the
+  BIOS baseline `tier1-firmware.json`.
+
 ## [0.21.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.21.0...v0.21.1) (2026-08-18)
 
 

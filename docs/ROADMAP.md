@@ -69,9 +69,12 @@ re-probe PCI, sysfs, or modules.
 
 | Input | Owner | How S2-M7 uses it |
 | --- | --- | --- |
-| GPU architecture, NPU identity | S1-M5 profile, overlaid by S2-M3 / S2-M4 reports when present | Facts for reference-platform acceptance |
-| Vulkan / amdgpu visibility | S2-M3 | Vulkan warn; not a generic FAIL |
-| BIOS acceptable | S2-M1 compat `tier1-firmware.json` until canonical S2-M1 JSON exists | Warn when `false` |
+| Stage 1 profile | S1-M5 `s1-m5-system-profile.json` | Required. Missing or unreadable profile is an error (exit 2); leftover `tier1-*` reports are not published as an unbound PASS |
+| GPU architecture, NPU identity | S1-M5 profile, overlaid by fingerprint-matched S2-M3 / S2-M4 reports | Facts for reference-platform acceptance |
+| Vulkan / amdgpu visibility | Fingerprint-matched S2-M3 | Vulkan warn; not a generic FAIL |
+| BIOS acceptable | S2-M1 baseline `tier1-firmware.json` until canonical S2-M1 JSON exists | Warn when `false` |
+| S2-M1 status | S2-M1 compat `tier1-firmware-validation.json` until canonical S2-M1 JSON exists | Child `FAIL` fails the aggregate |
+| Milestone `consumed_profile.fingerprint` | S2-M3 / S2-M4 and other fingerprint-bearing reports | Mismatch is `MISSING`; do not overlay that report's checks or fall back to possibly-stale GPU/NPU compat facts |
 | gfx1150 / XDNA2 missing | S2-M7 policy | Recorded in `warnings` without demoting `PASS` unless `--strict` |
 
 Child visibility `UNSUPPORTED` or `WARN` does not fail S2-M7. Child `FAIL`

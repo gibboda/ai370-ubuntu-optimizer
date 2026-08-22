@@ -230,7 +230,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/s2-m3-publish-gpu-visibility.py` | IMPLEMENTED | Canonical S2-M3 atomic publisher and schema validation |
 | `scripts/s2-m4-validate-npu-stack.sh` | IMPLEMENTED | Canonical S2-M4 NPU visibility collector; no `230-benchmark-npu.sh`; requires S1-M5 profile |
 | `scripts/s2-m4-publish-npu-visibility.py` | IMPLEMENTED | Canonical S2-M4 atomic publisher and schema validation |
-| `scripts/s2-m7-publish-platform-validation.py` | IMPLEMENTED | Canonical S2-M7 aggregate publisher; consumes profile + milestone reports |
+| `scripts/s2-m7-publish-platform-validation.py` | IMPLEMENTED | Canonical S2-M7 aggregate publisher; requires S1-M5 profile; rejects fingerprint-mismatched S2 reports |
 | `scripts/10-detect-hardware.sh` | DEPRECATED | Compatibility wrapper; also publishes legacy `tier1-*` artifacts and `system-profile.json` |
 | `scripts/75-detect-npu.sh` | DEPRECATED | Forwards to S1-M1 probe |
 | `configs/schemas/system-profile*.json` | IMPLEMENTED | v1/v2 retained for migration; v3 is current |
@@ -253,7 +253,7 @@ feature is not treated as implemented unless code exists.
 | `tests/test_s2_visibility_schemas.py` | IMPLEMENTED | S2-M3/S2-M4 report builders validate against schemas |
 | `tests/test_s2_m3_gpu_visibility.py` | IMPLEMENTED | GPU publisher CLI, schema, atomic write, and missing-device fixture |
 | `tests/test_s2_m4_npu_visibility.py` | IMPLEMENTED | NPU publisher CLI, schema, atomic write; visibility does not claim inference |
-| `tests/test_s2_m7_platform_validation.py` | IMPLEMENTED | S2-M7 aggregate from fixture milestone JSONs; no live gfx1150/NPU re-detection |
+| `tests/test_s2_m7_platform_validation.py` | IMPLEMENTED | S2-M7 aggregate from fixture milestone JSONs; required profile, stale fingerprint, and firmware-validation status coverage |
 | `tests/test_s2_m1_firmware.py` | IMPLEMENTED | Firmware policy from classified `platform_id` and consumed Stage 1 fingerprint |
 | `tests/test_s2_optimize_profile.py` | IMPLEMENTED | Optimize plan wrapper records classified identity and consumed fingerprint |
 | `tests/test_system_profile.py` | IMPLEMENTED | Classification, fingerprint, schema tests |
@@ -416,7 +416,7 @@ abbreviated; see the assumption table for the full class.
 | `scripts/s2-m3-publish-gpu-visibility.py` | Atomic S2-M3 visibility publisher | capability_ladder, S2-M3 schema | Visibility is not compute | S2-M3 | KEEP | `test_s2_m3_gpu_visibility.py` | Low |
 | `scripts/s2-m4-validate-npu-stack.sh` | NPU stack visibility collector | 205 inventory-only, 210 visibility-only, 220, S1-M5 profile | Visibility is not inference | S2-M4 | KEEP | `test_s2_m4_npu_visibility.py` | Medium |
 | `scripts/s2-m4-publish-npu-visibility.py` | Atomic S2-M4 visibility publisher | capability_ladder, S2-M4 schema | Visibility is not inference | S2-M4 | KEEP | `test_s2_m4_npu_visibility.py` | Low |
-| `scripts/s2-m7-publish-platform-validation.py` | Atomic S2-M7 platform aggregate | S1-M5 profile, S2-M3/S2-M4 reports, compat `tier1-*` | gfx1150/NPU `--strict` is reference-platform policy | S2-M7 | KEEP | `test_s2_m7_platform_validation.py` | Medium |
+| `scripts/s2-m7-publish-platform-validation.py` | Atomic S2-M7 platform aggregate | Required S1-M5 profile, fingerprint-matched S2-M3/S2-M4 reports, compat `tier1-*` | gfx1150/NPU `--strict` is reference-platform policy | S2-M7 | KEEP | `test_s2_m7_platform_validation.py` | Medium |
 | `scripts/40-platform-tuning.sh` | CPU/memory/storage plan and optional apply | governors, zram, NVMe | Invoked from `stage2-optimize-plan` / `stage2-optimize-apply --approve` | S2-M5/S2-M6 | SPLIT plan vs `--approve` apply; canonical JSON still Planned | No-mutation and idempotence | High |
 | `scripts/40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | Wrappers | Platform tuning | None | Compatibility | DEPRECATE | Wrapper smoke | Low |
 | `scripts/65-amd-acceleration-install.sh` | Risk-accepted stack install | `amd-acceleration.env` | Ubuntu package names | S2-M6 | KEEP explicit approval; no Stage 1 caller | Approval/backup tests | High |
