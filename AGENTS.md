@@ -14,22 +14,26 @@ change.
 This file is the shared instruction surface for every implementation agent
 that works in this repository. Nested `AGENTS.md` files,
 `.github/copilot-instructions.md`, and `CONTRIBUTING.md` remain in force.
-Do not treat this repository as Cursor-exclusive.
+Do not treat this repository as Cursor-exclusive: other agents may work here
+when escalated, but routine work stays with Cursor whenever practical.
 
 ### Roles
 
 - Cursor Agent is the primary/default implementation agent.
+- Grok Build is the preferred secondary agent when Cursor cannot complete the
+  work and a second implementation path is still warranted.
+- GitHub Copilot, Codex, Claude, and other metered cloud agents are
+  specialist/escalation resources. They must not be invoked automatically for
+  routine work.
 - GitHub remains the source of truth and control plane for repositories,
   Issues and Projects, branches and pull requests, GitHub Actions, rulesets
   and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
   and releases.
-- GitHub Copilot, Claude, Codex, and other paid or cloud agents are
-  secondary/specialist agents. They follow the same repository policies when
-  used.
+- Every agent follows the same repository policies when used.
 
 ### Default work for the primary agent
 
-Cursor should handle routine:
+Keep routine work with Cursor whenever practical. Cursor handles:
 
 - repository analysis
 - planning
@@ -42,22 +46,38 @@ Cursor should handle routine:
 - commit preparation
 - pull-request preparation
 
-### When to use a secondary agent
+Do not auto-escalate those tasks to Grok Build, GitHub Copilot, Codex,
+Claude, or other metered cloud agents.
 
-Use a secondary/specialist agent only when:
+### Escalation and secondary use
 
-- Cursor cannot reliably complete the task
+Escalate only when at least one of the following is true:
+
+- Cursor cannot reliably complete the task after a practical attempt
 - an independent second opinion has substantial value
 - security or architecture changes warrant additional review
-- specialized reasoning is needed
-- the developer explicitly requests it
+- specialized reasoning is needed that Cursor cannot provide
+- the developer explicitly requests a named secondary or specialist agent
 
-Do not invoke multiple AI agents for the same routine task.
+Preferred order when escalation is justified:
+
+1. Stay with Cursor and reuse existing findings, logs, PR discussion, and
+   deterministic check output.
+2. Use Grok Build as the preferred secondary implementation agent.
+3. Use GitHub Copilot, Codex, Claude, or another metered cloud agent only as a
+   specialist/escalation resource for a narrowly scoped need.
+
+Do not invoke multiple paid or cloud agents for the same routine task. Before
+starting a new paid-agent analysis, reuse prior agent findings, issue/PR
+comments, CI results, and local validation output.
+Minimize duplicate paid-agent analysis across the same change.
 
 ### Cost and capacity
 
-Optimize AI usage for an independent-developer budget. Do not assume
-unlimited tokens, premium requests, AI credits, or paid-agent capacity.
+Optimize AI usage for an independent-developer budget. Prefer Cursor for
+default throughput. Do not assume unlimited tokens, premium requests, AI
+credits, or paid-agent capacity. Metered specialist agents are scarce
+resources, not parallel reviewers for every change.
 
 ### Deterministic validation over AI review
 
@@ -76,14 +96,15 @@ Prefer deterministic validation over AI review:
 
 AI reviews are advisory. They are not required merge gates. Exhaustion of an
 optional AI agent's quota must not block development when required
-deterministic validation passes.
+deterministic validation passes. Do not spend paid-agent capacity on review
+when the required checks already answer the question.
 
 The Testing, Change discipline, and Cursor Cloud sections below remain the
 authoritative detail for what this repository requires those checks to cover.
 
 ## Codex PR creation policy
 
-Codex is a secondary/specialist agent. When Codex creates commits or pull
+Codex is a specialist/escalation agent. When Codex creates commits or pull
 requests in this repository, it must use this repository's Conventional Commit
 standard before opening the PR.
 
