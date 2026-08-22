@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `s2-m6-optimization-application.json` after `--approve`.
 - `tests/test_s2_m5_optimization_plan.py` proves plan-only does not mutate.
 - `tests/test_s2_m6_optimization_apply.py` proves apply requires `--approve`.
+- S2-M1 firmware validation publisher
+  (`scripts/s2-m1-publish-firmware-validation.py`) writes
+  `s2-m1-firmware-validation.json` with BIOS facts vs policy split.
+- S2-M2 kernel/driver validation publisher
+  (`scripts/s2-m2-publish-kernel-driver-validation.py`) writes
+  `s2-m2-kernel-driver-validation.json`.
+- `tests/test_s2_m2_kernel_driver.py` proves canonical S2-M2 JSON plus
+  compatibility `tier1-kernel-plan.json`.
 
 ### Changed
 
@@ -28,6 +36,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `runtime_apply` only after an approved apply.
 - ROADMAP marks S2-M5/S2-M6 **In progress** (not Implemented): canonical
   JSON and the `--approve` split exist; backup/rollback remain Planned.
+- `scripts/20-check-bios.sh` publishes canonical S2-M1 JSON and keeps
+  `tier1-firmware.json` until R1. BIOS identity facts stay separate from
+  classified-platform policy.
+- `scripts/30-validate-kernel.sh` publishes canonical S2-M2 JSON and keeps
+  `tier1-kernel-plan.json` until R1.
+- ROADMAP marks S2-M1/S2-M2 **In progress** (not Implemented): canonical
+  JSON exists; remaining work is remediation docs and the kernel/driver
+  matrix.
 
 ## [0.22.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.21.1...v0.22.0) (2026-08-22)
 
