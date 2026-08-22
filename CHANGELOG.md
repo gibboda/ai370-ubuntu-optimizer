@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.21.1...v0.22.0) (2026-08-22)
+
+
+### Features
+
+* **stage2:** Add S2-M7 platform validation publisher ([#197](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/197)) ([c0dd093](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/c0dd093a1d30ce2c9d8a7c5d154993a9780d7b84))
+
 ## [Unreleased]
 
 ### Added
