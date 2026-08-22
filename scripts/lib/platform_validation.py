@@ -132,6 +132,14 @@ def collect_milestone(
             "canonical": True,
             "document": canonical,
         }
+    if not required:
+        return {
+            "id": spec["id"],
+            "artifact": None,
+            "status": "SKIPPED",
+            "canonical": False,
+            "document": None,
+        }
     if compat:
         status = _document_status(compat) or "PASS"
         return {
@@ -141,18 +149,10 @@ def collect_milestone(
             "canonical": False,
             "document": compat,
         }
-    if required:
-        return {
-            "id": spec["id"],
-            "artifact": spec["compat"],
-            "status": "MISSING",
-            "canonical": False,
-            "document": None,
-        }
     return {
         "id": spec["id"],
-        "artifact": None,
-        "status": "SKIPPED",
+        "artifact": spec["compat"],
+        "status": "MISSING",
         "canonical": False,
         "document": None,
     }
