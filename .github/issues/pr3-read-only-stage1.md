@@ -18,7 +18,7 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 **Blocks:** R1 Tier removal prep
 
-**PR 3a status (orchestrator + `stage2-platform-*`):** landed in `#183` / `0.21.1` with leftover-label follow-up `#184`. `stage1` is read-only profile publication. `stage2-platform-validate` invokes existing GPU/NPU commands plus firmware/kernel wrappers and compatibility `90-validate.sh`. `stage2-validate` remains the runtime/NPU cheap gate. Canonical S2-M7 publisher, BIOS/kernel/tuning JSON splits, `require_tier123_pass` S2-M7 preference, migration-plan step 3, and `TASK_PROPOSALS.md` stay in this issue as PR 3b/3c.
+**PR 3a status (orchestrator + `stage2-platform-*`):** landed in `#183` / `0.21.1` with leftover-label follow-up `#184`. `stage1` is read-only profile publication. `stage2-platform-validate` invokes existing GPU/NPU commands plus firmware/kernel wrappers and the `90-validate.sh` S2-M7 shim. `stage2-validate` remains the runtime/NPU cheap gate. BIOS/kernel/tuning JSON splits, `require_tier123_pass` S2-M7 preference, migration-plan step 3, and `TASK_PROPOSALS.md` stay in this issue as PR 3c.
 
 Verified 2026-08-18 on `main` (`0.21.1`, `#183` + `#184`): `stage1` / `tier1` call `run_stage1_profile` only. `--apply-tuning` on Stage 1 warns toward `stage2-optimize-apply --approve`. `run_stage1_inventory()` is redirected to `stage2-platform-inventory`. `full-stack` / `all` run profile → platform validate → runtime. Legacy `firmware` / `kernel-amd` / `tune` warn toward `stage2-*`. This issue is **not complete**.
 
@@ -46,19 +46,19 @@ PR 3a follow-up: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/184
 - [x] `stage2-npu-validate` visibility-only already exists (`#180` / S2-M4); invoke it from platform validate, do not recreate
 - [x] `stage2-optimize-plan` → `40-platform-tuning.sh` plan-only (S2-M5)
 - [x] `stage2-optimize-apply --approve` → tuning apply (S2-M6)
-- [x] `stage2-platform-validate` → S2-M1–M4 + compatibility `90-validate.sh` until PR 3b
+- [x] `stage2-platform-validate` → S2-M1–M4 + S2-M7 via `90-validate.sh` shim
 
 `stage2-validate` stays the runtime/NPU cheap gate. The original alias-to-platform-validate item is **superseded**; do not treat it as remaining work (see Non-goals).
 
 ## Workstream C: Split `90-validate.sh` (S2-M7)
 
-This is the canonical `90-validate.sh` split. Do not start it in #168. Remaining PR 3b work.
+Canonical S2-M7 publisher. `90-validate.sh` is the compatibility shim.
 
-- [ ] Add `scripts/s2-m7-publish-platform-validation.py`
-- [ ] Add `configs/schemas/s2-m7-platform-validation.schema.json`
-- [ ] Publish `reports/latest/s2-m7-platform-validation.json`
-- [ ] Slim `90-validate.sh` to compat shim writing `tier1-validation.json`
-- [ ] Remove inline gfx1150/NPU re-detection from `90-validate.sh`
+- [x] Add `scripts/s2-m7-publish-platform-validation.py`
+- [x] Add `configs/schemas/s2-m7-platform-validation.schema.json`
+- [x] Publish `reports/latest/s2-m7-platform-validation.json`
+- [x] Slim `90-validate.sh` to compat shim writing `tier1-validation.json`
+- [x] Remove inline gfx1150/NPU re-detection from `90-validate.sh`
 
 ## Workstream D: Tuning boundary (S2-M5/S2-M6)
 
@@ -86,7 +86,7 @@ Wrappers consume `s1-m5-system-profile.json` (`test_s2_m1_firmware.py`). Canonic
 
 ## Tests
 
-- [ ] `tests/test_s2_m7_platform_validation.py` — aggregate from fixture milestone JSONs
+- [x] `tests/test_s2_m7_platform_validation.py` — aggregate from fixture milestone JSONs
 - [ ] `tests/test_s2_m5_optimization_plan.py` — plan-only, no mutation
 - [ ] `tests/test_s2_m6_optimization_apply.py` — apply requires `--approve`
 - [x] Update `tests/smoke_tier1.sh` — `stage1` does not require tuning artifacts
@@ -106,10 +106,10 @@ Wrappers consume `s1-m5-system-profile.json` (`test_s2_m1_firmware.py`). Canonic
 ## Definition of done
 
 - [x] `./ai370-optimize.sh stage1` runs only S1-M1–M5 (read-only)
-- [x] `./ai370-optimize.sh stage2-platform-validate` runs S2-M1/M2/M3/M4 + compatibility `90-validate.sh` (canonical S2-M7 remains PR 3b)
+- [x] `./ai370-optimize.sh stage2-platform-validate` runs S2-M1/M2/M3/M4 + S2-M7 (`90-validate.sh` shim)
 - [x] `--apply-tuning` only on `stage2-optimize-apply --approve`
-- [ ] `s2-m7-platform-validation.json` validates against schema
-- [ ] `tier1-validation.json` compat shim preserves `require_tier123_pass`
+- [x] `s2-m7-platform-validation.json` validates against schema
+- [x] `tier1-validation.json` compat shim preserves `require_tier123_pass`
 - [x] Portable tests pass on generic CI hardware
 - [x] README and ROADMAP agree Stage 1 is read-only
 - [x] README does not label Planned Stage 2 milestones as implemented
@@ -127,5 +127,5 @@ Wrappers consume `s1-m5-system-profile.json` (`test_s2_m1_firmware.py`). Canonic
 ## Optional split
 
 - **PR 3a** — Orchestrator + `stage2-platform-*` commands. Landed in `#183` / `0.21.1` plus follow-up `#184`.
-- **PR 3b** — Split `90-validate.sh` → `s2-m7-publish-platform-validation.py` (not started)
-- **PR 3c** — Remaining docs: mark migration-plan step 3 done when 3b lands; deprecate `TASK_PROPOSALS.md` Tier language. README Stage 1/Stage 2 status and smokes already landed with PR 3a.
+- **PR 3b** — Split `90-validate.sh` → `s2-m7-publish-platform-validation.py` (this change)
+- **PR 3c** — Remaining docs: mark migration-plan step 3 done when 3c items land; deprecate `TASK_PROPOSALS.md` Tier language. README Stage 1/Stage 2 status and smokes already landed with PR 3a. `require_tier123_pass` still reads `tier1-validation.json`.

@@ -85,7 +85,7 @@ Stage 1 (read-only, S1-M1 through S1-M5):
   --with-ai-smoke is not a Stage 1 flag; use scripts/80-benchmark-local-ai.sh (S3-M6)
   Mixed BIOS/kernel/GPU/tuning/90-validate no longer runs from stage1.
 
-Stage 2 platform (wrappers until canonical S2-M1/M2/M5–M7 outputs exist):
+Stage 2 platform (S2-M7 aggregate via 90-validate shim; S2-M1/M2/M5–M6 canonical JSON still Planned):
   stage2-firmware-validate = 20-check-bios (S2-M1 Planned); requires S1-M5 profile
   stage2-kernel-validate = 30-validate-kernel (S2-M2 Planned); requires S1-M5 profile
   stage2-gpu-validate = s2-m3-validate-gpu-stack (S2-M3 In progress)
@@ -94,9 +94,9 @@ Stage 2 platform (wrappers until canonical S2-M1/M2/M5–M7 outputs exist):
     always refreshes tier3-validation.json on this command.
   stage2-optimize-plan = 40-platform-tuning plan-only (S2-M5 Planned)
   stage2-optimize-apply --approve = 40-platform-tuning apply (S2-M6 Planned)
-  stage2-platform-validate = firmware + kernel + GPU + NPU visibility + 90-validate
-  --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing (90-validate)
-  stage2-platform-inventory = detect + firmware + kernel + GPU + inventory-scope validate
+  stage2-platform-validate = firmware + kernel + GPU + NPU visibility + S2-M7 (90-validate shim)
+  --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing (S2-M7)
+  stage2-platform-inventory = detect + firmware + kernel + GPU + inventory-scope S2-M7
 
 Stage 2 runtime (default stage2 / Stage 3 gate path; not the platform aggregate):
   Runtime: 100, 110, 120, 130, 140, 145, 150
@@ -207,7 +207,7 @@ run_script_or_legacy() {
 }
 
 export_platform_strict_env() {
-  # Strict mode belongs to the Stage 2 90-validate compatibility aggregate.
+  # Strict mode belongs to the Stage 2 S2-M7 aggregate (90-validate shim).
   if [[ "$STRICT" == "true" ]]; then
     export AI370_STAGE1_STRICT=true
   else
@@ -283,8 +283,8 @@ run_stage2_platform_inventory() {
 }
 
 run_stage2_platform_validate() {
-  echo "[INFO] Stage 2 platform validate – firmware, kernel, GPU, NPU visibility, then 90-validate"
-  echo "[INFO] Canonical S2-M7 publisher is not in this PR; 90-validate remains the compatibility aggregate"
+  echo "[INFO] Stage 2 platform validate – firmware, kernel, GPU, NPU visibility, then S2-M7"
+  echo "[INFO] 90-validate.sh is the compatibility shim; canonical report is s2-m7-platform-validation.json"
   export_platform_strict_env
   ensure_stage1_profile
   run_script "scripts/10-detect-hardware.sh"

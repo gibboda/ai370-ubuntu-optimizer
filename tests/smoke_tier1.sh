@@ -157,6 +157,20 @@ assert data.get("artifacts", {}).get("local_ai") in (None, ""), "full scope must
 print("[OK] tier1-validation.json structure + full scope (no AI smoke required)")
 PY
 
+python3 - "$LATEST_DIR/s2-m7-platform-validation.json" "$PROJECT_ROOT" <<'PY'
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[2])
+sys.path.insert(0, str(root / "scripts/lib"))
+import platform_validation
+import system_profile
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+system_profile.validate_document(report, platform_validation.S2_M7_SCHEMA, "S2-M7")
+assert report.get("milestone") == "S2-M7"
+assert report.get("artifact") == "s2-m7-platform-validation"
+print("[OK] s2-m7-platform-validation.json validates against schema")
+PY
+
 # firmware json
 python3 - "$LATEST_DIR/tier1-firmware.json" <<'PY'
 import json, sys

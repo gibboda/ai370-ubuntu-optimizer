@@ -187,6 +187,10 @@ from marketing names.
   `configs/schemas/s2-m4-npu-runtime-validation.schema.json` (S2-M4 NPU visibility;
   `stage2-npu-validate`; compat `npu-acceleration-status.json` /
   `npu-capabilities.json`; mixed `--bench` path until S3-M6)
+- `scripts/s2-m7-publish-platform-validation.py`,
+  `configs/schemas/s2-m7-platform-validation.schema.json` (S2-M7 platform
+  aggregate; `stage2-platform-validate`; compat `90-validate.sh` /
+  `tier1-validation.json`)
 - `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`,
   `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`,
   `scripts/140-benchmark-llm.sh`, `scripts/145-write-tier2-validation.sh`,
@@ -253,7 +257,7 @@ scripts/
 
 Stage 2 platform wrappers (not Stage 1): `20-check-bios.sh`, `30-validate-kernel.sh`,
 `40-platform-tuning.sh`, `s2-m3-validate-gpu-stack.sh`, `s2-m4-validate-npu-stack.sh`,
-`90-validate.sh`.
+`s2-m7-publish-platform-validation.py`, compatibility `90-validate.sh`.
 
 **Acceptance Criteria:**
 
@@ -265,8 +269,9 @@ Stage 2 platform wrappers (not Stage 1): `20-check-bios.sh`, `30-validate-kernel
 
 ### Stage 2 – Platform Enablement and Local AI Runtime
 
-ROADMAP status: S2-M3/S2-M4 In progress; S2-M1, S2-M2, and S2-M5–S2-M7 remain
-**Planned**. Wrappers below do not mark those Planned milestones Implemented.
+ROADMAP status: S2-M3/S2-M4/S2-M7 In progress; S2-M1, S2-M2, S2-M5, and S2-M6
+remain **Planned**. Wrappers below do not mark those Planned milestones
+Implemented.
 
 **Platform commands (S2-M1–M7 wrappers):**
 
@@ -284,10 +289,13 @@ ROADMAP status: S2-M3/S2-M4 In progress; S2-M1, S2-M2, and S2-M5–S2-M7 remain
 ```
 
 `stage2-platform-validate` runs firmware, kernel, GPU visibility, NPU
-visibility, and the compatibility `90-validate.sh` aggregate. Canonical
-`s2-m7-platform-validation.json` is still Planned. `stage2-validate` remains
-the **runtime/NPU cheap gate** until the Stage 3 split; it is not an alias
-for platform validate.
+visibility, and the S2-M7 aggregate (`90-validate.sh` compatibility shim
+writes `s2-m7-platform-validation.json` plus `tier1-validation.json`).
+S2-M7 requires `s1-m5-system-profile.json` and ignores milestone reports
+whose consumed fingerprint does not match that profile.
+`require_tier123_pass` still reads the compatibility file. `stage2-validate`
+remains the **runtime/NPU cheap gate** until the Stage 3 split; it is not an
+alias for platform validate.
 
 Use `stage2` for the runtime/model-storage + NPU aggregate. Default `stage2`
 writes `reports/latest/tier3-validation.json` for the Stage 3 gate. Optional
