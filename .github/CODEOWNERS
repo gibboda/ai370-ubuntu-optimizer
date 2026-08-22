@@ -3,6 +3,7 @@
 
 # Repository governance and automation.
 /.github/ @gibboda
+/.cursor/ @gibboda
 /AGENTS.md @gibboda
 /CONTRIBUTING.md @gibboda
 /release-please-config.json @gibboda

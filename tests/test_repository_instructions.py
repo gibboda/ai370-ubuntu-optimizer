@@ -18,12 +18,29 @@ class RepositoryInstructionsTests(unittest.TestCase):
         cls.pull_request_template = (
             ROOT / ".github/PULL_REQUEST_TEMPLATE.md"
         ).read_text(encoding="utf-8")
-        cls.copilot_instructions = (
+        cls.copilot_pointer = (
             ROOT / ".github/copilot-instructions.md"
         ).read_text(encoding="utf-8")
+        cls.copilot_instructions = (
+            ROOT / ".github/instructions/copilot.instructions.md"
+        ).read_text(encoding="utf-8")
+        cls.codex_instructions = (
+            ROOT / ".github/instructions/codex.instructions.md"
+        ).read_text(encoding="utf-8")
+        cls.cursor_rules = (
+            ROOT / ".cursor/rules/cursor.mdc"
+        ).read_text(encoding="utf-8")
 
-    def test_copilot_instructions_exist(self) -> None:
-        self.assertTrue((ROOT / ".github/copilot-instructions.md").is_file())
+    def test_instruction_hierarchy_files_exist(self) -> None:
+        for path in (
+            ROOT / "AGENTS.md",
+            ROOT / ".github/copilot-instructions.md",
+            ROOT / ".github/instructions/copilot.instructions.md",
+            ROOT / ".github/instructions/codex.instructions.md",
+            ROOT / ".cursor/rules/cursor.mdc",
+        ):
+            with self.subTest(path=path):
+                self.assertTrue(path.is_file(), path)
 
     def test_all_contributors_must_follow_commit_policy(self) -> None:
         for policy in (
@@ -38,40 +55,66 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("must follow this policy", self.contributing)
         self.assertIn("Co-authored-by", self.agent_instructions)
         self.assertIn("Co-authored-by", self.contributing)
-
-    def test_copilot_instructions_link_to_authoritative_documents(self) -> None:
-        self.assertIn("[`../AGENTS.md`](../AGENTS.md)", self.copilot_instructions)
         self.assertIn(
-            "[`../docs/ROADMAP.md`](../docs/ROADMAP.md)", self.copilot_instructions
+            "bash scripts/validate-pr-title.sh", self.agent_instructions
         )
         self.assertIn(
-            "[`../docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md`](../docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md)",
-            self.copilot_instructions,
+            "Do not open the PR unless the title validation command passes",
+            self.agent_instructions,
+        )
+
+    def test_agent_specific_files_point_to_shared_policy(self) -> None:
+        self.assertIn("[`../AGENTS.md`](../AGENTS.md)", self.copilot_pointer)
+        self.assertIn(
+            "compatibility pointer, not a second policy surface",
+            self.copilot_pointer,
         )
         self.assertIn(
-            "[`../docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`](../docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md)",
-            self.copilot_instructions,
+            "[`../../AGENTS.md`](../../AGENTS.md)", self.copilot_instructions
         )
         self.assertIn(
-            "[`../configs/schemas/system-profile.schema.json`](../configs/schemas/system-profile.schema.json)",
-            self.copilot_instructions,
+            "[`../../AGENTS.md`](../../AGENTS.md)", self.codex_instructions
+        )
+        self.assertIn("[`AGENTS.md`](../../AGENTS.md)", self.cursor_rules)
+        self.assertIn(
+            "[`AGENTS.md`](AGENTS.md)",
+            self.contributing,
         )
 
-    def test_both_instruction_files_preserve_stage_1_boundary(self) -> None:
-        for instructions in (self.agent_instructions, self.copilot_instructions):
-            with self.subTest(instructions=instructions[:20]):
-                self.assertIn("Stage 1 is read-only", instructions)
+    def test_shared_policy_names_authoritative_documents(self) -> None:
+        self.assertIn("`docs/ROADMAP.md`", self.agent_instructions)
+        self.assertIn(
+            "HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md", self.agent_instructions
+        )
+        self.assertIn(
+            "RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md", self.agent_instructions
+        )
+        self.assertIn(
+            "configs/schemas/system-profile.schema.json", self.agent_instructions
+        )
+        self.assertIn("Before changing code", self.agent_instructions)
+        self.assertIn("reading order in `AGENTS.md`", self.copilot_instructions)
 
-    def test_both_instruction_files_prohibit_new_tier_names(self) -> None:
-        for instructions in (self.agent_instructions, self.copilot_instructions):
-            with self.subTest(instructions=instructions[:20]):
-                self.assertIn("do not introduce new tier", instructions.casefold())
+    def test_shared_policy_preserves_stage_1_boundary(self) -> None:
+        self.assertIn("Stage 1 is read-only", self.agent_instructions)
+        self.assertNotIn("Stage 1 is read-only", self.copilot_instructions)
+        self.assertNotIn("Stage 1 is read-only", self.codex_instructions)
+        self.assertNotIn("Stage 1 is read-only", self.cursor_rules)
 
-    def test_both_instruction_files_define_elitemini_as_reference_only(self) -> None:
-        for instructions in (self.agent_instructions, self.copilot_instructions):
-            with self.subTest(instructions=instructions[:20]):
-                self.assertIn("EliteMini AI370 is", instructions)
-                self.assertIn("not a universal hardware assumption", instructions)
+    def test_shared_policy_prohibits_new_tier_names(self) -> None:
+        self.assertIn("do not introduce new tier", self.agent_instructions.casefold())
+        self.assertNotIn(
+            "do not introduce new tier", self.copilot_instructions.casefold()
+        )
+        self.assertNotIn(
+            "do not introduce new tier", self.codex_instructions.casefold()
+        )
+
+    def test_shared_policy_defines_elitemini_as_reference_only(self) -> None:
+        self.assertIn("EliteMini AI370 is", self.agent_instructions)
+        self.assertIn("not a universal hardware assumption", self.agent_instructions)
+        self.assertNotIn("EliteMini AI370 is", self.copilot_instructions)
+        self.assertNotIn("EliteMini AI370 is", self.codex_instructions)
 
     def test_agent_instructions_preserve_roadmap_authority_and_plan_docs(self) -> None:
         self.assertIn("`docs/ROADMAP.md` is authoritative", self.agent_instructions)
@@ -84,6 +127,10 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("not public command names", self.agent_instructions)
         self.assertIn(
             "Never label planned functionality as implemented", self.agent_instructions
+        )
+        self.assertIn(
+            "Do not add public `stage6` through `stage11` commands",
+            self.agent_instructions,
         )
 
     def test_agent_instructions_define_cost_efficient_multi_agent_policy(
@@ -151,13 +198,39 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn("AI reviews are advisory", self.agent_instructions)
         self.assertIn("not required merge gates", self.agent_instructions)
+        self.assertIn("GitHub Copilot, Codex, Claude", self.agent_instructions)
+
+    def test_cursor_cloud_notes_live_in_cursor_rules(self) -> None:
         self.assertIn(
-            "Codex is a specialist/escalation agent", self.agent_instructions
+            "These notes apply when the agent is running in Cursor Cloud",
+            self.cursor_rules,
         )
-        self.assertIn(
+        self.assertNotIn(
             "These notes apply when the agent is running in Cursor Cloud",
             self.agent_instructions,
         )
+        self.assertIn("alwaysApply: true", self.cursor_rules)
+        self.assertIn("startup update script", self.cursor_rules)
+        self.assertIn("markdownlint-cli2", self.cursor_rules)
+
+    def test_codex_pr_title_requirements_live_in_codex_instructions(self) -> None:
+        self.assertIn(
+            "Codex is a specialist/escalation agent", self.codex_instructions
+        )
+        self.assertIn(
+            "[`../../CONTRIBUTING.md`](../../CONTRIBUTING.md)",
+            self.codex_instructions,
+        )
+        self.assertIn(
+            "bash scripts/validate-pr-title.sh", self.codex_instructions
+        )
+        self.assertIn(
+            "Do not open the PR unless the title validation command passes",
+            self.codex_instructions,
+        )
+        self.assertNotIn("## Codex PR creation policy", self.agent_instructions)
+        self.assertNotIn("- `feat`", self.agent_instructions)
+        self.assertNotIn("- `audit`", self.agent_instructions)
 
 
 class MigrationPlanTests(unittest.TestCase):
@@ -585,6 +658,9 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         template = (ROOT / ".github/PULL_REQUEST_TEMPLATE.md").read_text(
             encoding="utf-8"
         )
+        codex = (ROOT / ".github/instructions/codex.instructions.md").read_text(
+            encoding="utf-8"
+        )
 
         pr_scopes = re.search(r"allowed_scopes='([^']+)'", pr_title)
         commit_scopes = re.search(r"allowed_scopes='([^']+)'", commit_subject)
@@ -593,9 +669,12 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         self.assertEqual(tuple(pr_scopes.group(1).split("|")), self.ALLOWED_SCOPES)
         self.assertEqual(tuple(commit_scopes.group(1).split("|")), self.ALLOWED_SCOPES)
 
+        self.assertIn("[`CONTRIBUTING.md`](CONTRIBUTING.md)", agents)
+        self.assertIn("authoritative for allowed types", agents)
+        self.assertIn("CONTRIBUTING.md", codex)
+
         for scope in self.ALLOWED_SCOPES:
             with self.subTest(scope=scope):
-                self.assertIn(f"- `{scope}`", agents)
                 self.assertIn(f"`{scope}`", contributing)
                 self.assertRegex(workflow, rf"(?m)^\s+{re.escape(scope)}$")
                 self.assertIn(scope, template)

@@ -1,5 +1,25 @@
 # AGENTS.md
 
+This file is the shared instruction surface for every implementation agent
+that works in this repository. It is authoritative for agent roles,
+escalation, cost policy, deterministic validation, architecture, testing,
+naming, and change discipline.
+
+Agent-specific files must not restate this policy. They may only add
+behavior that applies to that agent or environment:
+
+- Cursor-specific notes: [`.cursor/rules/`](.cursor/rules/)
+- GitHub Copilot: [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)
+- Codex: [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
+- Conventional Commit types, scopes, and human contributor workflow:
+  [`CONTRIBUTING.md`](CONTRIBUTING.md)
+
+Nested `AGENTS.md` files remain in force for their directories.
+`.github/copilot-instructions.md` is a compatibility pointer, not a second
+policy surface. Do not treat this repository as Cursor-exclusive: other
+agents may work here when escalated, but routine work stays with Cursor
+whenever practical.
+
 ## Contributor commit policy
 
 All contributors and co-contributors, including humans, AI agents, and
@@ -9,13 +29,27 @@ responsible for ensuring that the shared commit subject and PR title comply on
 behalf of every contributor and `Co-authored-by` identity credited in the
 change.
 
-## Multi-agent development policy
+Commit subjects and PR titles must use this format:
 
-This file is the shared instruction surface for every implementation agent
-that works in this repository. Nested `AGENTS.md` files,
-`.github/copilot-instructions.md`, and `CONTRIBUTING.md` remain in force.
-Do not treat this repository as Cursor-exclusive: other agents may work here
-when escalated, but routine work stays with Cursor whenever practical.
+```text
+type(optional-scope): Subject
+```
+
+[`CONTRIBUTING.md`](CONTRIBUTING.md) is authoritative for allowed types,
+scopes, examples, and release versioning. The `tier`, `tier1`, and `tier2`
+scopes are deprecated compatibility scopes. Do not use them for new work;
+retain them until their `docs/ROADMAP.md` compatibility removal targets are
+reached.
+
+Before opening a pull request, validate the title:
+
+```bash
+bash scripts/validate-pr-title.sh "$PR_TITLE"
+```
+
+Do not open the PR unless the title validation command passes.
+
+## Multi-agent development policy
 
 ### Roles
 
@@ -102,88 +136,8 @@ optional AI agent's quota must not block development when required
 deterministic validation passes. Do not spend paid-agent capacity on review
 when the required checks already answer the question.
 
-The Testing, Change discipline, and Cursor Cloud sections below remain the
-authoritative detail for what this repository requires those checks to cover.
-
-## Codex PR creation policy
-
-Codex is a specialist/escalation agent. When Codex creates commits or pull
-requests in this repository, it must use this repository's Conventional Commit
-standard before opening the PR.
-
-Commit subjects and PR titles must use this format:
-
-```text
-type(optional-scope): Subject
-```
-
-Allowed types:
-
-- `feat`
-- `fix`
-- `chore`
-- `refactor`
-- `docs`
-- `test`
-- `ci`
-- `perf`
-
-Allowed scopes:
-
-- `audit`
-- `baseline`
-- `amd`
-- `ai-stack`
-- `rocm`
-- `npu`
-- `acceleration`
-- `comfyui`
-- `config`
-- `architecture`
-- `workflows`
-- `vscode`
-- `release`
-- `deps`
-- `stage`
-- `stage1`
-- `stage2`
-- `stage3`
-- `stage4`
-- `stage5`
-- `tier`
-- `tier1`
-- `tier2`
-
-The `tier`, `tier1`, and `tier2` scopes are deprecated compatibility scopes.
-Do not use them for new work; retain them until their `docs/ROADMAP.md`
-compatibility removal targets are reached.
-
-Rules:
-
-- Scope is optional.
-- The subject must start with a letter.
-- Do not use leading emoji.
-- Do not use a plain English title without a Conventional Commit type.
-- Use `!` after the type or scope only for breaking changes.
-- Validate the PR title before opening the PR.
-
-Examples:
-
-```text
-fix: Relax S3-M7 NPU execution gate
-docs: Add ComfyUI heterogeneous acceleration roadmap
-chore(release): release 0.12.3
-feat(stage3): Add model validation report
-ci(workflows): Update PR title lint workflow
-```
-
-Before creating a PR, run:
-
-```bash
-bash scripts/validate-pr-title.sh "$PR_TITLE"
-```
-
-Do not open the PR unless the title validation command passes.
+The Testing and Change discipline sections below remain the authoritative
+detail for what this repository requires those checks to cover.
 
 ## Documentation authority
 
@@ -201,6 +155,23 @@ Do not open the PR unless the title validation command passes.
 - A milestone is not complete until its canonical outputs and deterministic
   tests exist.
 - Never label planned functionality as implemented.
+
+## Before changing code
+
+Read these sources in order, then any nested `AGENTS.md` that applies to the
+files being changed:
+
+1. This file (`AGENTS.md`).
+2. `docs/ROADMAP.md`.
+3. `docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md` for the target platform
+   architecture.
+4. `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md` for the current-to-target
+   inventory and file mapping.
+5. The profile schema relevant to the change (the canonical system profile is
+   `configs/schemas/system-profile.schema.json`).
+
+Use this file as the complete shared policy. Agent-specific files add only
+the extra steps that apply to that agent.
 
 ## Stage 1 boundary
 
@@ -237,11 +208,20 @@ Do not open the PR unless the title validation command passes.
 ## Naming
 
 - Canonical public naming uses `stageN` and `SN-MN`.
-- Do not introduce new Tier-named commands, scripts, reports, tests, functions,
-  JSON fields, or documentation sections.
+- Canonical names come from `docs/ROADMAP.md`; do not introduce new Tier-named
+  commands, scripts, reports, tests, functions, JSON fields, or documentation
+  sections.
 - Existing Tier names are compatibility surfaces only and may be changed solely
   through the documented migration plan.
 - Every new script and artifact must identify its owning Stage and Milestone.
+- Do not add public `stage6` through `stage11` commands.
+
+## Repository shape
+
+This repository is a Bash CLI toolkit (`./ai370-optimize.sh`), not a
+long-running service or GUI app. There is nothing to "serve"; you run commands
+and inspect the JSON/Markdown artifacts written under `reports/latest/` (that
+directory is gitignored).
 
 ## Testing
 
@@ -251,44 +231,33 @@ Do not open the PR unless the title validation command passes.
 - Tests must not suppress unexpected failures with unconditional `|| true`.
 - Hardware classification changes require reference-system, newer-Ryzen-AI,
   missing-tool, degraded-driver, and unsupported-host coverage.
+- `shellcheck` is the CI-authoritative lint. Reproduce CI exactly with
+  `shellcheck --severity=error $(git ls-files '*.sh')` (see
+  `.github/workflows/shellcheck.yml`).
+- `markdownlint-cli2` is not a CI gate. If used, scope it to files you
+  actually touch; running it on all `*.md` reports pre-existing style errors
+  under `workflows/comfyui/`.
+- Portable, hardware-independent tests are listed in `tests/README.md` and
+  run without AI370 hardware and without network:
+
+  ```bash
+  python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m1_firmware tests.test_s2_optimize_profile tests.test_repository_instructions
+  bash tests/smoke_tier1.sh
+  bash tests/smoke_stage2_platform.sh
+  bash tests/smoke_tier2.sh
+  ```
+
+- On generic hardware, Stage 1/Stage 2 commands report `WARN` for missing
+  Radeon 890M / XDNA2 NPU / ROCm and still exit `0`. These are recorded facts,
+  not failures. Do not treat a `WARN` status or missing-hardware messages as a
+  broken environment. Stage 2 scripts exit non-zero only on `status=FAIL`.
 
 ## Change discipline
 
 - Schema changes require schema-version review, migration notes, fixtures, and
   consumer tests.
 - Stage boundary changes require corresponding updates to `docs/ROADMAP.md`,
- `README.md`, and command help.
+  `README.md`, and command help.
+- When the profile contract changes, update schema tests and downstream
+  consumer tests.
 - Never add `try`/`catch` blocks around imports.
-
-## Cursor Cloud specific instructions
-
-These notes apply when the agent is running in Cursor Cloud. They do not
-require other agents to use Cursor, and they do not replace GitHub as the
-source of truth.
-
-This repository is a Bash CLI toolkit (`./ai370-optimize.sh`), not a
-long-running service or GUI app. There is nothing to "serve"; you run commands
-and inspect the JSON/Markdown artifacts written under `reports/latest/` (that
-directory is gitignored).
-
-- Toolchain: `bash`, `python3`, `jq`, `node`/`npm`, and `shellcheck` are all
- provided by the base environment. `shellcheck` is a system dependency (apt),
- not a repo package, so it is baked into the environment rather than the
- startup update script. The update script only runs `npm ci` for the single
- `markdownlint-cli2` dev dependency.
-- Lint: `shellcheck` is the CI-authoritative lint. Reproduce CI exactly with
- `shellcheck --severity=error $(git ls-files '*.sh')` (see
- `.github/workflows/shellcheck.yml`). `markdownlint-cli2` is available via npm
- but is NOT wired into CI; running it on all `*.md` reports pre-existing style
- errors under `workflows/comfyui/`, so scope it to files you actually touch.
-- Tests: portable, hardware-independent tests are
- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m1_firmware tests.test_s2_optimize_profile tests.test_repository_instructions`
- plus the CLI smokes `bash tests/smoke_tier1.sh`, `bash tests/smoke_stage2_platform.sh`, and `bash tests/smoke_tier2.sh`
- (see `tests/README.md`). All run without AI370 hardware and without network.
-- Non-obvious gotcha: on generic hardware (any cloud VM), Stage 1/Stage 2
- commands report `WARN` for missing Radeon 890M / XDNA2 NPU / ROCm and still
- exit `0`. Per the Stage 1 boundary rules above, these are recorded facts, not
- failures — do NOT treat a `WARN` status or missing-hardware messages as a
- broken environment. Stage 2 scripts exit non-zero only on `status=FAIL`.
-- Before opening a PR, validate the title:
- `bash scripts/validate-pr-title.sh "$PR_TITLE"`.
