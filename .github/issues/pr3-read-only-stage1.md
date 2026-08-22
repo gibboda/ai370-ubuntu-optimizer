@@ -20,7 +20,9 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 **PR 3a status (orchestrator + `stage2-platform-*`):** landed in `#183` / `0.21.1` with leftover-label follow-up `#184`. `stage1` is read-only profile publication. `stage2-platform-validate` invokes existing GPU/NPU commands plus firmware/kernel wrappers and the `90-validate.sh` S2-M7 shim. `stage2-validate` remains the runtime/NPU cheap gate.
 
-**PR 3b status (Workstream C / S2-M7):** landed in `#197`. Canonical publisher writes `s2-m7-platform-validation.json`; `90-validate.sh` is the compatibility shim for `require_tier123_pass`. BIOS/kernel JSON splits, `require_tier123_pass` S2-M7 preference, migration-plan step 3, and `TASK_PROPOSALS.md` stay in this issue as remaining PR 3c workstreams.
+**PR 3b status (Workstream C / S2-M7):** landed in `#197`. Canonical publisher writes `s2-m7-platform-validation.json`; `90-validate.sh` is the compatibility shim for `require_tier123_pass`.
+
+**PR 3c Workstream D status (S2-M5/S2-M6):** landing in `#199`. Canonical plan/apply JSON and in-script `--approve` split exist. Backup/rollback remain Planned; S2-M5/S2-M6 stay **In progress**. BIOS/kernel JSON splits, `require_tier123_pass` S2-M7 preference, migration-plan step 3, and `TASK_PROPOSALS.md` stay in this issue as remaining PR 3c workstreams.
 
 Verified 2026-08-22 on `main` after `#197`: `stage1` / `tier1` call `run_stage1_profile` only. `--apply-tuning` on Stage 1 warns toward `stage2-optimize-apply --approve`. `run_stage1_inventory()` is redirected to `stage2-platform-inventory`. `full-stack` / `all` run profile → platform validate → runtime. Legacy `firmware` / `kernel-amd` / `tune` warn toward `stage2-*`. This issue is **not complete**.
 
@@ -30,6 +32,7 @@ NPU publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/180
 PR 3a orchestrator: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/183
 PR 3a follow-up: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/184
 PR 3b S2-M7 publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/197
+PR 3c Workstream D tuning boundary: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/199
 
 ---
 
@@ -131,5 +134,5 @@ Wrappers consume `s1-m5-system-profile.json` (`test_s2_m1_firmware.py`). Canonic
 
 - **PR 3a** — Orchestrator + `stage2-platform-*` commands. Landed in `#183` / `0.21.1` plus follow-up `#184`.
 - **PR 3b** — Split `90-validate.sh` → `s2-m7-publish-platform-validation.py`. Landed in `#197`.
-- **PR 3c Workstream D** — S2-M5/S2-M6 canonical JSON and in-script `--approve` split (this change). Backup/rollback stay Planned.
+- **PR 3c Workstream D** — S2-M5/S2-M6 canonical JSON and in-script `--approve` split. Landing in `#199`. Backup/rollback stay Planned.
 - **PR 3c remaining** — S2-M1/M2 canonical JSON (Workstream E); `require_tier123_pass` S2-M7 preference and `10-detect-hardware.sh` callers (Workstream F); mark migration-plan step 3 done; deprecate `TASK_PROPOSALS.md` Tier language.
