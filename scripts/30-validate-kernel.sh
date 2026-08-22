@@ -104,14 +104,14 @@ main() {
     status="WARN"
   fi
 
-  local facts_json
+  local facts_json recommendations_json
   facts_json="$(mktemp "${TMPDIR:-/tmp}/s2-m2-facts.XXXXXX")"
-  printf '%s\n' "${recommendations[@]:-}" | python3 - "$facts_json" "$kernel" "$target_kernel" "$kernel_ok" "$amdgpu_ok" \
+  recommendations_json="$(printf '%s\n' "${recommendations[@]:-}" | python3 -c 'import json,sys; print(json.dumps([x for x in sys.stdin.read().splitlines() if x.strip()]))')"
+  python3 - "$facts_json" "$kernel" "$target_kernel" "$kernel_ok" "$amdgpu_ok" \
     "$amdxdna_seen" "$linux_firmware_state" "$status" \
-    "$os_description" "$os_version" "$os_codename" <<'PY'
+    "$os_description" "$os_version" "$os_codename" "$recommendations_json" <<'PY'
 import json, sys
 from pathlib import Path
-recommendations = [line for line in sys.stdin.read().splitlines() if line.strip()]
 Path(sys.argv[1]).write_text(json.dumps({
     "kernel": sys.argv[2],
     "target_kernel": sys.argv[3],
@@ -123,7 +123,7 @@ Path(sys.argv[1]).write_text(json.dumps({
     "os_description": sys.argv[9],
     "os_version": sys.argv[10],
     "os_codename": sys.argv[11],
-    "recommendations": recommendations,
+    "recommendations": json.loads(sys.argv[12] or "[]"),
 }, indent=2) + "\n", encoding="utf-8")
 PY
 
