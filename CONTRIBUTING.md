@@ -1,5 +1,19 @@
 # Contributing to ai370-ubuntu-optimizer
 
+This document is authoritative for Conventional Commit types, scopes,
+examples, release versioning, shell script standards, and the human
+contributor workflow.
+
+Shared AI-agent policy lives in [`AGENTS.md`](AGENTS.md). That file is
+authoritative for agent roles, escalation, cost policy, deterministic
+validation, architecture, testing, naming, and change discipline.
+
+- Cursor-specific environment notes: [`.cursor/rules/`](.cursor/rules/)
+- GitHub Copilot: [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)
+- Codex PR creation: [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
+
+Do not copy shared agent policy into those files.
+
 ## Commit message format
 
 This project uses
@@ -11,12 +25,13 @@ appending `(#PR)` on merge) **must** follow this format:
 type(scope): Subject
 ```
 
-The subject must begin with a letter and describe the change concisely. All
-contributors and co-contributors, including humans, AI agents, and automation,
-must follow this policy. The person or automation creating a commit and opening
-its pull request is responsible for ensuring that the shared commit subject and
-PR title comply on behalf of every contributor and `Co-authored-by` identity
-credited in the change.
+The subject must begin with a letter and describe the change concisely. Do not
+use leading emoji, and do not use a plain English title without a Conventional
+Commit type. All contributors and co-contributors, including humans, AI agents,
+and automation, must follow this policy. The person or automation creating a
+commit and opening its pull request is responsible for ensuring that the shared
+commit subject and PR title comply on behalf of every contributor and
+`Co-authored-by` identity credited in the change.
 
 Commit subjects pushed to a PR must follow the same convention so the branch
 history and final squash-merge commit stay consistent. CI enforces this for
