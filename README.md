@@ -122,14 +122,19 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 - Stage 1 profile pipeline: **Implemented** (S1-M1 through S1-M5). `stage1`,
   `stage1-probe`, and `stage1-profile` are read-only. BIOS, kernel, GPU/NPU
   visibility, and tuning run from Stage 2 platform commands.
-- Stage 2: **Planned** in ROADMAP except S2-M3/S2-M4, which are **In progress**
-  (capability ladder library and visibility schemas; GPU publisher landed in
+- Stage 2: **Planned** in ROADMAP except S2-M3/S2-M4/S2-M5/S2-M6/S2-M7, which
+  are **In progress** (capability ladder library and visibility schemas; GPU
+  publisher landed in
   [#176](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/176);
-  NPU visibility-only publisher is `stage2-npu-validate` / S2-M4).
+  NPU visibility-only publisher is `stage2-npu-validate` / S2-M4;
+  S2-M7 publisher landed in
+  [#197](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/197);
+  S2-M5/S2-M6 canonical plan/apply JSON exists).
   Platform wrappers (`stage2-firmware-validate`, `stage2-kernel-validate`,
   `stage2-optimize-plan`, `stage2-optimize-apply --approve`,
-  `stage2-platform-validate`) exist; they do not upgrade S2-M1/M2/M5–M7 to
-  Implemented. Current runtime scripts remain partial compatibility
+  `stage2-platform-validate`) exist; they do not upgrade S2-M1/M2 to
+  Implemented, and S2-M5/S2-M6 stay In progress until backup/rollback
+  tests exist. Current runtime scripts remain partial compatibility
   implementations (`stage2`, `stage2-runtime`, `stage2-npu`; legacy `tier2` /
   `tier3`). `stage2-validate` remains the runtime/NPU cheap gate until the
   S3 split; it is not the S2-M7 platform aggregate.
@@ -178,7 +183,7 @@ derived from the PCI map), `npu` (presence/family/driver/nodes), `pci`,
 `collection.missing_tools`. Unknown values stay explicit; they are not filled
 from marketing names.
 
-**Stage 2 — Planned (current scripts are partial compatibility implementations):**
+**Stage 2 — In progress / Planned (current scripts are partial compatibility implementations):**
 
 - `scripts/s2-m3-validate-gpu-stack.sh`, `scripts/s2-m3-publish-gpu-visibility.py`,
   `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` (S2-M3 GPU/Vulkan/ROCm
@@ -187,6 +192,14 @@ from marketing names.
   `configs/schemas/s2-m4-npu-runtime-validation.schema.json` (S2-M4 NPU visibility;
   `stage2-npu-validate`; compat `npu-acceleration-status.json` /
   `npu-capabilities.json`; mixed `--bench` path until S3-M6)
+- `scripts/s2-m5-publish-optimization-plan.py`,
+  `scripts/s2-m6-publish-optimization-application.py`,
+  `scripts/lib/optimization_plan.py`,
+  `configs/schemas/s2-m5-optimization-plan.schema.json`,
+  `configs/schemas/s2-m6-optimization-application.schema.json`
+  (S2-M5 plan / S2-M6 approved apply; `stage2-optimize-plan` /
+  `stage2-optimize-apply --approve`; compat `40-platform-tuning.sh` /
+  `tier1-platform-tuning.json`; backup/rollback remain Planned)
 - `scripts/s2-m7-publish-platform-validation.py`,
   `configs/schemas/s2-m7-platform-validation.schema.json` (S2-M7 platform
   aggregate; `stage2-platform-validate`; compat `90-validate.sh` /
@@ -269,9 +282,9 @@ Stage 2 platform wrappers (not Stage 1): `20-check-bios.sh`, `30-validate-kernel
 
 ### Stage 2 – Platform Enablement and Local AI Runtime
 
-ROADMAP status: S2-M3/S2-M4/S2-M7 In progress; S2-M1, S2-M2, S2-M5, and S2-M6
-remain **Planned**. Wrappers below do not mark those Planned milestones
-Implemented.
+ROADMAP status: S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress; S2-M1 and S2-M2
+remain **Planned**. Canonical S2-M5/S2-M6 JSON exists; backup/rollback remain
+Planned. Wrappers below do not mark Planned milestones Implemented.
 
 **Platform commands (S2-M1–M7 wrappers):**
 

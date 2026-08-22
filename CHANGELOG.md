@@ -6,43 +6,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- S2-M5 optimization plan publisher
+  (`scripts/s2-m5-publish-optimization-plan.py`) writes
+  `s2-m5-optimization-plan.json` against
+  `configs/schemas/s2-m5-optimization-plan.schema.json`.
+- S2-M6 optimization application publisher
+  (`scripts/s2-m6-publish-optimization-application.py`) writes
+  `s2-m6-optimization-application.json` after `--approve`.
+- `tests/test_s2_m5_optimization_plan.py` proves plan-only does not mutate.
+- `tests/test_s2_m6_optimization_apply.py` proves apply requires `--approve`.
+
+### Changed
+
+- `scripts/40-platform-tuning.sh` splits plan vs apply. Apply requires
+  `--approve`; `AI370_APPLY_TUNING` alone does not apply.
+- Compatibility `tier1-platform-tuning.json` remains until R1 and records
+  `runtime_apply` only after an approved apply.
+- ROADMAP marks S2-M5/S2-M6 **In progress** (not Implemented): canonical
+  JSON and the `--approve` split exist; backup/rollback remain Planned.
+
 ## [0.22.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.21.1...v0.22.0) (2026-08-22)
 
 
 ### Features
 
 * **stage2:** Add S2-M7 platform validation publisher ([#197](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/197)) ([c0dd093](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/c0dd093a1d30ce2c9d8a7c5d154993a9780d7b84))
-
-## [Unreleased]
-
-### Added
-
-- S2-M7 platform validation publisher
-  (`scripts/s2-m7-publish-platform-validation.py`) writes
-  `s2-m7-platform-validation.json` against
-  `configs/schemas/s2-m7-platform-validation.schema.json`.
-- `tests/test_s2_m7_platform_validation.py` aggregates fixture milestone
-  JSON reports without live PCI/NPU re-detection.
-
-### Changed
-
-- `scripts/90-validate.sh` is a compatibility shim: it publishes canonical
-  S2-M7 JSON and still writes `tier1-validation.json` for
-  `require_tier123_pass`. It no longer live-redetects gfx1150 or NPU.
-- `stage2-platform-validate` documents the S2-M7 shim rather than calling
-  the publisher missing.
-- ROADMAP marks S2-M7 **In progress** (not Implemented): schema, publisher,
-  tests, and status-semantics docs exist; the Stage 3 gate still reads
-  compatibility `tier1-validation.json`.
-
-### Fixed
-
-- S2-M7 requires `s1-m5-system-profile.json` before publishing (exit 2 when
-  missing or unreadable).
-- S2-M7 treats fingerprint-mismatched S2-M3/S2-M4 reports as missing and does
-  not overlay their GPU/NPU checks.
-- S2-M1 aggregate status comes from `tier1-firmware-validation.json`, not the
-  BIOS baseline `tier1-firmware.json`.
 
 ## [0.21.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.21.0...v0.21.1) (2026-08-18)
 

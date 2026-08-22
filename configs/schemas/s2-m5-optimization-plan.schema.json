@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai370.local/schemas/s2-m5-optimization-plan-v1.json",
+  "title": "S2-M5 Optimization Plan v1",
+  "description": "Stage 2 safe optimization plan. Records proposed runtime actions from the consumed Stage 1 profile. Does not apply tuning.",
+  "type": "object",
+  "required": [
+    "schema",
+    "stage",
+    "milestone",
+    "artifact",
+    "consumed_profile",
+    "status",
+    "cli_profile",
+    "classified_platform_id",
+    "mode",
+    "persistence",
+    "plan_only",
+    "approved",
+    "cpu",
+    "memory",
+    "storage",
+    "proposed_actions",
+    "compatibility_reports",
+    "warnings",
+    "notes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"$ref": "#/$defs/schemaIdentity"},
+    "stage": {"const": 2},
+    "milestone": {"const": "S2-M5"},
+    "artifact": {"const": "s2-m5-optimization-plan"},
+    "consumed_profile": {"$ref": "#/$defs/consumedProfile"},
+    "status": {"$ref": "#/$defs/gateStatus"},
+    "cli_profile": {"type": "string", "minLength": 1},
+    "classified_platform_id": {"type": ["string", "null"]},
+    "mode": {"type": "string", "minLength": 1},
+    "persistence": {"type": "string", "minLength": 1},
+    "plan_only": {"const": true},
+    "approved": {"const": false},
+    "cpu": {"$ref": "#/$defs/cpuFacts"},
+    "memory": {"$ref": "#/$defs/memoryFacts"},
+    "storage": {
+      "type": "object",
+      "required": ["report"],
+      "additionalProperties": false,
+      "properties": {
+        "report": {"type": "string", "minLength": 1}
+      }
+    },
+    "proposed_actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/proposedAction"}
+    },
+    "compatibility_reports": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "warnings": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "schemaIdentity": {
+      "type": "object",
+      "required": ["name", "version", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "s2-m5-optimization-plan"},
+        "version": {"const": 1},
+        "uri": {"const": "https://ai370.local/schemas/s2-m5-optimization-plan-v1.json"}
+      }
+    },
+    "profileSchemaIdentity": {
+      "type": "object",
+      "required": ["name", "version", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"const": "ai370-system-profile"},
+        "version": {"const": 3},
+        "uri": {"const": "https://ai370.local/schemas/system-profile-v3.json"}
+      }
+    },
+    "fingerprintRef": {
+      "type": "object",
+      "required": ["algorithm", "algorithm_version", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {"const": "sha256"},
+        "algorithm_version": {"const": 1},
+        "value": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "consumedProfile": {
+      "type": "object",
+      "required": ["artifact", "schema", "fingerprint"],
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {"type": ["string", "null"]},
+        "schema": {"$ref": "#/$defs/profileSchemaIdentity"},
+        "fingerprint": {"$ref": "#/$defs/fingerprintRef"}
+      }
+    },
+    "gateStatus": {
+      "enum": ["PASS", "WARN", "FAIL", "UNSUPPORTED", "SKIPPED"]
+    },
+    "cpuFacts": {
+      "type": "object",
+      "required": ["model", "target_power", "governor", "identity_source"],
+      "additionalProperties": false,
+      "properties": {
+        "model": {"type": "string"},
+        "target_power": {"type": "string"},
+        "governor": {"type": "string"},
+        "identity_source": {"enum": ["s1-m5-system-profile", "live"]}
+      }
+    },
+    "memoryFacts": {
+      "type": "object",
+      "required": ["total", "zram0", "identity_source"],
+      "additionalProperties": false,
+      "properties": {
+        "total": {"type": "string"},
+        "zram0": {"type": "string"},
+        "identity_source": {"enum": ["s1-m5-system-profile", "live"]}
+      }
+    },
+    "proposedAction": {
+      "type": "object",
+      "required": ["id", "description", "tool", "mutating"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 1},
+        "tool": {"type": "string", "minLength": 1},
+        "mutating": {"type": "boolean"}
+      }
+    }
+  }
+}

@@ -18,15 +18,21 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 **Blocks:** R1 Tier removal prep
 
-**PR 3a status (orchestrator + `stage2-platform-*`):** landed in `#183` / `0.21.1` with leftover-label follow-up `#184`. `stage1` is read-only profile publication. `stage2-platform-validate` invokes existing GPU/NPU commands plus firmware/kernel wrappers and the `90-validate.sh` S2-M7 shim. `stage2-validate` remains the runtime/NPU cheap gate. BIOS/kernel/tuning JSON splits, `require_tier123_pass` S2-M7 preference, migration-plan step 3, and `TASK_PROPOSALS.md` stay in this issue as PR 3c.
+**PR 3a status (orchestrator + `stage2-platform-*`):** landed in `#183` / `0.21.1` with leftover-label follow-up `#184`. `stage1` is read-only profile publication. `stage2-platform-validate` invokes existing GPU/NPU commands plus firmware/kernel wrappers and the `90-validate.sh` S2-M7 shim. `stage2-validate` remains the runtime/NPU cheap gate.
 
-Verified 2026-08-18 on `main` (`0.21.1`, `#183` + `#184`): `stage1` / `tier1` call `run_stage1_profile` only. `--apply-tuning` on Stage 1 warns toward `stage2-optimize-apply --approve`. `run_stage1_inventory()` is redirected to `stage2-platform-inventory`. `full-stack` / `all` run profile → platform validate → runtime. Legacy `firmware` / `kernel-amd` / `tune` warn toward `stage2-*`. This issue is **not complete**.
+**PR 3b status (Workstream C / S2-M7):** landed in `#197`. Canonical publisher writes `s2-m7-platform-validation.json`; `90-validate.sh` is the compatibility shim for `require_tier123_pass`.
+
+**PR 3c Workstream D status (S2-M5/S2-M6):** landing in `#199`. Canonical plan/apply JSON and in-script `--approve` split exist. Backup/rollback remain Planned; S2-M5/S2-M6 stay **In progress**. BIOS/kernel JSON splits, `require_tier123_pass` S2-M7 preference, migration-plan step 3, and `TASK_PROPOSALS.md` stay in this issue as remaining PR 3c workstreams.
+
+Verified 2026-08-22 on `main` after `#197`: `stage1` / `tier1` call `run_stage1_profile` only. `--apply-tuning` on Stage 1 warns toward `stage2-optimize-apply --approve`. `run_stage1_inventory()` is redirected to `stage2-platform-inventory`. `full-stack` / `all` run profile → platform validate → runtime. Legacy `firmware` / `kernel-amd` / `tune` warn toward `stage2-*`. This issue is **not complete**.
 
 Inventory review: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/175
 Follow-up after GPU publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/179
 NPU publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/180
 PR 3a orchestrator: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/183
 PR 3a follow-up: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/184
+PR 3b S2-M7 publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/197
+PR 3c Workstream D tuning boundary: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/199
 
 ---
 
@@ -52,7 +58,7 @@ PR 3a follow-up: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/184
 
 ## Workstream C: Split `90-validate.sh` (S2-M7)
 
-Canonical S2-M7 publisher. `90-validate.sh` is the compatibility shim.
+Canonical S2-M7 publisher. `90-validate.sh` is the compatibility shim. Landed in `#197`.
 
 - [x] Add `scripts/s2-m7-publish-platform-validation.py`
 - [x] Add `configs/schemas/s2-m7-platform-validation.schema.json`
@@ -62,10 +68,10 @@ Canonical S2-M7 publisher. `90-validate.sh` is the compatibility shim.
 
 ## Workstream D: Tuning boundary (S2-M5/S2-M6)
 
-Command wrappers exist (Workstream B). Canonical JSON and an in-script plan/apply split do not.
+Command wrappers exist (Workstream B). Canonical JSON and an in-script plan/apply split landed. Backup/rollback remain Planned; keep S2-M5/S2-M6 **In progress**.
 
-- [ ] Split plan vs apply in `40-platform-tuning.sh`; apply requires `--approve`
-- [ ] Canonical outputs: `s2-m5-optimization-plan.json`, `s2-m6-optimization-application.json`
+- [x] Split plan vs apply in `40-platform-tuning.sh`; apply requires `--approve`
+- [x] Canonical outputs: `s2-m5-optimization-plan.json`, `s2-m6-optimization-application.json`
 - [x] Keep compat `tier1-platform-tuning.json` until R1
 - [x] Remove tuning from all Stage 1 / `full-stack` Stage 1 paths
 
@@ -87,8 +93,8 @@ Wrappers consume `s1-m5-system-profile.json` (`test_s2_m1_firmware.py`). Canonic
 ## Tests
 
 - [x] `tests/test_s2_m7_platform_validation.py` — aggregate from fixture milestone JSONs
-- [ ] `tests/test_s2_m5_optimization_plan.py` — plan-only, no mutation
-- [ ] `tests/test_s2_m6_optimization_apply.py` — apply requires `--approve`
+- [x] `tests/test_s2_m5_optimization_plan.py` — plan-only, no mutation
+- [x] `tests/test_s2_m6_optimization_apply.py` — apply requires `--approve`
 - [x] Update `tests/smoke_tier1.sh` — `stage1` does not require tuning artifacts
 - [x] Add `tests/smoke_stage2_platform.sh`
 - [x] Update `tests/test_repository_instructions.py` — Stage 1 read-only
@@ -97,7 +103,7 @@ Wrappers consume `s1-m5-system-profile.json` (`test_s2_m1_firmware.py`). Canonic
 
 - [x] Rewrite README Stage 1 section (probe + profile only)
 - [x] Add Stage 2 platform command table to README
-- [x] Correct README Stage 2 header that claims S2-M1–S2-M7 scope is implemented; match ROADMAP (S2-M3/S2-M4 In progress, S2-M1/M2/M5–M7 Planned)
+- [x] Correct README Stage 2 header that claims S2-M1–S2-M7 scope is implemented; match ROADMAP (S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress; S2-M1/M2 remain Planned)
 - [x] Correct README Lemonade/Digest owners (S3-M5 / S3-M4 diagnostics, not S2-M6/S2-M7)
 - [ ] Update ROADMAP milestone status for S2-M1/M2/M5/M7 only when exit evidence exists
 - [ ] Mark migration plan step 3 done
@@ -127,5 +133,6 @@ Wrappers consume `s1-m5-system-profile.json` (`test_s2_m1_firmware.py`). Canonic
 ## Optional split
 
 - **PR 3a** — Orchestrator + `stage2-platform-*` commands. Landed in `#183` / `0.21.1` plus follow-up `#184`.
-- **PR 3b** — Split `90-validate.sh` → `s2-m7-publish-platform-validation.py` (this change)
-- **PR 3c** — Remaining docs: mark migration-plan step 3 done when 3c items land; deprecate `TASK_PROPOSALS.md` Tier language. README Stage 1/Stage 2 status and smokes already landed with PR 3a. `require_tier123_pass` still reads `tier1-validation.json`.
+- **PR 3b** — Split `90-validate.sh` → `s2-m7-publish-platform-validation.py`. Landed in `#197`.
+- **PR 3c Workstream D** — S2-M5/S2-M6 canonical JSON and in-script `--approve` split. Landing in `#199`. Backup/rollback stay Planned.
+- **PR 3c remaining** — S2-M1/M2 canonical JSON (Workstream E); `require_tier123_pass` S2-M7 preference and `10-detect-hardware.sh` callers (Workstream F); mark migration-plan step 3 done; deprecate `TASK_PROPOSALS.md` Tier language.
