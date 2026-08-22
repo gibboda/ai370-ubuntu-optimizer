@@ -94,16 +94,38 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn(
+            "Grok Build is the preferred secondary agent",
+            self.agent_instructions,
+        )
+        self.assertIn(
             "GitHub remains the source of truth and control plane",
             self.agent_instructions,
         )
-        self.assertIn("secondary/specialist agents", self.agent_instructions)
+        self.assertIn(
+            "specialist/escalation resources", self.agent_instructions
+        )
+        self.assertIn(
+            "must not be invoked automatically for",
+            self.agent_instructions,
+        )
         self.assertIn(
             "Do not treat this repository as Cursor-exclusive",
             self.agent_instructions,
         )
         self.assertIn(
-            "Do not invoke multiple AI agents for the same routine task",
+            "Keep routine work with Cursor whenever practical",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "Do not invoke multiple paid or cloud agents for the same routine task",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "Minimize duplicate paid-agent analysis",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "reuse prior agent findings",
             self.agent_instructions,
         )
         self.assertIn("independent-developer budget", self.agent_instructions)
@@ -114,7 +136,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("AI reviews are advisory", self.agent_instructions)
         self.assertIn("not required merge gates", self.agent_instructions)
         self.assertIn(
-            "Codex is a secondary/specialist agent", self.agent_instructions
+            "Codex is a specialist/escalation agent", self.agent_instructions
         )
         self.assertIn(
             "These notes apply when the agent is running in Cursor Cloud",
