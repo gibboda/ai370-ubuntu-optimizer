@@ -6,7 +6,7 @@ This document defines the architecture and naming system that all future
 renames and implementations must follow. It intentionally describes the target
 before code, commands, reports, schemas, or tests are renamed.
 
-**Last reviewed:** 2026-08-18
+**Last reviewed:** 2026-08-22
 
 The project will retain five stages, but their boundaries are replaced by the
 canonical boundaries below. Existing behavior outside its target boundary is
@@ -60,6 +60,24 @@ vocabularies:
 A PCI device or package inventory satisfies at most early ladder steps. Later
 steps remain `unknown` until the owning Stage 2 script performs the visibility
 check. `APPLICATION_READY` is never inferred from package presence alone.
+
+### Platform validation aggregate semantics
+
+S2-M7 (`s2-m7-platform-validation.json`) is the Stage 2 platform gate
+aggregate. It consumes the Stage 1 profile and milestone reports; it does not
+re-probe PCI, sysfs, or modules.
+
+| Input | Owner | How S2-M7 uses it |
+| --- | --- | --- |
+| GPU architecture, NPU identity | S1-M5 profile, overlaid by S2-M3 / S2-M4 reports when present | Facts for reference-platform acceptance |
+| Vulkan / amdgpu visibility | S2-M3 | Vulkan warn; not a generic FAIL |
+| BIOS acceptable | S2-M1 compat `tier1-firmware.json` until canonical S2-M1 JSON exists | Warn when `false` |
+| gfx1150 / XDNA2 missing | S2-M7 policy | Recorded in `warnings` without demoting `PASS` unless `--strict` |
+
+Child visibility `UNSUPPORTED` or `WARN` does not fail S2-M7. Child `FAIL`
+does. `--strict` / `AI370_STAGE1_STRICT` is the AI370 reference-platform
+opt-in, not generic-host policy. Compatibility `tier1-validation.json` keeps
+the `status` field `require_tier123_pass` reads until that gate prefers S2-M7.
 
 ## Canonical naming and ownership system
 
@@ -147,7 +165,7 @@ performance benchmark, or claim that a candidate capability is validated.
 | S1-M4 | Capability candidates | `s1-m4-derive-capabilities.py`, `s1-m4-capability-candidates.json` | Rules tests proving candidates are not validation claims | Implemented |
 | S1-M5 | Profile validation and publication | `stage1-profile`, `s1-m5-publish-profile.py`, `s1-m5-system-profile.schema.json`, `s1-m5-system-profile.json`, `s1-m5-inventory-summary.md` | Schema pass/fail tests, interrupted-write test, command/output documentation | Implemented |
 
-Canonical S1-M5 also writes a compatibility copy at `reports/latest/system-profile.json`. `stage1` / `tier1` now invoke only the read-only S1-M1 through S1-M5 profile pipeline. BIOS, kernel, GPU/NPU visibility, and tuning run from `stage2-platform-*` and `stage2-optimize-*` wrappers; canonical S2-M1/M2/M5–M7 outputs remain Planned.
+Canonical S1-M5 also writes a compatibility copy at `reports/latest/system-profile.json`. `stage1` / `tier1` now invoke only the read-only S1-M1 through S1-M5 profile pipeline. BIOS, kernel, GPU/NPU visibility, and tuning run from `stage2-platform-*` and `stage2-optimize-*` wrappers; canonical S2-M1/M2/M5–M6 outputs remain Planned. S2-M7 is In progress: the publisher writes `s2-m7-platform-validation.json` and a `tier1-validation.json` compatibility shim.
 
 ### Stage 2 — Platform Enablement & Validation
 
@@ -168,7 +186,7 @@ execution.
 | S2-M4 | NPU visibility and execution validation | `stage2-npu-validate`, `s2-m4-validate-npu-stack.sh`, `s2-m4-npu-runtime-validation.json`, `s2-m4-npu-runtime-validation.schema.json` | Tests distinguishing visibility, provider selection, and executed inference | In progress |
 | S2-M5 | Safe optimization plan | `stage2-optimize-plan`, `s2-m5-plan-optimization.sh`, `s2-m5-optimization-plan.json`, `s2-m5-optimization-plan.md` | Idempotence and no-mutation tests plus plan docs | Planned |
 | S2-M6 | Approved optimization application | `stage2-optimize-apply --approve`, `s2-m6-apply-optimization.sh`, `s2-m6-optimization-application.json` | Approval, backup, rollback, idempotence, and failure-path tests | Planned |
-| S2-M7 | Platform validation aggregate | `stage2-platform-validate`, `s2-m7-publish-platform-validation.py`, `s2-m7-platform-validation.schema.json`, `s2-m7-platform-validation.json` | Schema and gate tests plus status-semantics docs | Planned |
+| S2-M7 | Platform validation aggregate | `stage2-platform-validate`, `s2-m7-publish-platform-validation.py`, `s2-m7-platform-validation.schema.json`, `s2-m7-platform-validation.json` | Schema and gate tests plus status-semantics docs | In progress |
 
 ### Stage 3 — AI Runtime Foundation
 
@@ -237,7 +255,7 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 | S2-M4 | `scripts/s2-m4-validate-npu-stack.sh`, `scripts/s2-m4-publish-npu-visibility.py`, visibility portions of `scripts/210-check-ryzen-ai-software.sh` and `scripts/220-check-vitis-ai-ep.sh`, inventory-only `scripts/205-install-xrt-ryzen-ai.sh`, `scripts/lib/capability_ladder.py`, `configs/schemas/s2-m4-npu-runtime-validation.schema.json` | Visibility-only publisher landed in `#180` / `0.21.0`; keep S2-M4 In progress because mixed `stage2-npu` / `--bench` still runs 230 and ROADMAP exit evidence still wants provider-vs-inference tests; move runtime install and performance measurement to Stage 3 |
 | S2-M5–S2-M6 | `scripts/40-platform-tuning.sh` and wrappers `40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | Separate immutable plan from explicitly approved application |
 | S2-M6 | `scripts/65-amd-acceleration-install.sh` | Treat installation as an explicitly approved platform change; retain no Stage 1 caller |
-| S2-M7 | Platform portions of `scripts/90-validate.sh` | Replace Tier aggregation with a schema-backed Stage 2 report |
+| S2-M7 | `scripts/s2-m7-publish-platform-validation.py`, `configs/schemas/s2-m7-platform-validation.schema.json`, compatibility shim `scripts/90-validate.sh` | Publisher landed; keep S2-M7 In progress until `require_tier123_pass` prefers the canonical report and S2-M1/M2/M5 canonical JSON exists |
 | S3-M1 | `scripts/150-validate-offline-model-storage.sh`, `scripts/155-stage-model-layout.sh`, `configs/models/*`, `scripts/lib/offline-paths.sh` | Canonicalize model storage under Stage 3 |
 | S3-M2 | `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh` | Rename after canonical validation exists |
 | S3-M3 | `scripts/100-install-pytorch-rocm.sh` | Rename after canonical validation exists |
@@ -251,7 +269,7 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 | S4-M6 | `scripts/130-install-open-webui.sh` | Move from runtime orchestration to application ownership |
 | S5 milestones | No complete canonical implementation | Do not claim implemented from legacy plans |
 | S5-M6 | `scripts/validate-commit-subject.sh`, `scripts/validate-pr-title.sh` | Release-policy validation tooling |
-| S1–S5 tests | `tests/test_s1_m1_probe.py`, `tests/test_s1_m2_normalize.py`, `tests/test_s1_m3_classify.py`, `tests/test_s1_m4_capabilities.py`, `tests/test_s1_m5_publish.py`, `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m1_firmware.py`, `tests/test_s2_optimize_profile.py`, `tests/test_system_profile.py`, `tests/smoke_tier1.sh`, `tests/smoke_stage2_platform.sh`, `tests/smoke_tier2.sh` | Owner-specific Stage 1 tests exist; S2-M3 library/GPU publisher and S2-M4 NPU publisher tests exist; `test_s2_m1_firmware.py` covers consumed-profile BIOS policy; `test_s2_optimize_profile.py` covers optimize-plan profile consumption; `smoke_stage2_platform.sh` is fixture-based platform-wrapper coverage; remaining smokes are compatibility coverage until replaced |
+| S1–S5 tests | `tests/test_s1_m1_probe.py`, `tests/test_s1_m2_normalize.py`, `tests/test_s1_m3_classify.py`, `tests/test_s1_m4_capabilities.py`, `tests/test_s1_m5_publish.py`, `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m7_platform_validation.py`, `tests/test_s2_m1_firmware.py`, `tests/test_s2_optimize_profile.py`, `tests/test_system_profile.py`, `tests/smoke_tier1.sh`, `tests/smoke_stage2_platform.sh`, `tests/smoke_tier2.sh` | Owner-specific Stage 1 tests exist; S2-M3 library/GPU publisher, S2-M4 NPU publisher, and S2-M7 aggregate publisher tests exist; `test_s2_m1_firmware.py` covers consumed-profile BIOS policy; `test_s2_optimize_profile.py` covers optimize-plan profile consumption; `smoke_stage2_platform.sh` is fixture-based platform-wrapper coverage; remaining smokes are compatibility coverage until replaced |
 | Compatibility archive | `scripts/legacy/*` | No architectural ownership; frozen compatibility/archive only, then remove at the target below |
 | Repository orchestrator | `ai370-optimize.sh` | Routes commands; each branch is owned by the milestone it invokes, not by the file as a whole |
 

@@ -8,7 +8,7 @@ Lightweight smoke tests for the ai370-ubuntu-optimizer tier commands and artifac
 bash tests/smoke_tier1.sh
 bash tests/smoke_stage2_platform.sh
 bash tests/smoke_tier2.sh
-python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m1_firmware tests.test_s2_optimize_profile tests.test_repository_instructions
+python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m1_firmware tests.test_s2_optimize_profile tests.test_repository_instructions
 ```
 
 Or from repo root after making executable:
@@ -30,6 +30,7 @@ Or from repo root after making executable:
 - Asserts `s2-m3-gpu-runtime-visibility.json` from the S2-M3 GPU publisher
 - Runs `40-platform-tuning` plan-only and asserts platform-tuning artifacts
 - Direct `90-validate.sh` full-scope contract (no AI smoke required by default)
+- Asserts `s2-m7-platform-validation.json` after the S2-M7 publisher shim
 - Strict mode (`AI370_STAGE1_STRICT=true`) elevates missing gfx1150/NPU to FAIL
 - Presence + structure of `reports/latest/tier1-*.json` gate artifacts
 - Apply path is `stage2-optimize-apply --approve --dry-run`
@@ -41,6 +42,8 @@ Or from repo root after making executable:
 - Stage 2 visibility tests: `test_capability_ladder.py`,
   `test_s2_visibility_schemas.py`, `test_s2_m3_gpu_visibility.py`,
   `test_s2_m4_npu_visibility.py`
+- Stage 2 platform aggregate tests: `test_s2_m7_platform_validation.py`
+  (fixture milestone JSONs; no live PCI/NPU re-detection)
 - Stage 2 firmware policy tests: `test_s2_m1_firmware.py` (classified
   `platform_id` and consumed fingerprint; no live DMI)
 - Stage 2 optimize profile tests: `test_s2_optimize_profile.py` (plan-only

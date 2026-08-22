@@ -332,10 +332,12 @@ class MigrationPlanTests(unittest.TestCase):
             "scripts/s2-m3-publish-gpu-visibility.py",
             "scripts/s2-m4-validate-npu-stack.sh",
             "scripts/s2-m4-publish-npu-visibility.py",
+            "scripts/s2-m7-publish-platform-validation.py",
             "tests/test_capability_ladder.py",
             "tests/test_s2_visibility_schemas.py",
             "tests/test_s2_m3_gpu_visibility.py",
             "tests/test_s2_m4_npu_visibility.py",
+            "tests/test_s2_m7_platform_validation.py",
             "tests/test_s2_m1_firmware.py",
             "tests/test_s2_optimize_profile.py",
             "tests/smoke_stage2_platform.sh",
@@ -346,6 +348,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("tests.test_s2_visibility_schemas", self.plan)
         self.assertIn("tests.test_s2_m3_gpu_visibility", self.plan)
         self.assertIn("tests.test_s2_m4_npu_visibility", self.plan)
+        self.assertIn("tests.test_s2_m7_platform_validation", self.plan)
         self.assertIn("tests.test_s2_m1_firmware", self.plan)
         self.assertIn("tests.test_s2_optimize_profile", self.plan)
         self.assertIn("issues/168", self.plan)
@@ -356,6 +359,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("#176", self.plan)
         self.assertIn("#180", self.plan)
         self.assertIn("tests/test_s2_m4_npu_visibility.py", self.roadmap)
+        self.assertIn("tests/test_s2_m7_platform_validation.py", self.roadmap)
         self.assertNotIn("S2-M4 publisher tests remain issue #168", self.roadmap)
         self.assertNotIn(
             "JSON still hardcodes `target_gpu_arch=gfx1150`",
@@ -413,21 +417,21 @@ class MigrationPlanTests(unittest.TestCase):
             "- [x] PR title passes `bash scripts/validate-pr-title.sh`",
             issue169,
         )
-        self.assertIn("- [ ] Add `scripts/s2-m7-publish-platform-validation.py`", issue169)
+        self.assertIn("- [x] Add `scripts/s2-m7-publish-platform-validation.py`", issue169)
         self.assertIn(
-            "- [ ] Add `configs/schemas/s2-m7-platform-validation.schema.json`",
+            "- [x] Add `configs/schemas/s2-m7-platform-validation.schema.json`",
             issue169,
         )
         self.assertIn(
-            "- [ ] Publish `reports/latest/s2-m7-platform-validation.json`",
+            "- [x] Publish `reports/latest/s2-m7-platform-validation.json`",
             issue169,
         )
         self.assertIn(
-            "- [ ] Slim `90-validate.sh` to compat shim writing `tier1-validation.json`",
+            "- [x] Slim `90-validate.sh` to compat shim writing `tier1-validation.json`",
             issue169,
         )
         self.assertIn(
-            "- [ ] Remove inline gfx1150/NPU re-detection from `90-validate.sh`",
+            "- [x] Remove inline gfx1150/NPU re-detection from `90-validate.sh`",
             issue169,
         )
         self.assertIn(
@@ -456,7 +460,7 @@ class MigrationPlanTests(unittest.TestCase):
             issue169,
         )
         self.assertIn(
-            "- [ ] `tests/test_s2_m7_platform_validation.py` — aggregate from fixture milestone JSONs",
+            "- [x] `tests/test_s2_m7_platform_validation.py` — aggregate from fixture milestone JSONs",
             issue169,
         )
         self.assertIn(
@@ -470,11 +474,11 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("- [ ] Mark migration plan step 3 done", issue169)
         self.assertIn("- [ ] Deprecate `TASK_PROPOSALS.md` Tier language", issue169)
         self.assertIn(
-            "- [ ] `s2-m7-platform-validation.json` validates against schema",
+            "- [x] `s2-m7-platform-validation.json` validates against schema",
             issue169,
         )
         self.assertIn(
-            "- [ ] `tier1-validation.json` compat shim preserves `require_tier123_pass`",
+            "- [x] `tier1-validation.json` compat shim preserves `require_tier123_pass`",
             issue169,
         )
         self.assertNotIn(
@@ -539,7 +543,7 @@ class MigrationPlanTests(unittest.TestCase):
         )
         self.assertNotIn("scope is **implemented** (S2-M1–S2-M7)", readme)
         self.assertIn("stage2-platform-validate", readme)
-        self.assertIn("S2-M3/S2-M4 In progress", readme)
+        self.assertIn("S2-M3/S2-M4/S2-M7 In progress", readme)
         self.assertIn("S3-M5", readme)
         self.assertIn("does not label Planned Stage 2 milestones as implemented", issue169)
         self.assertNotIn(

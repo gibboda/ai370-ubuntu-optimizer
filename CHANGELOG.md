@@ -6,42 +6,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- S2-M7 platform validation publisher
+  (`scripts/s2-m7-publish-platform-validation.py`) writes
+  `s2-m7-platform-validation.json` against
+  `configs/schemas/s2-m7-platform-validation.schema.json`.
+- `tests/test_s2_m7_platform_validation.py` aggregates fixture milestone
+  JSON reports without live PCI/NPU re-detection.
+
+### Changed
+
+- `scripts/90-validate.sh` is a compatibility shim: it publishes canonical
+  S2-M7 JSON and still writes `tier1-validation.json` for
+  `require_tier123_pass`. It no longer live-redetects gfx1150 or NPU.
+- `stage2-platform-validate` documents the S2-M7 shim rather than calling
+  the publisher missing.
+- ROADMAP marks S2-M7 **In progress** (not Implemented): schema, publisher,
+  tests, and status-semantics docs exist; the Stage 3 gate still reads
+  compatibility `tier1-validation.json`.
+
 ## [0.21.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.21.0...v0.21.1) (2026-08-18)
 
 
 ### Bug Fixes
 
 * **stage2:** Correct leftover Stage 1 labels after read-only split ([#184](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/184)) ([4e74194](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/4e741946fa7ad33916b428ad336a8c4a929b015a))
-
-## [Unreleased]
-
-### Changed
-
-- `stage1` / `tier1` are read-only S1-M1 through S1-M5 profile publication.
-- Platform firmware, kernel, GPU/NPU visibility, and the `90-validate.sh`
-  compatibility aggregate run from `stage2-platform-validate`.
-- Tuning apply requires `stage2-optimize-apply --approve`.
-- `stage2-validate` remains the runtime/NPU cheap gate; it is not the
-  platform aggregate.
-- `stage2-firmware-validate` consumes `s1-m5-system-profile.json`. BIOS
-  policy uses classified `platform_id`, not CLI `--profile` alone, and
-  records the consumed schema version plus hardware fingerprint.
-- `tests/smoke_stage2_platform.sh` is fixture-based: it seeds a versioned
-  Stage 1 profile and does not probe host `/sys` or run live
-  `stage2-platform-validate`.
-- Legacy README mappings, ROADMAP S2-M7 command name, optional-pack
-  milestone IDs, and `90-validate.sh` next-steps no longer describe
-  firmware/kernel/tuning as Stage 1.
-- `stage2-optimize-plan` / `stage2-optimize-apply` consume
-  `s1-m5-system-profile.json`: CPU/memory identity and `consumed_profile`
-  come from classified hardware, not CLI `--profile` alone.
-
-### Added
-
-- Stage 2 platform commands: `stage2-firmware-validate`,
-  `stage2-kernel-validate`, `stage2-optimize-plan`,
-  `stage2-optimize-apply`, `stage2-platform-validate`,
-  `stage2-platform-inventory`.
 
 ## [0.21.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.20.0...v0.21.0) (2026-08-18)
 
