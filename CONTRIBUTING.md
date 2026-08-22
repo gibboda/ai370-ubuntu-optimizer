@@ -57,15 +57,23 @@ Scope narrows the area of change:
 | `workflows` | `workflows/` |
 | `vscode` | VS Code workspace settings |
 | `release` | Release tooling and CI |
-| `tier` | Tier 1 hardware/firmware detection and validation scripts |
-| `tier1` | Tier 1 hardware/firmware detection and validation scripts |
-| `tier2` | Tier 2 AI runtime and LLM installation/validation scripts |
+| `deps` | Dependency updates (Dependabot and manual bumps) |
+| `stage` | Cross-stage architecture and policy |
+| `stage1` | Stage 1 probe and system-profile publication |
+| `stage2` | Stage 2 platform visibility, tuning, and validation |
+| `stage3` | Stage 3 runtime foundation |
+| `stage4` | Stage 4 application workflows |
+| `stage5` | Stage 5 lifecycle and development tooling |
+| `tier` | Deprecated compatibility scope for Stage 1 hardware/firmware scripts |
+| `tier1` | Deprecated compatibility scope for Stage 1 hardware/firmware scripts |
+| `tier2` | Deprecated compatibility scope for Stage 2/3 AI runtime scripts |
 
 ### Examples
 
 ```text
 feat(comfyui): Add SDXL LoRA workflow template
 fix(rocm): Correct iGPU device path detection
+chore(deps): Bump onnx in configs/ai-runtime
 chore: Bump stefanzweifel/git-auto-commit-action to v5.1
 docs: Clarify safe-mode defaults in README
 ci(release): Pin checkout action to v4
