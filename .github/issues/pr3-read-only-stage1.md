@@ -24,7 +24,7 @@ Implement migration plan PR 3: canonical Stage 1 = **probe + profile only**. BIO
 
 **PR 3c Workstream D status (S2-M5/S2-M6):** landed in `#199`. Canonical plan/apply JSON and in-script `--approve` split exist. Backup/rollback remain Planned; S2-M5/S2-M6 stay **In progress**.
 
-**PR 3c Workstream E status (S2-M1/S2-M2):** canonical `s2-m1-firmware-validation.json` and `s2-m2-kernel-driver-validation.json` exist. BIOS facts vs policy are split. Remaining S2-M1/S2-M2 work is remediation docs and the kernel/driver matrix; keep **In progress**. `require_tier123_pass` S2-M7 preference, migration-plan step 3, and `TASK_PROPOSALS.md` stay in this issue as remaining PR 3c Workstream F.
+**PR 3c Workstream E status (S2-M1/S2-M2):** landing in `#201`. Canonical `s2-m1-firmware-validation.json` and `s2-m2-kernel-driver-validation.json` exist. BIOS facts vs policy are split. Remaining S2-M1/S2-M2 work is remediation docs and the kernel/driver matrix; keep **In progress**. `require_tier123_pass` S2-M7 preference, migration-plan step 3, and `TASK_PROPOSALS.md` stay in this issue as remaining PR 3c Workstream F.
 
 Verified 2026-08-22 on `main` after `#197`: `stage1` / `tier1` call `run_stage1_profile` only. `--apply-tuning` on Stage 1 warns toward `stage2-optimize-apply --approve`. `run_stage1_inventory()` is redirected to `stage2-platform-inventory`. `full-stack` / `all` run profile → platform validate → runtime. Legacy `firmware` / `kernel-amd` / `tune` warn toward `stage2-*`. This issue is **not complete**.
 
@@ -35,6 +35,7 @@ PR 3a orchestrator: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/183
 PR 3a follow-up: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/184
 PR 3b S2-M7 publisher: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/197
 PR 3c Workstream D tuning boundary: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/199
+PR 3c Workstream E firmware/kernel JSON: https://github.com/gibboda/ai370-ubuntu-optimizer/pull/201
 
 ---
 
@@ -140,5 +141,5 @@ matrix exist.
 - **PR 3a** — Orchestrator + `stage2-platform-*` commands. Landed in `#183` / `0.21.1` plus follow-up `#184`.
 - **PR 3b** — Split `90-validate.sh` → `s2-m7-publish-platform-validation.py`. Landed in `#197`.
 - **PR 3c Workstream D** — S2-M5/S2-M6 canonical JSON and in-script `--approve` split. Landed in `#199`. Backup/rollback stay Planned.
-- **PR 3c Workstream E** — S2-M1/S2-M2 canonical JSON and BIOS facts vs policy split.
+- **PR 3c Workstream E** — S2-M1/S2-M2 canonical JSON and BIOS facts vs policy split. Landing in `#201`.
 - **PR 3c remaining** — `require_tier123_pass` S2-M7 preference and `10-detect-hardware.sh` callers (Workstream F); mark migration-plan step 3 done; deprecate `TASK_PROPOSALS.md` Tier language.

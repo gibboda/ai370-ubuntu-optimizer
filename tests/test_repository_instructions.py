@@ -409,6 +409,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("#184", issue169)
         self.assertIn("#197", issue169)
         self.assertIn("#199", issue169)
+        self.assertIn("#201", issue169)
         self.assertIn("This issue is **not complete**", issue169)
         self.assertIn(
             "- [x] Make `stage1` / `tier1` call `run_stage1_profile` only",
