@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Stage 2: combined CPU / memory / storage runtime tuning plans (Package C merge of 40/50/60).
+# Stage 2: combined CPU / memory / storage runtime tuning (Package C merge of 40/50/60).
+# S2-M5 plan is the default. S2-M6 apply requires --approve.
 # Consumes s1-m5-system-profile.json for CPU/memory identity and consumed_profile.
 # Governor/zram/swap remain live runtime observations.
 # Opt-in runtime apply: ./ai370-optimize.sh stage2-optimize-apply --approve
-# (AI370_APPLY_TUNING=true is the script-level switch used by that command)
 
 set -euo pipefail
 
@@ -15,13 +15,54 @@ source "$PROJECT_ROOT/scripts/lib/common.sh"
 # shellcheck source=lib/hardware-detect.sh
 source "$PROJECT_ROOT/scripts/lib/hardware-detect.sh"
 
-ai370_parse_standard_args "$@"
+# Do not pass extra action/--approve tokens as OFFLINE (4th standard arg).
+ai370_parse_standard_args "${1:-ai370}" "${2:-safe}" "${3:-runtime}"
 ai370_init_latest_dir
 ai370_require_runtime_persistence "platform tuning"
 
+parse_action_and_approve() {
+  ACTION="plan"
+  APPROVED="false"
+  local arg
+  local rest=()
+  if [[ $# -ge 4 ]]; then
+    rest=("${@:4}")
+  fi
+  for arg in "${rest[@]}"; do
+    case "$arg" in
+      plan|--plan) ACTION="plan" ;;
+      apply|--apply) ACTION="apply" ;;
+      --approve) APPROVED="true" ;;
+      true|false|"") ;;
+      *)
+        echo "[WARN] Ignoring extra argument: $arg"
+        ;;
+    esac
+  done
+  case "${AI370_OPTIMIZE_ACTION:-}" in
+    apply) ACTION="apply" ;;
+    plan) ACTION="plan" ;;
+  esac
+  case "${AI370_APPROVE:-}" in
+    true|1|yes|on) APPROVED="true" ;;
+  esac
+}
+
+normalize_dry_run() {
+  local dry="${DRY_RUN:-${AI370_DRY_RUN:-false}}"
+  case "$dry" in
+    true|1|yes|on) DRY_RUN="true" ;;
+    *) DRY_RUN="false" ;;
+  esac
+}
+
 main() {
+  parse_action_and_approve "$@"
+  normalize_dry_run
+
   echo "[INFO] Stage 2 / 40-platform-tuning.sh (CPU + memory + storage)"
   echo "[INFO] Selected profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
+  echo "[INFO] Action: $ACTION  Approve: $APPROVED  Dry-run: $DRY_RUN"
 
   local PROFILE_FILE="$LATEST_DIR/s1-m5-system-profile.json"
   if [[ ! -f "$PROFILE_FILE" ]]; then
@@ -31,7 +72,13 @@ main() {
     exit 2
   fi
 
-  local cpu_model governor governors target_power mem_total zram_active swap_show storage nvme
+  if [[ "$ACTION" == "apply" && "$APPROVED" != "true" ]]; then
+    echo "[ERROR] Apply requires --approve. Plan first with ./ai370-optimize.sh stage2-optimize-plan."
+    echo "[ERROR] AI370_APPLY_TUNING is not sufficient; pass --approve to mutate runtime settings."
+    exit 2
+  fi
+
+  local cpu_model governor governors target_power mem_total zram_active swap_show nvme
   local platform_id cpu_source mem_source
   governor="$(detect_cpu_current_governor)"
   governors="$(detect_cpu_governors)"
@@ -78,14 +125,10 @@ PY
   # another "inactive" via || echo (that produced "inactive\ninactive").
   zram_active="$(systemctl is-active systemd-zram-setup@zram0.service 2>/dev/null || true)"
   zram_active="${zram_active:-inactive}"
-  # Collapse accidental multi-line noise to a single token for reports/JSON.
   zram_active="${zram_active%%$'\n'*}"
   swap_show="$(swapon --show --noheadings 2>/dev/null || true)"
-
-  storage="$(detect_storage_text)"
   nvme="$(detect_nvme_text)"
 
-  # --- Combined platform report ---
   {
     echo "# Tier 1 Platform Tuning Plan"
     echo
@@ -122,11 +165,10 @@ PY
     echo
     echo "Run 'sudo nvme list' and 'sudo smartctl -a /dev/nvme0n1' (or equivalent) for detailed health."
     echo
-    echo "Review and run the generated commands in:"
+    echo "Review and run the generated commands only after --approve:"
     echo "  reports/latest/tier1-cpu-runtime-commands.sh"
   } > "$LATEST_DIR/tier1-platform-tuning.md"
 
-  # Compatibility copies for existing consumers / 90-validate soft checks
   cp "$LATEST_DIR/tier1-platform-tuning.md" "$LATEST_DIR/tier1-cpu-plan.md" 2>/dev/null || true
   {
     echo "# Tier 1 Memory Report"
@@ -159,7 +201,7 @@ PY
   cat > "$LATEST_DIR/tier1-cpu-runtime-commands.sh" <<CMDS
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
-# Generated Tier 1 CPU runtime tuning commands. Review before execution.
+# Generated S2-M5 CPU runtime tuning commands. Review before --approve execution.
 set -euo pipefail
 
 echo "[TUNE] Setting power profile (runtime)..."
@@ -176,114 +218,69 @@ fi
 CMDS
   chmod +x "$LATEST_DIR/tier1-cpu-runtime-commands.sh"
 
-  PROFILE="$PROFILE" MODE="$MODE" PERSISTENCE="$PERSISTENCE" \
-  TARGET_POWER="$target_power" CPU_MODEL="$cpu_model" GOVERNOR="${governor:-}" \
-  MEM_TOTAL="$mem_total" ZRAM_ACTIVE="$zram_active" \
-  CPU_SOURCE="$cpu_source" MEM_SOURCE="$mem_source" \
-  PROJECT_ROOT="$PROJECT_ROOT" PROFILE_FILE="$PROFILE_FILE" \
-  python3 - <<'PY' > "$LATEST_DIR/tier1-platform-tuning.json"
-import json
-import os
-import sys
-from datetime import UTC, datetime
-from pathlib import Path
-
-sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
-import firmware_policy
-
-profile = firmware_policy.load_system_profile(Path(os.environ["PROFILE_FILE"]))
-print(json.dumps({
-  "tier": 1,
-  "phase": "platform-tuning",
-  "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-  "profile": os.environ.get("PROFILE", "ai370"),
-  "classified_platform_id": firmware_policy.classified_platform_id(profile),
-  "mode": os.environ.get("MODE", "safe"),
-  "persistence": os.environ.get("PERSISTENCE", "runtime"),
-  "cpu": {
-    "model": os.environ.get("CPU_MODEL", ""),
-    "target_power": os.environ.get("TARGET_POWER", "balanced"),
-    "governor": os.environ.get("GOVERNOR", ""),
-    "identity_source": os.environ.get("CPU_SOURCE", "live"),
-  },
-  "memory": {
-    "total": os.environ.get("MEM_TOTAL", ""),
-    "zram0": os.environ.get("ZRAM_ACTIVE", ""),
-    "identity_source": os.environ.get("MEM_SOURCE", "live"),
-  },
-  "storage": {"report": "reports/latest/tier1-storage.md"},
-  "compatibility_reports": [
-    "tier1-cpu-plan.md",
-    "tier1-memory.md",
-    "tier1-storage.md",
-    "tier1-cpu-runtime-commands.sh",
-  ],
-  "consumed_profile": firmware_policy.consumed_profile_block(profile),
-}, indent=2))
-PY
-
-  echo "[INFO] Wrote tier1-platform-tuning.* (+ compatibility cpu/memory/storage reports)"
-
-  # Package E: optional runtime apply (power profile / cpupower info only; still non-persistent).
-  # Honor DRY_RUN / AI370_DRY_RUN from orchestrator --dry-run.
-  local apply="${AI370_APPLY_TUNING:-false}"
-  local dry="${DRY_RUN:-${AI370_DRY_RUN:-false}}"
-  case "$dry" in
-    true|1|yes|on) dry="true" ;;
-    *) dry="false" ;;
-  esac
-  case "$apply" in
-    true|1|yes|on)
-      if [[ "$dry" == "true" ]]; then
-        echo "[INFO] AI370_APPLY_TUNING set but dry-run active; not applying runtime tuning."
-        python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY' || true
+  local facts_json
+  facts_json="$(mktemp "${TMPDIR:-/tmp}/s2-m5-facts.XXXXXX")"
+  python3 - "$facts_json" "$cpu_model" "$target_power" "${governor:-}" "$cpu_source" \
+    "$mem_total" "$zram_active" "$mem_source" <<'PY'
 import json, sys
 path = sys.argv[1]
-try:
-    data = json.load(open(path))
-except Exception:
-    raise SystemExit(0)
-data["runtime_apply"] = {
-    "requested": True,
-    "applied": False,
-    "dry_run": True,
-    "commands": "reports/latest/tier1-cpu-runtime-commands.sh",
-}
-with open(path, "w") as f:
-    json.dump(data, f, indent=2)
-    f.write("\n")
+json.dump({
+    "cpu_model": sys.argv[2],
+    "target_power": sys.argv[3],
+    "governor": sys.argv[4],
+    "cpu_source": sys.argv[5],
+    "mem_total": sys.argv[6],
+    "zram_active": sys.argv[7],
+    "mem_source": sys.argv[8],
+}, open(path, "w"), indent=2)
 PY
-      else
-        echo "[INFO] Applying runtime tuning commands (AI370_APPLY_TUNING=true)..."
-        # shellcheck disable=SC1091
-        bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh" || {
-          echo "[WARN] Runtime tuning commands exited non-zero; review tier1-cpu-runtime-commands.sh"
-        }
-        # Mark apply attempt in JSON for observability
-        python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY' || true
-import json, sys
-path = sys.argv[1]
-try:
-    data = json.load(open(path))
-except Exception:
-    raise SystemExit(0)
-data["runtime_apply"] = {
-    "requested": True,
-    "applied": True,
-    "dry_run": False,
-    "commands": "reports/latest/tier1-cpu-runtime-commands.sh",
-}
-with open(path, "w") as f:
-    json.dump(data, f, indent=2)
-    f.write("\n")
-PY
-      fi
-      ;;
-    *)
-      echo "[INFO] Platform tuning is plan-only. Apply with ./ai370-optimize.sh stage2-optimize-apply --approve"
-      ;;
-  esac
 
+  python3 "$PROJECT_ROOT/scripts/s2-m5-publish-optimization-plan.py" \
+    --profile "$PROFILE_FILE" \
+    --facts "$facts_json" \
+    --output "$LATEST_DIR/s2-m5-optimization-plan.json" \
+    --compat-output "$LATEST_DIR/tier1-platform-tuning.json" \
+    --compat-markdown "$LATEST_DIR/s2-m5-optimization-plan.md" \
+    --markdown-swap "$swap_show" \
+    --markdown-nvme "${nvme:-}" \
+    --cli-profile "$PROFILE" \
+    --mode "$MODE" \
+    --persistence "$PERSISTENCE"
+  rm -f "$facts_json"
+
+  echo "[INFO] Wrote s2-m5-optimization-plan.json and compatibility tier1-platform-tuning.*"
+
+  if [[ "$ACTION" != "apply" ]]; then
+    if [[ "${AI370_APPLY_TUNING:-false}" == "true" ]]; then
+      echo "[INFO] AI370_APPLY_TUNING is ignored without apply --approve."
+    fi
+    echo "[INFO] Platform tuning is plan-only. Apply with ./ai370-optimize.sh stage2-optimize-apply --approve"
+    echo "[INFO] 40-platform-tuning.sh complete."
+    return 0
+  fi
+
+  local applied="false"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo "[INFO] Approved apply with dry-run active; not applying runtime tuning."
+  else
+    echo "[INFO] Applying runtime tuning commands (--approve)..."
+    # shellcheck disable=SC1091
+    bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh" || {
+      echo "[WARN] Runtime tuning commands exited non-zero; review tier1-cpu-runtime-commands.sh"
+    }
+    applied="true"
+  fi
+
+  python3 "$PROJECT_ROOT/scripts/s2-m6-publish-optimization-application.py" \
+    --profile "$PROFILE_FILE" \
+    --plan "$LATEST_DIR/s2-m5-optimization-plan.json" \
+    --output "$LATEST_DIR/s2-m6-optimization-application.json" \
+    --compat-output "$LATEST_DIR/tier1-platform-tuning.json" \
+    --cli-profile "$PROFILE" \
+    --dry-run "$DRY_RUN" \
+    --applied "$applied"
+
+  echo "[INFO] Wrote s2-m6-optimization-application.json"
   echo "[INFO] 40-platform-tuning.sh complete."
 }
 

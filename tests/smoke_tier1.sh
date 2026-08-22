@@ -117,6 +117,9 @@ bash "$PROJECT_ROOT/scripts/40-platform-tuning.sh" "$SMOKE_PROFILE" "$SMOKE_MODE
 if [[ ! -f "$LATEST_DIR/tier1-platform-tuning.json" ]]; then
   echo "[FAIL] missing artifact: tier1-platform-tuning.json"; exit 2
 fi
+if [[ ! -f "$LATEST_DIR/s2-m5-optimization-plan.json" ]]; then
+  echo "[FAIL] missing canonical artifact: s2-m5-optimization-plan.json"; exit 2
+fi
 if [[ ! -f "$LATEST_DIR/tier1-cpu-runtime-commands.sh" ]]; then
   echo "[FAIL] missing generated commands: tier1-cpu-runtime-commands.sh"; exit 2
 fi
@@ -249,17 +252,37 @@ if status == "PASS":
 print("[OK] non-strict acceptance policy exercised")
 PY
 
-# 5c. Dry-run must not apply tuning commands even when AI370_APPLY_TUNING=true
+# 5c. AI370_APPLY_TUNING without apply --approve stays plan-only
 DRY_RUN=true AI370_APPLY_TUNING=true bash "$PROJECT_ROOT/scripts/40-platform-tuning.sh" \
   "$SMOKE_PROFILE" "$SMOKE_MODE" runtime
 python3 - "$LATEST_DIR/tier1-platform-tuning.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
-ra = data.get("runtime_apply") or {}
-assert ra.get("requested") is True, "apply was requested"
+assert "runtime_apply" not in data, "AI370_APPLY_TUNING without apply --approve must stay plan-only"
+print("[OK] AI370_APPLY_TUNING without --approve does not record runtime_apply")
+PY
+if [[ -f "$LATEST_DIR/s2-m6-optimization-application.json" ]]; then
+  echo "[FAIL] plan-only path must not write s2-m6-optimization-application.json"
+  exit 2
+fi
+
+# Approved apply with dry-run records S2-M6 without executing commands
+DRY_RUN=true bash "$PROJECT_ROOT/scripts/40-platform-tuning.sh" \
+  "$SMOKE_PROFILE" "$SMOKE_MODE" runtime apply --approve
+python3 - "$LATEST_DIR/s2-m6-optimization-application.json" "$LATEST_DIR/tier1-platform-tuning.json" <<'PY'
+import json, sys
+report = json.load(open(sys.argv[1]))
+compat = json.load(open(sys.argv[2]))
+assert report.get("milestone") == "S2-M6"
+assert report.get("approved") is True
+assert report.get("dry_run") is True
+assert report.get("applied") is False
+assert report.get("backup", {}).get("status") == "not-implemented"
+ra = compat.get("runtime_apply") or {}
+assert ra.get("requested") is True, "approved apply was requested"
 assert ra.get("dry_run") is True, "dry_run must be recorded"
 assert ra.get("applied") is False, "commands must not be applied under dry-run"
-print("[OK] dry-run honors AI370_APPLY_TUNING without applying runtime commands")
+print("[OK] apply --approve --dry-run records S2-M6 without applying runtime commands")
 PY
 
 # Also verify orchestrator apply path requires --approve and honors --dry-run

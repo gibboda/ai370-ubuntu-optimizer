@@ -48,6 +48,8 @@ class OptimizeScriptTests(unittest.TestCase):
                 env={**os.environ, "LATEST_DIR": str(latest), "AI370_APPLY_TUNING": "false"},
             )
             self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            self.assertTrue((latest / "s2-m5-optimization-plan.json").is_file())
+            self.assertFalse((latest / "s2-m6-optimization-application.json").exists())
             report = json.loads((latest / "tier1-platform-tuning.json").read_text(encoding="utf-8"))
         fixture = load_reference_profile()
         self.assertEqual(report["profile"], "generic-ryzen-ai")

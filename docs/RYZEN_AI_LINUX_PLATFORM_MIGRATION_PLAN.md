@@ -184,8 +184,8 @@ Boundary notes that later PRs must preserve:
 
 - Architecture-layer 1 is read-only. `stage1` now publishes the S1-M1 through
   S1-M5 profile only. BIOS, kernel, GPU validation, and tuning-plan scripts
-  run from `stage2-platform-*` / `stage2-optimize-*`. Canonical S2-M1/M2/M5–M7
-  outputs remain Planned until PR 3b/3c.
+  run from `stage2-platform-*` / `stage2-optimize-*`. Canonical S2-M5/S2-M6/S2-M7
+  JSON is In progress. Canonical S2-M1/M2 outputs remain Planned until PR 3c.
 - Architecture-layer 3 belongs in ROADMAP Stage 2, not Stage 1.
 - GPU and NPU remain independent. Current `stage2` installs both in one
   orchestrator path.
@@ -209,7 +209,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/validate-pr-title.sh` | IMPLEMENTED | Conventional Commit title gate |
 | `scripts/validate-commit-subject.sh` | IMPLEMENTED | Commit-subject gate |
 | `.github/workflows/*` | IMPLEMENTED | ShellCheck, PR title lint, release-please |
-| `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 still claims S2-M1–S2-M7 are implemented and assigns Lemonade/Digest to S2-M6/S2-M7 |
+| `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 tracks ROADMAP In progress vs Planned (S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress; S2-M1/M2 Planned) |
 | `TASK_PROPOSALS.md` | DEPRECATED | Still describes Tier 1–5 follow-ups as current work |
 | `.github/issues/pr2-capability-ladders.md`, `.github/issues/pr3-read-only-stage1.md` | IMPLEMENTED | Tracking templates for GitHub issues #168 and #169 |
 
@@ -226,11 +226,14 @@ feature is not treated as implemented unless code exists.
 | `scripts/lib/system_profile.py` | IMPLEMENTED | Shared S1-M2–S1-M5 library behind the canonical CLIs |
 | `scripts/lib/capability_ladder.py` | IMPLEMENTED | GPU/NPU ladder library plus S2-M3/S2-M4 report builders |
 | `scripts/lib/platform_validation.py` | IMPLEMENTED | S2-M7 aggregate builder, policy, and compatibility shim JSON |
+| `scripts/lib/optimization_plan.py` | IMPLEMENTED | S2-M5 plan and S2-M6 apply builders; does not run governors or zram |
 | `scripts/s2-m3-validate-gpu-stack.sh` | IMPLEMENTED | Canonical S2-M3 GPU visibility collector; consumes S1-M5 profile when present |
 | `scripts/s2-m3-publish-gpu-visibility.py` | IMPLEMENTED | Canonical S2-M3 atomic publisher and schema validation |
 | `scripts/s2-m4-validate-npu-stack.sh` | IMPLEMENTED | Canonical S2-M4 NPU visibility collector; no `230-benchmark-npu.sh`; requires S1-M5 profile |
 | `scripts/s2-m4-publish-npu-visibility.py` | IMPLEMENTED | Canonical S2-M4 atomic publisher and schema validation |
 | `scripts/s2-m7-publish-platform-validation.py` | IMPLEMENTED | Canonical S2-M7 aggregate publisher; requires S1-M5 profile; rejects fingerprint-mismatched S2 reports |
+| `scripts/s2-m5-publish-optimization-plan.py` | IMPLEMENTED | Canonical S2-M5 plan publisher; plan-only; requires S1-M5 profile |
+| `scripts/s2-m6-publish-optimization-application.py` | IMPLEMENTED | Canonical S2-M6 apply publisher; records `--approve`; backup status is `not-implemented` |
 | `scripts/10-detect-hardware.sh` | DEPRECATED | Compatibility wrapper; also publishes legacy `tier1-*` artifacts and `system-profile.json` |
 | `scripts/75-detect-npu.sh` | DEPRECATED | Forwards to S1-M1 probe |
 | `configs/schemas/system-profile*.json` | IMPLEMENTED | v1/v2 retained for migration; v3 is current |
@@ -241,6 +244,8 @@ feature is not treated as implemented unless code exists.
 | `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` | IMPLEMENTED | S2-M3 visibility report contract |
 | `configs/schemas/s2-m4-npu-runtime-validation.schema.json` | IMPLEMENTED | S2-M4 visibility report contract |
 | `configs/schemas/s2-m7-platform-validation.schema.json` | IMPLEMENTED | S2-M7 platform aggregate contract |
+| `configs/schemas/s2-m5-optimization-plan.schema.json` | IMPLEMENTED | S2-M5 plan-only contract |
+| `configs/schemas/s2-m6-optimization-application.schema.json` | IMPLEMENTED | S2-M6 approved-apply contract; `backup.status` is `not-implemented` |
 | `configs/profiles/gpu-pci-architectures.json` | IMPLEMENTED | Declarative PCI vendor:device to gfx mapping |
 | `configs/profiles/ai370.env` | IMPLEMENTED | Reference-platform profile |
 | `configs/profiles/generic-ryzen-ai.env` | IMPLEMENTED | Broader Ryzen AI profile |
@@ -256,6 +261,8 @@ feature is not treated as implemented unless code exists.
 | `tests/test_s2_m7_platform_validation.py` | IMPLEMENTED | S2-M7 aggregate from fixture milestone JSONs; required profile, stale fingerprint, and firmware-validation status coverage |
 | `tests/test_s2_m1_firmware.py` | IMPLEMENTED | Firmware policy from classified `platform_id` and consumed Stage 1 fingerprint |
 | `tests/test_s2_optimize_profile.py` | IMPLEMENTED | Optimize plan wrapper records classified identity and consumed fingerprint |
+| `tests/test_s2_m5_optimization_plan.py` | IMPLEMENTED | Plan-only publisher; no mutation; `AI370_APPLY_TUNING` is not sufficient |
+| `tests/test_s2_m6_optimization_apply.py` | IMPLEMENTED | Apply requires `--approve`; dry-run does not execute commands |
 | `tests/test_system_profile.py` | IMPLEMENTED | Classification, fingerprint, schema tests |
 | `tests/fixtures/raw-probes/v1/*` | IMPLEMENTED | AI370, Ryzen AI Pro 360, missing-tool, unsupported, unreadable, non-XDNA |
 
@@ -267,7 +274,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/25-check-firmware.sh` | DEPRECATED | Wrapper around `20-check-bios.sh` |
 | `scripts/30-validate-kernel.sh` | PARTIAL | Kernel/module/firmware checks; records consumed Stage 1 profile; target S2-M2 |
 | `scripts/70-validate-gpu-stack.sh` | DEPRECATED | Compatibility wrapper that execs `s2-m3-validate-gpu-stack.sh` |
-| `scripts/40-platform-tuning.sh` | PARTIAL | Combined CPU/memory/storage plan; consumes S1-M5 identity + fingerprint; apply requires `--approve`; target S2-M5/S2-M6 |
+| `scripts/40-platform-tuning.sh` | PARTIAL | Combined CPU/memory/storage plan/apply; consumes S1-M5 identity + fingerprint; writes canonical S2-M5/S2-M6 JSON; apply requires `--approve`; backup/rollback remain Planned |
 | `scripts/40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | DEPRECATED | Wrappers around platform tuning |
 | `scripts/65-amd-acceleration-install.sh` | PARTIAL | Explicit-risk ROCm/XRT install; target S2-M6 |
 | `scripts/90-validate.sh` | PARTIAL | Compatibility shim writing `tier1-validation.json`; canonical S2-M7 is `s2-m7-platform-validation.json` |
@@ -417,7 +424,10 @@ abbreviated; see the assumption table for the full class.
 | `scripts/s2-m4-validate-npu-stack.sh` | NPU stack visibility collector | 205 inventory-only, 210 visibility-only, 220, S1-M5 profile | Visibility is not inference | S2-M4 | KEEP | `test_s2_m4_npu_visibility.py` | Medium |
 | `scripts/s2-m4-publish-npu-visibility.py` | Atomic S2-M4 visibility publisher | capability_ladder, S2-M4 schema | Visibility is not inference | S2-M4 | KEEP | `test_s2_m4_npu_visibility.py` | Low |
 | `scripts/s2-m7-publish-platform-validation.py` | Atomic S2-M7 platform aggregate | Required S1-M5 profile, fingerprint-matched S2-M3/S2-M4 reports, compat `tier1-*` | gfx1150/NPU `--strict` is reference-platform policy | S2-M7 | KEEP | `test_s2_m7_platform_validation.py` | Medium |
-| `scripts/40-platform-tuning.sh` | CPU/memory/storage plan and optional apply | governors, zram, NVMe | Invoked from `stage2-optimize-plan` / `stage2-optimize-apply --approve` | S2-M5/S2-M6 | SPLIT plan vs `--approve` apply; canonical JSON still Planned | No-mutation and idempotence | High |
+| `scripts/lib/optimization_plan.py` | S2-M5 plan and S2-M6 apply builders | S1-M5 profile | Plan does not mutate; apply records `--approve` | S2-M5/S2-M6 | KEEP | `test_s2_m5_optimization_plan.py`, `test_s2_m6_optimization_apply.py` | Low |
+| `scripts/s2-m5-publish-optimization-plan.py` | Atomic S2-M5 plan publisher | Required S1-M5 profile | Plan-only | S2-M5 | KEEP | `test_s2_m5_optimization_plan.py` | Low |
+| `scripts/s2-m6-publish-optimization-application.py` | Atomic S2-M6 apply publisher | Required S1-M5 profile, optional S2-M5 plan | `--approve` required by caller | S2-M6 | KEEP; backup/rollback still Planned | `test_s2_m6_optimization_apply.py` | Medium |
+| `scripts/40-platform-tuning.sh` | CPU/memory/storage plan and optional apply | governors, zram, NVMe | Invoked from `stage2-optimize-plan` / `stage2-optimize-apply --approve` | S2-M5/S2-M6 | KEEP plan vs `--approve` apply; canonical JSON In progress; backup/rollback Planned | No-mutation and `--approve` tests | High |
 | `scripts/40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | Wrappers | Platform tuning | None | Compatibility | DEPRECATE | Wrapper smoke | Low |
 | `scripts/65-amd-acceleration-install.sh` | Risk-accepted stack install | `amd-acceleration.env` | Ubuntu package names | S2-M6 | KEEP explicit approval; no Stage 1 caller | Approval/backup tests | High |
 | `scripts/90-validate.sh` | Platform aggregate compatibility shim | Prior `tier1-*` artifacts and S2-M3/S2-M4 reports | gfx1150/NPU acceptance from consumed facts | S1-M5 facts plus S2-M7 policy | SPLIT | Gate schema tests | High |
@@ -452,7 +462,7 @@ abbreviated; see the assumption table for the full class.
 | `workflows/comfyui/*` | SDXL templates | ComfyUI | No NPU assumption | S4-M2 | KEEP | Workflow launch tests | Low |
 | `tests/smoke_tier1.sh`, `tests/smoke_stage2_platform.sh`, `tests/smoke_tier2.sh` | Portable CLI smokes | Orchestrator | `tier*` artifacts | Owner-specific `test_sN_mN_*` | REPLACE at R1/R2 | Deterministic fixtures | Medium |
 | `tests/test_s1_m1_probe.py`, `tests/test_system_profile.py` | Profile/probe contracts | Fixtures | AI370 reference plus non-AI370 | S1-M1/S1-M2/S1-M5 | KEEP and split by milestone | Existing plus unknown-host | Low |
-| `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m7_platform_validation.py`, `tests/test_s2_m1_firmware.py` | Ladder, unpublished report builders, GPU/NPU publisher CLI, S2-M7 aggregate, and firmware profile consumption | Probe/profile fixtures | No validation claims | S2-M1 / S2-M3 / S2-M4 / S2-M7 | KEEP | Existing plus missing-device and classified-platform fixtures | Low |
+| `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m7_platform_validation.py`, `tests/test_s2_m1_firmware.py`, `tests/test_s2_m5_optimization_plan.py`, `tests/test_s2_m6_optimization_apply.py` | Ladder, unpublished report builders, GPU/NPU publisher CLI, S2-M7 aggregate, firmware profile consumption, and S2-M5/S2-M6 plan/apply | Probe/profile fixtures | No validation claims | S2-M1 / S2-M3 / S2-M4 / S2-M5 / S2-M6 / S2-M7 | KEEP | Existing plus missing-device and classified-platform fixtures | Low |
 | `tests/fixtures/**` | Sanitized hardware evidence | None | Reference and counterexamples | Detection/classification | KEEP; add newer Ryzen AI as data | Classification matrix | Low |
 | `scripts/legacy/*` | Frozen archive | Historical | Tier/phase names | Compatibility archive | KEEP frozen; REMOVE at R1/R2 | No new tests | Low |
 | `docs/ROADMAP.md` | Implementation authority | All deliverables | Five stages | Current authority | KEEP; update when boundaries change | Instruction tests | High |
@@ -560,7 +570,7 @@ opt-in. Required fixture classes for hardware-classification changes:
 
 Current automated coverage to retain until replaced by owner-specific tests:
 
-- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m1_firmware tests.test_s2_optimize_profile tests.test_repository_instructions`
+- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m1_firmware tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions`
 - `bash tests/smoke_tier1.sh`
 - `bash tests/smoke_stage2_platform.sh`
 - `bash tests/smoke_tier2.sh`
@@ -586,11 +596,12 @@ is read-only profile publication. Remaining README / #169 drift:
   refreshes `tier3-validation.json` on this command. Pass `--bench` for the
   mixed 210/220/230/245 compatibility path until S3-M6. Do not treat the
   command name as missing.
-- Canonical S2-M3/S2-M4/S2-M7 are **In progress**, not Implemented. S2-M3 still
+- Canonical S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 are **In progress**, not Implemented. S2-M3 still
   lacks separate missing-driver/Vulkan/ROCm layer fixtures. S2-M4 still shares
-  a mixed `stage2-npu` bench path. S2-M7 still uses compatibility firmware,
-  kernel, and tuning JSON. S2-M1, S2-M2, S2-M5, S2-M6, and S3 through S5
-  remain Planned until outputs, tests, and docs exist.
+  a mixed `stage2-npu` bench path. S2-M7 still uses compatibility firmware and
+  kernel JSON. S2-M5/S2-M6 have canonical plan/apply JSON; backup/rollback remain
+  Planned. S2-M1, S2-M2, and S3 through S5 remain Planned until outputs, tests,
+  and docs exist.
 
 The architecture document is target design. Features listed there as local
 coding AI, FastFlowLM, unified master validation, heterogeneous live

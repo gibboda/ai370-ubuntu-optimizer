@@ -90,11 +90,19 @@ if [[ ! -f "$LATEST_DIR/tier1-platform-tuning.json" ]]; then
   echo "[FAIL] missing artifact after stage2-optimize-plan: tier1-platform-tuning.json"
   exit 2
 fi
+if [[ ! -f "$LATEST_DIR/s2-m5-optimization-plan.json" ]]; then
+  echo "[FAIL] missing canonical artifact after stage2-optimize-plan: s2-m5-optimization-plan.json"
+  exit 2
+fi
 
-python3 - "$LATEST_DIR/tier1-platform-tuning.json" "$PROFILE_FIXTURE" <<'PY'
+python3 - "$LATEST_DIR/s2-m5-optimization-plan.json" "$LATEST_DIR/tier1-platform-tuning.json" "$PROFILE_FIXTURE" <<'PY'
 import json, sys
-report = json.load(open(sys.argv[1], encoding="utf-8"))
-fixture = json.load(open(sys.argv[2], encoding="utf-8"))
+plan = json.load(open(sys.argv[1], encoding="utf-8"))
+report = json.load(open(sys.argv[2], encoding="utf-8"))
+fixture = json.load(open(sys.argv[3], encoding="utf-8"))
+assert plan.get("milestone") == "S2-M5", plan.get("milestone")
+assert plan.get("plan_only") is True
+assert plan.get("approved") is False
 assert report.get("profile") == "generic-ryzen-ai", report.get("profile")
 assert report.get("classified_platform_id") == "ai370", report.get("classified_platform_id")
 assert report["cpu"]["identity_source"] == "s1-m5-system-profile", report.get("cpu")
@@ -103,6 +111,30 @@ consumed = report.get("consumed_profile") or {}
 assert consumed.get("schema", {}).get("version") == 3, consumed
 assert consumed.get("fingerprint", {}).get("value") == fixture["fingerprint"]["value"], consumed
 print("[OK] optimize plan consumed classified ai370 identity and Stage 1 fingerprint")
+PY
+
+"$PROJECT_ROOT/ai370-optimize.sh" stage2-optimize-apply --dry-run --approve \
+  --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE"
+
+if [[ ! -f "$LATEST_DIR/s2-m6-optimization-application.json" ]]; then
+  echo "[FAIL] missing canonical artifact after stage2-optimize-apply: s2-m6-optimization-application.json"
+  exit 2
+fi
+
+python3 - "$LATEST_DIR/s2-m6-optimization-application.json" "$LATEST_DIR/tier1-platform-tuning.json" <<'PY'
+import json, sys
+report = json.load(open(sys.argv[1], encoding="utf-8"))
+compat = json.load(open(sys.argv[2], encoding="utf-8"))
+assert report.get("milestone") == "S2-M6"
+assert report.get("approved") is True
+assert report.get("dry_run") is True
+assert report.get("applied") is False
+assert report.get("backup", {}).get("status") == "not-implemented"
+ra = compat.get("runtime_apply") or {}
+assert ra.get("requested") is True
+assert ra.get("dry_run") is True
+assert ra.get("applied") is False
+print("[OK] optimize apply --dry-run --approve records S2-M6 without mutation")
 PY
 
 echo "[PASS] Stage 2 platform smoke test completed successfully."

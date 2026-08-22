@@ -85,15 +85,15 @@ Stage 1 (read-only, S1-M1 through S1-M5):
   --with-ai-smoke is not a Stage 1 flag; use scripts/80-benchmark-local-ai.sh (S3-M6)
   Mixed BIOS/kernel/GPU/tuning/90-validate no longer runs from stage1.
 
-Stage 2 platform (S2-M7 aggregate via 90-validate shim; S2-M1/M2/M5–M6 canonical JSON still Planned):
+Stage 2 platform (S2-M7 aggregate via 90-validate shim; S2-M1/M2 canonical JSON still Planned):
   stage2-firmware-validate = 20-check-bios (S2-M1 Planned); requires S1-M5 profile
   stage2-kernel-validate = 30-validate-kernel (S2-M2 Planned); requires S1-M5 profile
   stage2-gpu-validate = s2-m3-validate-gpu-stack (S2-M3 In progress)
   stage2-npu-validate is visibility-only (S2-M4) by default; pass --bench for the
     mixed 210-validate / 230 / 245 compatibility path until S3-M6. Script 240
     always refreshes tier3-validation.json on this command.
-  stage2-optimize-plan = 40-platform-tuning plan-only (S2-M5 Planned)
-  stage2-optimize-apply --approve = 40-platform-tuning apply (S2-M6 Planned)
+  stage2-optimize-plan = 40-platform-tuning plan-only (S2-M5 In progress)
+  stage2-optimize-apply --approve = 40-platform-tuning apply (S2-M6 In progress)
   stage2-platform-validate = firmware + kernel + GPU + NPU visibility + S2-M7 (90-validate shim)
   --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing (S2-M7)
   stage2-platform-inventory = detect + firmware + kernel + GPU + inventory-scope S2-M7
@@ -301,11 +301,13 @@ run_stage2_optimize_plan() {
   echo "[INFO] Stage 2 optimize plan – 40-platform-tuning plan-only (S2-M5 wrapper)"
   export DRY_RUN="${DRY_RUN:-false}"
   export AI370_APPLY_TUNING=false
+  export AI370_APPROVE=false
+  export AI370_OPTIMIZE_ACTION=plan
   if [[ "$APPLY_TUNING" == "true" ]]; then
     echo "[WARN] --apply-tuning is ignored on stage2-optimize-plan. Use stage2-optimize-apply --approve"
   fi
   ensure_stage1_profile
-  run_script "scripts/40-platform-tuning.sh"
+  run_script "scripts/40-platform-tuning.sh" plan
   write_report_index
 }
 
@@ -318,8 +320,10 @@ run_stage2_optimize_apply() {
   echo "[INFO] Stage 2 optimize apply – 40-platform-tuning with approval (S2-M6 wrapper)"
   export DRY_RUN="${DRY_RUN:-false}"
   export AI370_APPLY_TUNING=true
+  export AI370_APPROVE=true
+  export AI370_OPTIMIZE_ACTION=apply
   ensure_stage1_profile
-  run_script "scripts/40-platform-tuning.sh"
+  run_script "scripts/40-platform-tuning.sh" apply --approve
   write_report_index
 }
 
