@@ -94,7 +94,19 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn(
-            "Grok Build is the preferred secondary agent",
+            "Grok Build is the preferred secondary agent when available",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "If Grok Build is unavailable",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "use an available specialist agent such as",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "another explicitly approved agent",
             self.agent_instructions,
         )
         self.assertIn(
@@ -125,7 +137,11 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn(
-            "reuse prior agent findings",
+            "reuse prior agent findings, logs, issue/PR",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "CI results, tests, and local validation output",
             self.agent_instructions,
         )
         self.assertIn("independent-developer budget", self.agent_instructions)
