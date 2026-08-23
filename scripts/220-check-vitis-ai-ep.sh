@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M2: validate AMD Ryzen AI / Vitis AI ONNX Runtime execution-provider visibility.
+# S2-M4 visibility / S3-M4 backend: AMD Ryzen AI / Vitis AI EP listing.
 
 set -euo pipefail
 
@@ -92,7 +92,7 @@ else:
 status = "PASS" if matching else "WARN"
 data = {
     "tier": 2,
-    "milestone": "S2-M2",
+    "milestone": "S2-M4",
     "phase": "check-vitis-ai-ep",
     "status": status,
     "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),
@@ -133,7 +133,7 @@ from pathlib import Path
 status_path, summary_path = map(Path, sys.argv[1:])
 data = {
   "tier": 2,
-  "milestone": "S2-M2",
+  "milestone": "S2-M4",
   "phase": "check-vitis-ai-ep",
   "status": "WARN",
   "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),

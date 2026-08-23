@@ -1,5 +1,9 @@
 # PR 3: Make Stage 1 read-only; move platform validation to Stage 2
 
+> Archive: GitHub issue #169 PR 3 workstreams are complete (`#203` / `0.25.0`).
+> Do not reopen. Remaining S2-M1/S2-M2 remediations and S2-M5/S2-M6
+> backup/rollback live in `docs/ROADMAP.md`.
+
 **GitHub issue:** [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169)
 
 Copy this body into a GitHub issue, or run:

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M2: aggregate Stage 2 NPU reports into tier3-validation.json for stage gates.
+# Compatibility S3-M7 aggregate: NPU reports into tier3-validation.json until
+# s3-m7-runtime-validation.json exists. S2-M4 visibility is a separate report.
 
 set -euo pipefail
 

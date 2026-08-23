@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M6: Lemonade validation — inventory, health, optional OpenAI smoke.
+# S3-M5: Lemonade validation — inventory, health, optional OpenAI smoke.
 # Does not pull models unless LEMONADE_PULL_MODEL is set (online only).
 # Server start is opt-in via LEMONADE_START=true.
 
@@ -268,7 +268,7 @@ sys.exit(0 if ok else 1)' 2>/dev/null; then
 {
   "tier": 2,
   "phase": "validate-lemonade",
-  "milestone": "S2-M6",
+  "milestone": "S3-M5",
   "status": "$status",
   "profile": "$PROFILE",
   "mode": "$MODE",
@@ -298,7 +298,7 @@ sys.exit(0 if ok else 1)' 2>/dev/null; then
 EOF_JSON
 
   {
-    echo "# Stage 2 — Lemonade Validation (S2-M6)"
+    echo "# Stage 3 — Lemonade Validation (S3-M5)"
     echo
     echo "Profile: $PROFILE | Mode: $MODE | Offline: $OFFLINE"
     echo "Status: $status"

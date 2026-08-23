@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M2: explicit XRT / Ryzen AI package install or offline staging validation.
+# S2-M4 inventory / S3-M4 install: XRT / Ryzen AI staging or risk-accepted install.
 # Safe by default: without --accept-amd-acceleration-risk (5th arg true) this script
 # only inventories artifacts and records diagnostics (does not apt-install).
 # With risk accepted, installs staged XRT .deb packages and optional Ryzen AI tarball
@@ -528,11 +528,14 @@ match_source = os.environ.get("XRT_DEB_MATCH_SOURCE", "none")
 match_ubuntu = os.environ.get("XRT_DEB_MATCH_UBUNTU_VERSION") or None
 host_ubuntu = os.environ.get("XRT_HOST_UBUNTU_VERSION") or None
 ubuntu_versions = [v for v in os.environ.get("XRT_UBUNTU_VERSIONS", "").split() if v]
+accept_risk = os.environ["ACCEPT_RISK"] == "true"
+milestone = "S3-M4" if accept_risk else "S2-M4"
+stage = 3 if accept_risk else 2
 
 data = {
     "tier": 2,
-    "stage": 2,
-    "milestone": "S2-M2",
+    "stage": stage,
+    "milestone": milestone,
     "phase": "install-xrt-ryzen-ai",
     "status": status,
     "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -540,7 +543,7 @@ data = {
     "mode": os.environ["MODE"],
     "persistence": os.environ["PERSISTENCE"],
     "offline": os.environ["OFFLINE"] == "true",
-    "accept_amd_acceleration_risk": os.environ["ACCEPT_RISK"] == "true",
+    "accept_amd_acceleration_risk": accept_risk,
     "install_action": os.environ["ACTION"],
     "artifact_root": os.environ["AMD_ARTIFACT_ROOT"],
     "ryzen_ai_install_root": os.environ["RYZEN_AI_INSTALL_ROOT"],
@@ -576,6 +579,7 @@ lines = [
     "",
     f"Status: {status}",
     f"Profile: {os.environ['PROFILE']} | Mode: {os.environ['MODE']} | Offline: {os.environ['OFFLINE']}",
+    f"Milestone: {milestone} | Stage: {stage}",
     f"Risk accepted: {os.environ['ACCEPT_RISK']}",
     f"Install action: {os.environ['ACTION']}",
     "",
@@ -628,7 +632,7 @@ PY
 }
 
 main() {
-  echo "[INFO] S2-M2: XRT / Ryzen AI install or staging validation"
+  echo "[INFO] S2-M4/S3-M4: XRT / Ryzen AI install or staging validation"
   echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
   echo "[INFO] Offline: $OFFLINE  Risk accepted: $ACCEPT_AMD_ACCELERATION_RISK"
 

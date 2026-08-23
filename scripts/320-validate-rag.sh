@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M3: Offline RAG validator with production pass/fail aggregation.
+# S4-M3: Offline RAG validator with production pass/fail aggregation.
 # 1) Confirms embedding model + packages (offline-safe)
 # 2) Runs local semantic retrieval smoke (no network)
 # 3) Aggregates AnythingLLM + embedding installer reports into stage2-rag status
@@ -292,7 +292,7 @@ print(lines[-1] if lines else "")')"
 {
   "tier": 4,
   "phase": "validate-rag",
-  "milestone": "S2-M3",
+  "milestone": "S4-M3",
   "status": "$status",
   "profile": "$PROFILE",
   "mode": "$MODE",
@@ -329,7 +329,7 @@ EOF_JSON
 {
   "tier": 4,
   "phase": "stage2-rag-validation",
-  "milestone": "S2-M3",
+  "milestone": "S4-M3",
   "status": "$overall_status",
   "profile": "$PROFILE",
   "mode": "$MODE",
@@ -366,7 +366,7 @@ EOF_JSON
 EOF_JSON
 
   {
-    echo "# Stage 2 RAG — Retrieval Validation (S2-M3)"
+    echo "# Stage 4 RAG — Retrieval Validation (S4-M3)"
     echo
     echo "Profile: $PROFILE | Mode: $MODE | Offline: $OFFLINE"
     echo "Status: $status"
@@ -398,7 +398,7 @@ EOF_JSON
   } > "$SUMMARY_MD"
 
   {
-    echo "# Stage 2 RAG — Aggregate Validation (S2-M3)"
+    echo "# Stage 4 RAG — Aggregate Validation (S4-M3)"
     echo
     echo "Overall status: **$overall_status**"
     echo

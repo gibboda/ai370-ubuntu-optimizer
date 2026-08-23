@@ -12,22 +12,24 @@ The items below restate still-open follow-ups in Stage/Milestone language.
 
 - Complete S3-M2 and S3-M4 explicit scripts (Ollama/llama.cpp installers, ONNX
   Runtime + NPU EP install + dedicated benchmark) instead of delegating to
-  legacy 20/80/40.
+  `scripts/legacy/20-ai-stack.sh`, `80-benchmark-local-ai.sh`, and
+  `scripts/legacy/40-ryzen-ai-npu.sh`.
 - Add canonical S3-M7 `s3-m7-runtime-validation.json` so
   `require_tier123_pass` can consume Stage 3 reports instead of
   `tier2-validation.json` / `tier3-validation.json`.
 - Keep S2-M7 (`s2-m7-platform-validation.json`, with `90-validate.sh` as the
   compatibility shim) as the platform-gate source of truth.
-- Improve `80-benchmark-local-ai.sh` and `comfyui-benchmark.sh` to perform
-  real (non-placeholder) execution where a runtime is present (S3-M6 / S4-M2).
+- Improve `80-benchmark-local-ai.sh` and `scripts/420-benchmark-comfyui.sh` to
+  perform real (non-placeholder) execution where a runtime is present
+  (S3-M6 / S4-M2).
 - Replace `scripts/legacy/tier-gate.sh` with the S4-M7 consumer gate that
   reads canonical S2-M7 and S3-M7 reports.
 
 ## Remaining application and tuning work
 
-- **Live ComfyUI benchmark (S4-M2):** `scripts/comfyui-benchmark.sh` still uses
-  synthetic placeholder timings. Replace with real ComfyUI API submission +
-  measured trials.
+- **Live ComfyUI benchmark (S4-M2):** `scripts/420-benchmark-comfyui.sh` still
+  uses synthetic placeholder timings. Replace with real ComfyUI API submission
+  + measured trials.
 - **Persistent tuning (S2-M6):** `40-platform-tuning.sh` apply is approved
   runtime-only. Add opt-in persistent apply with rollback manifests. Keep
   S2-M5/S2-M6 **In progress** until that exit evidence exists.

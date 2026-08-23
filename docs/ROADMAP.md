@@ -381,6 +381,8 @@ tests, and documentation remain mandatory.
 
 ## Dependency and gate policy
 
+**Stage gate policy.** Later stages consume earlier canonical reports:
+
 * Stage 1 has no dependency on mutating or performance-oriented stages.
 * Stage 2 consumes a schema-valid S1-M5 profile, not Tier 1 aggregate status.
 * Stage 3 consumes S2 visibility and policy reports but owns runtime packages,

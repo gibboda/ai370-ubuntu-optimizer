@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Align compatibility script labels, JSON `milestone`/`stage` fields, and user
+  docs with ROADMAP owners (S3-M1 models, S3-M4/S3-M5/S3-M6 runtimes,
+  S4-M1/S4-M3 applications). Compatibility wrappers emit deprecation warnings.
+  XRT install reports set `stage` from the same owner as `milestone` (S2-M4
+  inventory vs S3-M4 approved install). The CPU/GPU/NPU comparison report uses
+  `stage: 3` with `milestone: S3-M6`. `tier` remains a compatibility field.
 - Document the per-PR README/ROADMAP sync contract in
   `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`. README Stage 2
   high-level status matches ROADMAP (S2-M7 Implemented; S2-M1–S2-M6 In

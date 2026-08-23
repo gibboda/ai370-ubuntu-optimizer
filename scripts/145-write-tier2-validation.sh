@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Package C: aggregate Stage 2 runtime gate artifact (tier2-validation.json)
-# from install reports + llm-validation / benchmark outputs.
-# Decouples the Stage 3 gate input from the benchmark script body.
+# Compatibility S3-M7 aggregate (tier2-validation.json) from install reports
+# plus llm-validation / benchmark outputs until s3-m7-runtime-validation.json
+# exists. Decouples the Stage 3 gate input from the benchmark script body.
 
 set -euo pipefail
 

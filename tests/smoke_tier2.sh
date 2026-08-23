@@ -94,7 +94,7 @@ done
 python3 - "$LATEST_DIR/offline-model-storage.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
-assert data.get("stage") == "S2-M5"
+assert data.get("stage") == "S3-M1"
 assert data.get("status") in ("PASS", "WARN", "FAIL")
 assert isinstance(data.get("models"), list)
 print("[OK] offline-model-storage.json structure")
@@ -196,6 +196,18 @@ data = json.load(open(sys.argv[1]))
 assert data.get("visibility_only") is True, "210 visibility-only must skip xrt-smi validate"
 assert data.get("xrt_smi_validate") == "skipped-visibility-only"
 print("[OK] npu-capabilities.json records skipped-visibility-only validate")
+PY
+if [[ ! -f "$LATEST_DIR/xrt-ryzen-ai-install.json" ]]; then
+  echo "[FAIL] missing artifact: xrt-ryzen-ai-install.json"
+  exit 2
+fi
+python3 - "$LATEST_DIR/xrt-ryzen-ai-install.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data.get("accept_amd_acceleration_risk") is False
+assert data.get("milestone") == "S2-M4"
+assert data.get("stage") == 2, data.get("stage")
+print("[OK] inventory-only 205 report stage matches S2-M4 milestone")
 PY
 
 # 6. Orchestrator help exposes Package B/C flags

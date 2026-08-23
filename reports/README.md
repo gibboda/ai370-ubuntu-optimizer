@@ -18,8 +18,11 @@ for example:
 
 ```bash
 ./ai370-optimize.sh stage1
-./ai370-optimize.sh stage1-validate
+./ai370-optimize.sh stage2-platform-validate
 ```
+
+`stage1-validate` remains a deprecated alias for `stage2-platform-validate`
+until R1.
 
 Scripts create `reports/latest/` as needed (`mkdir -p`). Clone the repo and run
 the stages you care about to populate reports on each machine.

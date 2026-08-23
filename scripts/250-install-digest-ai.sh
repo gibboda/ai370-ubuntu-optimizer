@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M7: Digest AI installer / inventory.
+# S3-M4 diagnostics: Digest AI installer / inventory.
 # Full Digest AI (onnx/digestai) requires Python >=3.9,<3.11.
 # Always ensures an ONNX analysis stack for offline fallback reports.
 # Diagnostics only — never claims NPU inference.
@@ -250,7 +250,7 @@ PY
 {
   "tier": 2,
   "phase": "install-digest-ai",
-  "milestone": "S2-M7",
+  "milestone": "S3-M4",
   "status": "$status",
   "profile": "$PROFILE",
   "mode": "$MODE",
@@ -279,7 +279,7 @@ PY
 EOF_JSON
 
   {
-    echo "# Stage 2 — Digest AI Status (S2-M7)"
+    echo "# Stage 3 — Digest AI Status (S3-M4)"
     echo
     echo "Profile: $PROFILE | Mode: $MODE | Offline: $OFFLINE"
     echo "Status: $status"

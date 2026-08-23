@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Stage 1: lightweight local AI visibility smoke (Package C: no network pip by default).
+# S3-M6: lightweight local AI visibility smoke (no network pip by default).
 # Does not install onnxruntime unless AI370_STAGE1_INSTALL_ORT=true.
-# Full model benchmarks belong in Stage 2 (140 / 230 / 245).
+# Full model benchmarks belong in S3-M6 (140 / 230 / 245).
 
 set -euo pipefail
 

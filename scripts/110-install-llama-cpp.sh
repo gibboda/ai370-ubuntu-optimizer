@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Milestone 2 / S2-M1: llama.cpp installer / validator with GPU-aware builds.
+# S3-M2: llama.cpp installer / validator with GPU-aware builds.
 #
 # Backend selection (LLAMA_CPP_BACKEND):
 #   auto (default) — HIP/ROCm when hipcc+ROCm present, else Vulkan when available, else CPU

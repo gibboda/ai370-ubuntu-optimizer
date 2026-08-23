@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # shellcheck shell=bash
 #
-# Shared Lemonade / TurnkeyML environment helpers (S2-M6).
+# Shared Lemonade / TurnkeyML environment helpers (S3-M5).
 # Requires PROJECT_ROOT. Prefer sourcing after offline-paths.sh.
 #
 # Usage:

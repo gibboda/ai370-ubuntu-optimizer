@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 """
-S2-M7 model analysis helper.
+S3-M4 diagnostics model analysis helper.
 
 Prefers Digest AI (digestai / digest package) when importable.
 Falls back to a pure-ONNX inventory analysis so offline reports still work
@@ -248,7 +248,7 @@ def find_onnx_models(roots: list[Path], limit: int = 5) -> list[Path]:
 
 def write_markdown_report(results: list[dict[str, Any]], path: Path, meta: dict[str, Any]) -> None:
     lines = [
-        "# Digest / Model Analysis Report (S2-M7)",
+        "# Digest / Model Analysis Report (S3-M4)",
         "",
         f"Generated: {meta.get('timestamp', '')}",
         f"Profile: {meta.get('profile', '')} | Mode: {meta.get('mode', '')} | Offline: {meta.get('offline', '')}",
@@ -258,7 +258,7 @@ def write_markdown_report(results: list[dict[str, Any]], path: Path, meta: dict[
         "",
         "- Digest AI / ONNX analysis is **diagnostics only**.",
         "- **Never** treat parameters, FLOPs, or op histograms as NPU inference proof.",
-        "- Inference truth sources: profiled EP verification (`npu_ep_verify`) and Lemonade smokes (S2-M6).",
+        "- Inference truth sources: profiled EP verification (`npu_ep_verify`) and Lemonade smokes (S3-M5).",
         "",
         f"Engine preference: Digest AI when importable; ONNX fallback otherwise.",
         "",
@@ -305,7 +305,7 @@ def write_markdown_report(results: list[dict[str, Any]], path: Path, meta: dict[
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="S2-M7 Digest/ONNX model analysis")
+    parser = argparse.ArgumentParser(description="S3-M4 Digest/ONNX model analysis")
     parser.add_argument("--model", action="append", default=[], help="ONNX file or directory (repeatable)")
     parser.add_argument("--out-dir", required=True, help="Output directory for analysis artifacts")
     parser.add_argument("--report-json", required=True, help="Aggregate JSON path")
@@ -358,7 +358,7 @@ def main(argv: list[str] | None = None) -> int:
     aggregate = {
         "tier": 2,
         "phase": "analyze-model-digest",
-        "milestone": "S2-M7",
+        "milestone": "S3-M4",
         "status": status,
         "profile": args.profile,
         "mode": args.mode,

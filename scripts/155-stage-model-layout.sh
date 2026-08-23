@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Package D (S2-M5 polish): create offline model directory layout and staging
+# S3-M1: create offline model directory layout and staging
 # placeholders from configs/models/manifest.yaml. Never downloads models.
 
 set -euo pipefail
@@ -21,7 +21,7 @@ REPORT_JSON="$LATEST_DIR/model-layout-staging.json"
 REPORT_MD="$LATEST_DIR/model-layout-staging.md"
 
 main() {
-  echo "[INFO] S2-M5 / 155-stage-model-layout.sh (layout only; no downloads)"
+  echo "[INFO] S3-M1 / 155-stage-model-layout.sh (layout only; no downloads)"
   echo "[INFO] Profile: $PROFILE  Offline: $OFFLINE"
 
   if [[ ! -f "$MANIFEST" ]]; then
@@ -141,7 +141,7 @@ Stage wheels under `.ai370-ai/wheelhouse` or this directory, then:
 LEMONADE_START=true ./scripts/165-validate-lemonade.sh
 ```
 
-See `docs/npu-status.md` (S2-M6).
+See `docs/npu-status.md` (S3-M5).
 EOF
 
   cat > "$OFFLINE_ROOT/digestai/README.md" <<'EOF'
@@ -165,7 +165,7 @@ from pathlib import Path
 
 out_json, out_md = Path(sys.argv[1]), Path(sys.argv[2])
 report = {
-    "stage": "S2-M5",
+    "stage": "S3-M1",
     "phase": "stage-model-layout",
     "status": "PASS",
     "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),

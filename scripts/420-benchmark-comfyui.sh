@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# S4-M2: ComfyUI workflow benchmark (synthetic timings until live API probes).
 
 set -euo pipefail
 

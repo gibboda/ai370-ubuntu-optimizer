@@ -42,7 +42,7 @@ documentation matches implementation, and the repository functions as the
 broader platform.
 
 Current CLI entry point: `./ai370-optimize.sh`.
-Current version at plan time: `0.21.0`.
+Current version at last review: `0.25.0`. NPU publisher landing remains `0.21.0`.
 
 ## Terminology
 
@@ -211,7 +211,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/validate-commit-subject.sh` | IMPLEMENTED | Commit-subject gate |
 | `.github/workflows/*` | IMPLEMENTED | ShellCheck, PR title lint, release-please |
 | `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 tracks ROADMAP (S2-M1–S2-M6 In progress; S2-M7 Implemented) |
-| `TASK_PROPOSALS.md` | DEPRECATED | Still describes Tier 1–5 follow-ups as current work |
+| `TASK_PROPOSALS.md` | DEPRECATED | Stage/Milestone compatibility backlog; do not add new Tier-named tasks |
 | `.github/issues/pr2-capability-ladders.md`, `.github/issues/pr3-read-only-stage1.md` | IMPLEMENTED | Tracking templates for GitHub issues #168 and #169 |
 
 ### Detection and system profile
@@ -376,7 +376,7 @@ files, and docs.
 | `configs/ai-runtime/requirements-offline.txt` | Pinned CPU `onnxruntime==1.22.0` and related wheels | TEMPORARY_COMPATIBILITY_RULE | KEEP as the S3 offline CPU pin file; do not treat it as NPU ORT |
 | `.ai370-ai/tools/llama.cpp` | Gitlink commit pin at `.ai370-ai/tools/llama.cpp` with no `.gitmodules` | TEMPORARY_COMPATIBILITY_RULE | KEEP the gitlink; `scripts/110-install-llama-cpp.sh` may clone or update the same path |
 | `README.md` Stage 1/2 status summary | User-facing snapshot of ROADMAP milestone rows | TEMPORARY_COMPATIBILITY_RULE | KEEP; update in the same commit as ROADMAP status changes |
-| `TASK_PROPOSALS.md` | Tier 1–5 as current architecture | DEPRECATED | DEPRECATE; do not extend |
+| `TASK_PROPOSALS.md` | Stage/Milestone compatibility backlog | DEPRECATED | KEEP as backlog; do not extend with new Tier tasks |
 
 BIOS 2.01, Ubuntu 26.04, kernel 7.x, Radeon 890M, and XDNA2 remain reference
 facts. They are not generic success requirements. Unknown or future Ryzen AI

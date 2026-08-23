@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M7: Analyze staged/local ONNX models via Digest AI or ONNX fallback.
+# S3-M4 diagnostics: Analyze staged/local ONNX models via Digest AI or ONNX fallback.
 # Produces reports/latest/digest-model-report.md and digest-analysis.json.
 # NEVER claims NPU execution from analysis statistics.
 

@@ -1,5 +1,9 @@
 # PR 2: Structured GPU and NPU capability ladders (Stage 2 visibility)
 
+> Archive: GitHub issue #168 is complete (`#180` / `0.21.0`). Do not reopen.
+> Remaining Stage 2 work lives in `docs/ROADMAP.md`. S2-M7 consumption of
+> ladder reports landed in [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169).
+
 **GitHub issue:** [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168)
 
 Copy this body into a GitHub issue, or run:

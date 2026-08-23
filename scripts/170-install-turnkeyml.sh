@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M6: TurnkeyML toolchain installer / inventory.
+# S3-M5: TurnkeyML toolchain installer / inventory.
 # Prefer lemonade-sdk venv (shared with 160). turnkeyml may be absent on modern
 # PyPI — lemonade-sdk is the supported successor for LLM serving tooling.
 
@@ -148,7 +148,7 @@ PY
 {
   "tier": 2,
   "phase": "install-turnkeyml",
-  "milestone": "S2-M6",
+  "milestone": "S3-M5",
   "status": "$status",
   "profile": "$PROFILE",
   "mode": "$MODE",
@@ -172,7 +172,7 @@ PY
 EOF_JSON
 
   {
-    echo "# Stage 2 — TurnkeyML Status (S2-M6)"
+    echo "# Stage 3 — TurnkeyML Status (S3-M5)"
     echo
     echo "Profile: $PROFILE | Mode: $MODE | Offline: $OFFLINE"
     echo "Status: $status"
