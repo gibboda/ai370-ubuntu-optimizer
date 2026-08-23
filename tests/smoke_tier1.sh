@@ -69,6 +69,14 @@ if [[ -f "$LATEST_DIR/tier1-validation.json" ]]; then
 fi
 echo "[OK] stage1 is read-only profile publication (no tuning / 90-validate)"
 
+# Compat wrapper still publishes legacy inventory artifacts until R1.
+bash "$PROJECT_ROOT/scripts/10-detect-hardware.sh" "$SMOKE_PROFILE" "$SMOKE_MODE" runtime
+if [[ ! -f "$LATEST_DIR/tier1-npu.json" ]]; then
+  echo "[FAIL] missing artifact after 10-detect-hardware.sh: tier1-npu.json"
+  exit 2
+fi
+echo "[OK] artifact present: tier1-npu.json (from 10-detect-hardware wrapper)"
+
 # Inventory path lives on Stage 2 (stage1-inventory remains a deprecated alias)
 "$PROJECT_ROOT/ai370-optimize.sh" stage2-platform-inventory --profile="$SMOKE_PROFILE" --mode="$SMOKE_MODE"
 
@@ -83,13 +91,6 @@ assert data.get("acceptance", {}).get("ai_smoke_required") is False
 assert data.get("artifacts", {}).get("local_ai") in (None, ""), "inventory must not require local_ai artifact"
 print("[OK] inventory-scope validation: scope + acceptance flags")
 PY
-
-# NPU JSON is produced by script 10 (included in inventory)
-if [[ ! -f "$LATEST_DIR/tier1-npu.json" ]]; then
-  echo "[FAIL] missing artifact after inventory: tier1-npu.json (expected from script 10)"
-  exit 2
-fi
-echo "[OK] artifact present: tier1-npu.json (from 10-detect-hardware)"
 
 if [[ ! -f "$LATEST_DIR/s2-m1-firmware-validation.json" ]]; then
   echo "[FAIL] missing artifact after inventory: s2-m1-firmware-validation.json (S2-M1)"

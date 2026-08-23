@@ -202,8 +202,9 @@ from marketing names.
   `stage2-optimize-apply --approve`; compat `40-platform-tuning.sh` /
   `tier1-platform-tuning.json`; backup/rollback remain Planned)
 - `scripts/s2-m7-publish-platform-validation.py`,
-  `configs/schemas/s2-m7-platform-validation.schema.json` (S2-M7 platform
-  aggregate; `stage2-platform-validate`; compat `90-validate.sh` /
+  `configs/schemas/s2-m7-platform-validation.schema.json` (S2-M7 Implemented
+  platform aggregate; `stage2-platform-validate`; `require_tier123_pass`
+  prefers `s2-m7-platform-validation.json`; compat `90-validate.sh` /
   `tier1-validation.json`)
 - `scripts/100-install-pytorch-rocm.sh`, `scripts/110-install-llama-cpp.sh`,
   `scripts/120-install-ollama.sh`, `scripts/130-install-open-webui.sh`,
@@ -283,11 +284,11 @@ Stage 2 platform wrappers (not Stage 1): `20-check-bios.sh`, `30-validate-kernel
 
 ### Stage 2 – Platform Enablement and Local AI Runtime
 
-ROADMAP status: S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress.
-Canonical S2-M1/S2-M2 JSON exists; remaining S2-M1/S2-M2 work is remediation
-docs and the kernel/driver matrix. Canonical S2-M5/S2-M6 JSON exists;
-backup/rollback remain Planned. Wrappers below do not mark Planned milestones
-Implemented.
+ROADMAP status: S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6 In progress. S2-M7
+Implemented. Canonical S2-M1/S2-M2 JSON exists; remaining S2-M1/S2-M2 work
+is remediation docs and the kernel/driver matrix. Canonical S2-M5/S2-M6 JSON
+exists; backup/rollback remain Planned. Wrappers below do not mark Planned
+milestones Implemented.
 
 **Platform commands (S2-M1–M7 wrappers):**
 
@@ -309,7 +310,8 @@ visibility, and the S2-M7 aggregate (`90-validate.sh` compatibility shim
 writes `s2-m7-platform-validation.json` plus `tier1-validation.json`).
 S2-M7 requires `s1-m5-system-profile.json` and ignores milestone reports
 whose consumed fingerprint does not match that profile.
-`require_tier123_pass` still reads the compatibility file. `stage2-validate`
+`require_tier123_pass` prefers `s2-m7-platform-validation.json` and falls
+back to `tier1-validation.json`. `stage2-validate`
 remains the **runtime/NPU cheap gate** until the Stage 3 split; it is not an
 alias for platform validate.
 
@@ -553,7 +555,7 @@ You can still run the classic commands (they continue to work and write the same
 rich `reports/latest/` artifacts):
 
 ```text
-hardware | inventory | audit          -> Stage 1 probe/profile compatibility (10-detect-hardware)
+hardware | inventory | audit          -> Stage 1 probe/profile (stage1-probe + stage1-profile)
 firmware                               -> Stage 2 platform BIOS check (stage2-firmware-validate)
 kernel-amd | baseline-apply            -> Stage 2 kernel validate (stage2-kernel-validate)
 baseline-plan | plan                   -> Stage 1 probe/profile compatibility

@@ -203,6 +203,21 @@ class Stage2PlatformValidationTests(unittest.TestCase):
                 GENERIC_FINGERPRINT,
             )
 
+    def test_missing_hardware_npu_compat_does_not_demote_when_profile_present(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            reports_dir = Path(directory)
+            profile_path = self.seed_reference_dir(reports_dir)
+            (reports_dir / "tier1-hardware.json").unlink()
+            (reports_dir / "tier1-npu.json").unlink()
+            output = reports_dir / "s2-m7-platform-validation.json"
+            result = self.publish_cli(reports_dir, output, profile_path=profile_path)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(report["status"], "PASS")
+            warnings = report.get("warnings") or []
+            self.assertFalse(any("tier1-hardware.json" in item for item in warnings))
+            self.assertFalse(any("tier1-npu.json" in item for item in warnings))
+
     def test_strict_mode_fails_missing_gfx1150_and_npu(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             reports_dir = Path(directory)

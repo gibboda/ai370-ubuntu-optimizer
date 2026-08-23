@@ -344,6 +344,7 @@ class MigrationPlanTests(unittest.TestCase):
             "tests/test_s2_m3_gpu_visibility.py",
             "tests/test_s2_m4_npu_visibility.py",
             "tests/test_s2_m7_platform_validation.py",
+            "tests/test_s2_m7_gate.py",
             "tests/test_s2_m1_firmware.py",
             "tests/test_s2_m2_kernel_driver.py",
             "tests/test_s2_optimize_profile.py",
@@ -358,6 +359,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("tests.test_s2_m3_gpu_visibility", self.plan)
         self.assertIn("tests.test_s2_m4_npu_visibility", self.plan)
         self.assertIn("tests.test_s2_m7_platform_validation", self.plan)
+        self.assertIn("tests.test_s2_m7_gate", self.plan)
         self.assertIn("tests.test_s2_m1_firmware", self.plan)
         self.assertIn("tests.test_s2_m2_kernel_driver", self.plan)
         self.assertIn("tests.test_s2_optimize_profile", self.plan)
@@ -372,6 +374,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("#180", self.plan)
         self.assertIn("tests/test_s2_m4_npu_visibility.py", self.roadmap)
         self.assertIn("tests/test_s2_m7_platform_validation.py", self.roadmap)
+        self.assertIn("tests/test_s2_m7_gate.py", self.roadmap)
         self.assertIn("tests/test_s2_m5_optimization_plan.py", self.roadmap)
         self.assertIn("tests/test_s2_m6_optimization_apply.py", self.roadmap)
         self.assertIn("tests/test_s2_m2_kernel_driver.py", self.roadmap)
@@ -410,7 +413,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("#197", issue169)
         self.assertIn("#199", issue169)
         self.assertIn("#201", issue169)
-        self.assertIn("This issue is **not complete**", issue169)
+        self.assertIn("This issue's PR 3 workstreams are **complete**", issue169)
         self.assertIn(
             "- [x] Make `stage1` / `tier1` call `run_stage1_profile` only",
             issue169,
@@ -470,15 +473,19 @@ class MigrationPlanTests(unittest.TestCase):
             issue169,
         )
         self.assertIn(
-            "- [ ] `require_tier123_pass` prefers `s2-m7-platform-validation.json`; fallback `tier1-validation.json`",
+            "- [x] `require_tier123_pass` prefers `s2-m7-platform-validation.json`; fallback `tier1-validation.json`",
             issue169,
         )
         self.assertIn(
-            "- [ ] Switch `10-detect-hardware.sh` callers to `stage1-probe` + `stage1-profile`",
+            "- [x] Switch `10-detect-hardware.sh` callers to `stage1-probe` + `stage1-profile`",
             issue169,
         )
         self.assertIn(
             "- [x] `tests/test_s2_m7_platform_validation.py` — aggregate from fixture milestone JSONs",
+            issue169,
+        )
+        self.assertIn(
+            "- [x] `tests/test_s2_m7_gate.py` — `require_tier123_pass` prefers S2-M7",
             issue169,
         )
         self.assertIn(
@@ -493,8 +500,13 @@ class MigrationPlanTests(unittest.TestCase):
             "- [x] `tests/test_s2_m2_kernel_driver.py` — canonical S2-M2 JSON",
             issue169,
         )
-        self.assertIn("- [ ] Mark migration plan step 3 done", issue169)
-        self.assertIn("- [ ] Deprecate `TASK_PROPOSALS.md` Tier language", issue169)
+        self.assertIn("- [x] Mark migration plan step 3 done", issue169)
+        self.assertIn("- [x] Deprecate `TASK_PROPOSALS.md` Tier language", issue169)
+        self.assertIn("- [x] Update ROADMAP milestone status for S2-M1/M2/M5/M7 only when exit evidence exists", issue169)
+        proposals = (ROOT / "TASK_PROPOSALS.md").read_text(encoding="utf-8")
+        self.assertIn("compatibility backlog", proposals.casefold())
+        self.assertIn("Do not add new Tier-named tasks", proposals)
+        self.assertIn("| 3 Stop Stage 1 mutation | **done**", self.plan)
         self.assertIn(
             "- [x] `s2-m7-platform-validation.json` validates against schema",
             issue169,
@@ -524,6 +536,24 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("always refreshes tier3-validation.json", orchestrator)
         self.assertIn("stage2-platform-validate", orchestrator)
         self.assertIn("stage2-optimize-apply --approve", orchestrator)
+        self.assertIn("s2-m7-platform-validation.json", orchestrator)
+        inventory_fn = orchestrator.split("run_stage2_platform_inventory()", 1)[1].split(
+            "run_stage2_platform_validate()", 1
+        )[0]
+        validate_fn = orchestrator.split("run_stage2_platform_validate()", 1)[1].split(
+            "run_stage2_optimize_plan()", 1
+        )[0]
+        self.assertNotIn("10-detect-hardware.sh", inventory_fn)
+        self.assertNotIn("10-detect-hardware.sh", validate_fn)
+        self.assertIn("ensure_stage1_profile", inventory_fn)
+        self.assertIn("ensure_stage1_profile", validate_fn)
+        gate_fn = orchestrator.split("require_tier123_pass()", 1)[1].split(
+            "load_runtime_config()", 1
+        )[0]
+        self.assertLess(
+            gate_fn.find("s2-m7-platform-validation.json"),
+            gate_fn.find("tier1-validation.json"),
+        )
         self.assertIn("s2-m4-npu-runtime-validation.json", readme)
         self.assertIn("visibility-only", readme.casefold())
         self.assertIn("stage2-npu-validate", readme)
@@ -565,7 +595,8 @@ class MigrationPlanTests(unittest.TestCase):
         )
         self.assertNotIn("scope is **implemented** (S2-M1–S2-M7)", readme)
         self.assertIn("stage2-platform-validate", readme)
-        self.assertIn("S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress", readme)
+        self.assertIn("S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6 In progress", readme)
+        self.assertIn("S2-M7\nImplemented", readme)
         self.assertIn("S3-M5", readme)
         self.assertIn("does not label Planned Stage 2 milestones as implemented", issue169)
         self.assertNotIn(
