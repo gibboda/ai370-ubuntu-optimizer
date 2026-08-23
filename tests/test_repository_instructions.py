@@ -413,6 +413,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("#197", issue169)
         self.assertIn("#199", issue169)
         self.assertIn("#201", issue169)
+        self.assertIn("#203", issue169)
         self.assertIn("This issue's PR 3 workstreams are **complete**", issue169)
         self.assertIn(
             "- [x] Make `stage1` / `tier1` call `run_stage1_profile` only",
