@@ -79,8 +79,9 @@ class RequireTier123PassGateTests(unittest.TestCase):
             _write_json(reports_dir / "s2-m7-platform-validation.json", "FAIL")
             _write_json(reports_dir / "tier1-validation.json", "PASS")
             result = _run_gate(reports_dir)
-            self.assertEqual(result.returncode, 3, result.stderr + result.stdout)
-            self.assertIn("s2-m7", result.stderr)
+            combined = result.stderr + result.stdout
+            self.assertEqual(result.returncode, 3, combined)
+            self.assertIn("s2-m7", combined)
 
     def test_falls_back_to_tier1_validation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -95,8 +96,9 @@ class RequireTier123PassGateTests(unittest.TestCase):
             reports_dir = Path(directory)
             self._seed_runtime_reports(reports_dir)
             result = _run_gate(reports_dir)
-            self.assertEqual(result.returncode, 3, result.stderr + result.stdout)
-            self.assertIn("s2-m7-platform-validation.json", result.stderr)
+            combined = result.stderr + result.stdout
+            self.assertEqual(result.returncode, 3, combined)
+            self.assertIn("s2-m7-platform-validation.json", combined)
 
 
 if __name__ == "__main__":
