@@ -258,6 +258,9 @@ directory is gitignored).
   consumer tests.
 - Stage boundary changes require corresponding updates to `docs/ROADMAP.md`,
   `README.md`, and command help.
+- README high-level status must match `docs/ROADMAP.md` milestone rows in the
+  same commit. The per-PR documentation sync contract lives in
+  `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`.
 - When the profile contract changes, update schema tests and downstream
   consumer tests.
 - Never add `try`/`catch` blocks around imports.

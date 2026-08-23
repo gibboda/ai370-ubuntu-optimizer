@@ -6,7 +6,7 @@ Tasks 2 through 5 and Task 24. It is analysis and planning only. It does not
 authorize a repository rewrite, a GitHub rename, or new public `stageN`
 commands.
 
-**Last reviewed:** 2026-08-22
+**Last reviewed:** 2026-08-23
 
 ## Document roles
 
@@ -184,9 +184,9 @@ Boundary notes that later PRs must preserve:
 
 - Architecture-layer 1 is read-only. `stage1` now publishes the S1-M1 through
   S1-M5 profile only. BIOS, kernel, GPU validation, and tuning-plan scripts
-  run from `stage2-platform-*` / `stage2-optimize-*`. Canonical S2-M1/S2-M2/S2-M5/S2-M6/S2-M7
-  JSON is In progress. Remaining S2-M1/S2-M2 work is remediation docs and the
-  kernel/driver matrix.
+  run from `stage2-platform-*` / `stage2-optimize-*`. Canonical S2-M7 JSON is
+  Implemented. Canonical S2-M1/S2-M2/S2-M5/S2-M6 JSON is In progress.
+  Remaining S2-M1/S2-M2 work is remediation docs and the kernel/driver matrix.
 - Architecture-layer 3 belongs in ROADMAP Stage 2, not Stage 1.
 - GPU and NPU remain independent. Current `stage2` installs both in one
   orchestrator path.
@@ -210,7 +210,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/validate-pr-title.sh` | IMPLEMENTED | Conventional Commit title gate |
 | `scripts/validate-commit-subject.sh` | IMPLEMENTED | Commit-subject gate |
 | `.github/workflows/*` | IMPLEMENTED | ShellCheck, PR title lint, release-please |
-| `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 tracks ROADMAP In progress vs Planned (S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress) |
+| `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 tracks ROADMAP (S2-M1–S2-M6 In progress; S2-M7 Implemented) |
 | `TASK_PROPOSALS.md` | DEPRECATED | Still describes Tier 1–5 follow-ups as current work |
 | `.github/issues/pr2-capability-ladders.md`, `.github/issues/pr3-read-only-stage1.md` | IMPLEMENTED | Tracking templates for GitHub issues #168 and #169 |
 
@@ -375,7 +375,7 @@ files, and docs.
 | `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | Venv/C++ install paths via `-p`/`-c`; `scripts/205` defaults to `.ai370-ai/ryzen-ai` | TEMPORARY_COMPATIBILITY_RULE | KEEP the path until a documented alias exists |
 | `configs/ai-runtime/requirements-offline.txt` | Pinned CPU `onnxruntime==1.22.0` and related wheels | TEMPORARY_COMPATIBILITY_RULE | KEEP as the S3 offline CPU pin file; do not treat it as NPU ORT |
 | `.ai370-ai/tools/llama.cpp` | Gitlink commit pin at `.ai370-ai/tools/llama.cpp` with no `.gitmodules` | TEMPORARY_COMPATIBILITY_RULE | KEEP the gitlink; `scripts/110-install-llama-cpp.sh` may clone or update the same path |
-| `README.md` Stage 1/2 "Implemented" summary | Reports canonical Planned milestones as implemented | UNNECESSARY_HARDCODE | REFACTOR status text to match ROADMAP |
+| `README.md` Stage 1/2 status summary | User-facing snapshot of ROADMAP milestone rows | TEMPORARY_COMPATIBILITY_RULE | KEEP; update in the same commit as ROADMAP status changes |
 | `TASK_PROPOSALS.md` | Tier 1–5 as current architecture | DEPRECATED | DEPRECATE; do not extend |
 
 BIOS 2.01, Ubuntu 26.04, kernel 7.x, Radeon 890M, and XDNA2 remain reference
@@ -483,7 +483,7 @@ abbreviated; see the assumption table for the full class.
 | `docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md` | Target architecture | None | Future 0–11 layers | Target architecture | KEEP | Instruction tests | Low |
 | `docs/npu-status.md` | NPU operator notes | Stage 2 NPU scripts | AI370/XDNA | S2-M4/S3-M4 docs | REFACTOR owners as scripts split | Docs-only | Low |
 | `docs/automatic1111-review.md`, `docs/forge-review.md`, `docs/openclaw-multi-llm-agent.md` | Application audits | None | Planned/non-goals | Stage 4/5 research | KEEP as non-implementation | None | Low |
-| `README.md` | User commands | Orchestrator | Status drift vs ROADMAP | User guide | REFACTOR status claims | Help smoke | Medium |
+| `README.md` | User commands | Orchestrator | Status must match ROADMAP | User guide | KEEP; same-commit status sync | Help smoke; instruction tests | Medium |
 | `TASK_PROPOSALS.md` | Stale Tier follow-ups | None | Tier architecture | None | DEPRECATE | None | Low |
 | VS Code / Continue / Aider / FastFlowLM / desktop module | Target applications | Runtime layer | None implemented | S5-M1/S5-M2, S3 runtime, desktop layer | Do not add until abstractions exist | Owner tests when added | High |
 
@@ -510,6 +510,7 @@ Do not file issues 4–11 until the prior boundary has tests.
 | 1 Detection facts | **done** (`#166`, `0.17.0`) | None remaining |
 | 2 Capability assessment | **done** (library `#170`, schemas `#173`, GPU publisher `#176` / `0.20.0`, NPU publisher `#180` / `0.21.0`) | None remaining; [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) is complete |
 | 3 Stop Stage 1 mutation | **done**; `stage1` is read-only; `stage2-platform-validate` invokes existing GPU/NPU commands and the S2-M7 publisher; `require_tier123_pass` prefers `s2-m7-platform-validation.json`; remaining S2-M1/S2-M2 remediations and S2-M5/S2-M6 backup/rollback are ROADMAP follow-ups | [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) |
+| 3-docs Documentation sync | **done** (this change) | Not a sequence 4–11 issue |
 | 4–11 later boundaries | **planned** | Not filed |
 
 Recommended order, using ROADMAP owners rather than new public stage numbers:
@@ -532,6 +533,10 @@ Recommended order, using ROADMAP owners rather than new public stage numbers:
    `s2-m7-platform-validation.json` and falls back to `tier1-validation.json`.
    Orchestrator callers use `stage1-probe` + `stage1-profile` instead of
    `10-detect-hardware.sh`.
+3-docs. **Documentation sync** — **done in this change.** Encode the per-PR
+    README/ROADMAP sync contract. Later boundary PRs carry the contract;
+    they do not wait on a second docs issue. Do not file this as GitHub
+    issues 4–11.
 4. **Independent GPU module** — S2-M3 visibility plus S3-M3 framework
    execution; package presence is not GPU compute.
 5. **Independent NPU module** — S2-M4 visibility plus S3-M4 execution;
@@ -597,11 +602,44 @@ Do not hide unexpected failures with unconditional `|| true`.
 
 ------------------------------------------------------------------------
 
-## Documentation and status drift
+## Documentation sync
 
-The high-level README Stage 1 summary now matches ROADMAP: S1-M1 through
-S1-M5 are Implemented as `stage1-probe` / `stage1-profile`, and `stage1`
-is read-only profile publication. Remaining README / #169 drift:
+README and ROADMAP stay **current-behavior** documents. They are not rewritten
+to look like the architecture document's destination layers 0–11.
+
+| Document | Sync rule |
+| --- | --- |
+| [`HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md`](HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md) | Destination architecture. Do not copy layer 0–11 language into README command lists until a ROADMAP stage-boundary PR exists. |
+| [`ROADMAP.md`](ROADMAP.md) | Implementation authority. Update the deliverable registry and milestone status in the **same commit** as the code, tests, or command that changes them. |
+| [`README.md`](../README.md) | User-facing commands and a high-level status snapshot. Follow ROADMAP milestone rows, not destination architecture language. |
+| This plan | Inventory and PR sequence. Update status rows when a boundary lands. |
+
+Per-PR contract for sequence 4–10 and remaining Stage 2 follow-ups:
+
+1. Same commit as the code: ROADMAP registry/status, README usage/status, and
+   orchestrator `usage()` when a public command changes.
+2. README follows ROADMAP. ROADMAP follows exit evidence. Architecture stays
+   destination.
+3. Status vocabulary stays split. This plan uses `IMPLEMENTED` / `PARTIAL` /
+   `PLANNED`. ROADMAP and README use `Implemented` / `In progress` / `Planned`.
+4. A dedicated ROADMAP stage-boundary PR is the only change that may add
+   public `stage6`–`stage11` commands, add a desktop ROADMAP owner, or change
+   the five-stage model. That PR must update ROADMAP, README, and help together.
+5. R1/R2 bind compatibility removal to versions in ROADMAP and README together.
+6. Sequence 11 rename prep updates identity wording without treating architecture
+   layers as current commands.
+
+This contract is **not** migration sequence 4–11. Do not file GitHub issues
+4–11 for documentation sync. Instruction tests in
+`tests/test_repository_instructions.py` enforce the contract.
+
+The high-level README Stage 1 and Stage 2 summaries match ROADMAP: S1-M1
+through S1-M5 are Implemented as `stage1-probe` / `stage1-profile`, and
+`stage1` is read-only profile publication. S2-M7 is **Implemented**. S2-M1
+through S2-M6 are **In progress**. S3 through S5 remain Planned until
+outputs, tests, and docs exist.
+
+Current command facts that later PRs must keep accurate:
 
 - Canonical S2-M7 (`s2-m7-platform-validation.json`) is **Implemented**. The
   publisher and schema exist; `90-validate.sh` is a compatibility shim.
@@ -614,13 +652,16 @@ is read-only profile publication. Remaining README / #169 drift:
   refreshes `tier3-validation.json` on this command. Pass `--bench` for the
   mixed 210/220/230/245 compatibility path until S3-M6. Do not treat the
   command name as missing.
-- Canonical S2-M3/S2-M4/S2-M5/S2-M6 are **In progress**, not Implemented. S2-M3 still
-  lacks separate missing-driver/Vulkan/ROCm layer fixtures. S2-M4 still shares
-  a mixed `stage2-npu` bench path. S2-M7 is **Implemented**: `require_tier123_pass`
-  prefers `s2-m7-platform-validation.json`. S2-M5/S2-M6 have canonical plan/apply JSON; backup/rollback remain
-  Planned. S2-M1 and S2-M2 are **In progress** (canonical JSON exists; remaining
-  work is remediation docs and the kernel/driver matrix). S3 through S5 remain
-  Planned until outputs, tests, and docs exist.
+- Canonical S2-M3/S2-M4/S2-M5/S2-M6 remain **In progress**, not Implemented.
+  S2-M3 still lacks separate missing-driver/Vulkan/ROCm layer fixtures. S2-M4
+  still shares a mixed `stage2-npu` bench path. S2-M5/S2-M6 have canonical
+  plan/apply JSON; backup/rollback remain Planned. S2-M1 and S2-M2 are **In
+  progress** (canonical JSON exists; remaining work is remediation docs and
+  the kernel/driver matrix).
+
+Remaining work is future same-commit updates as sequence 4–10 and those
+Stage 2 follow-ups land. Do not pre-write README or ROADMAP as if
+architecture layers 0–11 were public commands.
 
 The architecture document is target design. Features listed there as local
 coding AI, FastFlowLM, unified master validation, heterogeneous live

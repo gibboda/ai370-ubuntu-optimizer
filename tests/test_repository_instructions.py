@@ -129,6 +129,18 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "Never label planned functionality as implemented", self.agent_instructions
         )
         self.assertIn(
+            "README high-level status must match `docs/ROADMAP.md` milestone rows",
+            self.agent_instructions,
+        )
+        self.assertNotIn(
+            "README high-level status must match",
+            self.copilot_instructions,
+        )
+        self.assertNotIn(
+            "README high-level status must match",
+            self.codex_instructions,
+        )
+        self.assertIn(
             "Do not add public `stage6` through `stage11` commands",
             self.agent_instructions,
         )
@@ -387,6 +399,26 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertNotIn("NPU publisher remains", self.plan)
         self.assertNotIn("NPU publisher CLI remains issue #168", self.plan)
 
+    def test_migration_plan_defines_documentation_sync_contract(self) -> None:
+        self.assertIn("## Documentation sync", self.plan)
+        self.assertIn("README follows ROADMAP", self.plan)
+        self.assertIn("Same commit as the code", self.plan)
+        self.assertIn("Not a sequence 4–11 issue", self.plan)
+        self.assertIn("Do not file GitHub issues\n4–11 for documentation sync", self.plan)
+        self.assertIn("| 3-docs Documentation sync | **done** (this change)", self.plan)
+        self.assertNotIn(
+            "S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress",
+            self.plan,
+        )
+        self.assertNotIn(
+            "Reports canonical Planned milestones as implemented",
+            self.plan,
+        )
+        self.assertIn(
+            "User-facing `README.md` status must match this",
+            self.roadmap,
+        )
+
     def test_open_issue_templates_match_remaining_publisher_work(self) -> None:
         issue168 = (ROOT / ".github/issues/pr2-capability-ladders.md").read_text(
             encoding="utf-8"
@@ -598,6 +630,12 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("stage2-platform-validate", readme)
         self.assertIn("S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6 In progress", readme)
         self.assertIn("S2-M7\nImplemented", readme)
+        self.assertIn("S2-M7 is **Implemented**", readme)
+        self.assertNotIn("Next implementation steps", readme)
+        self.assertNotIn(
+            "S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7, which\n  are **In progress**",
+            readme,
+        )
         self.assertIn("S3-M5", readme)
         self.assertIn("does not label Planned Stage 2 milestones as implemented", issue169)
         self.assertNotIn(
