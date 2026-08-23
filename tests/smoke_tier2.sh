@@ -94,7 +94,7 @@ done
 python3 - "$LATEST_DIR/offline-model-storage.json" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1]))
-assert data.get("stage") == "S2-M5"
+assert data.get("stage") == "S3-M1"
 assert data.get("status") in ("PASS", "WARN", "FAIL")
 assert isinstance(data.get("models"), list)
 print("[OK] offline-model-storage.json structure")

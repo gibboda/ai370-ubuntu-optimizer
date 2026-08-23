@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M6: Lemonade SDK / Server installer (OpenAI-compatible local LLM serving).
+# S3-M5: Lemonade SDK / Server installer (OpenAI-compatible local LLM serving).
 # Sibling to Ollama — does not remove or require Ollama. Offline-first via
 # wheelhouse / staged artifacts. WARN-friendly experimental path on Linux.
 
@@ -201,7 +201,7 @@ PY
 {
   "tier": 2,
   "phase": "install-lemonade",
-  "milestone": "S2-M6",
+  "milestone": "S3-M5",
   "status": "$status",
   "profile": "$PROFILE",
   "mode": "$MODE",
@@ -236,7 +236,7 @@ PY
 EOF_JSON
 
   {
-    echo "# Stage 2 — Lemonade Status (S2-M6)"
+    echo "# Stage 3 — Lemonade Status (S3-M5)"
     echo
     echo "Profile: $PROFILE | Mode: $MODE | Offline: $OFFLINE"
     echo "Status: $status"

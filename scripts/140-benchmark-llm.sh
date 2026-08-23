@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Milestone 2 / S2-M4: local AI runtime validation and measured smoke benchmarks.
+# S3-M6: local AI runtime validation and measured smoke benchmarks.
 # Records load_time_ms, tokens_generated, tokens_per_sec when a local model runs.
 # Does not download models or pull Ollama manifests.
 
@@ -31,7 +31,7 @@ SMOKE_PROMPT="${SMOKE_PROMPT:-Hi}"
 SMOKE_LLAMA_TIMEOUT_SEC="${SMOKE_LLAMA_TIMEOUT_SEC:-90}"
 SMOKE_OLLAMA_TIMEOUT_SEC="${SMOKE_OLLAMA_TIMEOUT_SEC:-120}"
 OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
-# S2-M6 Lemonade OpenAI-compatible defaults (optional smoke when server is up)
+# S3-M5 Lemonade OpenAI-compatible defaults (optional smoke when server is up)
 LEMONADE_HOST="${LEMONADE_HOST:-127.0.0.1}"
 LEMONADE_PORT="${LEMONADE_PORT:-8000}"
 LEMONADE_BASE_URL="${LEMONADE_BASE_URL:-http://${LEMONADE_HOST}:${LEMONADE_PORT}/api/v1}"
@@ -533,7 +533,7 @@ main() {
   fi
 
   # Prefer token-generating backends: llama.cpp GGUF, then Ollama, then Lemonade
-  # (S2-M6 OpenAI server if already running), then PyTorch matmul fallback.
+  # (S3-M5 OpenAI server if already running), then PyTorch matmul fallback.
   local_inference_smoke="skipped"
   if [[ "$llama_state" == "available" && -n "$gguf_files" ]]; then
     first_gguf="$(printf '%s\n' "$gguf_files" | head -n 1)"

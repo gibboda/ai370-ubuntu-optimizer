@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M2: explicit XRT / Ryzen AI package install or offline staging validation.
+# S2-M4 inventory / S3-M4 install: XRT / Ryzen AI staging or risk-accepted install.
 # Safe by default: without --accept-amd-acceleration-risk (5th arg true) this script
 # only inventories artifacts and records diagnostics (does not apt-install).
 # With risk accepted, installs staged XRT .deb packages and optional Ryzen AI tarball
@@ -532,7 +532,7 @@ ubuntu_versions = [v for v in os.environ.get("XRT_UBUNTU_VERSIONS", "").split() 
 data = {
     "tier": 2,
     "stage": 2,
-    "milestone": "S2-M2",
+    "milestone": "S3-M4" if os.environ["ACCEPT_RISK"] == "true" else "S2-M4",
     "phase": "install-xrt-ryzen-ai",
     "status": status,
     "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -628,7 +628,7 @@ PY
 }
 
 main() {
-  echo "[INFO] S2-M2: XRT / Ryzen AI install or staging validation"
+  echo "[INFO] S2-M4/S3-M4: XRT / Ryzen AI install or staging validation"
   echo "[INFO] Profile: $PROFILE  Mode: $MODE  Persistence: $PERSISTENCE"
   echo "[INFO] Offline: $OFFLINE  Risk accepted: $ACCEPT_AMD_ACCELERATION_RISK"
 

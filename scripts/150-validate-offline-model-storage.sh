@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M5: offline model manifest, storage, and integrity validation.
+# S3-M1: offline model manifest, storage, and integrity validation.
 
 set -euo pipefail
 
@@ -295,7 +295,7 @@ if missing_categories:
 
 status = "FAIL" if failures else ("WARN" if warnings else "PASS")
 report = {
-    "stage": "S2-M5",
+    "stage": "S3-M1",
     "status": status,
     "timestamp": datetime.now(timezone.utc).isoformat(),
     "profile": profile,

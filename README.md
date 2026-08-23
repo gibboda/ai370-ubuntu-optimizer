@@ -144,8 +144,12 @@ Current high-level status (see `docs/ROADMAP.md` for details):
   pass `--bench` for the mixed 230/245 compatibility path until S3-M6.
   NPU PASS requires profiled AMD EP execution (`scripts/lib/npu_ep_verify.py`).
   Optional paths are not Stage 3 gates. See `docs/ROADMAP.md`.
-- Stage 3: **Planned** in ROADMAP. Current runtime/benchmark scripts exist as
-  partial implementations. GAIA and LM Studio remain planned applications.
+- Stage 3: **Planned** in ROADMAP. Current `stage2` / `stage2-runtime` /
+  `stage2-npu` scripts are partial S3 compatibility implementations.
+- Stage 4 and Stage 5: **Planned**. `stage2-rag` / `tier4` are S4-M3
+  compatibility commands; `stage3-image` / `tier5` are S4-M1/S4-M2
+  compatibility commands. GAIA, LM Studio, and coding assistants remain
+  planned applications.
 
 ### Implemented / Planned (high level)
 
@@ -228,19 +232,18 @@ from marketing names.
   `scripts/lib/digest_analyze.py` (S3-M4 Digest AI / ONNX analysis;
   diagnostics only)
 
-**Stage 3+ — Planned / not present (or partial):**
+**Stage 4 and Stage 5 — Planned (current scripts are partial compatibility implementations):**
 
-- `scripts/400-install-comfyui.sh` (S3-M1)
-- `scripts/410-install-comfyui-models.sh` (S3-M2)
-- `workflows/comfyui/flux/`, `workflows/comfyui/sdxl/`,
-  `workflows/comfyui/controlnet/`, `workflows/comfyui/upscalers/` (S3-M3)
-- ComfyUI start/stop/status/health automation (`430`–`434`, S3-M5)
-- Offline text/embed/Whisper app validators (`440`–`444`, S3-M6)
-- GAIA and LM Studio installers (optional S3 apps)
-- Stage 4 Continue/Aider and Stage 5 lifecycle automation
-
-Partial Stage 3 already present: `scripts/420-benchmark-comfyui.sh` and some
-workflows under `workflows/comfyui/`.
+- ComfyUI application and workflows (S4-M1 / S4-M2):
+  `scripts/70-comfyui-workflows.sh`, `scripts/420-benchmark-comfyui.sh`,
+  `workflows/comfyui/`
+- Planned ComfyUI installer/lifecycle scripts (`400`/`410`/`430`–`434`) are
+  not present
+- Offline RAG (S4-M3): current `stage2-rag` / `tier4` compatibility path
+- GAIA (S4-M4) and LM Studio (S4-M5): not present
+- Open WebUI (S4-M6): `scripts/130-install-open-webui.sh` (currently invoked
+  from the Stage 2 runtime compatibility path)
+- Continue/Aider coding assistants (S5-M1) and Stage 5 lifecycle: not present
 
 For the authoritative, up-to-date status and contributor guidance consult
 `docs/ROADMAP.md` (**Migration sequence** and remaining In progress Stage 2
@@ -249,13 +252,13 @@ rows). The per-PR documentation sync contract is in
 
 AUTOMATIC1111's Stable Diffusion WebUI is not currently supported. See the
 [`AUTOMATIC1111 codebase review`](docs/automatic1111-review.md) for the audited
-gaps, risks, and recommended Stage 3 implementation boundary.
+gaps, risks, and recommended Stage 4 application boundary.
 
 Stable Diffusion WebUI Forge is also not currently supported. See the
 [`Forge codebase review`](docs/forge-review.md) for the audited integration
-gaps, fork-specific risks, and recommended Stage 3 implementation boundary.
+gaps, fork-specific risks, and recommended Stage 4 application boundary.
 
-For a proposed Stage 3 personal-agent architecture that composes OpenClaw with
+For a proposed Stage 4/5 personal-agent architecture that composes OpenClaw with
 multiple local LLM roles, Ollama/Lemonade providers, offline RAG, and tiered
 tool permissions, see `docs/openclaw-multi-llm-agent.md`.
 
@@ -467,11 +470,12 @@ image-generation gate via the mixed `stage2-npu` / `--bench` path until S3-M6.
 ./ai370-optimize.sh tier4          # Legacy alias
 ```
 
-**Current status:** Implemented offline lifecycle (S2-M3). `stage2-rag` /
-`tier4` invoke `scripts/300-install-anythingllm.sh`,
+**Current status:** Partial compatibility implementation (ROADMAP S4-M3,
+**Planned**). `stage2-rag` / `tier4` invoke
+`scripts/300-install-anythingllm.sh`,
 `scripts/310-install-embedding-models.sh`, and `scripts/320-validate-rag.sh`.
 Online mode may pull/download; offline mode uses staged artifacts and
-wheelhouse only. Stage 2 RAG is optional and is not part of the Stage 3 gate.
+wheelhouse only. This path is optional and is not part of the Stage 3 gate.
 
 **Acceptance Criteria:**
 
@@ -482,7 +486,7 @@ wheelhouse only. Stage 2 RAG is optional and is not part of the Stage 3 gate.
 - Aggregate report distinguishes `production_ready` (embedding RAG) from
   `full_stack_ready` (including AnythingLLM)
 
-### Stage 3 Image Generation – Generative AI
+### Stage 3 Image Generation – Generative AI (ROADMAP S4-M1 / S4-M2)
 
 **Components:**
 

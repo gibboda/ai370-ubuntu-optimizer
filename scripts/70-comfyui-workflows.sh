@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
+#
+# S4-M1: ComfyUI application install and workflow templates.
 
 set -euo pipefail
 
@@ -247,7 +249,7 @@ Place models here:
 
 The generated launcher starts ComfyUI with \`--cpu\` by default. This prevents unstable AMD iGPU/ROCm assumptions.
 
-If \`./ai370-optimize.sh amd-accel-install --accept-amd-acceleration-risk\` completes and ROCm remains visible in Phase 5 validation, the launcher is generated without \`--cpu\` and sources \`reports/latest/amd-acceleration-env.sh\`. Otherwise it stays CPU-safe.
+If \`./ai370-optimize.sh amd-accel-install --accept-amd-acceleration-risk\` completes and ROCm remains visible in S2-M3 GPU validation, the launcher is generated without \`--cpu\` and sources \`reports/latest/amd-acceleration-env.sh\`. Otherwise it stays CPU-safe.
 
 ## Recommended local workflow order
 
@@ -267,7 +269,7 @@ EOF
 }
 
 main() {
-  echo "[INFO] Phase 8: ComfyUI + local AI workflows"
+  echo "[INFO] S4-M1: ComfyUI + local AI workflows"
   echo "[INFO] Profile: $PROFILE"
   echo "[INFO] Mode: $MODE"
   echo "[INFO] Persistence: $PERSISTENCE"

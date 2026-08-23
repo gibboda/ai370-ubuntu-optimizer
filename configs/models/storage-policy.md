@@ -2,7 +2,7 @@
 
 ## Purpose
 
-S2-M5 defines the local model inventory and validation rules for offline AI
+S3-M1 defines the local model inventory and validation rules for offline AI
 operation. The policy keeps model metadata in `configs/models/manifest.yaml` and
 expects validation to run without network access.
 

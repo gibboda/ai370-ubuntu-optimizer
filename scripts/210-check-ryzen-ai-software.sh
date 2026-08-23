@@ -241,7 +241,7 @@ PY
 }
 
 main() {
-  echo "[INFO] Phase 5: XDNA NPU validation track"
+  echo "[INFO] S2-M4: XDNA NPU visibility track"
   echo "[INFO] Offline: $OFFLINE  Visibility-only: $VISIBILITY_ONLY"
   require_runtime_persistence
   detect_npu_stack

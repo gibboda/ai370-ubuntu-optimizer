@@ -42,7 +42,7 @@ The production workflows are structured for repeatability, but model compatibili
 Run:
 
 ```bash
-bash scripts/comfyui-benchmark.sh
+bash scripts/420-benchmark-comfyui.sh
 ```
 
 See `benchmarking.md` for methodology and output artifact paths.

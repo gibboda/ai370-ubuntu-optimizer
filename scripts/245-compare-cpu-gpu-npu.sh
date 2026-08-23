@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M4: compare CPU, GPU (ROCm/HIP), and NPU (Vitis AI EP) microbenchmark paths.
+# S3-M6: compare CPU, GPU (ROCm/HIP), and NPU (Vitis AI EP) microbenchmark paths.
 # Emits reports/latest/cpu-gpu-npu-comparison.{json,md}.
 # Idempotent; does not download models or install packages.
 # Script id 245 (id 240 is reserved for 240-write-tier3-validation.sh).
@@ -30,7 +30,7 @@ COMPARE_TORCH_SIZE="${COMPARE_TORCH_SIZE:-512}"
 COMPARE_TORCH_ITERS="${COMPARE_TORCH_ITERS:-20}"
 
 main() {
-  echo "[INFO] S2-M4: CPU / GPU / NPU comparison benchmark"
+  echo "[INFO] S3-M6: CPU / GPU / NPU comparison benchmark"
   echo "[INFO] Profile: $PROFILE | Mode: $MODE | Offline: $OFFLINE"
 
   if [[ "$PERSISTENCE" == "system" ]]; then
@@ -735,7 +735,7 @@ diagnostics = unique_diag
 data = {
     "tier": 2,
     "stage": 2,
-    "milestone": "S2-M4",
+    "milestone": "S3-M6",
     "phase": "compare-cpu-gpu-npu",
     "status": status,
     "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),
@@ -764,7 +764,7 @@ data = {
 json_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 lines = [
-    "# CPU / GPU / NPU Comparison (S2-M4)",
+    "# CPU / GPU / NPU Comparison (S3-M6)",
     "",
     f"Profile: {profile} | Mode: {mode} | Offline: {offline}",
     "",

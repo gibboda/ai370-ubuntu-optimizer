@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # shellcheck shell=bash
 #
-# Shared offline path helpers for Stage 2 installers (S2-M3 RAG and others).
+# Shared offline path helpers for Stage 3/4 installers (S3-M1 models, S4-M3 RAG).
 # Requires PROJECT_ROOT to be set to the repository root before sourcing.
 #
 # Usage:
@@ -75,7 +75,7 @@ ai370_first_nonempty() {
   printf '%s\n' ""
 }
 
-# Apply S2-M3 / offline runtime path defaults into caller-visible variables.
+# Apply S4-M3 / offline runtime path defaults into caller-visible variables.
 # Respects explicit env overrides (ANYTHINGLLM_*, EMBEDDING_*, etc.) over OFFLINE_*.
 # Exports AI370_* path variables for installers that source this library.
 ai370_apply_offline_rag_paths() {

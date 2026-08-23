@@ -5,5 +5,5 @@
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo "[INFO] 40-optimize-cpu.sh → 40-platform-tuning.sh (combined platform tuning)"
+echo "[WARN] 40-optimize-cpu.sh is deprecated; use ./ai370-optimize.sh stage2-optimize-plan"
 exec bash "$SCRIPT_DIR/40-platform-tuning.sh" "$@"

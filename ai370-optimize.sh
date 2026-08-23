@@ -345,14 +345,14 @@ run_stage2_runtime_core() {
 }
 
 run_stage2_models() {
-  echo "[INFO] Stage 2 model layout + offline validation (S2-M5 polish; no downloads)"
+  echo "[INFO] Stage 3 model layout + offline validation (S3-M1; no downloads)"
   run_script "scripts/155-stage-model-layout.sh" "$OFFLINE"
   run_script "scripts/150-validate-offline-model-storage.sh" "$OFFLINE"
 }
 
 run_stage2_npu_core() {
   local include_compare="${1:-true}"
-  echo "[INFO] Stage 2 NPU core (S2-M2 / S2-M4)"
+  echo "[INFO] Mixed NPU core (S2-M4 visibility + S3-M4/S3-M6 until split)"
   run_script "scripts/205-install-xrt-ryzen-ai.sh" "$OFFLINE" "$ACCEPT_AMD_ACCELERATION_RISK"
   run_script "scripts/200-install-onnxruntime.sh" "$OFFLINE"
   run_script "scripts/210-check-ryzen-ai-software.sh" "$OFFLINE"

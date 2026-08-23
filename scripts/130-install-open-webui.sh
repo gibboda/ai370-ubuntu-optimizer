@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Milestone 2: Open WebUI optional installer / validator.
+# S4-M6: Open WebUI optional installer / validator.
 
 set -euo pipefail
 
@@ -70,7 +70,7 @@ main() {
     action="validated-existing-container-image"
   elif [[ "$OFFLINE" == "true" ]]; then
     action="skipped-offline-optional"
-    detail="Open WebUI is optional for Milestone 2. Offline mode does not install it; stage a wheel or container image before rerunning."
+    detail="Open WebUI is optional for S4-M6. Offline mode does not install it; stage a wheel or container image before rerunning."
   else
     action="pip-install-attempted"
     local selected_python="" venv_ready="true"

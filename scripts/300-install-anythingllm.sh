@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M3: AnythingLLM installer / validator with offline lifecycle support.
+# S4-M3: AnythingLLM installer / validator with offline lifecycle support.
 # Prefer staged Docker images or AppImage under .ai370-ai/; never requires
 # network when OFFLINE=true. Creates local RAG document/storage directories.
 
@@ -239,7 +239,7 @@ EOF
 {
   "tier": 4,
   "phase": "install-anythingllm",
-  "milestone": "S2-M3",
+  "milestone": "S4-M3",
   "status": "$status",
   "profile": "$PROFILE",
   "mode": "$MODE",
@@ -276,7 +276,7 @@ EOF
 EOF_JSON
 
   {
-    echo "# Stage 2 RAG — AnythingLLM Status (S2-M3)"
+    echo "# Stage 4 RAG — AnythingLLM Status (S4-M3)"
     echo
     echo "Profile: $PROFILE | Mode: $MODE | Offline: $OFFLINE"
     echo "Status: $status"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# Milestone 2: PyTorch ROCm installer / validator.
+# S3-M3: PyTorch ROCm installer / validator.
 # Online mode installs into the repo-local venv. Offline mode only validates a
 # pre-staged venv/wheelhouse and records clean missing-state reports.
 

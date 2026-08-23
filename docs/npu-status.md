@@ -1,13 +1,15 @@
 # AMD NPU / Ryzen AI Stack Status
 
-This document tracks the Stage 2 AMD AI Stack validation path for the
-Minisforum EliteMini AI370 / AMD XDNA-class NPU target.
+This document tracks NPU visibility (S2-M4) and runtime/execution (S3-M4 /
+S3-M6) for the Minisforum EliteMini AI370 / AMD XDNA-class NPU target.
+S2-M2 is kernel and driver validation, not the NPU stack.
 
 ## Scope
 
-S2-M2 validates the local AMD AI Stack without assuming that proprietary or
-platform-specific Ryzen AI components are already present. The scripts are safe
-by default: they generate status reports when hardware, kernel modules, runtime
+S2-M4 records XDNA2 NPU visibility. S3-M4 owns ONNX/XRT/Ryzen AI install and
+execution proof. S3-M6 owns NPU benchmarks. The mixed `stage2-npu` path still
+invokes those later-stage scripts until the S3 split. The scripts are safe by
+default: they generate status reports when hardware, kernel modules, runtime
 tools, ONNX Runtime, or NPU execution providers are missing.
 
 ## Validation flow
@@ -20,7 +22,8 @@ Preferred launcher path (inventory-only for XRT unless risk is accepted):
 ./ai370-optimize.sh stage2-npu --accept-amd-acceleration-risk
 ```
 
-Script order for S2-M2:
+Script order for the mixed `stage2-npu` compatibility path (S2-M4 inventory
+plus S3-M4/S3-M6 until split):
 
 ```bash
 ./scripts/205-install-xrt-ryzen-ai.sh   # inventory, or install when 5th arg is true
@@ -75,14 +78,15 @@ Stage 2 NPU intentionally uses **two** Python environments for ORT/XRT:
 
 | Path | Purpose | Typical packages |
 | --- | --- | --- |
-| `.ai370-ai/ryzen-ai/venv` | AMD Ryzen AI software + NPU EP (preferred for S2-M2 checks) | `ryzen-ai`, `onnxruntime-vitisai` (import name `onnxruntime`), `onnxruntime-genai-ryzenai` |
+| `.ai370-ai/ryzen-ai/venv` | AMD Ryzen AI software + NPU EP (preferred for S2-M4 / S3-M4 checks) | `ryzen-ai`, `onnxruntime-vitisai` (import name `onnxruntime`), `onnxruntime-genai-ryzenai` |
 | `.ai370-ai/venv` | Stock CPU ONNX Runtime from `scripts/200-install-onnxruntime.sh` | PyPI `onnxruntime`, `onnx`, `numpy` |
 
-### S2-M6 Lemonade / TurnkeyML (NPU/hybrid *LLM* serving)
+### S3-M5 Lemonade / TurnkeyML (NPU/hybrid *LLM* serving)
 
 Tiny ONNX MatMul smokes often cannot exercise VAIML even when VitisAI is listed.
-**Lemonade Server** (OpenAI-compatible) is the Stage 2 path for real LLM serving
-with hybrid/NPU backends where the platform supports them.
+**Lemonade Server** (OpenAI-compatible) is the S3-M5 path for real LLM serving
+with hybrid/NPU backends where the platform supports them. The
+`stage2-lemonade` command is a compatibility alias.
 
 | Path / command | Purpose |
 | --- | --- |
@@ -90,7 +94,7 @@ with hybrid/NPU backends where the platform supports them.
 | `scripts/170-install-turnkeyml.sh` | TurnkeyML inventory + lemonade-sdk companion install |
 | `scripts/160-install-lemonade.sh` | Install/detect Lemonade SDK or system package |
 | `scripts/165-validate-lemonade.sh` | Health + optional `/api/v1` models + chat smoke |
-| `./ai370-optimize.sh stage2-lemonade` | Run S2-M6 only |
+| `./ai370-optimize.sh stage2-lemonade` | Run S3-M5 compatibility path |
 | Default API | `http://127.0.0.1:8000/api/v1` (`LEMONADE_BASE_URL`) |
 
 **Rules:**
@@ -120,7 +124,7 @@ Server logs when `LEMONADE_START=true` are written to `/tmp/ai370-lemonade-serve
 Package install alone is WARN-friendly; `production_ready` in
 `lemonade-validation.json` requires a live OpenAI smoke.
 
-### S2-M7 Digest AI (model analysis diagnostics)
+### S3-M4 Digest AI (model analysis diagnostics)
 
 | Path / command | Purpose |
 | --- | --- |
@@ -128,7 +132,7 @@ Package install alone is WARN-friendly; `production_ready` in
 | `scripts/250-install-digest-ai.sh` | Install/inventory Digest AI; ensure ONNX fallback readiness |
 | `scripts/255-analyze-model-digest.sh` | Analyze staged ONNX models → `digest-model-report.md` |
 | `scripts/lib/digest_analyze.py` | Digest API or pure-ONNX fallback analyzer |
-| `./ai370-optimize.sh stage2-digest` | Run S2-M7 only |
+| `./ai370-optimize.sh stage2-digest` | Run S3-M4 diagnostics compatibility path |
 
 **Rules:**
 
@@ -200,7 +204,7 @@ A fully enabled NPU stack should show these signals:
 
 | Symptom | Likely cause | Next action |
 | --- | --- | --- |
-| No AMDXDNA/XDNA kernel module | Kernel, firmware, or driver support missing | Re-run Tier 1 kernel/NPU detection and confirm platform firmware support. |
+| No AMDXDNA/XDNA kernel module | Kernel, firmware, or driver support missing | Re-run `stage2-kernel-validate` and `stage1-probe` and confirm platform firmware support. |
 | No NPU device node | Firmware, kernel driver, or permissions issue | Check `reports/latest/tier1-npu.md` and `reports/latest/npu-capabilities.json`. |
 | `xrt-smi` missing | Ryzen AI/XRT runtime tools are not installed or not in `PATH` | Stage XRT/NPU `.deb` files under `.ai370-ai/amd-artifacts/` (see `configs/amd-acceleration.env`), re-run with `--accept-amd-acceleration-risk`, then rerun `scripts/210-check-ryzen-ai-software.sh`. |
 | No matching XRT/NPU debs | No host/previous-LTS/discovered tags matched and no override | Auto mode uses host `VERSION_ID`, previous LTS, and tags parsed from staged deb names, then `XRT_DEB_GLOBS`. Stage matching debs, pin `XRT_UBUNTU_VERSIONS`, or set `XRT_DEB_GLOBS` / `XRT_DEB_GLOBS_MODE=override`. |
@@ -218,7 +222,9 @@ A fully enabled NPU stack should show these signals:
 
 ## Completion criteria
 
-S2-M2 can be treated as complete when all deliverable scripts exist, the status
-document exists, and the benchmark step always emits either successful NPU
-timings or a clear limitation report explaining why the local hardware/software
-stack cannot run NPU inference yet.
+S2-M4 visibility is complete when the canonical
+`s2-m4-npu-runtime-validation.json` report exists and does not claim inference.
+S3-M4/S3-M6 remain Planned until provider-execution tests and a dedicated
+benchmark report exist. The mixed `stage2-npu` path still emits either
+successful NPU timings or a clear limitation report explaining why the local
+hardware/software stack cannot run NPU inference yet.

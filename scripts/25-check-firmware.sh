@@ -5,5 +5,5 @@
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo "[INFO] 25-check-firmware.sh → 20-check-bios.sh (combined BIOS + firmware baseline)"
+echo "[WARN] 25-check-firmware.sh is deprecated; use ./ai370-optimize.sh stage2-firmware-validate"
 exec bash "$SCRIPT_DIR/20-check-bios.sh" "$@"

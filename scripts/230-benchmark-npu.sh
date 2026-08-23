@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M2: local NPU benchmark/diagnostic report for AMD Ryzen AI / Vitis AI EP.
+# S3-M6: local NPU benchmark/diagnostic report for AMD Ryzen AI / Vitis AI EP.
 
 set -euo pipefail
 
@@ -188,7 +188,7 @@ else:
 
 data = {
     "tier": 2,
-    "milestone": "S2-M2",
+    "milestone": "S3-M6",
     "phase": "benchmark-npu",
     "status": status,
     "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),

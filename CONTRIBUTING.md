@@ -59,13 +59,13 @@ Scope narrows the area of change:
 
 | Scope | Area |
 | --- | --- |
-| `audit` | `scripts/01-hardware-audit.sh` |
-| `baseline` | Baseline inventory/plan/validate flow |
-| `amd` | `scripts/10-amd-baseline.sh` |
-| `ai-stack` | `scripts/20-ai-stack.sh` |
-| `rocm` | `scripts/30-rocm-igpu.sh` |
-| `npu` | `scripts/40-ryzen-ai-npu.sh` |
-| `acceleration` | `scripts/50-60-*` |
+| `audit` | Compatibility hardware audit (`scripts/legacy/01-hardware-audit.sh`); prefer `stage1` |
+| `baseline` | Baseline inventory/plan/validate compatibility flow |
+| `amd` | Compatibility AMD baseline (`scripts/legacy/10-amd-baseline.sh`); prefer `stage2-*` |
+| `ai-stack` | Compatibility AI stack (`scripts/legacy/20-ai-stack.sh`); prefer Stage 3 runtime scripts |
+| `rocm` | GPU/ROCm visibility (`scripts/s2-m3-validate-gpu-stack.sh`; legacy `scripts/legacy/30-rocm-igpu.sh`) |
+| `npu` | NPU visibility (`scripts/s2-m4-validate-npu-stack.sh`; legacy `scripts/legacy/40-ryzen-ai-npu.sh`) |
+| `acceleration` | AMD acceleration install (`scripts/65-amd-acceleration-install.sh`; legacy `scripts/legacy/50-guided-acceleration.sh`) |
 | `comfyui` | `scripts/70-comfyui-workflows.sh` |
 | `config` | `configs/` |
 | `architecture` | Architecture docs / high-level design |

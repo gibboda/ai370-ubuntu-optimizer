@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M2: ONNX Runtime installer / validator for the AMD AI Stack.
+# S3-M4: ONNX Runtime installer / validator for the AMD AI Stack.
 # Online mode installs into the repo-local venv. Offline mode only uses an
 # approved local wheelhouse and always emits actionable status reports.
 
@@ -118,7 +118,7 @@ provider_matches = [p for p in providers if any(token in p.lower() for token in 
 
 data = {
     "tier": 2,
-    "milestone": "S2-M2",
+    "milestone": "S3-M4",
     "phase": "install-onnxruntime",
     "status": status,
     "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),
@@ -178,7 +178,7 @@ status_path, summary_path = map(Path, sys.argv[1:])
 status = os.environ["STATUS"]
 data = {
   "tier": 2,
-  "milestone": "S2-M2",
+  "milestone": "S3-M4",
   "phase": "install-onnxruntime",
   "status": status,
   "timestamp": datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "Z"),

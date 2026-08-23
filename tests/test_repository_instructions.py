@@ -739,6 +739,25 @@ class MigrationPlanTests(unittest.TestCase):
             readme,
         )
 
+    def test_compatibility_docs_use_roadmap_owners(self) -> None:
+        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        proposals = (ROOT / "TASK_PROPOSALS.md").read_text(encoding="utf-8")
+        npu_status = (ROOT / "docs/npu-status.md").read_text(encoding="utf-8")
+        reports = (ROOT / "reports/README.md").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("scripts/legacy/01-hardware-audit.sh", contributing)
+        self.assertIn("scripts/legacy/10-amd-baseline.sh", contributing)
+        self.assertIn("scripts/420-benchmark-comfyui.sh", proposals)
+        self.assertNotIn("scripts/comfyui-benchmark.sh", proposals)
+        self.assertIn("S2-M2 is kernel and driver validation", npu_status)
+        self.assertIn("stage2-platform-validate", reports)
+        self.assertIn("deprecated alias", reports.casefold())
+        self.assertNotIn("Implemented offline lifecycle (S2-M3)", readme)
+        self.assertIn("**Stage gate policy.**", self.roadmap)
+        self.assertIn("0.25.0", self.plan)
+        firmware = (ROOT / "scripts/25-check-firmware.sh").read_text(encoding="utf-8")
+        self.assertIn("is deprecated", firmware)
+
     def test_readme_stage2_status_detects_roadmap_drift(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         drifted_roadmap = self.roadmap.replace(

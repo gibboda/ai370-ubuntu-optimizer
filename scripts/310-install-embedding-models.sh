@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# S2-M3: Local embedding model installer / validator with offline lifecycle.
+# S4-M3: Local embedding model installer / validator with offline lifecycle.
 # Prefer already-installed model, then staged copy, then online download.
 # Offline package installs use .ai370-ai/wheelhouse when present.
 
@@ -239,7 +239,7 @@ PY
 {
   "tier": 4,
   "phase": "install-embedding-models",
-  "milestone": "S2-M3",
+  "milestone": "S4-M3",
   "status": "$status",
   "profile": "$PROFILE",
   "mode": "$MODE",
@@ -272,7 +272,7 @@ PY
 EOF_JSON
 
   {
-    echo "# Stage 2 RAG — Embedding Model Status (S2-M3)"
+    echo "# Stage 4 RAG — Embedding Model Status (S4-M3)"
     echo
     echo "Profile: $PROFILE | Mode: $MODE | Offline: $OFFLINE"
     echo "Status: $status"
