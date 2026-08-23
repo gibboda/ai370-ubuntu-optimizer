@@ -197,6 +197,18 @@ assert data.get("visibility_only") is True, "210 visibility-only must skip xrt-s
 assert data.get("xrt_smi_validate") == "skipped-visibility-only"
 print("[OK] npu-capabilities.json records skipped-visibility-only validate")
 PY
+if [[ ! -f "$LATEST_DIR/xrt-ryzen-ai-install.json" ]]; then
+  echo "[FAIL] missing artifact: xrt-ryzen-ai-install.json"
+  exit 2
+fi
+python3 - "$LATEST_DIR/xrt-ryzen-ai-install.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data.get("accept_amd_acceleration_risk") is False
+assert data.get("milestone") == "S2-M4"
+assert data.get("stage") == 2, data.get("stage")
+print("[OK] inventory-only 205 report stage matches S2-M4 milestone")
+PY
 
 # 6. Orchestrator help exposes Package B/C flags
 help_out="$("$PROJECT_ROOT/ai370-optimize.sh" help 2>&1 || true)"

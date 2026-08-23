@@ -734,7 +734,7 @@ diagnostics = unique_diag
 
 data = {
     "tier": 2,
-    "stage": 2,
+    "stage": 3,
     "milestone": "S3-M6",
     "phase": "compare-cpu-gpu-npu",
     "status": status,
