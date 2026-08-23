@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Document the per-PR README/ROADMAP sync contract in
+  `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`. README Stage 2
+  high-level status matches ROADMAP (S2-M7 Implemented; S2-M1–S2-M6 In
+  progress). Instruction tests compare README Stage 2 labels with ROADMAP
+  milestone rows.
+
 ## [0.24.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.23.0...v0.24.0) (2026-08-22)
 
 

@@ -122,8 +122,8 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 - Stage 1 profile pipeline: **Implemented** (S1-M1 through S1-M5). `stage1`,
   `stage1-probe`, and `stage1-profile` are read-only. BIOS, kernel, GPU/NPU
   visibility, and tuning run from Stage 2 platform commands.
-- Stage 2: **Planned** in ROADMAP except S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7, which
-  are **In progress** (capability ladder library and visibility schemas; GPU
+- Stage 2: S2-M7 is **Implemented**. S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6 are
+  **In progress** (capability ladder library and visibility schemas; GPU
   publisher landed in
   [#176](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/176);
   NPU visibility-only publisher is `stage2-npu-validate` / S2-M4;
@@ -243,7 +243,9 @@ Partial Stage 3 already present: `scripts/420-benchmark-comfyui.sh` and some
 workflows under `workflows/comfyui/`.
 
 For the authoritative, up-to-date status and contributor guidance consult
-`docs/ROADMAP.md` (including **Next implementation steps** after Stage 2).
+`docs/ROADMAP.md` (**Migration sequence** and remaining In progress Stage 2
+rows). The per-PR documentation sync contract is in
+`docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`.
 
 AUTOMATIC1111's Stable Diffusion WebUI is not currently supported. See the
 [`AUTOMATIC1111 codebase review`](docs/automatic1111-review.md) for the audited

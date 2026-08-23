@@ -21,7 +21,10 @@ The current-to-target inventory and file mapping is
 This roadmap remains authoritative for Stage/Milestone ownership, canonical
 deliverables, implementation status, and Tier compatibility removal. The
 architecture document's Stages 0 through 11 are target platform layers, not
-public command names.
+public command names. User-facing `README.md` status must match this
+document's milestone rows in the same commit. The per-PR documentation
+sync contract lives in
+[`RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`](RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md).
 
 ## Status vocabulary
 
