@@ -8,7 +8,7 @@ Lightweight smoke tests for the ai370-ubuntu-optimizer tier commands and artifac
 bash tests/smoke_tier1.sh
 bash tests/smoke_stage2_platform.sh
 bash tests/smoke_tier2.sh
-python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions
+python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions
 ```
 
 Or from repo root after making executable:
@@ -45,7 +45,8 @@ Or from repo root after making executable:
   `test_s2_visibility_schemas.py`, `test_s2_m3_gpu_visibility.py`,
   `test_s2_m4_npu_visibility.py`
 - Stage 2 platform aggregate tests: `test_s2_m7_platform_validation.py`
-  (fixture milestone JSONs; no live PCI/NPU re-detection)
+  (fixture milestone JSONs; no live PCI/NPU re-detection) and
+  `test_s2_m7_gate.py` (`require_tier123_pass` prefers S2-M7)
 - Stage 2 firmware policy tests: `test_s2_m1_firmware.py` (classified
   `platform_id`, consumed fingerprint, facts vs policy, canonical publisher)
 - Stage 2 kernel/driver tests: `test_s2_m2_kernel_driver.py` (canonical

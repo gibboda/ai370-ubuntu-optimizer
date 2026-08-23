@@ -273,8 +273,6 @@ run_stage2_platform_inventory() {
   echo "[INFO] Stage 2 platform inventory – firmware + kernel + GPU + inventory-scope validate"
   export_platform_strict_env
   ensure_stage1_profile
-  # Compatibility collector still publishes tier1-hardware.json / tier1-npu.json for 90-validate.
-  run_script "scripts/10-detect-hardware.sh"
   run_script "scripts/20-check-bios.sh"
   run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
   run_script "scripts/s2-m3-validate-gpu-stack.sh" "$OFFLINE"
@@ -287,7 +285,6 @@ run_stage2_platform_validate() {
   echo "[INFO] 90-validate.sh is the compatibility shim; canonical report is s2-m7-platform-validation.json"
   export_platform_strict_env
   ensure_stage1_profile
-  run_script "scripts/10-detect-hardware.sh"
   run_script "scripts/20-check-bios.sh"
   run_script "scripts/30-validate-kernel.sh" "$DRY_RUN"
   run_script "scripts/s2-m3-validate-gpu-stack.sh" "$OFFLINE"
@@ -426,16 +423,17 @@ print(str(status if status is not None else "UNKNOWN").upper())
 PY
 }
 
-# Stage gate: Stage 3 image generation must not proceed until Stage 1 + Stage 2
-# runtime + Stage 2 NPU have produced acceptable validation artifacts.
+# Stage gate: Stage 3 image generation must not proceed until Stage 2 platform
+# + Stage 2 runtime + Stage 2 NPU have produced acceptable validation artifacts.
 #
 # Gate policy (experimental default; see docs/ROADMAP.md "Stage gate policy"):
-#   Stage 1 (tier1-validation): PASS only
+#   Stage 2 platform (s2-m7-platform-validation, fallback tier1-validation): PASS only
 #   Stage 2 runtime (tier2-validation): PASS or WARN
 #   Offline model storage: PASS or WARN (required file; optional models may WARN)
 #   Stage 2 NPU (tier3-validation): PASS, WARN, or EXPERIMENTAL-PASS
 require_tier123_pass() {
-  local LATEST_DIR="$PROJECT_ROOT/reports/latest"
+  local LATEST_DIR="${AI370_REPORTS_DIR:-$PROJECT_ROOT/reports/latest}"
+  local s2_m7_status="$LATEST_DIR/s2-m7-platform-validation.json"
   local tier1_status="$LATEST_DIR/tier1-validation.json"
   local tier2_status="$LATEST_DIR/tier2-validation.json"
   local offline_model_status="$LATEST_DIR/offline-model-storage.json"
@@ -452,7 +450,12 @@ require_tier123_pass() {
   models_result="unknown"
   t3_result="unknown"
 
-  if [[ -f "$tier1_status" ]]; then
+  if [[ -f "$s2_m7_status" ]]; then
+    t1_result="$(json_status "$s2_m7_status" "status")"
+    if [[ "$t1_result" != "PASS" ]]; then
+      pass="false"
+    fi
+  elif [[ -f "$tier1_status" ]]; then
     t1_result="$(json_status "$tier1_status" "status,tier1_status")"
     if [[ "$t1_result" != "PASS" ]]; then
       pass="false"
@@ -465,7 +468,7 @@ require_tier123_pass() {
       pass="false"
     fi
   else
-    t1_result="MISSING (tier1-validation.json)"
+    t1_result="MISSING (s2-m7-platform-validation.json)"
     pass="false"
   fi
 
@@ -504,9 +507,9 @@ require_tier123_pass() {
   fi
 
   if [[ "$pass" != "true" ]]; then
-    echo "[ERROR] Stage 1 + Stage 2 runtime + Stage 2 NPU validation has not passed."
+    echo "[ERROR] Stage 2 platform + Stage 2 runtime + Stage 2 NPU validation has not passed."
     echo "[ERROR] Gate artifact status:"
-    echo "[ERROR]   Stage 1 (tier1-validation):     $t1_result  (need PASS)"
+    echo "[ERROR]   Stage 2 platform (s2-m7 / tier1-validation): $t1_result  (need PASS)"
     echo "[ERROR]   Stage 2 runtime (tier2-validation): $t2_result  (need PASS|WARN)"
     echo "[ERROR]   Model storage (offline-model-storage): $models_result  (need PASS|WARN)"
     echo "[ERROR]   Stage 2 NPU (tier3-validation):  $t3_result  (need PASS|WARN|EXPERIMENTAL-PASS)"
@@ -788,8 +791,8 @@ case "$CMD" in
 
   # === Legacy phase commands (compat; prefer stage1 / stage2) ===
   hardware|inventory|audit)
-    # Prefer modern hardware detect when present.
-    run_script_or_legacy "scripts/10-detect-hardware.sh" "scripts/legacy/01-hardware-audit.sh"
+    echo "[WARN] hardware|inventory|audit is legacy; prefer ./ai370-optimize.sh stage1-probe && ./ai370-optimize.sh stage1-profile"
+    run_stage1_profile
     ;;
 
   firmware)
@@ -843,7 +846,7 @@ case "$CMD" in
 
   baseline-plan|plan)
     echo "[WARN] baseline-plan is legacy; prefer stage1-probe / stage1-profile"
-    run_script_or_legacy "scripts/10-detect-hardware.sh" "scripts/legacy/02-generate-report.sh"
+    run_stage1_profile
     ;;
 
   baseline-apply)

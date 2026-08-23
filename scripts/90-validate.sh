@@ -3,7 +3,8 @@
 #
 # Compatibility shim for S2-M7 platform validation (90-validate.sh).
 # Canonical report: reports/latest/s2-m7-platform-validation.json
-# Compatibility report: reports/latest/tier1-validation.json (require_tier123_pass until R2)
+# Compatibility report: reports/latest/tier1-validation.json
+# (require_tier123_pass fallback until R2)
 #
 # Requires reports/latest/s1-m5-system-profile.json. Does not re-detect
 # gfx1150 or NPU from live PCI/sysfs. Facts come from the consumed Stage 1

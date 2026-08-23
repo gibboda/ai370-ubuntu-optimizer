@@ -262,6 +262,7 @@ feature is not treated as implemented unless code exists.
 | `tests/test_s2_m3_gpu_visibility.py` | IMPLEMENTED | GPU publisher CLI, schema, atomic write, and missing-device fixture |
 | `tests/test_s2_m4_npu_visibility.py` | IMPLEMENTED | NPU publisher CLI, schema, atomic write; visibility does not claim inference |
 | `tests/test_s2_m7_platform_validation.py` | IMPLEMENTED | S2-M7 aggregate from fixture milestone JSONs; required profile, stale fingerprint, and firmware-validation status coverage |
+| `tests/test_s2_m7_gate.py` | IMPLEMENTED | `require_tier123_pass` prefers `s2-m7-platform-validation.json` and falls back to `tier1-validation.json` |
 | `tests/test_s2_m1_firmware.py` | IMPLEMENTED | Firmware policy from classified `platform_id`, facts vs policy, and canonical publisher |
 | `tests/test_s2_m2_kernel_driver.py` | IMPLEMENTED | Canonical S2-M2 JSON plus compatibility `tier1-kernel-plan.json` |
 | `tests/test_s2_optimize_profile.py` | IMPLEMENTED | Optimize plan wrapper records classified identity and consumed fingerprint |
@@ -475,7 +476,7 @@ abbreviated; see the assumption table for the full class.
 | `workflows/comfyui/*` | SDXL templates | ComfyUI | No NPU assumption | S4-M2 | KEEP | Workflow launch tests | Low |
 | `tests/smoke_tier1.sh`, `tests/smoke_stage2_platform.sh`, `tests/smoke_tier2.sh` | Portable CLI smokes | Orchestrator | `tier*` artifacts | Owner-specific `test_sN_mN_*` | REPLACE at R1/R2 | Deterministic fixtures | Medium |
 | `tests/test_s1_m1_probe.py`, `tests/test_system_profile.py` | Profile/probe contracts | Fixtures | AI370 reference plus non-AI370 | S1-M1/S1-M2/S1-M5 | KEEP and split by milestone | Existing plus unknown-host | Low |
-| `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m7_platform_validation.py`, `tests/test_s2_m1_firmware.py`, `tests/test_s2_m2_kernel_driver.py`, `tests/test_s2_m5_optimization_plan.py`, `tests/test_s2_m6_optimization_apply.py` | Ladder, unpublished report builders, GPU/NPU publisher CLI, S2-M7 aggregate, firmware/kernel publishers, and S2-M5/S2-M6 plan/apply | Probe/profile fixtures | No validation claims | S2-M1 / S2-M2 / S2-M3 / S2-M4 / S2-M5 / S2-M6 / S2-M7 | KEEP | Existing plus missing-device and classified-platform fixtures | Low |
+| `tests/test_capability_ladder.py`, `tests/test_s2_visibility_schemas.py`, `tests/test_s2_m3_gpu_visibility.py`, `tests/test_s2_m4_npu_visibility.py`, `tests/test_s2_m7_platform_validation.py`, `tests/test_s2_m7_gate.py`, `tests/test_s2_m1_firmware.py`, `tests/test_s2_m2_kernel_driver.py`, `tests/test_s2_m5_optimization_plan.py`, `tests/test_s2_m6_optimization_apply.py` | Ladder, unpublished report builders, GPU/NPU publisher CLI, S2-M7 aggregate, firmware/kernel publishers, S2-M5/S2-M6 plan/apply, and S2-M7 gate preference | Probe/profile fixtures | No validation claims | S2-M1 / S2-M2 / S2-M3 / S2-M4 / S2-M5 / S2-M6 / S2-M7 | KEEP | Existing plus missing-device and classified-platform fixtures | Low |
 | `tests/fixtures/**` | Sanitized hardware evidence | None | Reference and counterexamples | Detection/classification | KEEP; add newer Ryzen AI as data | Classification matrix | Low |
 | `scripts/legacy/*` | Frozen archive | Historical | Tier/phase names | Compatibility archive | KEEP frozen; REMOVE at R1/R2 | No new tests | Low |
 | `docs/ROADMAP.md` | Implementation authority | All deliverables | Five stages | Current authority | KEEP; update when boundaries change | Instruction tests | High |
@@ -499,15 +500,16 @@ Later PRs must stay small, keep detection read-only, and add or preserve
 regression tests before replacing working code.
 
 Tracked GitHub issues: #168 remaining work is none after `#180` / `0.21.0`;
-#169 PR 3a (orchestrator + `stage2-platform-*`) landed; PR 3b is the S2-M7
-publisher. Remaining fixture work stays on #169 as PR 3c.
+#169 PR 3 (read-only Stage 1 + Stage 2 platform validation) is done through
+Workstream F. Remaining S2-M1/S2-M2 remediations and S2-M5/S2-M6
+backup/rollback stay on ROADMAP, not as a new mutation-boundary issue.
 Do not file issues 4–11 until the prior boundary has tests.
 
 | Sequence | Status | Tracked issue |
 | --- | --- | --- |
 | 1 Detection facts | **done** (`#166`, `0.17.0`) | None remaining |
 | 2 Capability assessment | **done** (library `#170`, schemas `#173`, GPU publisher `#176` / `0.20.0`, NPU publisher `#180` / `0.21.0`) | None remaining; [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) is complete |
-| 3 Stop Stage 1 mutation | **in progress**; `stage1` is read-only; `stage2-platform-validate` invokes existing GPU/NPU commands and the S2-M7 publisher shim; remaining #169 work is PR 3c | [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) |
+| 3 Stop Stage 1 mutation | **done**; `stage1` is read-only; `stage2-platform-validate` invokes existing GPU/NPU commands and the S2-M7 publisher; `require_tier123_pass` prefers `s2-m7-platform-validation.json`; remaining S2-M1/S2-M2 remediations and S2-M5/S2-M6 backup/rollback are ROADMAP follow-ups | [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) |
 | 4–11 later boundaries | **planned** | Not filed |
 
 Recommended order, using ROADMAP owners rather than new public stage numbers:
@@ -521,13 +523,15 @@ Recommended order, using ROADMAP owners rather than new public stage numbers:
    visibility-only `stage2-npu-validate`, `#180` / `0.21.0`) exist; ROADMAP
    marks S2-M3/S2-M4 In progress until remaining exit evidence exists. The
    `90-validate.sh` split is S2-M7 / #169 PR 3b.
-3. **Stop Stage 1 mutation and mixed validation** — issue #169. PR 3a makes
-   `stage1` read-only profile publication and adds `stage2-platform-validate`
-   that invokes existing `stage2-gpu-validate` and visibility-only
-   `stage2-npu-validate`. `stage2-validate` remains the runtime/NPU cheap
-   gate. PR 3b adds the S2-M7 publisher (`s2-m7-platform-validation.json`)
-   and slims `90-validate.sh` to a compatibility shim. Remaining #169 work is
-   leftover canonical outputs and `require_tier123_pass` preference (PR 3c).
+3. **Stop Stage 1 mutation and mixed validation** — **done** (issue #169).
+   `stage1` is read-only profile publication. `stage2-platform-validate`
+   invokes existing `stage2-gpu-validate` and visibility-only
+   `stage2-npu-validate`, plus firmware/kernel wrappers and the S2-M7
+   publisher. `stage2-validate` remains the runtime/NPU cheap gate.
+   `90-validate.sh` is a compatibility shim. `require_tier123_pass` prefers
+   `s2-m7-platform-validation.json` and falls back to `tier1-validation.json`.
+   Orchestrator callers use `stage1-probe` + `stage1-profile` instead of
+   `10-detect-hardware.sh`.
 4. **Independent GPU module** — S2-M3 visibility plus S3-M3 framework
    execution; package presence is not GPU compute.
 5. **Independent NPU module** — S2-M4 visibility plus S3-M4 execution;
@@ -583,7 +587,7 @@ opt-in. Required fixture classes for hardware-classification changes:
 
 Current automated coverage to retain until replaced by owner-specific tests:
 
-- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions`
+- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions`
 - `bash tests/smoke_tier1.sh`
 - `bash tests/smoke_stage2_platform.sh`
 - `bash tests/smoke_tier2.sh`
@@ -599,9 +603,10 @@ The high-level README Stage 1 summary now matches ROADMAP: S1-M1 through
 S1-M5 are Implemented as `stage1-probe` / `stage1-profile`, and `stage1`
 is read-only profile publication. Remaining README / #169 drift:
 
-- Canonical S2-M7 (`s2-m7-platform-validation.json`) is **In progress**. The
+- Canonical S2-M7 (`s2-m7-platform-validation.json`) is **Implemented**. The
   publisher and schema exist; `90-validate.sh` is a compatibility shim.
-  `require_tier123_pass` still reads `tier1-validation.json` until PR 3c.
+  `require_tier123_pass` prefers the canonical report and falls back to
+  `tier1-validation.json`.
 - `stage2-gpu-validate` exists and writes `s2-m3-gpu-runtime-visibility.json`
   (`#176` / `0.20.0`). Do not treat the GPU command as missing.
 - `stage2-npu-validate` is visibility-only by default and writes
@@ -609,10 +614,10 @@ is read-only profile publication. Remaining README / #169 drift:
   refreshes `tier3-validation.json` on this command. Pass `--bench` for the
   mixed 210/220/230/245 compatibility path until S3-M6. Do not treat the
   command name as missing.
-- Canonical S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 are **In progress**, not Implemented. S2-M3 still
+- Canonical S2-M3/S2-M4/S2-M5/S2-M6 are **In progress**, not Implemented. S2-M3 still
   lacks separate missing-driver/Vulkan/ROCm layer fixtures. S2-M4 still shares
-  a mixed `stage2-npu` bench path. S2-M7 still uses `require_tier123_pass` on
-  compatibility `tier1-validation.json`. S2-M5/S2-M6 have canonical plan/apply JSON; backup/rollback remain
+  a mixed `stage2-npu` bench path. S2-M7 is **Implemented**: `require_tier123_pass`
+  prefers `s2-m7-platform-validation.json`. S2-M5/S2-M6 have canonical plan/apply JSON; backup/rollback remain
   Planned. S2-M1 and S2-M2 are **In progress** (canonical JSON exists; remaining
   work is remediation docs and the kernel/driver matrix). S3 through S5 remain
   Planned until outputs, tests, and docs exist.
@@ -639,9 +644,9 @@ This plan does not authorize later PRs to:
 
 Issue #168 publishers (S2-M3 GPU in `#176` / `0.20.0` and S2-M4 NPU
 visibility in `#180` / `0.21.0`) have landed; remaining #168 work is none.
-Issue #169 PR 3a rewires `stage1` to the read-only profile pipeline and
-invokes the existing `stage2-gpu-validate` and visibility-only
-`stage2-npu-validate` commands from `stage2-platform-validate`. PR 3b adds
-the S2-M7 publisher. Remaining #169 work is leftover canonical outputs and
-`require_tier123_pass` preference. Neither issue upgrades a ROADMAP row to
-Implemented until the exit evidence exists.
+Issue #169 PR 3 rewires `stage1` to the read-only profile pipeline, invokes
+the existing `stage2-gpu-validate` and visibility-only `stage2-npu-validate`
+commands from `stage2-platform-validate`, publishes S2-M7, and prefers that
+report in `require_tier123_pass`. Remaining ROADMAP work is S2-M1 remediation
+docs, the S2-M2 kernel/driver matrix, and S2-M5/S2-M6 backup/rollback. Do
+not mark those rows Implemented until the exit evidence exists.

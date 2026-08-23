@@ -460,7 +460,11 @@ def build_s2_m7_platform_validation_report(
             f"{classified or cli_profile} (see firmware report)."
         )
 
+    # Stage 1 profile + S2-M4 replace the 10-detect-hardware inventory files.
+    profile_superseded_compat = frozenset({"tier1-hardware.json", "tier1-npu.json"})
     for name in expected_compat_artifacts(scope):
+        if name in profile_superseded_compat:
+            continue
         if not (reports_dir / name).is_file():
             record_warn(f"Expected Tier 1 artifact missing: {name}")
 

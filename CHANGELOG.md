@@ -39,6 +39,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `require_tier123_pass` prefers `s2-m7-platform-validation.json` and falls
+  back to `tier1-validation.json`.
+- `tests/test_s2_m7_gate.py` proves the S2-M7 preference and compat fallback.
+
+### Changed
+
+- `stage2-platform-validate`, `stage2-platform-inventory`, and legacy
+  `hardware` / `inventory` / `audit` / `baseline-plan` callers use
+  `stage1-probe` + `stage1-profile` instead of `10-detect-hardware.sh`.
+- Missing `tier1-hardware.json` / `tier1-npu.json` no longer demote S2-M7
+  when the Stage 1 profile is present.
+- ROADMAP marks S2-M7 **Implemented**. S2-M1/S2-M2/S2-M5 stay **In progress**.
+  Migration plan step 3 is done. `TASK_PROPOSALS.md` is a Stage/Milestone
+  compatibility backlog.
+
 ## [0.23.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.22.0...v0.23.0) (2026-08-22)
 
 
