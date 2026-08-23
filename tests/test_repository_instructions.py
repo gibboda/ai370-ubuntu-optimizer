@@ -9,6 +9,36 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+_MILESTONE_ID = re.compile(r"^S[1-5]-M\d+$")
+_MILESTONE_STATUS = frozenset({"Implemented", "In progress", "Planned"})
+_README_S2_IN_PROGRESS_GROUP = re.compile(
+    r"(S2-M\d+(?:/S2-M\d+)*)(?: are\s+\*\*In progress\*\*| In progress)"
+)
+_README_S2_IMPLEMENTED = re.compile(
+    r"(S2-M\d+)(?: is \*\*Implemented\*\*|\nImplemented| Implemented)"
+)
+
+
+def parse_roadmap_milestone_statuses(roadmap: str) -> dict[str, str]:
+    """Parse ROADMAP canonical-deliverable table rows into ID -> status."""
+    statuses: dict[str, str] = {}
+    for line in roadmap.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+        if len(cells) != 5:
+            continue
+        milestone_id, _deliverable, _outputs, _evidence, status = cells
+        if _MILESTONE_ID.fullmatch(milestone_id) and status in _MILESTONE_STATUS:
+            statuses[milestone_id] = status
+    return statuses
+
+
+def _milestone_sort_key(milestone_id: str) -> tuple[int, int]:
+    stage, mile = milestone_id.split("-M")
+    return int(stage[1:]), int(mile)
+
 
 class RepositoryInstructionsTests(unittest.TestCase):
     @classmethod
@@ -628,14 +658,55 @@ class MigrationPlanTests(unittest.TestCase):
         )
         self.assertNotIn("scope is **implemented** (S2-M1–S2-M7)", readme)
         self.assertIn("stage2-platform-validate", readme)
-        self.assertIn("S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6 In progress", readme)
-        self.assertIn("S2-M7\nImplemented", readme)
-        self.assertIn("S2-M7 is **Implemented**", readme)
-        self.assertNotIn("Next implementation steps", readme)
-        self.assertNotIn(
-            "S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7, which\n  are **In progress**",
-            readme,
+        statuses = parse_roadmap_milestone_statuses(self.roadmap)
+        s2 = {
+            milestone_id: status
+            for milestone_id, status in statuses.items()
+            if milestone_id.startswith("S2-")
+        }
+        self.assertGreaterEqual(len(s2), 7, "ROADMAP Stage 2 table missing rows")
+        self.assertEqual(
+            set(s2),
+            {f"S2-M{index}" for index in range(1, 8)},
+            "ROADMAP Stage 2 table must list S2-M1 through S2-M7",
         )
+        in_progress = sorted(
+            (
+                milestone_id
+                for milestone_id, status in s2.items()
+                if status == "In progress"
+            ),
+            key=_milestone_sort_key,
+        )
+        implemented = sorted(
+            (
+                milestone_id
+                for milestone_id, status in s2.items()
+                if status == "Implemented"
+            ),
+            key=_milestone_sort_key,
+        )
+        progress_groups = _README_S2_IN_PROGRESS_GROUP.findall(readme)
+        if in_progress:
+            self.assertTrue(
+                progress_groups,
+                "README must list Stage 2 In progress milestones",
+            )
+            for group in progress_groups:
+                self.assertEqual(
+                    group.split("/"),
+                    in_progress,
+                    "README In progress group must match ROADMAP Stage 2 rows",
+                )
+        else:
+            self.assertEqual(progress_groups, [])
+        mentioned_implemented = set(_README_S2_IMPLEMENTED.findall(readme))
+        self.assertEqual(
+            mentioned_implemented,
+            set(implemented),
+            "README Implemented S2 labels must match ROADMAP Stage 2 rows",
+        )
+        self.assertNotIn("Next implementation steps", readme)
         self.assertIn("S3-M5", readme)
         self.assertIn("does not label Planned Stage 2 milestones as implemented", issue169)
         self.assertNotIn(
@@ -667,6 +738,34 @@ class MigrationPlanTests(unittest.TestCase):
             "npu                                    -> mixed: Stage 2 NPU visibility (210/220) + S3-M6 benchmark (230)",
             readme,
         )
+
+    def test_readme_stage2_status_detects_roadmap_drift(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        drifted_roadmap = self.roadmap.replace(
+            "| Deterministic policy fixtures and remediation docs | In progress |",
+            "| Deterministic policy fixtures and remediation docs | Implemented |",
+            1,
+        )
+        statuses = parse_roadmap_milestone_statuses(drifted_roadmap)
+        self.assertEqual(statuses.get("S2-M1"), "Implemented")
+        in_progress = sorted(
+            (
+                milestone_id
+                for milestone_id, status in statuses.items()
+                if milestone_id.startswith("S2-") and status == "In progress"
+            ),
+            key=_milestone_sort_key,
+        )
+        progress_groups = _README_S2_IN_PROGRESS_GROUP.findall(readme)
+        self.assertTrue(progress_groups)
+        self.assertNotEqual(progress_groups[0].split("/"), in_progress)
+        mentioned_implemented = set(_README_S2_IMPLEMENTED.findall(readme))
+        implemented = {
+            milestone_id
+            for milestone_id, status in statuses.items()
+            if milestone_id.startswith("S2-") and status == "Implemented"
+        }
+        self.assertNotEqual(mentioned_implemented, implemented)
 
 
 class ConventionalCommitScopeTests(unittest.TestCase):
