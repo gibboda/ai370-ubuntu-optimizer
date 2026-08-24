@@ -1,0 +1,60 @@
+name: Bug report
+description: Report incorrect behavior in the AI370 Ubuntu optimizer
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for defects. The workflow adds `needs-triage` and the
+        selected area label. Do not paste secrets, hostnames, or private keys.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the toolkit is involved?
+      options:
+        - Hardware
+        - Firmware
+        - Kernel
+        - GPU
+        - NPU
+        - Runtime
+        - Models
+        - Image generation
+        - RAG
+        - Storage
+        - Docs
+        - CI
+        - Dev environment
+        - Security
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Observed behavior, including command and exit status.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Exact commands, profile, and whether this is an EliteMini AI370 or another host.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, kernel, and relevant Stage 1 profile facts if you have them.

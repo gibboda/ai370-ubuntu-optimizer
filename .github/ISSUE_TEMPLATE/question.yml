@@ -1,0 +1,40 @@
+name: Question
+description: Ask for clarification about current behavior or docs
+title: "[Question]: "
+labels:
+  - question
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when you need information, not a code change.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which topic is this about?
+      options:
+        - Hardware
+        - Firmware
+        - Kernel
+        - GPU
+        - NPU
+        - Runtime
+        - Models
+        - Image generation
+        - RAG
+        - Storage
+        - Docs
+        - CI
+        - Dev environment
+        - Security
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true

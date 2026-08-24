@@ -1,0 +1,194 @@
+{
+  "owner": "S5-M6",
+  "skip_labels": [
+    "autorelease: pending",
+    "autorelease: tagged"
+  ],
+  "skip_title_prefixes": [
+    "chore(release):"
+  ],
+  "queue_labels": [
+    "needs-triage",
+    "needs-info",
+    "needs-reproduction"
+  ],
+  "bump_labels": [
+    "bump:major",
+    "bump:minor",
+    "bump:patch"
+  ],
+  "pr_type_labels": [
+    "bug",
+    "enhancement"
+  ],
+  "issue_area_choices": {
+    "Hardware": "area:hardware",
+    "Firmware": "area:firmware",
+    "Kernel": "area:kernel",
+    "GPU": "area:gpu",
+    "NPU": "area:npu",
+    "Runtime": "area:runtime",
+    "Models": "area:models",
+    "Image generation": "area:image-generation",
+    "RAG": "area:rag",
+    "Storage": "area:storage",
+    "Docs": "area:docs",
+    "CI": "area:ci",
+    "Dev environment": "area:dev-environment",
+    "Security": "area:security",
+    "Unsure": null
+  },
+  "issue_title_prefixes": {
+    "[Bug]": ["bug", "needs-triage"],
+    "[Feature]": ["enhancement", "needs-triage"],
+    "[Question]": ["question", "needs-triage"],
+    "[Security]": ["area:security", "needs-triage"]
+  },
+  "title_type_labels": {
+    "feat": ["enhancement", "bump:minor"],
+    "fix": ["bug", "bump:patch"],
+    "docs": ["bump:patch"],
+    "chore": ["bump:patch"],
+    "refactor": ["bump:patch"],
+    "test": ["bump:patch"],
+    "ci": ["bump:patch"],
+    "perf": ["bump:patch"]
+  },
+  "title_scope_labels": {
+    "npu": ["area:npu"],
+    "rocm": ["area:gpu"],
+    "comfyui": ["area:image-generation"],
+    "vscode": ["area:dev-environment"],
+    "release": ["area:ci"],
+    "ci": ["area:ci"],
+    "deps": ["dependencies"],
+    "audit": ["area:hardware"],
+    "stage1": ["area:hardware"],
+    "architecture": ["area:docs"]
+  },
+  "path_labels": [
+    {
+      "label": "area:hardware",
+      "globs": [
+        "scripts/s1-*",
+        "configs/schemas/s1-*",
+        "tests/test_s1_*",
+        "tests/test_system_profile.py",
+        "scripts/10-detect-hardware.sh"
+      ]
+    },
+    {
+      "label": "area:firmware",
+      "globs": [
+        "scripts/s2-m1-*",
+        "scripts/20-check-bios.sh",
+        "scripts/25-check-firmware.sh",
+        "tests/test_s2_m1_firmware.py"
+      ]
+    },
+    {
+      "label": "area:kernel",
+      "globs": [
+        "scripts/s2-m2-*",
+        "scripts/30-validate-kernel.sh",
+        "tests/test_s2_m2_kernel_driver.py"
+      ]
+    },
+    {
+      "label": "area:gpu",
+      "globs": [
+        "scripts/s2-m3-*",
+        "scripts/70-validate-gpu-stack.sh",
+        "scripts/100-install-pytorch-rocm.sh",
+        "tests/test_s2_m3_gpu_visibility.py"
+      ]
+    },
+    {
+      "label": "area:npu",
+      "globs": [
+        "scripts/s2-m4-*",
+        "scripts/75-detect-npu.sh",
+        "scripts/205-install-xrt-ryzen-ai.sh",
+        "scripts/210-check-ryzen-ai-software.sh",
+        "scripts/220-check-vitis-ai-ep.sh",
+        "scripts/230-benchmark-npu.sh",
+        "tests/test_s2_m4_npu_visibility.py"
+      ]
+    },
+    {
+      "label": "area:image-generation",
+      "globs": [
+        "scripts/70-comfyui-workflows.sh",
+        "scripts/420-benchmark-comfyui.sh",
+        "workflows/comfyui/**"
+      ]
+    },
+    {
+      "label": "area:rag",
+      "globs": [
+        "scripts/300-*",
+        "scripts/310-*",
+        "scripts/320-*"
+      ]
+    },
+    {
+      "label": "area:runtime",
+      "globs": [
+        "scripts/110-install-llama-cpp.sh",
+        "scripts/120-install-ollama.sh",
+        "scripts/160-install-lemonade.sh",
+        "scripts/165-validate-lemonade.sh",
+        "scripts/170-install-turnkeyml.sh",
+        "scripts/200-install-onnxruntime.sh"
+      ]
+    },
+    {
+      "label": "area:models",
+      "globs": [
+        "scripts/150-validate-offline-model-storage.sh",
+        "scripts/155-stage-model-layout.sh",
+        "scripts/250-install-digest-ai.sh",
+        "scripts/255-analyze-model-digest.sh",
+        "configs/models/**"
+      ]
+    },
+    {
+      "label": "area:storage",
+      "globs": [
+        "scripts/60-optimize-storage.sh"
+      ]
+    },
+    {
+      "label": "area:docs",
+      "globs": [
+        "docs/**",
+        "*.md"
+      ]
+    },
+    {
+      "label": "area:ci",
+      "globs": [
+        ".github/**"
+      ]
+    },
+    {
+      "label": "area:dev-environment",
+      "globs": [
+        ".vscode/**",
+        ".cursor/**"
+      ]
+    },
+    {
+      "label": "validation",
+      "globs": [
+        "tests/**"
+      ]
+    },
+    {
+      "label": "compatibility",
+      "globs": [
+        "scripts/legacy/**"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+name: Security
+description: Report a security-sensitive finding about this toolkit
+title: "[Security]: "
+labels:
+  - area:security
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for permission, hardening, or disclosure issues in this
+        repository. Do **not** paste secrets, tokens, private keys, or exploit
+        payloads. If the report cannot be discussed in public, contact the
+        maintainer privately instead of opening an issue.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the toolkit is involved?
+      options:
+        - Security
+        - Hardware
+        - Firmware
+        - Kernel
+        - GPU
+        - NPU
+        - Runtime
+        - Models
+        - Image generation
+        - RAG
+        - Storage
+        - Docs
+        - CI
+        - Dev environment
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is exposed or misconfigured, without reproduction payloads.
+    validations:
+      required: true

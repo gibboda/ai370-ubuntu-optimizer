@@ -123,6 +123,30 @@ All scripts in this repository follow these conventions:
   `PERSISTENCE="${3:-runtime}"`
 - Wrap main logic in a `main()` function and call `main "$@"` at the end
 
+## Labels
+
+Issue forms and `.github/workflows/label-issues-and-prs.yml` apply identity
+labels automatically. Do not hand-apply type, area, or bump labels unless you
+are correcting automation.
+
+On **open**:
+
+- Issues: `needs-triage`, the form type (`bug`, `enhancement`, `question`, or
+  `area:security`), and the selected `area:*` label.
+- Pull requests: Conventional Commit type (`enhancement` / `bug` and exactly
+  one `bump:*` label) plus `area:*` / `validation` / `compatibility` /
+  `dependencies` from title scope and changed paths.
+
+On **close**:
+
+- Remove `needs-triage`, `needs-info`, and `needs-reproduction`.
+- Issues closed as not planned get `wontfix`; duplicates get `duplicate`.
+- Completed issues and merged or unmerged PRs do not get an extra outcome
+  label. Identity labels stay.
+
+On **reopen**, issues get `needs-triage` again and lose `wontfix` / `duplicate`.
+Release Please PRs (`autorelease:*` or `chore(release):`) are left untouched.
+
 ## Workflow
 
 1. Fork and create a feature branch.
@@ -136,8 +160,10 @@ All scripts in this repository follow these conventions:
    bash scripts/validate-commit-subject.sh "type(optional-scope): Subject"
    ```
 
-5. Once merged into `main`, the `release-please` workflow automatically updates
+5. Confirm the auto-applied bump and area labels. Override only when the title
+   cannot express the intended release or area.
+6. Once merged into `main`, the `release-please` workflow automatically updates
    (or creates) a Release PR. This Release PR handles bumping the version in
    `VERSION` and `.release-please-manifest.json`, and updating `CHANGELOG.md`.
-6. When the Release PR is merged, the release is finalized, and the new Git
+7. When the Release PR is merged, the release is finalized, and the new Git
    tag and GitHub Release are created automatically.
