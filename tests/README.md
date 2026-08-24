@@ -8,7 +8,7 @@ Lightweight smoke tests for the ai370-ubuntu-optimizer tier commands and artifac
 bash tests/smoke_tier1.sh
 bash tests/smoke_stage2_platform.sh
 bash tests/smoke_tier2.sh
-python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions
+python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy
 ```
 
 Or from repo root after making executable:
@@ -56,6 +56,8 @@ Or from repo root after making executable:
 - Stage 2 tuning boundary tests: `test_s2_m5_optimization_plan.py`
   (plan-only, no mutation) and `test_s2_m6_optimization_apply.py`
   (apply requires `--approve`)
+- GitHub label policy tests: `test_github_label_policy.py` (issue/PR open
+  and close label mutations from `.github/label-policy.json`)
 
 ### Stage 2 platform (`smoke_stage2_platform.sh`)
 

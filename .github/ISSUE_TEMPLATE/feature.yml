@@ -1,0 +1,49 @@
+name: Feature request
+description: Propose a new capability or improvement
+title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for new work. Planned ROADMAP milestones stay Planned
+        until canonical outputs, tests, and docs exist.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the toolkit would this change?
+      options:
+        - Hardware
+        - Firmware
+        - Kernel
+        - GPU
+        - NPU
+        - Runtime
+        - Models
+        - Image generation
+        - RAG
+        - Storage
+        - Docs
+        - CI
+        - Dev environment
+        - Security
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is missing or painful today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should change? Name the owning Stage/Milestone if you know it.
+    validations:
+      required: true

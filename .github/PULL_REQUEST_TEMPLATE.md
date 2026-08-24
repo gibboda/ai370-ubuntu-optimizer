@@ -23,16 +23,16 @@
 
 ## Version bump label
 
-<!-- Apply exactly ONE label to set the semver bump type for the release: -->
-<!-- bump:patch  — backwards-compatible fix (default) -->
-<!-- bump:minor  — new backwards-compatible feature -->
-<!-- bump:major  — breaking change -->
+<!-- Applied automatically from the Conventional Commit PR title:
+     feat -> bump:minor; fix/docs/chore/refactor/test/ci/perf -> bump:patch;
+     type!: or type(scope)!: -> bump:major. Override after open if needed. -->
 
 ## Checklist
 
 - [ ] PR title follows the Conventional Commits format (`type(scope): Subject`)
 - [ ] All contributors and co-contributors follow the Conventional Commits
   policy; every commit subject uses `type(scope): Subject`
-- [ ] A `bump:patch`, `bump:minor`, or `bump:major` label has been applied
+- [ ] Confirm the auto-applied `bump:patch`, `bump:minor`, or `bump:major`
+  label matches the intended release
 - [ ] Changes are tested locally where applicable
 - [ ] `CHANGELOG.md` `[Unreleased]` section updated if needed

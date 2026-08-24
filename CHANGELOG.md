@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- GitHub issue forms and a label workflow apply type, area, and bump labels
+  on open, then clear queue labels on close. S5-M6 helper
+  `scripts/github_label_policy.py` owns the deterministic policy.
+
 ### Changed
 
 - Align compatibility script labels, JSON `milestone`/`stage` fields, and user

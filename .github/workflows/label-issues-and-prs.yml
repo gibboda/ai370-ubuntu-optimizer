@@ -1,0 +1,121 @@
+name: Label issues and pull requests
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+      - closed
+      - reopened
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+      - closed
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: labels-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  apply-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Compute and apply label mutations
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { execFileSync } = require('child_process');
+
+            const isPullRequest = Boolean(context.payload.pull_request);
+            const entity = context.payload.pull_request || context.payload.issue;
+            if (!entity) {
+              core.info('No issue or pull request payload; skipping.');
+              return;
+            }
+
+            let files = [];
+            if (isPullRequest) {
+              const listed = await github.paginate(github.rest.pulls.listFiles, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: entity.number,
+                per_page: 100,
+              });
+              files = listed.map((file) => file.filename);
+            }
+
+            const event = {
+              action: context.payload.action,
+              kind: isPullRequest ? 'pull_request' : 'issue',
+              title: entity.title || '',
+              body: entity.body || '',
+              state_reason: entity.state_reason || null,
+              merged: Boolean(entity.merged),
+              files,
+              current_labels: (entity.labels || []).map((label) => (
+                typeof label === 'string' ? label : label.name
+              )),
+            };
+
+            const eventPath = 'label-event.json';
+            fs.writeFileSync(eventPath, JSON.stringify(event));
+            const output = execFileSync(
+              'python3',
+              ['scripts/github_label_policy.py', '--input', eventPath],
+              { encoding: 'utf8' },
+            );
+            const result = JSON.parse(output);
+            core.info(JSON.stringify(result));
+
+            if (result.skip) {
+              core.info('Skipping label automation for this item.');
+              return;
+            }
+
+            const mutate = async () => {
+              if (result.apply.length > 0) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: entity.number,
+                  labels: result.apply,
+                });
+              }
+
+              for (const name of result.remove) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: entity.number,
+                    name,
+                  });
+                } catch (error) {
+                  if (error.status !== 404) {
+                    throw error;
+                  }
+                }
+              }
+            };
+
+            try {
+              await mutate();
+            } catch (error) {
+              if (error.status === 403) {
+                core.warning('Cannot write labels (fork pull request or missing permission).');
+                return;
+              }
+              throw error;
+            }
