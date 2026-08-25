@@ -327,7 +327,7 @@ def select_files(
 
 def chunk_files(
     files: list[FileDiff], config: dict[str, Any]
-) -> tuple[list[list[FileDiff]], list[dict[str, str]]:
+) -> tuple[list[list[FileDiff]], list[dict[str, str]]]:
     max_diff = int(config["max_diff_chars"])
     max_chunk = int(config["max_chunk_chars"])
     chunks: list[list[FileDiff]] = []
