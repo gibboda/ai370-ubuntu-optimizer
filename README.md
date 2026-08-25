@@ -742,6 +742,19 @@ The workflow templates are model-agnostic starters. Review
 before treating any JSON workflow as drop-in runnable for your local model
 filenames.
 
+## Pull request validation
+
+GitHub Actions is the deterministic validation layer. ShellCheck, portable
+tests, Conventional Commit title lint, and label policy do not call an LLM.
+
+Independent xAI/Grok review is a separate S5-M6 workflow. It analyzes the
+diff for correctness, architecture, security, testing gaps, and stage-boundary
+policy, then a repository-owned policy engine publishes an advisory GitHub
+review. Grok cannot merge, approve as a maintainer, or change repository
+state. Fork PRs are skipped because this workflow does not use
+`pull_request_target`. Setup, thresholds, and disable instructions are in
+[`.github/grok/README.md`](.github/grok/README.md).
+
 ## License
 
 GPLv3
