@@ -1,0 +1,16 @@
+{
+  "verdict": "fail",
+  "summary": "A low-confidence style nit should not block the PR.",
+  "findings": [
+    {
+      "severity": "critical",
+      "category": "correctness",
+      "confidence": 0.2,
+      "file": "scripts/s1-m1-probe-system.sh",
+      "line": 21,
+      "title": "Possible unused echo",
+      "description": "Speculative concern without strong evidence.",
+      "recommendation": "Ignore unless confirmed."
+    }
+  ]
+}

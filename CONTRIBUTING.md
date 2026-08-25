@@ -160,6 +160,12 @@ Release Please PRs (`autorelease:*` or `chore(release):`) are left untouched.
    bash scripts/validate-commit-subject.sh "type(optional-scope): Subject"
    ```
 
+   Deterministic GitHub Actions (ShellCheck, portable tests, PR title lint,
+   labels) never call an LLM. Independent xAI/Grok review is advisory and
+   runs only for same-repository, non-draft PRs when `XAI_API_KEY` is
+   configured. It cannot merge, approve as a maintainer, or change labels,
+   issues, or repository settings. See [`.github/grok/README.md`](.github/grok/README.md).
+
 5. Confirm the auto-applied bump and area labels. Override only when the title
    cannot express the intended release or area.
 6. Once merged into `main`, the `release-please` workflow automatically updates

@@ -1,0 +1,16 @@
+{
+  "verdict": "fail",
+  "summary": "Stage 1 probe would install packages, violating the read-only boundary.",
+  "findings": [
+    {
+      "severity": "critical",
+      "category": "policy",
+      "confidence": 0.96,
+      "file": "scripts/s1-m1-probe-system.sh",
+      "line": 22,
+      "title": "Stage 1 probe installs packages",
+      "description": "The diff adds apt-get install to a Stage 1 collector.",
+      "recommendation": "Remove the install from Stage 1 and keep the collector read-only."
+    }
+  ]
+}

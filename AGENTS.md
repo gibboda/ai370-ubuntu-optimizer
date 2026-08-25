@@ -136,6 +136,11 @@ optional AI agent's quota must not block development when required
 deterministic validation passes. Do not spend paid-agent capacity on review
 when the required checks already answer the question.
 
+Independent pull-request review through the xAI/Grok API is a repository-owned
+GitHub Actions subsystem (S5-M6, `.github/grok/`). It is not Cursor, not Grok
+Build, and not a Marketplace review action. Deterministic CI must remain able
+to pass or fail without that workflow. See `.github/grok/README.md`.
+
 The Testing and Change discipline sections below remain the authoritative
 detail for what this repository requires those checks to cover.
 
@@ -241,7 +246,7 @@ directory is gitignored).
   run without AI370 hardware and without network:
 
   ```bash
-  python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy
+  python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_grok_pr_review
   bash tests/smoke_tier1.sh
   bash tests/smoke_stage2_platform.sh
   bash tests/smoke_tier2.sh
