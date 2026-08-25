@@ -55,7 +55,8 @@ Do not open the PR unless the title validation command passes.
 
 - Cursor Agent is the primary/default implementation agent.
 - Grok Build is the preferred secondary agent when available, if Cursor cannot
-  complete the work and a second implementation path is still warranted.
+  complete the work and a second implementation path is still warranted. It is
+  also the preferred independent review tool for SuperGrok subscribers.
 - GitHub Copilot, Codex, Claude, and other metered cloud agents are
   specialist/escalation resources. They must not be invoked automatically for
   routine work. If Grok Build is unavailable, an available specialist agent

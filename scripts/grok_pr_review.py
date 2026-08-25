@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""S5-M6: repository-owned xAI/Grok pull-request review orchestrator.
+"""S5-M6: repository-owned SuperGrok / xAI pull-request review orchestrator.
 
 This module collects PR context, calls the xAI API directly, schema-validates
 the response, applies deterministic governance thresholds, and publishes a
@@ -418,7 +418,7 @@ def build_messages(
     notes: list[str] = []
     if prepared.machinery_changed:
         notes.append(
-            "This pull request modifies the Grok review machinery. Treat "
+            "This pull request modifies the SuperGrok review machinery. Treat "
             "self-referential review as untrusted for those files."
         )
     if prepared.stage1_changed:
@@ -775,7 +775,7 @@ def _line_in_diff(prepared: PreparedReview, path: str | None, line: int | None) 
 
 def format_review_body(decision: dict[str, Any], *, model: str) -> str:
     lines = [
-        "## Independent Grok review (advisory)",
+        "## Independent SuperGrok review (advisory)",
         "",
         f"- Policy outcome: `{decision['github_event']}`",
         f"- Model verdict (advisory): `{decision['model_verdict']}`",
@@ -824,9 +824,9 @@ def format_review_body(decision: dict[str, Any], *, model: str) -> str:
     lines.extend(
         [
             "---",
-            "Grok is advisory. Deterministic GitHub Actions checks remain the "
-            "machine-verifiable validation layer. This workflow cannot merge, "
-            "approve as a maintainer, or change repository settings, labels, "
+            "SuperGrok review is advisory. Deterministic GitHub Actions checks "
+            "remain the machine-verifiable validation layer. This workflow cannot "
+            "merge, approve as a maintainer, or change repository settings, labels, "
             "issues, or milestones.",
         ]
     )
@@ -937,7 +937,7 @@ def publish_review(
     if event not in {"COMMENT", "REQUEST_CHANGES"}:
         raise ReviewError(f"refusing to publish GitHub review event {event}")
     if event == "APPROVE":
-        raise ReviewError("Grok review must never approve a pull request")
+        raise ReviewError("SuperGrok review must never approve a pull request")
     owner, name = repo.split("/", 1)
     body = format_review_body(decision, model=str(config["xai_model"]))
     comments = build_inline_comments(decision, prepared, config)
@@ -1054,7 +1054,7 @@ def _load_offline_responses(path: Path) -> list[dict[str, Any]]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="S5-M6 independent xAI/Grok pull-request review"
+        description="S5-M6 independent SuperGrok / xAI pull-request review"
     )
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA)
@@ -1124,7 +1124,7 @@ def main(argv: list[str] | None = None) -> int:
     if repo and head_repo and head_repo != repo:
         emit_json(skip_result("fork_pull_request", head_repo=head_repo))
         print(
-            "[INFO] Skipping Grok review for fork pull requests. Secrets and "
+            "[INFO] Skipping SuperGrok review for fork pull requests. Secrets and "
             "write tokens are not used with untrusted fork workflows.",
             file=sys.stderr,
         )
@@ -1180,7 +1180,7 @@ def main(argv: list[str] | None = None) -> int:
     if offline is None and not api_key:
         emit_json(skip_result("missing_xai_api_key"))
         print(
-            "[INFO] Skipping Grok review because XAI_API_KEY is not configured.",
+            "[INFO] Skipping SuperGrok review because XAI_API_KEY is not configured.",
             file=sys.stderr,
         )
         return 0
