@@ -87,18 +87,20 @@ def load_config(
     path: Path | None = None, env: dict[str, str] | None = None
 ) -> dict[str, Any]:
     config = _read_json(path or DEFAULT_CONFIG)
-    environ = env if env is not None else dict(os.environ)
-    if environ.get("XAI_MODEL"):
-        config["xai_model"] = environ["XAI_MODEL"]
-    if environ.get("XAI_API_URL"):
-        config["xai_api_url"] = environ["XAI_API_URL"]
-    if environ.get("MAX_DIFF_CHARS"):
+    environ = env if env is not None else os.environ
+    model = (environ.get("XAI_MODEL") or "").strip()
+    if model:
+        config["xai_model"] = model
+    api_url = (environ.get("XAI_API_URL") or "").strip()
+    if api_url:
+        config["xai_api_url"] = api_url
+    if (environ.get("MAX_DIFF_CHARS") or "").strip():
         config["max_diff_chars"] = int(environ["MAX_DIFF_CHARS"])
-    if environ.get("MAX_CHUNK_CHARS"):
+    if (environ.get("MAX_CHUNK_CHARS") or "").strip():
         config["max_chunk_chars"] = int(environ["MAX_CHUNK_CHARS"])
-    if environ.get("MAX_FINDINGS"):
+    if (environ.get("MAX_FINDINGS") or "").strip():
         config["max_findings"] = int(environ["MAX_FINDINGS"])
-    if environ.get("MIN_CONFIDENCE"):
+    if (environ.get("MIN_CONFIDENCE") or "").strip():
         config["min_confidence"] = float(environ["MIN_CONFIDENCE"])
     return config
 
@@ -191,6 +193,20 @@ def redact_secrets(text: str, secrets: list[str]) -> str:
         if secret:
             redacted = redacted.replace(secret, "[redacted]")
     return redacted
+
+
+def credential_values() -> list[str]:
+    """Return configured credential strings for redaction. Never log these."""
+    values: list[str] = []
+    for key in ("XAI_API_KEY", "GITHUB_TOKEN"):
+        value = os.environ.get(key)
+        if value:
+            values.append(value)
+    return values
+
+
+def emit_json(payload: Any) -> None:
+    print(redact_secrets(json.dumps(payload), credential_values()))
 
 
 def parse_unified_diff(diff_text: str) -> list[FileDiff]:
@@ -1061,21 +1077,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, help="Write decision JSON")
     args = parser.parse_args(argv)
 
-    env = dict(os.environ)
-    if not review_is_enabled(env):
-        result = skip_result("disabled")
-        print(json.dumps(result))
+    if not review_is_enabled(os.environ):
+        emit_json(skip_result("disabled"))
         return 0
 
-    config = load_config(args.config, env)
+    config = load_config(args.config)
     schema = load_schema(args.schema)
-    token = env.get("GITHUB_TOKEN")
-    repo = args.repo or env.get("GITHUB_REPOSITORY")
+    token = os.environ.get("GITHUB_TOKEN")
+    repo = args.repo or os.environ.get("GITHUB_REPOSITORY")
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
     meta: dict[str, Any] = {}
     if args.pr_meta:
         meta = _load_pr_meta(args.pr_meta)
-    elif env.get("GITHUB_EVENT_PATH") and Path(env["GITHUB_EVENT_PATH"]).is_file():
-        event = _read_json(Path(env["GITHUB_EVENT_PATH"]))
+    elif event_path and Path(event_path).is_file():
+        event = _read_json(Path(event_path))
         pull = event.get("pull_request") if isinstance(event, dict) else None
         if isinstance(pull, dict):
             head = pull.get("head") if isinstance(pull.get("head"), dict) else {}
@@ -1095,17 +1110,19 @@ def main(argv: list[str] | None = None) -> int:
         try:
             meta = fetch_pull_request(str(repo), int(number), token)
         except ReviewError as exc:
-            print(f"[ERROR] {exc}", file=sys.stderr)
+            print(
+                redact_secrets(f"[ERROR] {exc}", credential_values()),
+                file=sys.stderr,
+            )
             return 1
 
     head_repo = str(meta.get("head_repo") or "")
-    if env.get("GROK_REVIEW_SKIP_FORK", "").lower() in {"1", "true", "yes"}:
-        result = skip_result("fork_pull_request")
-        print(json.dumps(result))
+    skip_fork = (os.environ.get("GROK_REVIEW_SKIP_FORK") or "").strip().lower()
+    if skip_fork in {"1", "true", "yes"}:
+        emit_json(skip_result("fork_pull_request"))
         return 0
     if repo and head_repo and head_repo != repo:
-        result = skip_result("fork_pull_request", head_repo=head_repo)
-        print(json.dumps(result))
+        emit_json(skip_result("fork_pull_request", head_repo=head_repo))
         print(
             "[INFO] Skipping Grok review for fork pull requests. Secrets and "
             "write tokens are not used with untrusted fork workflows.",
@@ -1138,32 +1155,30 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.print_prompt:
         if not prepared.chunks:
-            print("[INFO] no reviewable chunks")
+            emit_json({"reviewable_chunks": 0})
             return 0
         system, user = build_messages(
             prepared, prepared.chunks[0], 0, len(prepared.chunks)
         )
-        print(
-            json.dumps(
-                {
-                    "system_redacted": True,
-                    "user_redacted": True,
-                    "system_length": len(system),
-                    "user_length": len(user),
-                }
-            )
+        emit_json(
+            {
+                "system_chars": len(system),
+                "user_chars": len(user),
+                "untrusted_wrapped": UNTRUSTED_BEGIN in user
+                and UNTRUSTED_END in user,
+                "chunk_count": len(prepared.chunks),
+            }
         )
         return 0
 
-    api_key = env.get("XAI_API_KEY")
+    api_key = os.environ.get("XAI_API_KEY")
     offline = (
         _load_offline_responses(args.offline_response)
         if args.offline_response
         else None
     )
     if offline is None and not api_key:
-        result = skip_result("missing_xai_api_key")
-        print(json.dumps(result))
+        emit_json(skip_result("missing_xai_api_key"))
         print(
             "[INFO] Skipping Grok review because XAI_API_KEY is not configured.",
             file=sys.stderr,
@@ -1179,15 +1194,19 @@ def main(argv: list[str] | None = None) -> int:
             response_payloads=offline,
         )
     except ReviewError as exc:
-        print(f"[ERROR] {exc}", file=sys.stderr)
-        failure = {
-            "owner": OWNER,
-            "skipped": False,
-            "published": False,
-            "reason": "review_failed",
-            "error": str(exc),
-        }
-        print(json.dumps(failure))
+        print(
+            redact_secrets(f"[ERROR] {exc}", credential_values()),
+            file=sys.stderr,
+        )
+        emit_json(
+            {
+                "owner": OWNER,
+                "skipped": False,
+                "published": False,
+                "reason": "review_failed",
+                "error": redact_secrets(str(exc), credential_values()),
+            }
+        )
         return 1
 
     publish_info: dict[str, Any] = {"published": False, "skipped": True}
@@ -1205,8 +1224,17 @@ def main(argv: list[str] | None = None) -> int:
                 expected_head_sha=head_sha,
             )
         except ReviewError as exc:
-            print(f"[ERROR] {exc}", file=sys.stderr)
-            print(json.dumps({"owner": OWNER, "published": False, "error": str(exc)}))
+            print(
+                redact_secrets(f"[ERROR] {exc}", credential_values()),
+                file=sys.stderr,
+            )
+            emit_json(
+                {
+                    "owner": OWNER,
+                    "published": False,
+                    "error": redact_secrets(str(exc), credential_values()),
+                }
+            )
             return 1
     else:
         publish_info = {
@@ -1217,8 +1245,11 @@ def main(argv: list[str] | None = None) -> int:
 
     result = {"owner": OWNER, "skipped": False, **decision, "publish": publish_info}
     if args.output:
-        args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"owner": OWNER, "outcome": decision["outcome"], **publish_info}))
+        args.output.write_text(
+            redact_secrets(json.dumps(result, indent=2) + "\n", credential_values()),
+            encoding="utf-8",
+        )
+    emit_json({"owner": OWNER, "outcome": decision["outcome"], **publish_info})
     return 0
 
 

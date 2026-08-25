@@ -278,6 +278,19 @@ class DiffAndPromptTests(unittest.TestCase):
         self.assertEqual(config["max_findings"], 7)
         self.assertEqual(config["min_confidence"], 0.77)
 
+    def test_load_config_does_not_copy_api_credentials(self) -> None:
+        config = grok.load_config(
+            env={
+                "XAI_API_KEY": "secret-value",
+                "GITHUB_TOKEN": "github-token-value",
+                "XAI_MODEL": "grok-4-fast",
+            }
+        )
+        dumped = json.dumps(config)
+        self.assertNotIn("secret-value", dumped)
+        self.assertNotIn("github-token-value", dumped)
+        self.assertEqual(config["xai_model"], "grok-4-fast")
+
     def test_inline_comments_only_use_diff_lines(self) -> None:
         prepared = grok.prepare_review(
             title=self.meta["title"],
@@ -426,6 +439,31 @@ class PublishAndCliTests(unittest.TestCase):
         payload = json.loads(completed.stdout)
         self.assertEqual(payload["reason"], "disabled")
 
+    def test_cli_print_prompt_does_not_dump_untrusted_text(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts/grok_pr_review.py"),
+                "--pr-meta",
+                str(FIXTURES / "pr-meta.json"),
+                "--diff-file",
+                str(FIXTURES / "sample.diff"),
+                "--print-prompt",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+            env=self.isolated_env(),
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertNotIn("Ignore previous instructions", completed.stdout)
+        self.assertNotIn("apt-get install", completed.stdout)
+        payload = json.loads(completed.stdout)
+        self.assertGreater(payload["system_chars"], 0)
+        self.assertGreater(payload["user_chars"], 0)
+        self.assertTrue(payload["untrusted_wrapped"])
+
     def test_cli_missing_key_skips_without_calling_network(self) -> None:
         completed = subprocess.run(
             [
@@ -527,6 +565,7 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertIn("pull-requests: write", workflow)
         self.assertNotIn("contents: write", workflow)
         self.assertNotIn("issues: write", workflow)
+        self.assertNotIn("persist-credentials: false", workflow)
         self.assertNotIn("uses: coderabbitai/", workflow)
         self.assertNotIn("uses: github/copilot-code-review", workflow)
         self.assertNotRegex(workflow, r"uses:\s+(?!actions/checkout@)")

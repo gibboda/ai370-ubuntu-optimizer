@@ -45,6 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Grok review checkout uses the same `actions/checkout@v5` defaults as
+  other workflows so the llama.cpp gitlink does not fail credential
+  stripping. `--print-prompt` emits metadata only and does not log
+  untrusted PR text or credentials.
+
+### Changed
+
 - Align compatibility script labels, JSON `milestone`/`stage` fields, and user
   docs with ROADMAP owners (S3-M1 models, S3-M4/S3-M5/S3-M6 runtimes,
   S4-M1/S4-M3 applications). Compatibility wrappers emit deprecation warnings.

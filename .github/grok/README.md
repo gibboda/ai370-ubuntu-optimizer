@@ -113,9 +113,13 @@ trusted checkout.
 
 - `GITHUB_TOKEN` permissions are `contents: read` and
   `pull-requests: write`.
-- Checkout uses `persist-credentials: false`.
-- The xAI key is passed only as `XAI_API_KEY` and is redacted from error
-  text.
+- Checkout uses the same `actions/checkout@v5` defaults as the other
+  workflows. `persist-credentials: false` is avoided because this
+  repository tracks a llama.cpp gitlink without `.gitmodules`, and
+  checkout's credential-stripping path fails `git submodule foreach` on
+  that gitlink.
+- The xAI key is read only as `XAI_API_KEY` for the API call. It is never
+  copied into review JSON, prompts, or logs. API errors redact the key.
 - PR title, body, diffs, source, comments, and docs are wrapped as
   untrusted data. The system prompt and `policy.md` are the only
   instruction surfaces.
@@ -157,7 +161,7 @@ python3 scripts/grok_pr_review.py \
   --skip-publish
 ```
 
-Print the trusted/untrusted prompt split without calling xAI:
+Print prompt metadata without dumping untrusted PR text:
 
 ```bash
 python3 scripts/grok_pr_review.py \
