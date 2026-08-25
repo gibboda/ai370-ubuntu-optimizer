@@ -27,3 +27,36 @@ source of truth.
 - Portable tests listed in `AGENTS.md` run here without AI370 hardware and
   without network. On generic cloud VMs, treat Stage 1/Stage 2 `WARN` results
   as recorded facts per `AGENTS.md`, not as a broken environment.
+
+## GitHub Projects MCP
+
+Desktop Cursor loads [`.cursor/mcp.json`](../mcp.json). That file enables
+the official GitHub Projects toolset (`projects_list`, `projects_get`,
+`projects_write`) at `https://api.githubcopilot.com/mcp/x/projects`. Set
+`GITHUB_MCP_PAT` in the local environment to a token with `project` scope
+for writes (`read:project` is enough for reads). Do not put tokens in
+`mcp.json` or `environment.json`.
+
+Cloud Agents do not take that PAT from `mcp.json`. Add the same HTTP server
+in the Cloud Agent MCP dropdown or Dashboard → Integrations & MCP, then
+enable it for this environment:
+
+- URL: `https://api.githubcopilot.com/mcp/x/projects`
+- Header: `Authorization: Bearer <PAT with project scope>`
+
+`mcpServerAllowlist` only permits a server; it does not install or
+authenticate it. This Cloud Agent environment is dashboard-managed
+(personal). Do not commit `.cursor/environment.json` only to add an
+allowlist: a committed file would override the dashboard environment.
+
+If this environment later becomes repository-managed, allow the Projects
+server with:
+
+```json
+"mcpServerAllowlist": [
+  {
+    "name": "github-projects",
+    "serverUrl": "https://api.githubcopilot.com/mcp/x/projects"
+  }
+]
+```

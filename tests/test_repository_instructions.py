@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Contract tests for repository implementation instructions."""
 
+import json
 import re
 import subprocess
 import unittest
@@ -254,6 +255,29 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("alwaysApply: true", self.cursor_rules)
         self.assertIn("startup update script", self.cursor_rules)
         self.assertIn("markdownlint-cli2", self.cursor_rules)
+
+    def test_cursor_github_projects_mcp_has_no_secrets(self) -> None:
+        mcp_path = ROOT / ".cursor/mcp.json"
+        self.assertTrue(mcp_path.is_file(), mcp_path)
+        raw = mcp_path.read_text(encoding="utf-8")
+        self.assertNotRegex(
+            raw,
+            r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|YOUR_GITHUB_PAT",
+        )
+        config = json.loads(raw)
+        server = config["mcpServers"]["github-projects"]
+        self.assertEqual(
+            server["url"],
+            "https://api.githubcopilot.com/mcp/x/projects",
+        )
+        self.assertIn("${env:GITHUB_MCP_PAT}", server["headers"]["Authorization"])
+        self.assertIn("https://api.githubcopilot.com/mcp/x/projects", self.cursor_rules)
+        self.assertIn("mcpServerAllowlist", self.cursor_rules)
+        self.assertIn("Do not commit `.cursor/environment.json`", self.cursor_rules)
+        self.assertFalse(
+            (ROOT / ".cursor/environment.json").exists(),
+            "A committed environment.json would override the dashboard Cloud Agent environment",
+        )
 
     def test_codex_pr_title_requirements_live_in_codex_instructions(self) -> None:
         self.assertIn(
