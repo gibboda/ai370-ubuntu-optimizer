@@ -1143,7 +1143,16 @@ def main(argv: list[str] | None = None) -> int:
         system, user = build_messages(
             prepared, prepared.chunks[0], 0, len(prepared.chunks)
         )
-        print(json.dumps({"system": system, "user": user}))
+        print(
+            json.dumps(
+                {
+                    "system_redacted": True,
+                    "user_redacted": True,
+                    "system_length": len(system),
+                    "user_length": len(user),
+                }
+            )
+        )
         return 0
 
     api_key = env.get("XAI_API_KEY")
