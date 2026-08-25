@@ -1,4 +1,4 @@
-name: Grok PR Review
+name: Grok Build PR Review
 
 on:
   pull_request:
@@ -14,9 +14,9 @@ on:
         required: true
         type: string
 
-# Advisory xAI review is independent of deterministic CI. Least privilege:
-# read the checked-out code and publish a GitHub review. Never merge, never
-# approve as a maintainer, and never change labels, issues, or settings.
+# Advisory SuperGrok / xAI review is independent of deterministic CI. Least
+# privilege: read the checked-out code and publish a GitHub review. Never merge,
+# never approve as a maintainer, and never change labels, issues, or settings.
 permissions:
   contents: read
   pull-requests: write
@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   grok-review:
-    name: Independent Grok review
+    name: Independent SuperGrok review
     runs-on: ubuntu-latest
     # pull_request_target is intentionally not used. Fork PRs therefore do
     # not receive this review: repository secrets are unavailable, and this
@@ -51,7 +51,7 @@ jobs:
         run: |
           git fetch --no-tags origin "$BASE_SHA" "$HEAD_SHA"
 
-      - name: Run repository-owned Grok review
+      - name: Run repository-owned SuperGrok review
         shell: bash
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
