@@ -161,10 +161,16 @@ Release Please PRs (`autorelease:*` or `chore(release):`) are left untouched.
    ```
 
    Deterministic GitHub Actions (ShellCheck, portable tests, PR title lint,
-   labels) never call an LLM. Independent xAI/Grok review is advisory and
-   runs only for same-repository, non-draft PRs when `XAI_API_KEY` is
-   configured. It cannot merge, approve as a maintainer, or change labels,
-   issues, or repository settings. See [`.github/grok/README.md`](.github/grok/README.md).
+   labels) never call an LLM.
+
+   Independent review:
+   - **Preferred (SuperGrok)**: Use Grok Build (included with SuperGrok) for
+     interactive, agentic PR review. See the install walkthrough or run
+     `grok` inside a PR branch.
+   - **Automated fallback**: The repository-owned S5-M6 workflow
+     (`.github/grok/`) can still post advisory GitHub reviews when
+     `XAI_API_KEY` is configured. It is schema-validated, never approves,
+     and never merges. See [`.github/grok/README.md`](.github/grok/README.md).
 
 5. Confirm the auto-applied bump and area labels. Override only when the title
    cannot express the intended release or area.

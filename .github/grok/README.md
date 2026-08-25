@@ -4,6 +4,20 @@ Owner: **S5-M6**. This directory is the repository-owned review policy for
 GitHub pull requests. It is not a Cursor integration and it is not a GitHub
 Marketplace action.
 
+## Preferred independent review path (SuperGrok)
+
+For SuperGrok (and X Premium+) subscribers, the preferred independent review
+mechanism is **Grok Build**, not this API-key workflow.
+
+- Grok Build is included with SuperGrok.
+- It provides richer, agentic, codebase-aware reviews (plan mode, subagents,
+  full `AGENTS.md` + policy awareness, tool use).
+- Run it locally on a PR branch for interactive review and proposed fixes.
+- This repository’s automated GitHub Actions review remains available as a
+  lightweight advisory fallback when `XAI_API_KEY` is configured.
+
+See `AGENTS.md` (Multi-agent development policy) for the preferred agent order.
+
 ## Architecture
 
 ```text
@@ -55,7 +69,7 @@ only schema-valid JSON. The policy engine, not the model, chooses
 
 | Name | Kind | Required | Purpose |
 | --- | --- | --- | --- |
-| `XAI_API_KEY` | secret | yes, to run reviews | xAI API bearer token |
+| `XAI_API_KEY` | secret | optional | Required only for the automated GitHub Actions advisory review. SuperGrok users should prefer Grok Build instead. |
 | `XAI_MODEL` | variable | no | Override `config.json` `xai_model` |
 | `XAI_API_URL` | variable | no | Override the Chat Completions URL |
 | `MAX_DIFF_CHARS` | variable | no | Total reviewable diff budget |
