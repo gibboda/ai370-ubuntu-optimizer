@@ -986,6 +986,28 @@ def skip_result(reason: str, **extra: Any) -> dict[str, Any]:
     return payload
 
 
+
+def is_xai_credits_exhausted(error: BaseException) -> bool:
+    """True when the xAI API rejects the key for exhausted credits / spending limit.
+
+    These conditions are treated as a soft skip so the preferred SuperGrok /
+    Grok Build path is not blocked by a red CI check when the metered key is
+    present but unusable.
+    """
+    text = str(error).lower()
+    if "http 403" not in text:
+        return False
+    markers = (
+        "used all available credits",
+        "monthly spending limit",
+        "spending limit",
+        "permission-denied",
+        "insufficient credits",
+        "credit limit",
+    )
+    return any(marker in text for marker in markers)
+
+
 def run_review(
     *,
     prepared: PreparedReview,
@@ -1194,6 +1216,15 @@ def main(argv: list[str] | None = None) -> int:
             response_payloads=offline,
         )
     except ReviewError as exc:
+        if is_xai_credits_exhausted(exc):
+            emit_json(skip_result("xai_credits_exhausted"))
+            print(
+                "[INFO] Skipping SuperGrok review because the xAI API key has "
+                "exhausted credits or hit its spending limit. Prefer Grok Build "
+                "(included with SuperGrok) for independent review.",
+                file=sys.stderr,
+            )
+            return 0
         print(
             redact_secrets(f"[ERROR] {exc}", credential_values()),
             file=sys.stderr,
