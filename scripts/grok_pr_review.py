@@ -38,6 +38,10 @@ REVIEW_MACHINERY_PREFIXES = (
     ".github/workflows/grok-pr-review.yml",
     "scripts/grok_pr_review.py",
     "tests/test_grok_pr_review.py",
+    ".github/antigravity/",
+    ".github/workflows/gemini-pr-review.yml",
+    "scripts/gemini_pr_review.py",
+    "tests/test_gemini_pr_review.py",
 )
 STAGE1_PREFIXES = (
     "scripts/s1-",
@@ -198,7 +202,7 @@ def redact_secrets(text: str, secrets: list[str]) -> str:
 def credential_values() -> list[str]:
     """Return configured credential strings for redaction. Never log these."""
     values: list[str] = []
-    for key in ("XAI_API_KEY", "GITHUB_TOKEN"):
+    for key in ("XAI_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN"):
         value = os.environ.get(key)
         if value:
             values.append(value)
@@ -773,9 +777,11 @@ def _line_in_diff(prepared: PreparedReview, path: str | None, line: int | None) 
     return False
 
 
-def format_review_body(decision: dict[str, Any], *, model: str) -> str:
+def format_review_body(
+    decision: dict[str, Any], *, model: str, product: str = "SuperGrok"
+) -> str:
     lines = [
-        "## Independent SuperGrok review (advisory)",
+        f"## Independent {product} review (advisory)",
         "",
         f"- Policy outcome: `{decision['github_event']}`",
         f"- Model verdict (advisory): `{decision['model_verdict']}`",
@@ -824,7 +830,7 @@ def format_review_body(decision: dict[str, Any], *, model: str) -> str:
     lines.extend(
         [
             "---",
-            "SuperGrok review is advisory. Deterministic GitHub Actions checks "
+            f"{product} review is advisory. Deterministic GitHub Actions checks "
             "remain the machine-verifiable validation layer. This workflow cannot "
             "merge, approve as a maintainer, or change repository settings, labels, "
             "issues, or milestones.",
@@ -923,6 +929,8 @@ def publish_review(
     prepared: PreparedReview,
     config: dict[str, Any],
     expected_head_sha: str,
+    model: str | None = None,
+    product: str = "SuperGrok",
 ) -> dict[str, Any]:
     live_sha = current_pr_head_sha(repo, number, token)
     if live_sha != expected_head_sha:
@@ -937,9 +945,12 @@ def publish_review(
     if event not in {"COMMENT", "REQUEST_CHANGES"}:
         raise ReviewError(f"refusing to publish GitHub review event {event}")
     if event == "APPROVE":
-        raise ReviewError("SuperGrok review must never approve a pull request")
+        raise ReviewError(f"{product} review must never approve a pull request")
     owner, name = repo.split("/", 1)
-    body = format_review_body(decision, model=str(config["xai_model"]))
+    resolved_model = model
+    if resolved_model is None:
+        resolved_model = str(config.get("xai_model") or config.get("gemini_model") or "")
+    body = format_review_body(decision, model=resolved_model, product=product)
     comments = build_inline_comments(decision, prepared, config)
     payload: dict[str, Any] = {
         "commit_id": expected_head_sha,
@@ -1008,6 +1019,49 @@ def is_xai_credits_exhausted(error: BaseException) -> bool:
     return any(marker in text for marker in markers)
 
 
+def is_invalid_api_key(error: BaseException) -> bool:
+    """True when a provider rejects the configured API key as invalid.
+
+    Advisory review is optional. A missing, revoked, or mistyped key must not
+    fail deterministic GitHub checks. HTTP 401 from the model provider is
+    treated as an unusable key; HTTP 400 is only skipped when the body names
+    an invalid key, so malformed review JSON still fails the job.
+    """
+    text = str(error).lower()
+    if "http 401" in text:
+        return True
+    markers = (
+        "incorrect api key",
+        "invalid api key",
+        "api key not valid",
+        "api_key_invalid",
+        "api key is invalid",
+        "provided key is not a valid",
+        "malformed api key",
+    )
+    return any(marker in text for marker in markers)
+
+
+def is_quota_exhausted(error: BaseException) -> bool:
+    """True when a provider rejects the request for quota or rate limit."""
+    text = str(error).lower()
+    if "http 429" in text:
+        return True
+    markers = (
+        "resource_exhausted",
+        "quota exceeded",
+        "quota metric",
+        "rate limit",
+        "too many requests",
+    )
+    return any(marker in text for marker in markers)
+
+
+def is_xai_key_unusable(error: BaseException) -> bool:
+    """True when the configured xAI key cannot complete an advisory review."""
+    return is_xai_credits_exhausted(error) or is_invalid_api_key(error)
+
+
 def run_review(
     *,
     prepared: PreparedReview,
@@ -1015,6 +1069,7 @@ def run_review(
     schema: dict[str, Any],
     api_key: str | None,
     response_payloads: list[dict[str, Any]] | None = None,
+    call_model: Any = None,
 ) -> dict[str, Any]:
     if not prepared.chunks:
         empty = {
@@ -1044,7 +1099,8 @@ def run_review(
                     "review prompt exceeds MAX_PROMPT_CHARS; refusing to silently "
                     "truncate"
                 )
-            parsed = call_xai(
+            caller = call_xai if call_model is None else call_model
+            parsed = caller(
                 system=system,
                 user=user,
                 config=config,
@@ -1222,6 +1278,15 @@ def main(argv: list[str] | None = None) -> int:
                 "[INFO] Skipping SuperGrok review because the xAI API key has "
                 "exhausted credits or hit its spending limit. Prefer Grok Build "
                 "(included with SuperGrok) for independent review.",
+                file=sys.stderr,
+            )
+            return 0
+        if is_invalid_api_key(exc):
+            emit_json(skip_result("xai_api_key_invalid"))
+            print(
+                "[INFO] Skipping SuperGrok review because the xAI API key is "
+                "invalid or unauthorized. Prefer Grok Build (included with "
+                "SuperGrok) for independent review, or replace XAI_API_KEY.",
                 file=sys.stderr,
             )
             return 0
