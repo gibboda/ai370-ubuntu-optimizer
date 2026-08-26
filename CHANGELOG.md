@@ -73,6 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the preferred secondary agent, and GitHub Copilot, Codex, Claude, Gemini,
   and other approved agents are specialist resources. Duplicate paid-agent
   usage is prohibited unless an explicit reason justifies parallel analysis.
+- Copilot and Codex overlays point at the Agent hierarchy in `AGENTS.md`
+  instead of restating specialist-escalation rules.
 - Remove the accidental repo-root `.gemini/antigravity-cli/settings.json`
   copy from #245. Ignore `.gemini/` so local Antigravity CLI setup cannot
   be committed; the canonical pin remains `.github/antigravity/settings.json`.

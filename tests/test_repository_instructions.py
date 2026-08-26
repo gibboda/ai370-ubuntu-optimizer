@@ -279,11 +279,16 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "### Prevent duplicate AI usage", self.codex_instructions
         )
         self.assertIn("See the Agent hierarchy", self.cursor_rules)
-        self.assertIn(
+        self.assertIn("See the Agent hierarchy", self.copilot_instructions)
+        self.assertIn("See the Agent hierarchy", self.codex_instructions)
+        self.assertNotIn(
             "narrowly scoped and capability-driven", self.copilot_instructions
         )
-        self.assertIn(
+        self.assertNotIn(
             "narrowly scoped and capability-driven", self.codex_instructions
+        )
+        self.assertNotIn(
+            "narrowly scoped and capability-driven", self.cursor_rules
         )
         self.assertIn("agent hierarchy", self.contributing)
 

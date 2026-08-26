@@ -9,8 +9,8 @@ is authoritative for shared agent roles, escalation, cost policy,
 architecture, testing, naming, and change discipline. Do not restate or
 override that policy here.
 
-Invoke Codex only when `AGENTS.md` allows specialist use. Specialist use
-must be narrowly scoped and capability-driven. Do not treat Codex as the
+Invoke Codex only when `AGENTS.md` allows specialist use. See the Agent hierarchy
+in `AGENTS.md` rather than restating it here. Do not treat Codex as the
 default implementation agent or as a parallel reviewer for routine work.
 
 ## PR creation
