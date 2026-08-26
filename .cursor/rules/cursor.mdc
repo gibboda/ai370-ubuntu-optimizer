@@ -37,7 +37,8 @@ configuration so Cursor can reproduce an automated reviewer. Secrets used by
 repository-owned Actions remain in GitHub.
 
 Follow the shared escalation, cost, and default-implementation policy in
-`AGENTS.md`. Do not restate those rules here. Independent GitHub review
+`AGENTS.md`. Do not restate those rules here. See the Agent hierarchy in
+`AGENTS.md` rather than restating it here. Independent GitHub review
 findings may be consumed as feedback in Cursor.
 
 GitHub Actions and other deterministic checks remain authoritative for facts

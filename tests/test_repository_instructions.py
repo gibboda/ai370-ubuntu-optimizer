@@ -242,6 +242,55 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("AI reviews are advisory", self.agent_instructions)
         self.assertIn("not required merge gates", self.agent_instructions)
         self.assertIn("GitHub Copilot, Codex, Claude", self.agent_instructions)
+        self.assertIn(
+            "GitHub Copilot, Codex, Claude, Gemini", self.agent_instructions
+        )
+
+    def test_agent_hierarchy_and_duplicate_usage_policy(self) -> None:
+        self.assertIn("## Agent hierarchy", self.agent_instructions)
+        self.assertIn("GitHub is not an implementation agent", self.agent_instructions)
+        self.assertIn("default task owner", self.agent_instructions)
+        self.assertIn(
+            "before another AI agent is invoked", self.agent_instructions
+        )
+        self.assertIn(
+            "narrowly scoped and capability-driven", self.agent_instructions
+        )
+        self.assertIn("### Prevent duplicate AI usage", self.agent_instructions)
+        self.assertIn("equivalent routine analysis", self.agent_instructions)
+        self.assertIn(
+            "Parallel multi-agent analysis requires an explicit reason",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "GitHub Actions and repository checks", self.agent_instructions
+        )
+        self.assertIn("final merge authority", self.agent_instructions)
+        self.assertIn(
+            "deterministic merge validation", self.agent_instructions
+        )
+        self.assertNotIn("## Agent hierarchy", self.copilot_instructions)
+        self.assertNotIn("## Agent hierarchy", self.codex_instructions)
+        self.assertNotIn("## Agent hierarchy", self.cursor_rules)
+        self.assertNotIn(
+            "### Prevent duplicate AI usage", self.copilot_instructions
+        )
+        self.assertNotIn(
+            "### Prevent duplicate AI usage", self.codex_instructions
+        )
+        self.assertIn("See the Agent hierarchy", self.cursor_rules)
+        self.assertIn("See the Agent hierarchy", self.copilot_instructions)
+        self.assertIn("See the Agent hierarchy", self.codex_instructions)
+        self.assertNotIn(
+            "narrowly scoped and capability-driven", self.copilot_instructions
+        )
+        self.assertNotIn(
+            "narrowly scoped and capability-driven", self.codex_instructions
+        )
+        self.assertNotIn(
+            "narrowly scoped and capability-driven", self.cursor_rules
+        )
+        self.assertIn("agent hierarchy", self.contributing)
 
     def test_cursor_cloud_notes_live_in_cursor_rules(self) -> None:
         self.assertIn(

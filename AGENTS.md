@@ -1,9 +1,9 @@
 # AGENTS.md
 
 This file is the shared instruction surface for every implementation agent
-that works in this repository. It is authoritative for agent roles,
-escalation, cost policy, deterministic validation, architecture, testing,
-naming, and change discipline.
+that works in this repository. It is authoritative for agent hierarchy,
+agent roles, escalation, cost policy, deterministic validation, architecture,
+testing, naming, and change discipline.
 
 Agent-specific files must not restate this policy. They may only add
 behavior that applies to that agent or environment:
@@ -49,6 +49,33 @@ bash scripts/validate-pr-title.sh "$PR_TITLE"
 
 Do not open the PR unless the title validation command passes.
 
+## Agent hierarchy
+
+This repository uses the following hierarchy. Later entries do not replace
+earlier ones. GitHub is the control plane and source of truth.
+GitHub is not an implementation agent. Cursor remains the default task owner.
+
+1. **GitHub** is the control plane and source of truth for repositories,
+   Issues and Projects, branches and pull requests, GitHub Actions, rulesets
+   and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
+   and releases.
+2. **Cursor** is the primary/default implementation agent and the default
+   task owner. Keep routine work with Cursor whenever practical.
+3. **Deterministic validation** must run before escalation. Attempt local
+   tests, linters, formatters, type checking, and repository validation
+   scripts, and reuse existing GitHub Actions output, before another AI
+   agent is invoked.
+4. **Grok Build** is the preferred secondary agent when available, if
+   escalation is justified.
+5. **GitHub Copilot, Codex, Claude, Gemini, and other approved agents** are
+   specialist/escalation resources. Specialist use must be narrowly scoped
+   and capability-driven. They must not be invoked automatically for
+   routine work.
+6. **GitHub Actions and repository checks** are the deterministic merge
+   validation surface. They remain authoritative for facts they can verify.
+7. **GitHub pull-request governance** (rulesets, branch protection, required
+   checks, and human decisions) is the final merge authority.
+
 ## Multi-agent development policy
 
 ### Roles
@@ -57,14 +84,17 @@ Do not open the PR unless the title validation command passes.
 - Grok Build is the preferred secondary agent when available, if Cursor cannot
   complete the work and a second implementation path is still warranted. It is
   also the preferred independent review tool for SuperGrok subscribers.
-- GitHub Copilot, Codex, Claude, Antigravity/Gemini, and other metered cloud
-  agents are specialist/escalation resources. They must not be invoked automatically for
-  routine work. If Grok Build is unavailable, an available specialist agent
-  may be used for a narrowly scoped escalation need.
+- GitHub Copilot, Codex, Claude, Gemini, and other metered cloud agents
+  are specialist/escalation resources.
+  They must not be invoked automatically for routine work. If Grok Build is
+  unavailable, an available specialist agent may be used for a narrowly
+  scoped, capability-driven escalation need.
+  Approved specialists include Antigravity when a Gemini-backed local tool
+  is the capability being requested.
 - GitHub remains the source of truth and control plane for repositories,
   Issues and Projects, branches and pull requests, GitHub Actions, rulesets
   and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
-  and releases.
+  and releases. GitHub is not an implementation agent.
 - Every agent follows the same repository policies when used.
 
 ### Default work for the primary agent
@@ -83,7 +113,7 @@ Keep routine work with Cursor whenever practical. Cursor handles:
 - pull-request preparation
 
 Do not auto-escalate those tasks to Grok Build, GitHub Copilot, Codex,
-Claude, Antigravity/Gemini, or other metered cloud agents.
+Claude, Gemini, or other metered cloud agents.
 
 ### Escalation and secondary use
 
@@ -95,20 +125,37 @@ Escalate only when at least one of the following is true:
 - specialized reasoning is needed that Cursor cannot provide
 - the developer explicitly requests a named secondary or specialist agent
 
-Preferred order when escalation is justified:
+Attempt deterministic validation before another AI agent is invoked. Preferred
+order when escalation is justified:
 
 1. Stay with Cursor and reuse existing findings, logs, issue/PR discussion, and
    deterministic check output.
-2. Use Grok Build as the preferred secondary implementation agent when
+2. Attempt deterministic validation (builds, tests, linters, formatters, type
+   checking, GitHub Actions, CodeQL, dependency scanning, secret scanning, and
+   repository validation scripts) before another AI agent is invoked.
+3. Use Grok Build as the preferred secondary implementation agent when
    available.
-3. If Grok Build is unavailable, use an available specialist agent such as
-   GitHub Copilot, Codex, Claude, Antigravity/Gemini, or another explicitly approved agent
-   for the narrowly scoped escalation need.
+4. If Grok Build is unavailable, use an available specialist agent such as
+   GitHub Copilot, Codex, Claude, Gemini, or another explicitly approved agent
+   for the narrowly scoped escalation need. Specialist use must be narrowly
+   scoped and capability-driven.
 
-Do not invoke multiple paid or cloud agents for the same routine task. Before
-starting a new paid-agent analysis, reuse prior agent findings, logs, issue/PR
-discussion, CI results, tests, and local validation output.
-Minimize duplicate paid-agent analysis across the same change.
+### Prevent duplicate AI usage
+
+Do not spend paid or metered agent capacity on work that Cursor, existing
+artifacts, or deterministic checks have already answered.
+
+- Do not invoke multiple paid or cloud agents for the same routine task.
+- Do not invoke multiple paid or metered agents for equivalent routine analysis.
+- Before starting a new paid-agent analysis, reuse prior agent findings, logs, issue/PR
+  discussion, CI results, tests, and local validation output.
+- Minimize duplicate paid-agent analysis across the same change.
+- Specialist use must be narrowly scoped and capability-driven. Choose the
+  agent that uniquely provides the needed capability.
+- Parallel multi-agent analysis requires an explicit reason, such as a
+  developer request to compare named agents or a provider-specific capability
+  that one agent cannot cover. Without that reason, invoke one agent at a
+  time.
 
 ### Cost and capacity
 
@@ -132,7 +179,9 @@ Prefer deterministic validation over AI review:
 - secret scanning
 - repository validation scripts
 
-AI reviews are advisory. They are not required merge gates. Exhaustion of an
+AI reviews are advisory. They are not required merge gates. GitHub Actions
+and repository checks remain the deterministic merge validation surface.
+GitHub pull-request governance is the final merge authority. Exhaustion of an
 optional AI agent's quota must not block development when required
 deterministic validation passes. Do not spend paid-agent capacity on review
 when the required checks already answer the question.

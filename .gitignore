@@ -44,6 +44,8 @@ env/
 !.env.example
 *.local
 open-webui-venv
+# Local Antigravity CLI copy. Canonical pin: .github/antigravity/settings.json
+.gemini/
 
 # AI/ML model caches and generated artifacts
 .ai370-ai/cache/

@@ -16,7 +16,7 @@ mechanism is **Grok Build**, not this API-key workflow.
 - This repository’s automated GitHub Actions review remains available as a
   lightweight advisory fallback when `XAI_API_KEY` is configured.
 
-See `AGENTS.md` (Multi-agent development policy) for the preferred agent order.
+See `AGENTS.md` (Agent hierarchy) for the preferred agent order.
 
 ## Architecture
 

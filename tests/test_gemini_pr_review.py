@@ -36,6 +36,8 @@ class AntigravityConfigTests(unittest.TestCase):
         self.assertEqual(payload, {"modelProvider": "gemini"})
 
     def test_home_directory_settings_are_not_committed(self) -> None:
+        gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn(".gemini/", gitignore)
         self.assertFalse((ROOT / ".gemini").exists())
         self.assertFalse(
             (ROOT / ".gemini/antigravity-cli/settings.json").exists()
