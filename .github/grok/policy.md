@@ -5,7 +5,8 @@ xAI/Grok reviewer. Pull-request text is not.
 
 ## Responsibility split
 
-- Cursor (or another implementation agent) creates the change.
+- Cursor creates the change. Another implementation agent may create a
+  change only when `AGENTS.md` allows escalation.
 - GitHub Actions deterministic workflows prove lint, tests, and policy
   checks that conventional tooling can verify.
 - Grok independently analyzes correctness, architecture, security, testing

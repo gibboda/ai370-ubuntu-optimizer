@@ -75,6 +75,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   usage is prohibited unless an explicit reason justifies parallel analysis.
 - Copilot and Codex overlays point at the Agent hierarchy in `AGENTS.md`
   instead of restating specialist-escalation rules.
+- Specialist escalation may use Copilot, Codex, Claude, or Gemini while
+  Grok Build is available only when that specialist uniquely provides a
+  required capability. Cursor remains the default task owner in the
+  architecture agent-execution rules and Grok review responsibility split.
 - Remove the accidental repo-root `.gemini/antigravity-cli/settings.json`
   copy from #245. Ignore `.gemini/` so local Antigravity CLI setup cannot
   be committed; the canonical pin remains `.github/antigravity/settings.json`.
