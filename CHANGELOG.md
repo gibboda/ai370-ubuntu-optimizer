@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Conventional Commit scope `agents` for agent policy and orchestration
+  (`AGENTS.md`, `.cursor/`, `.github/instructions/`).
+- Cursor hybrid orchestration boundary in `.cursor/rules/cursor.mdc`: GitHub
+  pull requests remain the automated CI/review surface, and Cursor does not
+  copy repository-owned reviewer secrets.
 - Cursor GitHub Projects MCP config (`.cursor/mcp.json`) plus Cloud Agent
   allowlist notes in `.cursor/rules/cursor.mdc`. Authenticate with
   `GITHUB_MCP_PAT`; do not commit tokens or a dashboard-overriding
