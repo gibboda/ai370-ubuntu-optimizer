@@ -32,9 +32,9 @@ For routine repository work, use this boundary:
 
 Do not require direct Cursor credentials for repository-owned review agents
 merely to run the normal implementation workflow. In particular, do not copy
-`XAI_API_KEY` or other GitHub Actions secrets into Cursor configuration so
-Cursor can reproduce an automated reviewer. Secrets used by repository-owned
-Actions remain in GitHub.
+`XAI_API_KEY`, `GEMINI_API_KEY`, or other GitHub Actions secrets into Cursor
+configuration so Cursor can reproduce an automated reviewer. Secrets used by
+repository-owned Actions remain in GitHub.
 
 Follow the shared escalation, cost, and default-implementation policy in
 `AGENTS.md`. Do not restate those rules here. Independent GitHub review

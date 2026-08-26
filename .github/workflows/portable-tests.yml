@@ -47,7 +47,8 @@ jobs:
             tests.test_s2_m6_optimization_apply \
             tests.test_repository_instructions \
             tests.test_github_label_policy \
-            tests.test_grok_pr_review
+            tests.test_grok_pr_review \
+            tests.test_gemini_pr_review
 
       - name: Run portable smoke tests
         shell: bash

@@ -1,0 +1,76 @@
+name: Gemini Antigravity PR Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  workflow_dispatch:
+    inputs:
+      pull_request_number:
+        description: Pull request number to review
+        required: true
+        type: string
+
+# Advisory Gemini / Antigravity review is independent of deterministic CI.
+# Least privilege: read the checked-out code and publish a GitHub review.
+# Never merge, never approve as a maintainer, and never change labels,
+# issues, or settings. This job calls the Gemini API directly; it does not
+# install or execute the Antigravity TUI.
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: gemini-pr-review-${{ github.event.pull_request.number || inputs.pull_request_number }}
+  cancel-in-progress: true
+
+jobs:
+  gemini-review:
+    name: Independent Gemini review
+    runs-on: ubuntu-latest
+    # pull_request_target is intentionally not used. Fork PRs therefore do
+    # not receive this review: repository secrets are unavailable, and this
+    # job does not run with a write token against untrusted fork code.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.draft == false &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Fetch pull-request SHAs
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --no-tags origin "$BASE_SHA" "$HEAD_SHA"
+
+      - name: Run repository-owned Gemini review
+        shell: bash
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          GEMINI_API_URL: ${{ vars.GEMINI_API_URL }}
+          MAX_DIFF_CHARS: ${{ vars.MAX_DIFF_CHARS }}
+          MAX_FINDINGS: ${{ vars.MAX_FINDINGS }}
+          MIN_CONFIDENCE: ${{ vars.MIN_CONFIDENCE }}
+          GEMINI_REVIEW_ENABLED: ${{ vars.GEMINI_REVIEW_ENABLED }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          args=(
+            --cwd "$GITHUB_WORKSPACE"
+            --output "$RUNNER_TEMP/gemini-review-decision.json"
+          )
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            args+=(--pr "${{ inputs.pull_request_number }}")
+          fi
+          python3 scripts/gemini_pr_review.py "${args[@]}"

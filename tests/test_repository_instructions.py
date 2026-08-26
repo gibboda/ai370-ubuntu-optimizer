@@ -261,6 +261,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("If the task produces repository changes", self.cursor_rules)
         self.assertIn("automated orchestration boundary", self.cursor_rules)
         self.assertIn("XAI_API_KEY", self.cursor_rules)
+        self.assertIn("GEMINI_API_KEY", self.cursor_rules)
         self.assertIn(
             "Follow the shared escalation, cost, and default-implementation policy",
             self.cursor_rules,

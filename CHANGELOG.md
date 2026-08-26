@@ -47,7 +47,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`.github/grok/`, `scripts/grok_pr_review.py`). GitHub Actions calls the
   xAI API directly, schema-validates JSON, applies confidence thresholds,
   and publishes an advisory review. Deterministic CI remains a separate
-  `portable-tests` workflow and never calls Grok.
+  `portable-tests` workflow and never calls Grok. Invalid or unauthorized
+  `XAI_API_KEY` values soft-skip so advisory review cannot fail the job.
+- Optional Gemini/Antigravity pull-request review owned by S5-M6
+  (`.github/antigravity/`, `scripts/gemini_pr_review.py`). GitHub Actions
+  calls the Gemini API directly with `GEMINI_API_KEY`. The Antigravity CLI
+  provider pin lives in `.github/antigravity/settings.json` for local copy
+  into `~/.gemini/antigravity-cli/`; CI does not run `agy`. Missing,
+  invalid, or quota-exhausted Gemini keys soft-skip.
 - GitHub issue forms and a label workflow apply type, area, and bump labels
   on open, then clear queue labels on close. S5-M6 helper
   `scripts/github_label_policy.py` owns the deterministic policy.
