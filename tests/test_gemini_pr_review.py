@@ -350,6 +350,91 @@ class PublishAndCliTests(unittest.TestCase):
         payload = json.loads(buffer.getvalue())
         self.assertEqual(payload["reason"], "gemini_model_unavailable")
 
+    def test_permission_denied_key_is_detected(self) -> None:
+        denied = grok.ReviewError(
+            "HTTP 403 calling https://generativelanguage.googleapis.com/"
+            "v1beta/models/gemini-3.6-flash:generateContent: "
+            '{"error":{"code":403,"message":"The caller does not have '
+            'permission","status":"PERMISSION_DENIED"}}'
+        )
+        github_forbidden = grok.ReviewError(
+            "HTTP 403 calling https://api.github.com/repos/x/pulls/1/reviews: "
+            '{"message":"Resource not accessible by integration"}'
+        )
+        org_policy = grok.ReviewError(
+            "HTTP 403 calling https://generativelanguage.googleapis.com/"
+            'v1beta/models/x:generateContent: {"error":{"code":403,'
+            '"message":"Request blocked by organization policy"}}'
+        )
+        invalid = grok.ReviewError(
+            "HTTP 400 calling https://generativelanguage.googleapis.com/"
+            'v1beta/models/x:generateContent: {"error":{"message":'
+            '"API key not valid. Please pass a valid API key.",'
+            '"status":"INVALID_ARGUMENT"}}'
+        )
+        self.assertTrue(gemini.is_gemini_permission_denied(denied))
+        self.assertFalse(grok.is_invalid_api_key(denied))
+        self.assertFalse(grok.is_quota_exhausted(denied))
+        self.assertFalse(gemini.is_gemini_permission_denied(github_forbidden))
+        self.assertFalse(gemini.is_gemini_permission_denied(org_policy))
+        self.assertFalse(gemini.is_gemini_permission_denied(invalid))
+
+    def test_cli_permission_denied_key_soft_skips(self) -> None:
+        env = self.isolated_env(GEMINI_API_KEY="restricted-key")
+        buffer = StringIO()
+        with mock.patch.dict(os.environ, env, clear=True):
+            with mock.patch.object(
+                grok,
+                "run_review",
+                side_effect=grok.ReviewError(
+                    "HTTP 403 calling https://generativelanguage.googleapis.com/"
+                    "v1beta/models/gemini-3.6-flash:generateContent: "
+                    '{"error":{"code":403,"message":"The caller does not have '
+                    'permission","status":"PERMISSION_DENIED"}}'
+                ),
+            ):
+                with mock.patch("sys.stdout", new=buffer):
+                    code = gemini.main(
+                        [
+                            "--pr-meta",
+                            str(FIXTURES / "pr-meta.json"),
+                            "--diff-file",
+                            str(FIXTURES / "sample.diff"),
+                            "--skip-publish",
+                        ]
+                    )
+        self.assertEqual(code, 0)
+        payload = json.loads(buffer.getvalue())
+        self.assertTrue(payload["skipped"])
+        self.assertEqual(payload["reason"], "gemini_api_key_permission_denied")
+
+    def test_cli_unrelated_forbidden_does_not_soft_skip(self) -> None:
+        env = self.isolated_env(GEMINI_API_KEY="ok-key")
+        buffer = StringIO()
+        with mock.patch.dict(os.environ, env, clear=True):
+            with mock.patch.object(
+                grok,
+                "run_review",
+                side_effect=grok.ReviewError(
+                    "HTTP 403 calling https://generativelanguage.googleapis.com/"
+                    'v1beta/models/x:generateContent: {"error":{"message":'
+                    '"Request blocked by organization policy"}}'
+                ),
+            ):
+                with mock.patch("sys.stdout", new=buffer):
+                    code = gemini.main(
+                        [
+                            "--pr-meta",
+                            str(FIXTURES / "pr-meta.json"),
+                            "--diff-file",
+                            str(FIXTURES / "sample.diff"),
+                            "--skip-publish",
+                        ]
+                    )
+        self.assertEqual(code, 1)
+        payload = json.loads(buffer.getvalue())
+        self.assertEqual(payload["reason"], "review_failed")
+
 
 class WorkflowContractTests(unittest.TestCase):
     def test_gemini_workflow_is_repository_owned_and_least_privilege(self) -> None:

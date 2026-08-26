@@ -167,6 +167,31 @@ def call_gemini(
     raise last_error or grok.ReviewError("Gemini request failed")
 
 
+def is_gemini_permission_denied(error: BaseException) -> bool:
+    """True when Gemini rejects a valid key that is not allowed to call the API.
+
+    HTTP 403 PERMISSION_DENIED is distinct from an invalid key (400/401) and
+    from quota (429). Unrelated 403s, including GitHub publish failures, must
+    still fail the job.
+    """
+    text = str(error).lower()
+    if "http 403" not in text:
+        return False
+    if "generativelanguage.googleapis.com" not in text:
+        return False
+    markers = (
+        "permission_denied",
+        "permission denied",
+        "caller does not have permission",
+        "generative language api has not been used",
+        "generativelanguage.googleapis.com are blocked",
+        "service_disabled",
+        "access not configured",
+        "api has not been enabled",
+    )
+    return any(marker in text for marker in markers)
+
+
 def review_is_enabled(env: dict[str, str]) -> bool:
     value = env.get("GEMINI_REVIEW_ENABLED", "true").strip().lower()
     return value not in {"0", "false", "no", "off"}
@@ -320,6 +345,14 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 "[INFO] Skipping Gemini review because the Gemini API key is "
                 "invalid or unauthorized.",
+                file=sys.stderr,
+            )
+            return 0
+        if is_gemini_permission_denied(exc):
+            grok.emit_json(grok.skip_result("gemini_api_key_permission_denied"))
+            print(
+                "[INFO] Skipping Gemini review because the Gemini API key is "
+                "not authorized for the Generative Language API.",
                 file=sys.stderr,
             )
             return 0

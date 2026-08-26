@@ -55,6 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   provider pin lives in `.github/antigravity/settings.json` for local copy
   into `~/.gemini/antigravity-cli/`; CI does not run `agy`. Missing,
   invalid, quota-exhausted, or retired-model Gemini responses soft-skip.
+  HTTP 403 `PERMISSION_DENIED` for a syntactically valid key that cannot
+  call the Generative Language API also soft-skips. Unrelated 403s still
+  fail the advisory job.
   Default model is `gemini-3.6-flash` (override with `GEMINI_MODEL`).
   The Actions job checks out the PR base revision for review machinery
   and fetches the PR head only to build diffs.

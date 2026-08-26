@@ -176,6 +176,7 @@ Fork PRs are skipped:
 | `GEMINI_REVIEW_ENABLED=false` | Skip; job succeeds |
 | Missing `GEMINI_API_KEY` | Skip; job succeeds (setup is optional until the secret exists) |
 | Invalid or unauthorized `GEMINI_API_KEY` | Soft-skip; job succeeds |
+| Valid key with Gemini HTTP 403 `PERMISSION_DENIED` | Soft-skip; job succeeds |
 | Retired or missing Gemini model (HTTP 404) | Soft-skip; job succeeds. Set `GEMINI_MODEL` or edit `config.json` |
 | Gemini quota / rate limit | Soft-skip; job succeeds |
 | Fork PR | Job skipped by workflow `if` |

@@ -64,7 +64,8 @@ Or from repo root after making executable:
   contract)
 - Independent Gemini/Antigravity PR review tests: `test_gemini_pr_review.py`
   (provider pin, Gemini generateContent contract, missing/invalid-key
-  soft-skip, trusted base checkout, and workflow least privilege)
+  and permission-denied soft-skip, trusted base checkout, and workflow
+  least privilege)
 
 ### Stage 2 platform (`smoke_stage2_platform.sh`)
 
