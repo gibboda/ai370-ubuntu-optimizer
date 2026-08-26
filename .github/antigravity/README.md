@@ -144,11 +144,17 @@ Fork PRs are skipped:
 
 - `GITHUB_TOKEN` permissions are `contents: read` and
   `pull-requests: write`.
-- Checkout uses the same `actions/checkout@v5` defaults as the other
-  workflows. `persist-credentials: false` is avoided because this
-  repository tracks a llama.cpp gitlink without `.gitmodules`, and
-  checkout's credential-stripping path fails `git submodule foreach` on
-  that gitlink.
+- Checkout uses `actions/checkout@v5` at the pull-request **base SHA**
+  (or the repository default branch for `workflow_dispatch`), then fetches
+  the PR head only for diff generation. The merge ref is not the runtime
+  tree, so a same-repository branch cannot replace
+  `scripts/gemini_pr_review.py` or `scripts/grok_pr_review.py` while this
+  job holds `GEMINI_API_KEY`. `persist-credentials: false` is still
+  avoided because this repository tracks a llama.cpp gitlink without
+  `.gitmodules`, and checkout's credential-stripping path fails
+  `git submodule foreach` on that gitlink. The workflow YAML itself still
+  comes from the `pull_request` event (not `pull_request_target`); a PR
+  that edits this workflow file can still change how checkout runs.
 - The Gemini key is read only as `GEMINI_API_KEY` for the API call. It is
   never copied into review JSON, prompts, or logs. API errors redact the
   key. The key is sent as the `x-goog-api-key` header, not a query

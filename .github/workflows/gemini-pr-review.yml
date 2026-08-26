@@ -41,17 +41,38 @@ jobs:
         github.event.pull_request.head.repo.full_name == github.repository
       )
     steps:
-      - name: Check out repository
+      # Check out the PR base (or the default branch for workflow_dispatch),
+      # not the merge ref. The merge ref can replace scripts/gemini_pr_review.py
+      # and scripts/grok_pr_review.py while this job holds GEMINI_API_KEY and a
+      # pull-requests: write token. Diff generation fetches PR SHAs separately.
+      # persist-credentials: false is avoided because this repository tracks a
+      # llama.cpp gitlink without .gitmodules.
+      - name: Check out trusted review machinery
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.event.repository.default_branch }}
 
-      - name: Fetch pull-request SHAs
+      - name: Fetch pull-request revisions
         if: github.event_name == 'pull_request'
         shell: bash
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          set -euo pipefail
           git fetch --no-tags origin "$BASE_SHA" "$HEAD_SHA"
+          # First-introduction bootstrap: overlay orchestrator files from the
+          # PR head only when they are absent on the trusted base. After this
+          # workflow merges, the file exists on base and PR-supplied scripts
+          # are not executed. An attacker cannot trigger this by deleting the
+          # script on their branch.
+          if [[ ! -f scripts/gemini_pr_review.py ]]; then
+            echo "Gemini review machinery is missing on the base revision; overlaying from the PR head (bootstrap only)."
+            git checkout "$HEAD_SHA" -- \
+              scripts/gemini_pr_review.py \
+              scripts/grok_pr_review.py \
+              .github/antigravity
+          fi
 
       - name: Run repository-owned Gemini review
         shell: bash

@@ -56,6 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   into `~/.gemini/antigravity-cli/`; CI does not run `agy`. Missing,
   invalid, quota-exhausted, or retired-model Gemini responses soft-skip.
   Default model is `gemini-3.6-flash` (override with `GEMINI_MODEL`).
+  The Actions job checks out the PR base revision for review machinery
+  and fetches the PR head only to build diffs.
 - GitHub issue forms and a label workflow apply type, area, and bump labels
   on open, then clear queue labels on close. S5-M6 helper
   `scripts/github_label_policy.py` owns the deterministic policy.
