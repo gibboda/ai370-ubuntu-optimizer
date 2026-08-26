@@ -755,6 +755,17 @@ state. Fork PRs are skipped because this workflow does not use
 `pull_request_target`. Setup, thresholds, and disable instructions are in
 [`.github/grok/README.md`](.github/grok/README.md).
 
+Optional Gemini/Antigravity advisory review is the same S5-M6 class of
+workflow. GitHub Actions calls the Gemini API directly with `GEMINI_API_KEY`;
+it does not install the Antigravity TUI. Local Antigravity CLI setup uses
+[`.github/antigravity/settings.json`](.github/antigravity/settings.json)
+copied to `~/.gemini/antigravity-cli/settings.json` plus `GEMINI_API_KEY` in
+the environment. Do not commit the home-directory file. Setup is in
+[`.github/antigravity/README.md`](.github/antigravity/README.md).
+Prefer enabling only one Actions advisory reviewer unless comparing
+providers. Missing or invalid provider keys soft-skip so deterministic CI
+stays authoritative.
+
 ## License
 
 GPLv3

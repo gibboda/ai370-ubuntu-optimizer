@@ -57,8 +57,8 @@ Do not open the PR unless the title validation command passes.
 - Grok Build is the preferred secondary agent when available, if Cursor cannot
   complete the work and a second implementation path is still warranted. It is
   also the preferred independent review tool for SuperGrok subscribers.
-- GitHub Copilot, Codex, Claude, and other metered cloud agents are
-  specialist/escalation resources. They must not be invoked automatically for
+- GitHub Copilot, Codex, Claude, Antigravity/Gemini, and other metered cloud
+  agents are specialist/escalation resources. They must not be invoked automatically for
   routine work. If Grok Build is unavailable, an available specialist agent
   may be used for a narrowly scoped escalation need.
 - GitHub remains the source of truth and control plane for repositories,
@@ -83,7 +83,7 @@ Keep routine work with Cursor whenever practical. Cursor handles:
 - pull-request preparation
 
 Do not auto-escalate those tasks to Grok Build, GitHub Copilot, Codex,
-Claude, or other metered cloud agents.
+Claude, Antigravity/Gemini, or other metered cloud agents.
 
 ### Escalation and secondary use
 
@@ -102,8 +102,8 @@ Preferred order when escalation is justified:
 2. Use Grok Build as the preferred secondary implementation agent when
    available.
 3. If Grok Build is unavailable, use an available specialist agent such as
-   GitHub Copilot, Codex, Claude, or another explicitly approved agent for the
-   narrowly scoped escalation need.
+   GitHub Copilot, Codex, Claude, Antigravity/Gemini, or another explicitly approved agent
+   for the narrowly scoped escalation need.
 
 Do not invoke multiple paid or cloud agents for the same routine task. Before
 starting a new paid-agent analysis, reuse prior agent findings, logs, issue/PR
@@ -138,9 +138,14 @@ deterministic validation passes. Do not spend paid-agent capacity on review
 when the required checks already answer the question.
 
 Independent pull-request review through the xAI/Grok API is a repository-owned
-GitHub Actions subsystem (S5-M6, `.github/grok/`). It is not Cursor, not Grok
-Build, and not a Marketplace review action. Deterministic CI must remain able
-to pass or fail without that workflow. See `.github/grok/README.md`.
+GitHub Actions subsystem (S5-M6, `.github/grok/`). Optional Gemini/Antigravity
+advisory review is the same class of subsystem (`.github/antigravity/`,
+`scripts/gemini_pr_review.py`). Neither is Cursor, Grok Build, the Antigravity
+TUI, or a Marketplace review action. GitHub Actions calls the provider APIs
+directly. Deterministic CI must remain able to pass or fail without those
+workflows. Missing, invalid, or quota-exhausted provider keys soft-skip.
+Prefer enabling only one Actions advisory reviewer unless comparing providers.
+See `.github/grok/README.md` and `.github/antigravity/README.md`.
 
 The Testing and Change discipline sections below remain the authoritative
 detail for what this repository requires those checks to cover.
@@ -247,7 +252,7 @@ directory is gitignored).
   run without AI370 hardware and without network:
 
   ```bash
-  python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_grok_pr_review
+  python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_grok_pr_review tests.test_gemini_pr_review
   bash tests/smoke_tier1.sh
   bash tests/smoke_stage2_platform.sh
   bash tests/smoke_tier2.sh
