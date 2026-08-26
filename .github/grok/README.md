@@ -151,6 +151,7 @@ trusted checkout.
 | `GROK_REVIEW_ENABLED=false` | Skip; job succeeds |
 | Missing `XAI_API_KEY` | Skip; job succeeds (setup is optional until the secret exists) |
 | xAI credits exhausted / spending limit (HTTP 403) | Soft-skip; job succeeds. Prefer Grok Build (SuperGrok) for independent review |
+| Invalid or unauthorized `XAI_API_KEY` (HTTP 400/401) | Soft-skip; job succeeds. Replace the secret or use Grok Build |
 | Fork PR | Job skipped by workflow `if` |
 | Empty or fully excluded diff | Publish an advisory comment; no xAI call |
 | Diff exceeds limits | Review reviewed chunks; list unreviewed paths explicitly |

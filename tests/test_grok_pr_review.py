@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 import unittest
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Any
 from unittest import mock
@@ -329,6 +329,7 @@ class PublishAndCliTests(unittest.TestCase):
             "GITHUB_REPOSITORY",
             "GROK_REVIEW_ENABLED",
             "GROK_REVIEW_SKIP_FORK",
+            "GEMINI_API_KEY",
         ):
             env.pop(key, None)
         env.update(extra)
@@ -530,6 +531,56 @@ class PublishAndCliTests(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 1)
         self.assertIn("unexpected keys", completed.stderr)
+
+    def test_incorrect_xai_api_key_is_unusable(self) -> None:
+        invalid = grok.ReviewError(
+            "HTTP 400 calling https://api.x.ai/v1/chat/completions: "
+            '{"code":"invalid-argument","error":"Incorrect API key provided. '
+            'You can obtain an API key from https://console.x.ai."}'
+        )
+        credits = grok.ReviewError(
+            "HTTP 403 calling https://api.x.ai/v1/chat/completions: "
+            "used all available credits"
+        )
+        schema = grok.ReviewError(
+            "HTTP 400 calling https://api.x.ai/v1/chat/completions: "
+            "review payload has unexpected keys"
+        )
+        self.assertTrue(grok.is_invalid_api_key(invalid))
+        self.assertTrue(grok.is_xai_key_unusable(invalid))
+        self.assertFalse(grok.is_xai_credits_exhausted(invalid))
+        self.assertTrue(grok.is_xai_credits_exhausted(credits))
+        self.assertTrue(grok.is_xai_key_unusable(credits))
+        self.assertFalse(grok.is_invalid_api_key(schema))
+        self.assertFalse(grok.is_xai_key_unusable(schema))
+
+    def test_cli_invalid_api_key_soft_skips(self) -> None:
+        env = self.isolated_env(XAI_API_KEY="bad-key")
+        buffer = StringIO()
+        with mock.patch.dict(os.environ, env, clear=True):
+            with mock.patch.object(
+                grok,
+                "run_review",
+                side_effect=grok.ReviewError(
+                    "HTTP 400 calling https://api.x.ai/v1/chat/completions: "
+                    '{"code":"invalid-argument","error":'
+                    '"Incorrect API key provided."}'
+                ),
+            ):
+                with mock.patch("sys.stdout", new=buffer):
+                    code = grok.main(
+                        [
+                            "--pr-meta",
+                            str(FIXTURES / "pr-meta.json"),
+                            "--diff-file",
+                            str(FIXTURES / "sample.diff"),
+                            "--skip-publish",
+                        ]
+                    )
+        self.assertEqual(code, 0)
+        payload = json.loads(buffer.getvalue())
+        self.assertTrue(payload["skipped"])
+        self.assertEqual(payload["reason"], "xai_api_key_invalid")
 
     def test_http_error_does_not_echo_api_key(self) -> None:
         error = grok.urllib.error.HTTPError(
