@@ -101,7 +101,7 @@ it.
 
 `config.json` defaults:
 
-- Model: `gemini-2.5-flash` (change the variable or this file; do not
+- Model: `gemini-3.6-flash` (change the variable or this file; do not
   hard-code a key or couple the toolkit to one Gemini SKU in application
   scripts)
 - `max_diff_chars`: 80000
@@ -170,6 +170,7 @@ Fork PRs are skipped:
 | `GEMINI_REVIEW_ENABLED=false` | Skip; job succeeds |
 | Missing `GEMINI_API_KEY` | Skip; job succeeds (setup is optional until the secret exists) |
 | Invalid or unauthorized `GEMINI_API_KEY` | Soft-skip; job succeeds |
+| Retired or missing Gemini model (HTTP 404) | Soft-skip; job succeeds. Set `GEMINI_MODEL` or edit `config.json` |
 | Gemini quota / rate limit | Soft-skip; job succeeds |
 | Fork PR | Job skipped by workflow `if` |
 | Empty or fully excluded diff | Publish an advisory comment; no Gemini call |

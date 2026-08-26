@@ -81,7 +81,7 @@ class AntigravityConfigTests(unittest.TestCase):
         config = gemini.load_config()
         url = gemini.gemini_endpoint(config)
         self.assertIn("generativelanguage.googleapis.com", url)
-        self.assertIn("gemini-2.5-flash", url)
+        self.assertIn("gemini-3.6-flash", url)
         self.assertNotIn("key=", url)
         self.assertNotIn("{model}", url)
 
@@ -321,6 +321,34 @@ class PublishAndCliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         payload = json.loads(buffer.getvalue())
         self.assertEqual(payload["reason"], "gemini_quota_exhausted")
+
+    def test_cli_retired_model_soft_skips(self) -> None:
+        error = grok.ReviewError(
+            "HTTP 404 calling https://generativelanguage.googleapis.com/"
+            "v1beta/models/gemini-2.5-flash:generateContent: "
+            '{"error":{"code":404,"message":"This model models/gemini-2.5-flash '
+            'is no longer available to new users. Please update your code to '
+            'use models/gemini-3.6-flash for the latest features and '
+            'improvements.","status":"NOT_FOUND"}}'
+        )
+        self.assertTrue(grok.is_model_unavailable(error))
+        env = self.isolated_env(GEMINI_API_KEY="ok-key")
+        buffer = StringIO()
+        with mock.patch.dict(os.environ, env, clear=True):
+            with mock.patch.object(grok, "run_review", side_effect=error):
+                with mock.patch("sys.stdout", new=buffer):
+                    code = gemini.main(
+                        [
+                            "--pr-meta",
+                            str(FIXTURES / "pr-meta.json"),
+                            "--diff-file",
+                            str(FIXTURES / "sample.diff"),
+                            "--skip-publish",
+                        ]
+                    )
+        self.assertEqual(code, 0)
+        payload = json.loads(buffer.getvalue())
+        self.assertEqual(payload["reason"], "gemini_model_unavailable")
 
 
 class WorkflowContractTests(unittest.TestCase):

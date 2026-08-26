@@ -331,6 +331,15 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 0
+        if grok.is_model_unavailable(exc):
+            grok.emit_json(grok.skip_result("gemini_model_unavailable"))
+            print(
+                "[INFO] Skipping Gemini review because the configured Gemini "
+                "model is retired or not found. Set GEMINI_MODEL or edit "
+                ".github/antigravity/config.json.",
+                file=sys.stderr,
+            )
+            return 0
         print(
             grok.redact_secrets(f"[ERROR] {exc}", grok.credential_values()),
             file=sys.stderr,

@@ -1042,6 +1042,26 @@ def is_invalid_api_key(error: BaseException) -> bool:
     return any(marker in text for marker in markers)
 
 
+def is_model_unavailable(error: BaseException) -> bool:
+    """True when the configured model ID is retired or not found.
+
+    Advisory review is optional. A provider retiring a default SKU must not
+    fail deterministic GitHub checks. HTTP 404 is only skipped when the body
+    names a missing or retired model.
+    """
+    text = str(error).lower()
+    if "http 404" not in text:
+        return False
+    markers = (
+        "no longer available",
+        "not found for api version",
+        "is not found",
+        '"status": "not_found"',
+        "not_found",
+    )
+    return any(marker in text for marker in markers)
+
+
 def is_quota_exhausted(error: BaseException) -> bool:
     """True when a provider rejects the request for quota or rate limit."""
     text = str(error).lower()

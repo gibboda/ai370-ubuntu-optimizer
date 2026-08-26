@@ -54,7 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   calls the Gemini API directly with `GEMINI_API_KEY`. The Antigravity CLI
   provider pin lives in `.github/antigravity/settings.json` for local copy
   into `~/.gemini/antigravity-cli/`; CI does not run `agy`. Missing,
-  invalid, or quota-exhausted Gemini keys soft-skip.
+  invalid, quota-exhausted, or retired-model Gemini responses soft-skip.
+  Default model is `gemini-3.6-flash` (override with `GEMINI_MODEL`).
 - GitHub issue forms and a label workflow apply type, area, and bump labels
   on open, then clear queue labels on close. S5-M6 helper
   `scripts/github_label_policy.py` owns the deterministic policy.
