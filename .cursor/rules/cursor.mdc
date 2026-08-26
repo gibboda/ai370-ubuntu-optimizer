@@ -11,6 +11,40 @@ Do not duplicate or override that file here.
 
 Nested `AGENTS.md` files remain in force for their directories.
 
+## Hybrid orchestration boundary
+
+Cursor is the interactive implementation surface; GitHub is the repository
+orchestration and governance surface.
+
+For routine repository work, use this boundary:
+
+1. Read and follow `AGENTS.md` and any applicable nested instructions.
+2. Analyze, implement, refactor, debug, document, and run local deterministic
+   validation in Cursor.
+3. Commit and push the implementation branch to GitHub and prepare the pull
+   request.
+4. Treat the pull request as the automated orchestration boundary. GitHub
+   Actions runs deterministic CI and any repository-owned advisory AI review.
+5. Use GitHub check results and review findings as feedback. Fix confirmed
+   defects in Cursor, push the update, and let GitHub rerun validation.
+6. Leave merge eligibility and repository governance to GitHub rulesets,
+   branch protection, required checks, and human decisions.
+
+Do not require direct Cursor credentials for repository-owned review agents
+merely to run the normal implementation workflow. In particular, do not copy
+`XAI_API_KEY` or other GitHub Actions secrets into Cursor configuration so
+Cursor can reproduce an automated reviewer. Secrets used by repository-owned
+Actions remain in GitHub.
+
+Do not invoke a secondary AI agent merely because it is available. Follow the
+escalation and cost policy in `AGENTS.md`. Independent review and duplicate
+implementation are different tasks: review findings may be consumed by Cursor,
+but Cursor remains responsible for the default implementation path.
+
+GitHub Actions and other deterministic checks remain authoritative for facts
+they can verify. AI findings are advisory unless repository governance is
+explicitly changed to make a corresponding check required.
+
 ## Cursor Cloud
 
 These notes apply when the agent is running in Cursor Cloud. They do not
