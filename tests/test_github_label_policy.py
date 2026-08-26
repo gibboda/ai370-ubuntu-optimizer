@@ -163,6 +163,20 @@ class LabelPolicyTests(unittest.TestCase):
         )
         self.assertEqual(result["apply"], ["bump:patch", "dependencies"])
 
+    def test_pr_agents_scope_applies_dev_environment(self) -> None:
+        result = self.compute(
+            {
+                "action": "opened",
+                "kind": "pull_request",
+                "title": "chore(agents): Define Cursor hybrid orchestration boundary",
+                "files": ["AGENTS.md"],
+                "current_labels": [],
+            }
+        )
+        self.assertIn("area:dev-environment", result["apply"])
+        self.assertIn("area:docs", result["apply"])
+        self.assertIn("bump:patch", result["apply"])
+
     def test_pr_title_edit_replaces_exclusive_bump_and_type(self) -> None:
         result = self.compute(
             {

@@ -21,8 +21,8 @@ For routine repository work, use this boundary:
 1. Read and follow `AGENTS.md` and any applicable nested instructions.
 2. Analyze, implement, refactor, debug, document, and run local deterministic
    validation in Cursor.
-3. Commit and push the implementation branch to GitHub and prepare the pull
-   request.
+3. If the task produces repository changes, commit and push the
+   implementation branch to GitHub and prepare the pull request.
 4. Treat the pull request as the automated orchestration boundary. GitHub
    Actions runs deterministic CI and any repository-owned advisory AI review.
 5. Use GitHub check results and review findings as feedback. Fix confirmed
@@ -36,10 +36,9 @@ merely to run the normal implementation workflow. In particular, do not copy
 Cursor can reproduce an automated reviewer. Secrets used by repository-owned
 Actions remain in GitHub.
 
-Do not invoke a secondary AI agent merely because it is available. Follow the
-escalation and cost policy in `AGENTS.md`. Independent review and duplicate
-implementation are different tasks: review findings may be consumed by Cursor,
-but Cursor remains responsible for the default implementation path.
+Follow the shared escalation, cost, and default-implementation policy in
+`AGENTS.md`. Do not restate those rules here. Independent GitHub review
+findings may be consumed as feedback in Cursor.
 
 GitHub Actions and other deterministic checks remain authoritative for facts
 they can verify. AI findings are advisory unless repository governance is

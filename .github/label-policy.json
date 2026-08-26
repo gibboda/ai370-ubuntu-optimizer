@@ -64,7 +64,8 @@
     "deps": ["dependencies"],
     "audit": ["area:hardware"],
     "stage1": ["area:hardware"],
-    "architecture": ["area:docs"]
+    "architecture": ["area:docs"],
+    "agents": ["area:dev-environment"]
   },
   "path_labels": [
     {

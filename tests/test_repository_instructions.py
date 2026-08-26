@@ -256,6 +256,25 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("startup update script", self.cursor_rules)
         self.assertIn("markdownlint-cli2", self.cursor_rules)
 
+    def test_cursor_hybrid_orchestration_stays_cursor_specific(self) -> None:
+        self.assertIn("Hybrid orchestration boundary", self.cursor_rules)
+        self.assertIn("If the task produces repository changes", self.cursor_rules)
+        self.assertIn("automated orchestration boundary", self.cursor_rules)
+        self.assertIn("XAI_API_KEY", self.cursor_rules)
+        self.assertIn(
+            "Follow the shared escalation, cost, and default-implementation policy",
+            self.cursor_rules,
+        )
+        self.assertNotIn(
+            "Do not invoke a secondary AI agent merely because it is available",
+            self.cursor_rules,
+        )
+        self.assertNotIn(
+            "Cursor remains responsible for the default implementation path",
+            self.cursor_rules,
+        )
+        self.assertNotIn("If the task produces repository changes", self.agent_instructions)
+
     def test_cursor_github_projects_mcp_has_no_secrets(self) -> None:
         mcp_path = ROOT / ".cursor/mcp.json"
         self.assertTrue(mcp_path.is_file(), mcp_path)
@@ -825,6 +844,7 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         "comfyui",
         "config",
         "architecture",
+        "agents",
         "workflows",
         "vscode",
         "release",
@@ -860,6 +880,34 @@ class ConventionalCommitScopeTests(unittest.TestCase):
                 "bash",
                 str(ROOT / "scripts/validate-commit-subject.sh"),
                 "chore(deps): bump pillow from 11.2.1 to 12.3.0 in /configs/ai-runtime",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_pr_title_accepts_agents_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "chore(agents): Define hybrid orchestration boundary",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_commit_subject_accepts_agents_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "chore(agents): Define Cursor hybrid orchestration boundary",
             ],
             check=False,
             capture_output=True,
