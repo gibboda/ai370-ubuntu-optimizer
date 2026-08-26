@@ -5,8 +5,9 @@ examples, release versioning, shell script standards, and the human
 contributor workflow.
 
 Shared AI-agent policy lives in [`AGENTS.md`](AGENTS.md). That file is
-authoritative for agent roles, escalation, cost policy, deterministic
-validation, architecture, testing, naming, and change discipline.
+authoritative for agent hierarchy, agent roles, escalation, cost policy,
+deterministic validation, architecture, testing, naming, and change
+discipline.
 
 - Cursor-specific environment notes: [`.cursor/rules/`](.cursor/rules/)
 - GitHub Copilot: [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)

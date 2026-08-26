@@ -67,6 +67,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Shared agent policy now has an explicit Agent hierarchy: GitHub remains
+  the control plane (not an implementation agent), Cursor stays the default
+  task owner, deterministic validation runs before escalation, Grok Build is
+  the preferred secondary agent, and GitHub Copilot, Codex, Claude, Gemini,
+  and other approved agents are specialist resources. Duplicate paid-agent
+  usage is prohibited unless an explicit reason justifies parallel analysis.
+
 - Grok review checkout uses the same `actions/checkout@v5` defaults as
   other workflows so the llama.cpp gitlink does not fail credential
   stripping. `--print-prompt` emits metadata only and does not log

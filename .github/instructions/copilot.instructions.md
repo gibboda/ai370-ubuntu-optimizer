@@ -12,5 +12,6 @@ policy here.
 
 Follow the reading order in `AGENTS.md` before changing code, including any
 nested `AGENTS.md` that applies to the files being changed. Escalate Copilot
-only when `AGENTS.md` allows specialist use. Do not treat Copilot as a
-parallel reviewer for routine work.
+only when `AGENTS.md` allows specialist use. Specialist use must be
+narrowly scoped and capability-driven. Do not treat Copilot as a parallel
+reviewer for routine work.
