@@ -89,6 +89,8 @@ GitHub is not an implementation agent. Cursor remains the default task owner.
   They must not be invoked automatically for routine work. If Grok Build is
   unavailable, an available specialist agent may be used for a narrowly
   scoped, capability-driven escalation need.
+  If Grok Build is available, a specialist may be used only when
+  it uniquely provides a required capability that Grok Build cannot.
   Approved specialists include Antigravity when a Gemini-backed local tool
   is the capability being requested.
 - GitHub remains the source of truth and control plane for repositories,
@@ -137,7 +139,9 @@ order when escalation is justified:
    available.
 4. If Grok Build is unavailable, use an available specialist agent such as
    GitHub Copilot, Codex, Claude, Gemini, or another explicitly approved agent
-   for the narrowly scoped escalation need. Specialist use must be narrowly
+   for the narrowly scoped escalation need. If Grok Build is available, use a
+   specialist only when that specialist uniquely provides a required
+   capability that Grok Build cannot. Specialist use must be narrowly
    scoped and capability-driven.
 
 ### Prevent duplicate AI usage

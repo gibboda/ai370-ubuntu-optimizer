@@ -290,6 +290,10 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertNotIn(
             "narrowly scoped and capability-driven", self.cursor_rules
         )
+        self.assertIn(
+            "If Grok Build is available, a specialist may be used only when",
+            self.agent_instructions,
+        )
         self.assertIn("agent hierarchy", self.contributing)
 
     def test_cursor_cloud_notes_live_in_cursor_rules(self) -> None:

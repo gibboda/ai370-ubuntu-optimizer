@@ -1265,9 +1265,10 @@ This should permit future support for:
 
 # 23. Recommended Repository Migration Tasks
 
-The following tasks define how Codex, Grok Build, or another
+The following tasks define how Cursor, Grok Build, Codex, or another
 implementation agent should migrate the existing repository into the new
-architecture.
+architecture. Cursor remains the default task owner; other agents follow
+the Agent hierarchy in `AGENTS.md`.
 
 The migration must be incremental. Do not perform a large-scale
 directory rewrite before understanding and testing the current
@@ -2009,8 +2010,9 @@ The platform is successful when it can:
 
 # 26. Agent Execution Rules
 
-When Codex, Grok Build, or another implementation agent works from this
-document, it should follow these rules:
+When Cursor, Grok Build, Codex, or another implementation agent works from
+this document, it should follow these rules. Cursor remains the default
+task owner:
 
 1.  **Inspect before editing.**
 2.  **Preserve working behavior before generalizing it.**
