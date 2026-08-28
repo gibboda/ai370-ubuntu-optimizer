@@ -15,6 +15,10 @@ discipline.
 
 Do not copy shared agent policy into those files.
 
+The human maintainer retains final decision authority. `AGENTS.md` does not
+transfer merge, policy, release, architecture, or repository-governance
+authority to an AI agent.
+
 ## Commit message format
 
 This project uses
