@@ -607,6 +607,10 @@ class WorkflowContractTests(unittest.TestCase):
         workflow = (ROOT / ".github/workflows/grok-pr-review.yml").read_text(
             encoding="utf-8"
         )
+        self.assertRegex(
+            workflow, r"(?m)^name: Independent xAI/Grok PR Review$"
+        )
+        self.assertNotIn("Grok Build PR Review", workflow)
         self.assertNotRegex(workflow, r"(?m)^[ \t]*pull_request_target:")
         self.assertNotRegex(workflow, r"(?m)^[ \t]*- pull_request_target\s*$")
         self.assertIn("cancel-in-progress: true", workflow)
@@ -650,6 +654,9 @@ class WorkflowContractTests(unittest.TestCase):
         self.assertTrue((ROOT / ".github/grok/review_prompt.md").is_file())
         self.assertTrue((ROOT / ".github/grok/schema.json").is_file())
         self.assertTrue((ROOT / ".github/grok/README.md").is_file())
+        readme = (ROOT / ".github/grok/README.md").read_text(encoding="utf-8")
+        self.assertIn("Independent xAI/Grok PR Review", readme)
+        self.assertIn("It is not Grok Build", readme)
         workflow = (ROOT / ".github/workflows/grok-pr-review.yml").read_text(
             encoding="utf-8"
         )

@@ -67,6 +67,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Rename the S5-M6 advisory xAI Actions workflow display name from
+  `Grok Build PR Review` to `Independent xAI/Grok PR Review` so GitHub's
+  check list does not confuse that API-key job with Grok Build.
+
 - Shared agent policy now has an explicit Agent hierarchy: GitHub remains
   the control plane (not an implementation agent), Cursor stays the default
   task owner, deterministic validation runs before escalation, Grok Build is
