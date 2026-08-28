@@ -747,24 +747,15 @@ filenames.
 GitHub Actions is the deterministic validation layer. ShellCheck, portable
 tests, Conventional Commit title lint, and label policy do not call an LLM.
 
-Independent xAI/Grok review is a separate S5-M6 workflow. It analyzes the
-diff for correctness, architecture, security, testing gaps, and stage-boundary
-policy, then a repository-owned policy engine publishes an advisory GitHub
-review. Grok cannot merge, approve as a maintainer, or change repository
-state. Fork PRs are skipped because this workflow does not use
-`pull_request_target`. Setup, thresholds, and disable instructions are in
-[`.github/grok/README.md`](.github/grok/README.md).
-
-Optional Gemini/Antigravity advisory review is the same S5-M6 class of
-workflow. GitHub Actions calls the Gemini API directly with `GEMINI_API_KEY`;
-it does not install the Antigravity TUI. Local Antigravity CLI setup uses
+Independent review is local. Run Grok Build (`grok`) on the pull-request
+branch. If Grok Build is unavailable, use Antigravity CLI (`agy`). Setup
+is in [`.github/grok/README.md`](.github/grok/README.md) and
+[`.github/antigravity/README.md`](.github/antigravity/README.md). GitHub
+Actions does not call xAI or Gemini and does not use `XAI_API_KEY` or
+`GEMINI_API_KEY`. Local Antigravity CLI setup uses
 [`.github/antigravity/settings.json`](.github/antigravity/settings.json)
-copied to `~/.gemini/antigravity-cli/settings.json` plus `GEMINI_API_KEY` in
-the environment. Do not commit the home-directory file. Setup is in
-[`.github/antigravity/README.md`](.github/antigravity/README.md).
-Prefer enabling only one Actions advisory reviewer unless comparing
-providers. Missing or invalid provider keys soft-skip so deterministic CI
-stays authoritative.
+copied to `~/.gemini/antigravity-cli/settings.json`. Do not commit the
+home-directory file.
 
 ## License
 

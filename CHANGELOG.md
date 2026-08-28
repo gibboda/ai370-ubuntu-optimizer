@@ -67,6 +67,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Remove the S5-M6 xAI and Gemini GitHub Actions advisory reviewers
+  (`grok-pr-review.yml`, `gemini-pr-review.yml`, `scripts/grok_pr_review.py`,
+  `scripts/gemini_pr_review.py`). Independent review is local Grok Build
+  (`grok`) with Antigravity CLI (`agy`) as backup. GitHub Actions does not
+  call xAI or Gemini and does not use `XAI_API_KEY` or `GEMINI_API_KEY`.
+
 - Clarify agent planes, human final decision authority, and capability
   routing in `AGENTS.md` without changing Cursor as primary or Grok Build
   as the preferred secondary agent. Copilot overlay names the GitHub

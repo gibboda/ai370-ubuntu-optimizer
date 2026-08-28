@@ -187,12 +187,11 @@ Capability routing does not change the preferred order above:
 | --- | --- | --- | --- |
 | Cursor | Primary | Default task ownership | Skipping Cursor only because another agent is available |
 | Deterministic tests and CI | Evidence | Before any second AI agent | Asking an LLM to re-run ShellCheck or unittest |
-| Grok Build | Preferred secondary; SuperGrok interactive review | Defined gap after Cursor, or independent review | Routine Cursor work; as a merge gate; treating the xAI Actions job as Grok Build |
-| xAI Actions job | Advisory PR review | Optional `XAI_API_KEY` fallback | Calling it Grok Build; making it a required check |
+| Grok Build | Preferred secondary; SuperGrok interactive review | Defined gap after Cursor, or independent review | Routine Cursor work; as a merge gate; treating a GitHub API key as Grok Build |
+| Antigravity CLI (`agy`) | Backup independent review | Grok Build unavailable, including weekly limit | Default peer to Grok Build; using Gemini CLI as the product name; GitHub `GEMINI_API_KEY` |
 | Codex | Specialist implementation | Codex interface or PR path is the gap | Default second opinion |
 | GitHub Copilot | GitHub specialist | Coding agent, pull-request review, or Projects MCP | Parallel routine analysis |
 | Claude | Specialist | Maintainer names it, or a unique capability gap | Default peer to Grok Build |
-| Antigravity CLI / Gemini API | Specialist local tool or optional Actions review | Gemini-backed review | Using Gemini CLI as the product name; enabling both Actions reviewers by default |
 
 ### Prevent duplicate AI usage
 
@@ -242,15 +241,11 @@ optional AI agent's quota must not block development when required
 deterministic validation passes. Do not spend paid-agent capacity on review
 when the required checks already answer the question.
 
-Independent pull-request review through the xAI/Grok API is a repository-owned
-GitHub Actions subsystem (S5-M6, `.github/grok/`). Optional Gemini/Antigravity
-advisory review is the same class of subsystem (`.github/antigravity/`,
-`scripts/gemini_pr_review.py`). Neither is Cursor, Grok Build, the Antigravity
-TUI, or a Marketplace review action. GitHub Actions calls the provider APIs
-directly. Deterministic CI must remain able to pass or fail without those
-workflows. Missing, invalid, or quota-exhausted provider keys soft-skip.
-Prefer enabling only one Actions advisory reviewer unless comparing providers.
-See `.github/grok/README.md` and `.github/antigravity/README.md`.
+Independent pull-request review is local Grok Build (`grok`), authenticated
+by a SuperGrok account. If Grok Build is unavailable, use Antigravity CLI
+(`agy`). GitHub Actions does not call xAI or Gemini and does not use
+`XAI_API_KEY` or `GEMINI_API_KEY`. See `.github/grok/README.md` and
+`.github/antigravity/README.md`.
 
 The Testing and Change discipline sections below remain the authoritative
 detail for what this repository requires those checks to cover.
@@ -357,7 +352,7 @@ directory is gitignored).
   run without AI370 hardware and without network:
 
   ```bash
-  python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_grok_pr_review tests.test_gemini_pr_review
+  python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy
   bash tests/smoke_tier1.sh
   bash tests/smoke_stage2_platform.sh
   bash tests/smoke_tier2.sh
