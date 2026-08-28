@@ -16,6 +16,9 @@ mechanism is **Grok Build**, not this API-key workflow.
 - This repository’s automated GitHub Actions review remains available as a
   lightweight advisory fallback when `XAI_API_KEY` is configured.
 
+The GitHub Actions workflow display name is `Independent xAI/Grok PR Review`.
+That name refers to this API-key advisory job. It is not Grok Build.
+
 See `AGENTS.md` (Agent hierarchy) for the preferred agent order.
 
 ## Architecture
