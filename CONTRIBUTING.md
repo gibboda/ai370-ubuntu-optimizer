@@ -13,10 +13,11 @@ discipline.
 - GitHub Copilot: [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)
 - Codex PR creation: [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
 
-Do not copy shared agent policy into those files. The human maintainer
-retains final decision authority. `AGENTS.md` does not transfer merge,
-policy, release, architecture, or repository-governance authority to an
-AI agent.
+Do not copy shared agent policy into those files.
+
+The human maintainer retains final decision authority. `AGENTS.md` does not
+transfer merge, policy, release, architecture, or repository-governance
+authority to an AI agent.
 
 ## Commit message format
 

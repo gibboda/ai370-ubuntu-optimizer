@@ -74,9 +74,10 @@ GitHub is not an implementation agent. Cursor remains the default task owner.
 6. **GitHub Actions and repository checks** are the deterministic merge
    validation surface. They remain authoritative for facts they can verify.
 7. **GitHub pull-request governance** (rulesets, branch protection, required
-   checks, and human decisions) is the final merge authority. The human
-   maintainer retains final decision authority. No AI agent is merge,
-   policy, release, architecture, or repository-governance authority.
+   checks, and human decisions) is the final merge authority.
+
+The human maintainer retains final decision authority. No AI agent is merge,
+policy, release, architecture, or repository-governance authority.
 
 These numbered items describe four concerns. GitHub appears in more than one
 because it is the control plane, not a step in an agent ladder:
@@ -160,8 +161,8 @@ Before invoking another AI agent, record:
 8. When does escalation stop?
 
 Stop when the defined gap is closed, deterministic evidence answers it, the
-selected agent is unavailable, or tests contradict the agent. Do not chain
-the next vendor automatically.
+selected agent is unavailable, or tests contradict the agent.
+Do not chain the next vendor automatically.
 
 Attempt deterministic validation before another AI agent is invoked. Preferred
 order when escalation is justified:
@@ -231,8 +232,8 @@ Prefer deterministic validation over AI review:
 - dependency scanning
 - secret scanning
 
-`markdownlint-cli2` is not a CI gate. This repository does not run a
-formatter or type-checker as merge validation.
+`markdownlint-cli2` is not a CI gate.
+This repository does not run a formatter or type-checker as merge validation.
 
 AI reviews are advisory. They are not required merge gates. GitHub Actions
 and repository checks remain the deterministic merge validation surface.
