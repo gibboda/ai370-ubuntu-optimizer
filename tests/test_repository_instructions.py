@@ -296,6 +296,66 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn("agent hierarchy", self.contributing)
 
+    def test_agent_planes_and_capability_routing_are_additive(self) -> None:
+        self.assertIn(
+            "The human maintainer retains final decision authority",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "No AI agent is merge",
+            self.agent_instructions,
+        )
+        self.assertIn("four concerns", self.agent_instructions)
+        self.assertIn("Validation / evidence", self.agent_instructions)
+        self.assertIn(
+            "not a step in an agent ladder",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "Do not treat this map as Cursor → Grok Build → Claude → Gemini → Codex",
+            self.agent_instructions,
+        )
+        self.assertIn("What remains unresolved?", self.agent_instructions)
+        self.assertIn(
+            "Do not chain the next vendor automatically",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "Capability routing does not change the preferred order above",
+            self.agent_instructions,
+        )
+        self.assertIn("Default peer to Grok Build", self.agent_instructions)
+        self.assertIn("xAI Actions job", self.agent_instructions)
+        self.assertIn(
+            "Using Gemini CLI as the product name",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "This repository does not run a formatter or type-checker",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "The human maintainer retains final decision authority",
+            self.contributing,
+        )
+        self.assertIn(
+            "coding agent, pull-request review, or Projects MCP",
+            self.copilot_instructions,
+        )
+        for overlay in (
+            self.copilot_instructions,
+            self.codex_instructions,
+            self.cursor_rules,
+        ):
+            with self.subTest(overlay=overlay[:40]):
+                self.assertNotIn("four concerns", overlay)
+                self.assertNotIn(
+                    "Capability routing does not change the preferred order above",
+                    overlay,
+                )
+                self.assertNotIn("Default peer to Grok Build", overlay)
+                self.assertNotIn("What remains unresolved?", overlay)
+
     def test_cursor_cloud_notes_live_in_cursor_rules(self) -> None:
         self.assertIn(
             "These notes apply when the agent is running in Cursor Cloud",

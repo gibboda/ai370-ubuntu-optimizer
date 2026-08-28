@@ -67,6 +67,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Clarify agent planes, human final decision authority, and capability
+  routing in `AGENTS.md` without changing Cursor as primary or Grok Build
+  as the preferred secondary agent. Copilot overlay names the GitHub
+  product in scope. Validation catalog matches tools this repository
+  actually runs.
+
 - Rename the S5-M6 advisory xAI Actions workflow display name from
   `Grok Build PR Review` to `Independent xAI/Grok PR Review` so GitHub's
   check list does not confuse that API-key job with Grok Build.

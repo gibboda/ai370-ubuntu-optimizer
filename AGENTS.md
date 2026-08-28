@@ -62,7 +62,7 @@ GitHub is not an implementation agent. Cursor remains the default task owner.
 2. **Cursor** is the primary/default implementation agent and the default
    task owner. Keep routine work with Cursor whenever practical.
 3. **Deterministic validation** must run before escalation. Attempt local
-   tests, linters, formatters, type checking, and repository validation
+   tests, linters, schema validation, and repository validation
    scripts, and reuse existing GitHub Actions output, before another AI
    agent is invoked.
 4. **Grok Build** is the preferred secondary agent when available, if
@@ -74,7 +74,28 @@ GitHub is not an implementation agent. Cursor remains the default task owner.
 6. **GitHub Actions and repository checks** are the deterministic merge
    validation surface. They remain authoritative for facts they can verify.
 7. **GitHub pull-request governance** (rulesets, branch protection, required
-   checks, and human decisions) is the final merge authority.
+   checks, and human decisions) is the final merge authority. The human
+   maintainer retains final decision authority. No AI agent is merge,
+   policy, release, architecture, or repository-governance authority.
+
+These numbered items describe four concerns. GitHub appears in more than one
+because it is the control plane, not a step in an agent ladder:
+
+```text
+1 GitHub source of truth     → Authority
+2 Cursor                     → AI execution (Primary)
+3 Deterministic validation   → Validation / evidence
+4 Grok Build                 → AI execution (preferred Secondary)
+5 Copilot, Codex, Claude,
+  Gemini, and other approved
+  agents                     → AI execution (specialist/escalation)
+6 GitHub Actions and
+  repository checks          → Validation / evidence
+7 PR governance and human
+  decisions                  → Governance
+```
+
+Do not treat this map as Cursor → Grok Build → Claude → Gemini → Codex.
 
 ## Multi-agent development policy
 
@@ -127,14 +148,29 @@ Escalate only when at least one of the following is true:
 - specialized reasoning is needed that Cursor cannot provide
 - the developer explicitly requests a named secondary or specialist agent
 
+Before invoking another AI agent, record:
+
+1. What remains unresolved?
+2. Can deterministic tooling answer it?
+3. Why can't Cursor reliably resolve it?
+4. What capability is missing?
+5. Which resource best matches the gap?
+6. What exact scope should it receive?
+7. What constitutes completion?
+8. When does escalation stop?
+
+Stop when the defined gap is closed, deterministic evidence answers it, the
+selected agent is unavailable, or tests contradict the agent. Do not chain
+the next vendor automatically.
+
 Attempt deterministic validation before another AI agent is invoked. Preferred
 order when escalation is justified:
 
 1. Stay with Cursor and reuse existing findings, logs, issue/PR discussion, and
    deterministic check output.
-2. Attempt deterministic validation (builds, tests, linters, formatters, type
-   checking, GitHub Actions, CodeQL, dependency scanning, secret scanning, and
-   repository validation scripts) before another AI agent is invoked.
+2. Attempt deterministic validation (ShellCheck, portable tests, schema
+   validation, repository validation scripts, GitHub Actions, CodeQL,
+   dependency scanning, and secret scanning) before another AI agent is invoked.
 3. Use Grok Build as the preferred secondary implementation agent when
    available.
 4. If Grok Build is unavailable, use an available specialist agent such as
@@ -143,6 +179,19 @@ order when escalation is justified:
    specialist only when that specialist uniquely provides a required
    capability that Grok Build cannot. Specialist use must be narrowly
    scoped and capability-driven.
+
+Capability routing does not change the preferred order above:
+
+| Resource | Role | Select when | Do not use when |
+| --- | --- | --- | --- |
+| Cursor | Primary | Default task ownership | Skipping Cursor only because another agent is available |
+| Deterministic tests and CI | Evidence | Before any second AI agent | Asking an LLM to re-run ShellCheck or unittest |
+| Grok Build | Preferred secondary; SuperGrok interactive review | Defined gap after Cursor, or independent review | Routine Cursor work; as a merge gate; treating the xAI Actions job as Grok Build |
+| xAI Actions job | Advisory PR review | Optional `XAI_API_KEY` fallback | Calling it Grok Build; making it a required check |
+| Codex | Specialist implementation | Codex interface or PR path is the gap | Default second opinion |
+| GitHub Copilot | GitHub specialist | Coding agent, pull-request review, or Projects MCP | Parallel routine analysis |
+| Claude | Specialist | Maintainer names it, or a unique capability gap | Default peer to Grok Build |
+| Antigravity CLI / Gemini API | Specialist local tool or optional Actions review | Gemini-backed review | Using Gemini CLI as the product name; enabling both Actions reviewers by default |
 
 ### Prevent duplicate AI usage
 
@@ -172,16 +221,18 @@ resources, not parallel reviewers for every change.
 
 Prefer deterministic validation over AI review:
 
-- builds
 - tests
-- linters
-- formatters
-- type checking
+- linters (`shellcheck` is the CI-authoritative lint)
+- schema validation
+- PR-title and commit-subject validators
+- repository validation scripts
 - GitHub Actions
 - CodeQL
 - dependency scanning
 - secret scanning
-- repository validation scripts
+
+`markdownlint-cli2` is not a CI gate. This repository does not run a
+formatter or type-checker as merge validation.
 
 AI reviews are advisory. They are not required merge gates. GitHub Actions
 and repository checks remain the deterministic merge validation surface.
