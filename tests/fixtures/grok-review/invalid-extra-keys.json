@@ -1,6 +1,0 @@
-{
-  "verdict": "pass",
-  "summary": "Extra keys are not allowed.",
-  "findings": [],
-  "merge": true
-}

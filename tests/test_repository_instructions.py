@@ -325,9 +325,18 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn("Default peer to Grok Build", self.agent_instructions)
-        self.assertIn("xAI Actions job", self.agent_instructions)
+        self.assertNotIn("xAI Actions job", self.agent_instructions)
         self.assertIn(
-            "Using Gemini CLI as the product name",
+            "using Gemini CLI as the product name",
+            self.agent_instructions,
+        )
+        self.assertIn("Antigravity CLI (`agy`)", self.agent_instructions)
+        self.assertIn(
+            "treating a GitHub API key as Grok Build",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "GitHub Actions does not call xAI or Gemini",
             self.agent_instructions,
         )
         self.assertIn(
@@ -355,6 +364,56 @@ class RepositoryInstructionsTests(unittest.TestCase):
                 )
                 self.assertNotIn("Default peer to Grok Build", overlay)
                 self.assertNotIn("What remains unresolved?", overlay)
+
+    def test_actions_do_not_call_xai_or_gemini(self) -> None:
+        for path in (
+            ROOT / ".github/workflows/grok-pr-review.yml",
+            ROOT / ".github/workflows/gemini-pr-review.yml",
+            ROOT / "scripts/grok_pr_review.py",
+            ROOT / "scripts/gemini_pr_review.py",
+            ROOT / "tests/test_grok_pr_review.py",
+            ROOT / "tests/test_gemini_pr_review.py",
+            ROOT / "tests/fixtures/grok-review",
+            ROOT / ".github/grok/review_prompt.md",
+            ROOT / ".github/grok/schema.json",
+            ROOT / ".github/grok/config.json",
+            ROOT / ".github/antigravity/review_prompt.md",
+            ROOT / ".github/antigravity/config.json",
+        ):
+            with self.subTest(path=path):
+                self.assertFalse(path.exists(), path)
+
+        self.assertTrue((ROOT / ".github/grok/README.md").is_file())
+        self.assertTrue((ROOT / ".github/grok/policy.md").is_file())
+        self.assertTrue((ROOT / ".github/antigravity/README.md").is_file())
+        self.assertTrue((ROOT / ".github/antigravity/settings.json").is_file())
+
+        settings_path = ROOT / ".github/antigravity/settings.json"
+        raw = settings_path.read_text(encoding="utf-8")
+        self.assertNotRegex(raw, r"AIza[0-9A-Za-z_-]+")
+        self.assertNotIn("GEMINI_API_KEY", raw)
+        self.assertEqual(json.loads(raw), {"modelProvider": "gemini"})
+
+        gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn(".gemini/", gitignore)
+        self.assertFalse((ROOT / ".gemini").exists())
+
+        portable_tests = (ROOT / ".github/workflows/portable-tests.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("tests.test_grok_pr_review", portable_tests)
+        self.assertNotIn("tests.test_gemini_pr_review", portable_tests)
+        self.assertNotIn("tests.test_grok_pr_review", self.agent_instructions)
+        self.assertNotIn("tests.test_gemini_pr_review", self.agent_instructions)
+
+        self.assertIn(
+            "GitHub Actions does not call xAI or Gemini",
+            self.contributing,
+        )
+        self.assertIn(
+            "This repository's GitHub Actions do not call xAI or Gemini",
+            self.cursor_rules,
+        )
 
     def test_cursor_cloud_notes_live_in_cursor_rules(self) -> None:
         self.assertIn(
