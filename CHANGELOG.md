@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Vendor-neutral multi-agent architecture overview in
+  `docs/AI-AGENT-ARCHITECTURE.md` (Cursor orchestrator flow, secrets
+  domains, and manual authentication prerequisites).
+- GitHub Copilot custom agents under `.github/agents/` (`reviewer`,
+  `security-reviewer`, `test-reviewer`).
+- Antigravity workspace specialist agents under `.agents/agents/`
+  (`architecture-reviewer`, `security-reviewer`, `test-reviewer`).
 - Shared official GitHub MCP architecture for Cursor, Grok Build,
   Antigravity, and Copilot: hosted endpoint
   `https://api.githubcopilot.com/mcp/` with toolsets `default,projects`.
@@ -72,6 +79,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `scripts/github_label_policy.py` owns the deterministic policy.
 
 ### Changed
+
+- Align `AGENTS.md` to a vendor-neutral multi-agent hierarchy: Cursor is the
+  primary development orchestrator, Antigravity is the secondary/specialist,
+  Grok Build is independent advisory review (not a mandatory implementation
+  path), GitHub Actions remains deterministic validation, and GitHub Copilot
+  is the GitHub-native fallback. Add precedence, least-agent, and secrets-
+  domain rules. Sync Cursor/Grok/Antigravity/Copilot overlays, label policy
+  globs for `.agents/` and `.github/agents/`, and repository instruction
+  contract tests.
 
 - Align specialist overlay shape in `AGENTS.md`: GitHub Copilot and Codex
   are the named specialist products with instruction overlays. Other
