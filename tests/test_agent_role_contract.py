@@ -11,6 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "config/agent-roles.json"
 V1_FIXTURE = ROOT / "tests/fixtures/agent-role-contract/v1.json"
 SCHEMA_POLICY = ROOT / "docs/AGENT-ROLE-SCHEMA.md"
+ESCALATION_SCHEMA = ROOT / "config/agent-escalation-record.schema.json"
+ESCALATION_POLICY = ROOT / "docs/AGENT-ESCALATION-RECORD.md"
+ESCALATION_FIXTURES = ROOT / "tests/fixtures/agent-escalation-record"
+AGENTS_POLICY = ROOT / "AGENTS.md"
 MAX_SUPPORTED_SCHEMA_VERSION = 2
 _CREDENTIAL = re.compile(
     r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|"
@@ -115,6 +119,119 @@ class AgentRoleContractTests(unittest.TestCase):
             self._assert_v1_semantics_preserved(changed_value, v1_roles, "roles")
         with self.assertRaises(self.failureException):
             self._assert_v1_semantics_preserved(["cursor"], v1_roles, "roles")
+
+    def _escalation_schema(self) -> dict:
+        return json.loads(ESCALATION_SCHEMA.read_text(encoding="utf-8"))
+
+    def _escalation_record_errors(self, record: dict, schema: dict) -> list[str]:
+        """Apply the published record contract without a JSON Schema engine."""
+        errors: list[str] = []
+        allowed = set(schema["properties"])
+        extra = set(record) - allowed
+        if extra:
+            errors.append(f"unexpected properties: {sorted(extra)}")
+        for name in schema["required"]:
+            if name not in record:
+                errors.append(f"missing required property {name!r}")
+        selected = record.get("selected_resource")
+        resources = schema["properties"]["selected_resource"]["enum"]
+        if selected not in resources:
+            errors.append(f"selected_resource {selected!r} is not allowed")
+        approved = record.get("approved_resource")
+        if selected == "maintainer_approved":
+            if not isinstance(approved, str) or not approved.strip():
+                errors.append("maintainer_approved requires approved_resource")
+        elif "approved_resource" in record:
+            errors.append("approved_resource is only valid for maintainer_approved")
+        return errors
+
+    def test_escalation_record_schema_matches_agents_policy(self) -> None:
+        schema = self._escalation_schema()
+        required = schema["required"]
+        expected = [
+            "schema_version",
+            "unresolved_gap",
+            "deterministic_tooling_assessment",
+            "cursor_limit",
+            "missing_capability",
+            "selected_resource",
+            "scope",
+            "completion_criterion",
+            "stop_condition",
+        ]
+        self.assertEqual(required, expected)
+        self.assertNotIn("approved_resource", required)
+        self.assertEqual(schema["properties"]["schema_version"]["const"], 1)
+        self.assertFalse(schema["additionalProperties"])
+        agents = AGENTS_POLICY.read_text(encoding="utf-8")
+        for question in (
+            "What remains unresolved?",
+            "Can deterministic tooling answer it?",
+            "Why can't Cursor reliably resolve it?",
+            "What capability is missing?",
+            "Which resource best matches the gap?",
+            "What exact scope should it receive?",
+            "What constitutes completion?",
+            "When does escalation stop?",
+        ):
+            self.assertIn(question, agents)
+
+    def test_escalation_resources_are_consistent_with_role_contract(self) -> None:
+        schema = self._escalation_schema()
+        resources = set(schema["properties"]["selected_resource"]["enum"])
+        expected = {
+            self.roles["secondary_specialist"]["provider"],
+            self.roles["github_native_fallback"]["provider"],
+            "codex",
+            self.roles["independent_reviewer"]["provider"],
+            "antigravity_cli",
+            "maintainer_approved",
+        }
+        self.assertEqual(resources, expected)
+        self.assertNotIn(self.roles["primary_orchestrator"]["provider"], resources)
+        self.assertNotIn(self.roles["control_plane"]["provider"], resources)
+
+    def test_maintainer_approved_requires_concrete_resource_identifier(self) -> None:
+        schema = self._escalation_schema()
+        approved = schema["properties"]["approved_resource"]
+        self.assertEqual(approved["type"], "string")
+        self.assertGreaterEqual(approved["minLength"], 1)
+        self.assertEqual(schema["if"]["properties"]["selected_resource"]["const"], "maintainer_approved")
+        self.assertEqual(schema["then"]["required"], ["approved_resource"])
+        self.assertEqual(schema["else"]["not"]["required"], ["approved_resource"])
+
+        named = json.loads((ESCALATION_FIXTURES / "v1-named-resource.json").read_text(encoding="utf-8"))
+        custom = json.loads((ESCALATION_FIXTURES / "v1-maintainer-approved.json").read_text(encoding="utf-8"))
+        self.assertEqual(self._escalation_record_errors(named, schema), [])
+        self.assertEqual(self._escalation_record_errors(custom, schema), [])
+
+        missing = dict(custom)
+        del missing["approved_resource"]
+        self.assertIn(
+            "maintainer_approved requires approved_resource",
+            self._escalation_record_errors(missing, schema),
+        )
+
+        extra = dict(named)
+        extra["approved_resource"] = "should-not-be-present"
+        self.assertIn(
+            "approved_resource is only valid for maintainer_approved",
+            self._escalation_record_errors(extra, schema),
+        )
+
+    def test_escalation_record_document_preserves_authority_and_stop_rules(self) -> None:
+        text = ESCALATION_POLICY.read_text(encoding="utf-8")
+        self.assertIn("`AGENTS.md` is authoritative", text)
+        self.assertIn("eight questions", text)
+        self.assertIn("Do not automatically chain to another vendor", text)
+        self.assertIn("does not grant repository, merge, release, or governance authority", text)
+        self.assertIn("does not turn advisory review into a merge gate", text)
+        self.assertIn("required for those explicitly requested reviews", text)
+        self.assertNotIn("may use the same record when useful", text)
+        self.assertIn("A record is evidence", text)
+        self.assertIn("does not authorize the selected resource", text)
+        self.assertIn("does not confer approval", text)
+        self.assertIn("`approved_resource` must name", text)
 
     def test_exactly_one_primary_orchestrator(self) -> None:
         primary = self.roles["primary_orchestrator"]
