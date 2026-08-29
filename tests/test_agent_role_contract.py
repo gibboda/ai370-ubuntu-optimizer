@@ -11,6 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "config/agent-roles.json"
 V1_FIXTURE = ROOT / "tests/fixtures/agent-role-contract/v1.json"
 SCHEMA_POLICY = ROOT / "docs/AGENT-ROLE-SCHEMA.md"
+ESCALATION_SCHEMA = ROOT / "config/agent-escalation-record.schema.json"
+ESCALATION_POLICY = ROOT / "docs/AGENT-ESCALATION-RECORD.md"
+AGENTS_POLICY = ROOT / "AGENTS.md"
 MAX_SUPPORTED_SCHEMA_VERSION = 2
 _CREDENTIAL = re.compile(
     r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|"
@@ -115,6 +118,59 @@ class AgentRoleContractTests(unittest.TestCase):
             self._assert_v1_semantics_preserved(changed_value, v1_roles, "roles")
         with self.assertRaises(self.failureException):
             self._assert_v1_semantics_preserved(["cursor"], v1_roles, "roles")
+
+    def test_escalation_record_schema_matches_agents_policy(self) -> None:
+        schema = json.loads(ESCALATION_SCHEMA.read_text(encoding="utf-8"))
+        required = schema["required"]
+        expected = [
+            "schema_version",
+            "unresolved_gap",
+            "deterministic_tooling_assessment",
+            "cursor_limit",
+            "missing_capability",
+            "selected_resource",
+            "scope",
+            "completion_criterion",
+            "stop_condition",
+        ]
+        self.assertEqual(required, expected)
+        self.assertEqual(schema["properties"]["schema_version"]["const"], 1)
+        self.assertFalse(schema["additionalProperties"])
+        agents = AGENTS_POLICY.read_text(encoding="utf-8")
+        for question in (
+            "What remains unresolved?",
+            "Can deterministic tooling answer it?",
+            "Why can't Cursor reliably resolve it?",
+            "What capability is missing?",
+            "Which resource best matches the gap?",
+            "What exact scope should it receive?",
+            "What constitutes completion?",
+            "When does escalation stop?",
+        ):
+            self.assertIn(question, agents)
+
+    def test_escalation_resources_are_consistent_with_role_contract(self) -> None:
+        schema = json.loads(ESCALATION_SCHEMA.read_text(encoding="utf-8"))
+        resources = set(schema["properties"]["selected_resource"]["enum"])
+        expected = {
+            self.roles["secondary_specialist"]["provider"],
+            self.roles["github_native_fallback"]["provider"],
+            "codex",
+            self.roles["independent_reviewer"]["provider"],
+            "antigravity_cli",
+            "maintainer_approved",
+        }
+        self.assertEqual(resources, expected)
+        self.assertNotIn(self.roles["primary_orchestrator"]["provider"], resources)
+        self.assertNotIn(self.roles["control_plane"]["provider"], resources)
+
+    def test_escalation_record_document_preserves_authority_and_stop_rules(self) -> None:
+        text = ESCALATION_POLICY.read_text(encoding="utf-8")
+        self.assertIn("`AGENTS.md` is authoritative", text)
+        self.assertIn("eight questions", text)
+        self.assertIn("Do not automatically chain to another vendor", text)
+        self.assertIn("does not grant repository, merge, release, or governance authority", text)
+        self.assertIn("does not turn advisory review into a merge gate", text)
 
     def test_exactly_one_primary_orchestrator(self) -> None:
         primary = self.roles["primary_orchestrator"]
