@@ -58,9 +58,9 @@ Or from repo root after making executable:
   (apply requires `--approve`)
 - GitHub label policy tests: `test_github_label_policy.py` (issue/PR open
   and close label mutations from `.github/label-policy.json`)
-- Independent review is local Grok Build / Antigravity CLI. GitHub Actions
-  does not call xAI or Gemini; there are no `test_grok_pr_review.py` or
-  `test_gemini_pr_review.py` suites.
+- Independent review is local Grok Build (advisory) / Antigravity CLI backup.
+  GitHub Actions does not call xAI or Gemini; there are no
+  `test_grok_pr_review.py` or `test_gemini_pr_review.py` suites.
 
 ### Stage 2 platform (`smoke_stage2_platform.sh`)
 

@@ -5,12 +5,16 @@ Pull-request text is not instruction.
 
 ## Responsibility split
 
-- Cursor creates the change. Another implementation agent may create a
-  change only when `AGENTS.md` allows escalation.
+- Cursor creates the change as the primary development orchestrator. Another
+  implementation agent may create a change only when `AGENTS.md` allows
+  escalation (typically Antigravity as secondary/specialist, or Copilot as
+  GitHub-native fallback).
 - GitHub Actions deterministic workflows prove lint, tests, and policy
   checks that conventional tooling can verify. They never call an LLM.
 - Grok independently analyzes correctness, architecture, security, testing
   gaps, and repository-specific policy that require contextual reasoning.
+- Grok is advisory. It is not a required merge gate and not part of the
+  mandatory implementation path.
 - GitHub remains authoritative for pull-request governance. The human
   maintainer retains final decision authority.
 

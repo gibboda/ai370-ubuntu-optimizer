@@ -4,10 +4,11 @@ applyTo: "**"
 
 # Codex implementation instructions
 
-Codex is a specialist/escalation agent. [`../../AGENTS.md`](../../AGENTS.md)
-is authoritative for shared agent roles, escalation, cost policy,
-architecture, testing, naming, and change discipline. Do not restate or
-override that policy here.
+Codex is a specialist/escalation agent. Cursor remains the primary
+development orchestrator.
+[`../../AGENTS.md`](../../AGENTS.md) is authoritative for shared agent
+roles, escalation, cost policy, architecture, testing, naming, and change
+discipline. Do not restate or override that policy here.
 
 Invoke Codex only when `AGENTS.md` allows specialist use. See the Agent hierarchy
 in `AGENTS.md` rather than restating it here. Do not treat Codex as the

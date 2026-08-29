@@ -1,13 +1,19 @@
-# Independent Antigravity CLI review
+# Antigravity specialist and backup review
 
-Owner: **S5-M6**. Independent backup pull-request review is the local
-Antigravity CLI (`agy`). It is not a GitHub Actions workflow and it does
-not use GitHub `GEMINI_API_KEY`.
+Owner: **S5-M6**. Antigravity has two related roles in this repository:
 
-Use `agy` only when Grok Build (`grok`) is unavailable. Follow the Agent
-hierarchy in `AGENTS.md` and [`.github/grok/policy.md`](../grok/policy.md).
+1. **Secondary / specialist** (Antigravity IDE / workspace agents under
+   [`.agents/agents/`](../../.agents/agents/)): architecture analysis,
+   difficult debugging, security analysis, specialized research, and complex
+   test investigation when Cursor escalates.
+2. **Backup independent review** (Antigravity CLI `agy`): use only when
+   Grok Build (`grok`) is unavailable for pull-request review.
 
-## Local setup
+Neither role uses GitHub Actions or GitHub `GEMINI_API_KEY`. Follow the
+Agent hierarchy in `AGENTS.md` and [`.github/grok/policy.md`](../grok/policy.md)
+for review severity and categories.
+
+## Local CLI setup (`agy`)
 
 Keep `modelProvider` in the **home-directory** file
 `~/.gemini/antigravity-cli/settings.json`. The CLI does not read a
@@ -38,6 +44,7 @@ with a token. Default Project authorization is `read:project`. See
 | --- | --- |
 | `settings.json` | Canonical Antigravity CLI `modelProvider` pin (copy to `$HOME`) |
 | `../grok/policy.md` | Shared local independent-review policy |
+| `../../.agents/agents/` | Workspace specialist agents |
 
 `agy` must not merge pull requests, approve as a maintainer, or change
 repository settings, labels, issues, milestones, or GitHub Project state
