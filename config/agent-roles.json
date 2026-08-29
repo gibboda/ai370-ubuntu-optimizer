@@ -42,6 +42,17 @@
       "must_not_contain_credentials": true,
       "must_not_claim_merge_authority": true
     },
+    "discovery": {
+      "roots": [
+        {"path": ".cursor/rules", "patterns": ["*.mdc"]},
+        {"path": ".github/instructions", "patterns": ["*.instructions.md"]},
+        {"path": ".github/agents", "patterns": ["*.agent.md"]},
+        {"path": ".agents/agents", "patterns": ["*/agent.md"]},
+        {"path": ".github/grok", "patterns": ["*.md"]},
+        {"path": ".github/antigravity", "patterns": ["*.md"]}
+      ],
+      "exclusions": []
+    },
     "overlays": [
       {"path": ".cursor/rules/cursor.mdc", "role": "primary_orchestrator", "required_any": ["primary development orchestrator"]},
       {"path": ".github/instructions/copilot.instructions.md", "role": "github_native_fallback", "required_any": ["GitHub-native fallback / specialist"]},
