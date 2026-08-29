@@ -48,8 +48,8 @@
         {"path": ".github/instructions", "patterns": ["*.instructions.md"]},
         {"path": ".github/agents", "patterns": ["*.agent.md"]},
         {"path": ".agents/agents", "patterns": ["*/agent.md"]},
-        {"path": ".github/grok", "patterns": ["README.md", "policy.md"]},
-        {"path": ".github/antigravity", "patterns": ["README.md"]}
+        {"path": ".github/grok", "patterns": ["*.md"]},
+        {"path": ".github/antigravity", "patterns": ["*.md"]}
       ],
       "exclusions": []
     },

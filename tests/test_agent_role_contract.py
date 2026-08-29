@@ -4,6 +4,7 @@
 import json
 import re
 import unittest
+from fnmatch import fnmatch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -112,6 +113,21 @@ class AgentRoleContractTests(unittest.TestCase):
         exclusions = discovery["exclusions"]
         self.assertEqual(len(roots), len(set(roots)))
         self.assertEqual(len(exclusions), len(set(exclusions)))
+
+    def test_reviewer_policy_roots_discover_all_markdown(self) -> None:
+        """Enumerated filenames let new reviewer policy Markdown bypass the contract."""
+        reviewer_roots = {".github/grok", ".github/antigravity"}
+        for root_spec in self.overlay_contract["discovery"]["roots"]:
+            if root_spec["path"] not in reviewer_roots:
+                continue
+            reviewer_roots.remove(root_spec["path"])
+            with self.subTest(path=root_spec["path"]):
+                self.assertIn("*.md", root_spec["patterns"])
+                self.assertTrue(
+                    any(fnmatch("new-policy.md", pattern) for pattern in root_spec["patterns"]),
+                    f"{root_spec['path']} must discover future Markdown, not only current filenames",
+                )
+        self.assertFalse(reviewer_roots, "reviewer-policy discovery roots are missing")
 
     def test_overlays_reference_canonical_authority(self) -> None:
         self.assertTrue(self.overlay_contract["common"]["must_reference_authority"])
