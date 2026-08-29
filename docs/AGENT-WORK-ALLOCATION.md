@@ -8,7 +8,7 @@ The machine-readable shape is `config/agent-work-allocation.schema.json`. Escala
 
 Cursor remains the primary implementation resource. Before another AI receives overlapping repository work, record the allocation and reuse existing evidence instead of paying another agent to rediscover it.
 
-Routine duplicate implementation is prohibited. A second implementation resource requires a valid structured escalation record identifying a capability gap and bounded scope.
+Routine duplicate implementation is prohibited. A second implementation resource requires a valid structured escalation record identifying a capability gap and bounded scope. An empty `escalation_record` object is not valid; the nested record must satisfy `config/agent-escalation-record.schema.json`, and `additional_resource` must equal `escalation_record.selected_resource`.
 
 Independent review is not duplicate implementation. It remains intentionally separate because its purpose is to challenge an existing change rather than independently reproduce the implementation. It still requires the escalation record required by repository policy plus a concrete `independent_review_reason`, and it remains advisory.
 

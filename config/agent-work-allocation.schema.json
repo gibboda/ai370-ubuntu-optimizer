@@ -28,8 +28,8 @@
       "description": "Existing evidence supplied to the additional resource instead of repeating completed work."
     },
     "escalation_record": {
-      "type": "object",
-      "description": "The structured escalation record required by config/agent-escalation-record.schema.json."
+      "$ref": "agent-escalation-record.schema.json",
+      "description": "A valid structured escalation record. selected_resource must match additional_resource."
     },
     "independent_review_reason": {
       "type": "string",
@@ -52,6 +52,72 @@
     {
       "if": {"properties": {"work_kind": {"const": "parallel_analysis"}}, "required": ["work_kind"]},
       "then": {"required": ["escalation_record", "parallel_reason"]}
+    },
+    {
+      "if": {"properties": {"additional_resource": {"const": "antigravity"}}, "required": ["additional_resource"]},
+      "then": {
+        "properties": {
+          "escalation_record": {
+            "properties": {"selected_resource": {"const": "antigravity"}},
+            "required": ["selected_resource"]
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"additional_resource": {"const": "github_copilot"}}, "required": ["additional_resource"]},
+      "then": {
+        "properties": {
+          "escalation_record": {
+            "properties": {"selected_resource": {"const": "github_copilot"}},
+            "required": ["selected_resource"]
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"additional_resource": {"const": "codex"}}, "required": ["additional_resource"]},
+      "then": {
+        "properties": {
+          "escalation_record": {
+            "properties": {"selected_resource": {"const": "codex"}},
+            "required": ["selected_resource"]
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"additional_resource": {"const": "grok_build"}}, "required": ["additional_resource"]},
+      "then": {
+        "properties": {
+          "escalation_record": {
+            "properties": {"selected_resource": {"const": "grok_build"}},
+            "required": ["selected_resource"]
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"additional_resource": {"const": "antigravity_cli"}}, "required": ["additional_resource"]},
+      "then": {
+        "properties": {
+          "escalation_record": {
+            "properties": {"selected_resource": {"const": "antigravity_cli"}},
+            "required": ["selected_resource"]
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"additional_resource": {"const": "maintainer_approved"}}, "required": ["additional_resource"]},
+      "then": {
+        "properties": {
+          "escalation_record": {
+            "properties": {"selected_resource": {"const": "maintainer_approved"}},
+            "required": ["selected_resource"]
+          }
+        }
+      }
     }
   ]
 }
