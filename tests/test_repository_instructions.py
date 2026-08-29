@@ -547,9 +547,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("Prefer GitHub-native OAuth", doc)
         self.assertIn("[`.github/github-mcp.md`](.github/github-mcp.md)", self.agent_instructions)
         self.assertIn("GitHub MCP is the shared GitHub interface", self.agent_instructions)
-        self.assertIn(
-            "must not mutate Project state by default",
+        self.assertRegex(
             self.agent_instructions,
+            r"must not mutate\s+Project state by default",
         )
         self.assertIn(
             "MCP availability is capability",
