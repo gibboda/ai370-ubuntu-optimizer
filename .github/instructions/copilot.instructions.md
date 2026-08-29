@@ -15,4 +15,7 @@ nested `AGENTS.md` that applies to the files being changed. Escalate Copilot
 only when `AGENTS.md` allows specialist use. See the Agent hierarchy in
 `AGENTS.md` rather than restating it here. Do not treat Copilot as a parallel
 reviewer for routine work. When invoking Copilot, name the GitHub product in
-scope: coding agent, pull-request review, or Projects MCP.
+scope: coding agent, pull-request review, or Projects MCP. Prefer
+GitHub-native OAuth for the official hosted GitHub MCP endpoint; do not
+replace functioning OAuth with a PAT. Setup is
+[`.github/github-mcp.md`](../github-mcp.md).

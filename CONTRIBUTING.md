@@ -17,6 +17,7 @@ discipline.
 - Independent review (not implementation overlays):
   [`.github/grok/`](.github/grok/),
   [`.github/antigravity/`](.github/antigravity/)
+- Shared GitHub MCP and Projects setup: [`.github/github-mcp.md`](.github/github-mcp.md)
 
 Do not copy shared agent policy into those files.
 

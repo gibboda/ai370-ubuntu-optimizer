@@ -11,7 +11,10 @@ workflow and it does not use `XAI_API_KEY`.
 
 GitHub Actions does not call xAI. Do not configure `XAI_API_KEY` for this
 repository. Deterministic CI (ShellCheck, portable tests, PR title lint,
-labels) never calls an LLM.
+labels) never calls an LLM. Do not use `XAI_API_KEY` for GitHub MCP
+authorization; Grok uses `GITHUB_GROK_PAT`. See
+[`.github/github-mcp.md`](../github-mcp.md).
 
 Grok must not merge pull requests, approve as a maintainer, or change
-repository settings, labels, issues, or milestones.
+repository settings, labels, issues, milestones, or GitHub Project items,
+fields, or status.

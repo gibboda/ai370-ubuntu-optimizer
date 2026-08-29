@@ -42,6 +42,8 @@ env/
 .env
 .env.*
 !.env.example
+*.secret
+*.secrets
 *.local
 open-webui-venv
 # Local Antigravity CLI copy. Canonical pin: .github/antigravity/settings.json
