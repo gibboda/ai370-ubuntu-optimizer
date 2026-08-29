@@ -507,6 +507,10 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("https://api.githubcopilot.com/mcp/", self.cursor_rules)
         self.assertIn("X-MCP-Toolsets: default,projects", self.cursor_rules)
         self.assertIn("GITHUB_CURSOR_PAT", self.cursor_rules)
+        self.assertIn(
+            "repository access as needed, plus\n`project` scope",
+            self.cursor_rules,
+        )
         self.assertNotIn("/mcp/x/projects", self.cursor_rules)
         self.assertIn("mcpServerAllowlist", self.cursor_rules)
         self.assertIn("Do not commit `.cursor/environment.json`", self.cursor_rules)

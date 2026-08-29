@@ -67,8 +67,9 @@ source of truth.
 Desktop Cursor loads [`.cursor/mcp.json`](../mcp.json). That file uses the
 official hosted GitHub MCP endpoint `https://api.githubcopilot.com/mcp/`
 with `X-MCP-Toolsets: default,projects`. Set `GITHUB_CURSOR_PAT` in the
-local environment to a token with `project` scope. Do not put tokens in
-`mcp.json` or `environment.json`. Shared MCP architecture is
+local environment to a token with repository access as needed, plus
+`project` scope. Do not put tokens in `mcp.json` or `environment.json`.
+Shared MCP architecture is
 [`.github/github-mcp.md`](../../.github/github-mcp.md).
 
 Cloud Agents do not take that PAT from `mcp.json`. Add the same HTTP server
