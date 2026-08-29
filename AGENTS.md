@@ -1,9 +1,11 @@
 # AGENTS.md
 
-This file is the shared instruction surface for every implementation agent
-that works in this repository. It is authoritative for agent hierarchy,
-agent roles, escalation, cost policy, deterministic validation, architecture,
-testing, naming, and change discipline.
+This file is the canonical, vendor-neutral AI policy for every agent that
+works in this repository. It is authoritative for agent hierarchy,
+responsibilities, delegation, duplicate-work prevention, cost-conscious
+selection, deterministic validation, security boundaries, secret handling,
+pull-request requirements, architecture, testing, naming, and change
+discipline.
 
 Agent-specific files must not restate this policy. They may only add
 behavior that applies to that agent or environment:
@@ -13,14 +15,18 @@ behavior that applies to that agent or environment:
   [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)
 - Codex specialist overlay:
   [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
+- GitHub Copilot custom agents: [`.github/agents/`](.github/agents/)
+- Antigravity workspace agents: [`.agents/agents/`](.agents/agents/)
 - Conventional Commit types, scopes, and human contributor workflow:
   [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- Architecture overview:
+  [`docs/AI-AGENT-ARCHITECTURE.md`](docs/AI-AGENT-ARCHITECTURE.md)
 
 Independent review is not an implementation overlay:
 
-- Preferred: [`.github/grok/`](.github/grok/)
-- Backup when Grok Build is unavailable:
-  [`.github/antigravity/`](.github/antigravity/)
+- Preferred independent reviewer: [`.github/grok/`](.github/grok/)
+- Backup independent review when Grok Build is unavailable:
+  [`.github/antigravity/`](.github/antigravity/) (`agy` CLI)
 
 Nested `AGENTS.md` files remain in force for their directories.
 `.github/copilot-instructions.md` is a compatibility pointer, not a second
@@ -28,7 +34,23 @@ policy surface. Do not add an implementation overlay for a vendor until
 that product has a unique interface or workflow this repository uses.
 Do not treat this repository as Cursor-exclusive: other agents may work
 here when escalated, but routine work stays with Cursor whenever
-practical.
+practical. Cursor is the preferred external development orchestrator; it
+is not a GitHub-hosted Copilot custom agent.
+
+## Precedence
+
+Unless a stronger security or governance control applies, use this order:
+
+1. Security and repository governance (secrets, rulesets, branch
+   protection, required checks, human merge authority)
+2. This file (`AGENTS.md`)
+3. Repository-specific developer documentation (`CONTRIBUTING.md`,
+   `docs/AI-AGENT-ARCHITECTURE.md`, roadmap and architecture docs)
+4. Tool-specific agent configuration (`.cursor/`, `.github/agents/`,
+   `.agents/`, `.github/instructions/`, `.grok/`)
+5. Individual AI-agent product defaults
+
+Tool-specific configuration must not silently override this file.
 
 ## Contributor commit policy
 
@@ -63,28 +85,32 @@ Do not open the PR unless the title validation command passes.
 
 This repository uses the following hierarchy. Later entries do not replace
 earlier ones. GitHub is the control plane and source of truth.
-GitHub is not an implementation agent. Cursor remains the default task owner.
+GitHub is not an implementation agent. Cursor remains the default task owner
+and primary development orchestrator.
 
 1. **GitHub** is the control plane and source of truth for repositories,
    Issues and Projects, branches and pull requests, GitHub Actions, rulesets
    and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
    and releases.
-2. **Cursor** is the primary/default implementation agent and the default
+2. **Cursor** is the primary development orchestrator and the default
    task owner. Keep routine work with Cursor whenever practical.
 3. **Deterministic validation** must run before escalation. Attempt local
    tests, linters, schema validation, and repository validation
    scripts, and reuse existing GitHub Actions output, before another AI
    agent is invoked.
-4. **Grok Build** is the preferred secondary agent when available, if
-   escalation is justified.
-5. **GitHub Copilot** and **Codex** are specialist/escalation resources.
-   Other agents may be used only when the maintainer explicitly approves
-   them and they uniquely cover a gap. Specialist use must be narrowly
-   scoped and capability-driven. They must not be invoked automatically
-   for routine work.
-6. **GitHub Actions and repository checks** are the deterministic merge
+4. **Google Antigravity** is the secondary / specialist agent when
+   specialization, decomposition, or a second implementation perspective is
+   justified.
+5. **Grok / Grok Build** is the independent AI reviewer. It is not part of
+   the mandatory implementation path. Absence or failure of Grok credentials
+   must not block ordinary development, testing, or merging unless repository
+   governance explicitly requires that review.
+6. **GitHub Copilot** is the GitHub-native fallback / specialist. **Codex**
+   and other maintainer-approved agents are narrowly scoped specialists.
+   They must not be invoked automatically for routine Cursor work.
+7. **GitHub Actions and repository checks** are the deterministic merge
    validation surface. They remain authoritative for facts they can verify.
-7. **GitHub pull-request governance** (rulesets, branch protection, required
+8. **GitHub pull-request governance** (rulesets, branch protection, required
    checks, and human decisions) is the final merge authority.
 
 The human maintainer retains final decision authority. No AI agent is merge,
@@ -95,37 +121,59 @@ because it is the control plane, not a step in an agent ladder:
 
 ```text
 1 GitHub source of truth     → Authority
-2 Cursor                     → AI execution (Primary)
+2 Cursor                     → AI execution (Primary orchestrator)
 3 Deterministic validation   → Validation / evidence
-4 Grok Build                 → AI execution (preferred Secondary)
-5 Copilot, Codex, and other
-  explicitly approved agents → AI execution (specialist/escalation)
-6 GitHub Actions and
+4 Antigravity                → AI execution (Secondary / specialist)
+5 Grok Build                 → Independent review (advisory)
+6 Copilot, Codex, and other
+  explicitly approved agents → AI execution (fallback / specialist)
+7 GitHub Actions and
   repository checks          → Validation / evidence
-7 PR governance and human
+8 PR governance and human
   decisions                  → Governance
 ```
 
 Do not treat this map as Cursor → Grok Build → Claude → Gemini → Codex.
 
+## Cost and least-agent principle
+
+Use the least expensive capable agent for the task. Do not invoke multiple
+AI systems to perform substantially identical work unless independent review
+or verification provides a concrete benefit.
+
+Optimize AI usage for an independent-developer budget. Prefer Cursor for
+default throughput. Do not assume unlimited tokens, premium requests, AI
+credits, or paid-agent capacity. Metered specialist agents are scarce
+resources, not parallel reviewers for every change.
+
 ## Multi-agent development policy
 
 ### Roles
 
-- Cursor Agent is the primary/default implementation agent.
-- Grok Build is the preferred secondary agent when available, if Cursor cannot
-  complete the work and a second implementation path is still warranted. It is
-  also the preferred independent review tool for SuperGrok subscribers.
-- GitHub Copilot and Codex are specialist/escalation resources. Other
-  agents may be used only when explicitly approved and uniquely required.
-  They must not be invoked automatically for routine work. If Grok Build is
-  unavailable, an available specialist agent may be used for a narrowly
-  scoped, capability-driven escalation need.
-  If Grok Build is available, a specialist may be used only when
-  it uniquely provides a required capability that Grok Build cannot.
-  If the requested capability is a Gemini-backed local CLI, Antigravity
-  (`agy`) may fill that specialist gap. That does not make `agy` a default
-  peer to Grok Build.
+- Cursor is the primary development orchestrator. It explores the repository,
+  implements, refactors, debugs, creates tests, updates implementation-related
+  documentation, prepares commits and pull requests, and coordinates
+  specialists only when justified.
+- Antigravity is the secondary / specialist agent for architecture analysis,
+  difficult debugging, security analysis, specialized repository research,
+  complex test analysis, and independent technical investigation. It must not
+  duplicate work Cursor has already completed unless independent verification
+  is specifically useful.
+- Grok Build (`grok`) is primarily an independent reviewer for pull-request
+  review, architectural criticism, regression detection, overlooked edge
+  cases, questionable assumptions, and substantial-change review. Do not make
+  Grok part of the mandatory implementation path.
+- When Grok Build is unavailable for independent review, use Antigravity CLI
+  (`agy`) as backup review. That backup-review role does not make `agy` a
+  default peer to Grok Build when Grok is available, and it does not replace
+  Antigravity's secondary/specialist implementation role.
+- GitHub Copilot is the GitHub-native fallback / specialist when work starts
+  on GitHub, a GitHub-native coding agent is specifically useful, Cursor is
+  unavailable, or explicit independent implementation is desired. Copilot
+  must not automatically duplicate Cursor's normal development work.
+- Codex and other agents may be used only when the maintainer explicitly
+  approves them and they uniquely cover a gap. Specialist use must be narrowly
+  scoped and capability-driven.
 - GitHub remains the source of truth and control plane for repositories,
   Issues and Projects, branches and pull requests, GitHub Actions, rulesets
   and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
@@ -147,8 +195,8 @@ Keep routine work with Cursor whenever practical. Cursor handles:
 - commit preparation
 - pull-request preparation
 
-Do not auto-escalate those tasks to Grok Build, GitHub Copilot, Codex,
-or other specialist agents.
+Do not auto-escalate those tasks to Antigravity, Grok Build, GitHub Copilot,
+Codex, or other specialist agents.
 
 ### Escalation and secondary use
 
@@ -183,26 +231,27 @@ order when escalation is justified:
 2. Attempt deterministic validation (ShellCheck, portable tests, schema
    validation, repository validation scripts, GitHub Actions, CodeQL,
    dependency scanning, and secret scanning) before another AI agent is invoked.
-3. Use Grok Build as the preferred secondary implementation agent when
-   available.
-4. If Grok Build is unavailable, use an available specialist agent such as
-   GitHub Copilot, Codex, or another explicitly approved agent for the
-   narrowly scoped escalation need. If Grok Build is available, use a
-   specialist only when that specialist uniquely provides a required
-   capability that Grok Build cannot. Specialist use must be narrowly
-   scoped and capability-driven.
+3. Use Antigravity as the secondary / specialist agent when available and the
+   gap matches its strengths.
+4. Use GitHub Copilot when the work is GitHub-native, Cursor is unavailable, or
+   an explicit independent GitHub-side implementation is desired. Use Codex or
+   another explicitly approved agent only for a narrowly scoped,
+   capability-driven gap those products uniquely cover.
+5. Use Grok Build for independent review of substantial changes. If Grok Build
+   is unavailable, use Antigravity CLI (`agy`) for backup independent review.
 
 Capability routing does not change the preferred order above:
 
 | Resource | Role | Select when | Do not use when |
 | --- | --- | --- | --- |
-| Cursor | Primary | Default task ownership | Skipping Cursor only because another agent is available |
+| Cursor | Primary development orchestrator | Default task ownership | Skipping Cursor only because another agent is available |
 | Deterministic tests and CI | Evidence | Before any second AI agent | Asking an LLM to re-run ShellCheck or unittest |
-| Grok Build | Preferred secondary; SuperGrok interactive review | Defined gap after Cursor, or independent review | Routine Cursor work; as a merge gate; treating a GitHub API key as Grok Build |
-| Antigravity CLI (`agy`) | Backup independent review | Grok Build unavailable, including weekly limit | Default peer to Grok Build; using Gemini CLI as the product name; GitHub `GEMINI_API_KEY` |
-| GitHub Copilot | GitHub specialist | Coding agent, pull-request review, or Projects MCP | Parallel routine analysis |
+| Antigravity | Secondary / specialist | Architecture, hard debugging, security analysis, specialized research, complex test analysis, second implementation perspective | Routine Cursor work; duplicating completed Cursor work without independent value |
+| Grok Build | Independent reviewer | PR review, architectural criticism, regressions, edge cases, substantial-change review | Mandatory implementation path; as a merge gate; treating a GitHub API key as Grok Build |
+| Antigravity CLI (`agy`) | Backup independent review | Grok Build unavailable, including weekly limit | Default peer to Grok Build when Grok is available; using Gemini CLI as the product name; GitHub `GEMINI_API_KEY` |
+| GitHub Copilot | GitHub-native fallback / specialist | Work initiated on GitHub; GitHub coding agent / PR review / Projects MCP; Cursor unavailable; explicit independent implementation | Parallel routine Cursor analysis |
 | Codex | Specialist implementation | Codex interface or PR path is the gap | Default second opinion |
-| Other explicitly approved agent | Specialist | Maintainer names it, and it uniquely covers a gap Grok Build cannot | Automatic vendor chaining; default peer to Grok Build |
+| Other explicitly approved agent | Specialist | Maintainer names it, and it uniquely covers a gap | Automatic vendor chaining; default peer to Cursor or Grok Build |
 
 ### Prevent duplicate AI usage
 
@@ -225,6 +274,26 @@ artifacts, or deterministic checks have already answered.
   instruction to consume Cursor, Grok Build, Antigravity, and Copilot
   together.
 
+### Secrets model
+
+Clearly separate credential domains. Do not assume a GitHub Actions secret
+is available to Cursor, Antigravity, Copilot, or any local application.
+
+| Domain | Used by | Examples |
+| --- | --- | --- |
+| GitHub Actions secrets | Workflows only | Repository Actions secrets and variables |
+| GitHub Agents / Copilot environment secrets | GitHub-hosted Copilot coding-agent or MCP environments where applicable | Copilot environment secrets configured in GitHub |
+| Local environment credentials | Cursor, Antigravity, Grok Build, CLIs, local MCP | Per-client GitHub PATs and local Google/Gemini login |
+
+Never place credentials directly in `AGENTS.md`, `.cursor/mcp.json`, agent
+Markdown files, workflows, documentation examples containing real values, or
+committed `.env` files. Use placeholders and environment-variable references.
+Never commit `XAI_API_KEY`, `GEMINI_API_KEY`, PATs, OAuth tokens, or
+passwords. Do not print credentials.
+
+Named local variables and least-privilege scopes live in
+[`.github/github-mcp.md`](.github/github-mcp.md).
+
 ### GitHub MCP and Projects
 
 GitHub MCP is the shared GitHub interface for repositories, Issues, pull
@@ -242,18 +311,11 @@ and receives Project write only when that mutation is explicitly required.
 GitHub Copilot uses GitHub-native authorization subject to repository
 rules.
 
-Client setup, toolsets, and credential names live in
-[`.github/github-mcp.md`](.github/github-mcp.md). Do not put tokens in
-this file.
-
-### Cost and capacity
-
-Optimize AI usage for an independent-developer budget. Prefer Cursor for
-default throughput. Do not assume unlimited tokens, premium requests, AI
-credits, or paid-agent capacity. Metered specialist agents are scarce
-resources, not parallel reviewers for every change.
-
 ### Deterministic validation over AI review
+
+Deterministic tooling and GitHub Actions take precedence over AI opinions
+for build, test, lint, formatting, type-checking, and other
+machine-verifiable results.
 
 Prefer deterministic validation over AI review:
 
@@ -296,6 +358,8 @@ detail for what this repository requires those checks to cover.
   not public command names, until `docs/ROADMAP.md` is updated.
 - `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md` is the current-to-target
   inventory, assumption classification, and file-by-file migration map.
+- `docs/AI-AGENT-ARCHITECTURE.md` explains the multi-agent development
+  architecture and credential domains.
 - `README.md` is the user-facing installation and command guide.
 - Documentation must distinguish current behavior from target behavior during
   migration.

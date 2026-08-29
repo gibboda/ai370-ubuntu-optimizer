@@ -65,6 +65,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
     def test_instruction_hierarchy_files_exist(self) -> None:
         for path in (
             ROOT / "AGENTS.md",
+            ROOT / "docs/AI-AGENT-ARCHITECTURE.md",
             ROOT / ".github/copilot-instructions.md",
             ROOT / ".github/instructions/copilot.instructions.md",
             ROOT / ".github/instructions/codex.instructions.md",
@@ -73,6 +74,12 @@ class RepositoryInstructionsTests(unittest.TestCase):
             ROOT / ".github/antigravity/README.md",
             ROOT / ".github/github-mcp.md",
             ROOT / ".grok/config.toml",
+            ROOT / ".github/agents/reviewer.agent.md",
+            ROOT / ".github/agents/security-reviewer.agent.md",
+            ROOT / ".github/agents/test-reviewer.agent.md",
+            ROOT / ".agents/agents/architecture-reviewer/agent.md",
+            ROOT / ".agents/agents/security-reviewer/agent.md",
+            ROOT / ".agents/agents/test-reviewer/agent.md",
         ):
             with self.subTest(path=path):
                 self.assertTrue(path.is_file(), path)
@@ -85,6 +92,20 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertEqual(
             instruction_names,
             ["codex.instructions.md", "copilot.instructions.md"],
+        )
+
+        agent_names = sorted(
+            path.name
+            for path in (ROOT / ".github/agents").iterdir()
+            if path.is_file()
+        )
+        self.assertEqual(
+            agent_names,
+            [
+                "reviewer.agent.md",
+                "security-reviewer.agent.md",
+                "test-reviewer.agent.md",
+            ],
         )
 
     def test_all_contributors_must_follow_commit_policy(self) -> None:
@@ -194,11 +215,15 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self,
     ) -> None:
         self.assertIn(
-            "Cursor Agent is the primary/default implementation agent",
+            "Cursor is the primary development orchestrator",
             self.agent_instructions,
         )
         self.assertIn(
-            "Grok Build is the preferred secondary agent when available",
+            "Google Antigravity** is the secondary / specialist agent",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "Grok / Grok Build** is the independent AI reviewer",
             self.agent_instructions,
         )
         self.assertIn(
@@ -206,7 +231,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn(
-            "use an available specialist agent such as",
+            "Use GitHub Copilot when the work is GitHub-native",
             self.agent_instructions,
         )
         self.assertIn(
@@ -218,7 +243,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn(
-            "specialist/escalation resources", self.agent_instructions
+            "GitHub-native fallback / specialist", self.agent_instructions
         )
         self.assertIn(
             "must not be invoked automatically for",
@@ -250,22 +275,35 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn("independent-developer budget", self.agent_instructions)
         self.assertIn(
+            "Use the least expensive capable agent for the task",
+            self.agent_instructions,
+        )
+        self.assertIn(
             "Prefer deterministic validation over AI review",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "Deterministic tooling and GitHub Actions take precedence over AI opinions",
             self.agent_instructions,
         )
         self.assertIn("AI reviews are advisory", self.agent_instructions)
         self.assertIn("not required merge gates", self.agent_instructions)
         self.assertIn(
-            "**GitHub Copilot** and **Codex** are specialist/escalation resources",
+            "**GitHub Copilot** is the GitHub-native fallback / specialist",
             self.agent_instructions,
         )
         self.assertNotIn(
             "GitHub Copilot, Codex, Claude, Gemini, and other approved agents",
             self.agent_instructions,
         )
+        self.assertNotIn(
+            "Grok Build is the preferred secondary agent when available",
+            self.agent_instructions,
+        )
 
     def test_agent_hierarchy_and_duplicate_usage_policy(self) -> None:
         self.assertIn("## Agent hierarchy", self.agent_instructions)
+        self.assertIn("## Precedence", self.agent_instructions)
         self.assertIn("GitHub is not an implementation agent", self.agent_instructions)
         self.assertIn("default task owner", self.agent_instructions)
         self.assertIn(
@@ -275,6 +313,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "narrowly scoped and capability-driven", self.agent_instructions
         )
         self.assertIn("### Prevent duplicate AI usage", self.agent_instructions)
+        self.assertIn("### Secrets model", self.agent_instructions)
         self.assertIn("equivalent routine analysis", self.agent_instructions)
         self.assertIn(
             "Parallel multi-agent analysis requires an explicit reason",
@@ -309,7 +348,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "narrowly scoped and capability-driven", self.cursor_rules
         )
         self.assertIn(
-            "If Grok Build is available, a specialist may be used only when",
+            "Use Antigravity as the secondary / specialist agent",
             self.agent_instructions,
         )
         self.assertIn("agent hierarchy", self.contributing)
@@ -334,7 +373,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn(
-            "explicitly approved agents → AI execution (specialist/escalation)",
+            "explicitly approved agents → AI execution (fallback / specialist)",
             self.agent_instructions,
         )
         self.assertIn(
@@ -347,7 +386,6 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn("| Other explicitly approved agent |", self.agent_instructions)
         self.assertNotIn("| Claude | Specialist |", self.agent_instructions)
-        self.assertIn("Gemini-backed local CLI", self.agent_instructions)
         self.assertIn(
             "Independent review (not implementation overlays)",
             self.contributing,
@@ -385,7 +423,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.contributing,
         )
         self.assertIn(
-            "coding agent, pull-request review, or Projects MCP",
+            "coding agent, pull-request review, Projects MCP",
             self.copilot_instructions,
         )
         for overlay in (
@@ -401,6 +439,41 @@ class RepositoryInstructionsTests(unittest.TestCase):
                 )
                 self.assertNotIn("Default peer to Grok Build", overlay)
                 self.assertNotIn("What remains unresolved?", overlay)
+
+    def test_custom_and_workspace_agents_defer_to_shared_policy(self) -> None:
+        for path in (
+            ROOT / ".github/agents/reviewer.agent.md",
+            ROOT / ".github/agents/security-reviewer.agent.md",
+            ROOT / ".github/agents/test-reviewer.agent.md",
+            ROOT / ".agents/agents/architecture-reviewer/agent.md",
+            ROOT / ".agents/agents/security-reviewer/agent.md",
+            ROOT / ".agents/agents/test-reviewer/agent.md",
+        ):
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(path=path):
+                self.assertTrue(text.startswith("---\n"), path)
+                self.assertIn("name:", text)
+                self.assertIn("description:", text)
+                self.assertIn("AGENTS.md", text)
+                self.assertNotRegex(
+                    text,
+                    r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|AIza[0-9A-Za-z_-]+|xai-[A-Za-z0-9]+",
+                )
+                self.assertNotIn("## Agent hierarchy", text)
+                self.assertNotIn("Stage 1 is read-only", text)
+
+        architecture = (ROOT / "docs/AI-AGENT-ARCHITECTURE.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Primary Development Orchestrator", architecture)
+        self.assertIn("GitHub Actions", architecture)
+        self.assertIn("Independent", architecture)
+        self.assertIn("`AGENTS.md`", architecture)
+        self.assertIn("GITHUB_CURSOR_PAT", architecture)
+        self.assertNotRegex(
+            architecture,
+            r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+",
+        )
 
     def test_actions_do_not_call_xai_or_gemini(self) -> None:
         for path in (

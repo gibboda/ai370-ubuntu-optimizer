@@ -746,10 +746,13 @@ filenames.
 
 GitHub Actions is the deterministic validation layer. ShellCheck, portable
 tests, Conventional Commit title lint, and label policy do not call an LLM.
+AI agent roles and credential domains are documented in
+[`docs/AI-AGENT-ARCHITECTURE.md`](docs/AI-AGENT-ARCHITECTURE.md); shared
+policy lives in [`AGENTS.md`](AGENTS.md).
 
-Independent review is local. Run Grok Build (`grok`) on the pull-request
-branch. If Grok Build is unavailable, use Antigravity CLI (`agy`). Setup
-is in [`.github/grok/README.md`](.github/grok/README.md) and
+Independent review is local and advisory. Run Grok Build (`grok`) on the
+pull-request branch. If Grok Build is unavailable, use Antigravity CLI
+(`agy`). Setup is in [`.github/grok/README.md`](.github/grok/README.md) and
 [`.github/antigravity/README.md`](.github/antigravity/README.md). GitHub
 Actions does not call xAI or Gemini and does not use `XAI_API_KEY` or
 `GEMINI_API_KEY`. Local Antigravity CLI setup uses

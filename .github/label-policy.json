@@ -176,7 +176,10 @@
       "label": "area:dev-environment",
       "globs": [
         ".vscode/**",
-        ".cursor/**"
+        ".cursor/**",
+        ".agents/**",
+        ".github/agents/**",
+        ".grok/**"
       ]
     },
     {

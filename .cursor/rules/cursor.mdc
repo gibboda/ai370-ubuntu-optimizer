@@ -6,10 +6,11 @@ alwaysApply: true
 # Cursor-specific instructions
 
 [`AGENTS.md`](../../AGENTS.md) is authoritative for shared agent policy,
-including that Cursor Agent is the primary/default implementation agent.
+including that Cursor is the primary development orchestrator.
 Do not duplicate or override that file here.
 
 Nested `AGENTS.md` files remain in force for their directories.
+Architecture overview: [`docs/AI-AGENT-ARCHITECTURE.md`](../../docs/AI-AGENT-ARCHITECTURE.md).
 
 ## Hybrid orchestration boundary
 
@@ -29,6 +30,11 @@ For routine repository work, use this boundary:
    defects in Cursor, push the update, and let GitHub rerun validation.
 6. Leave merge eligibility and repository governance to GitHub rulesets,
    branch protection, required checks, and human decisions.
+
+Invoke Antigravity, Grok Build, Copilot, or other specialists only when
+`AGENTS.md` justifies escalation. Do not duplicate AI work Cursor has already
+completed unless independent verification provides a concrete benefit.
+Never commit secrets. Never put tokens in `mcp.json` or tracked docs.
 
 Do not require direct Cursor credentials for local independent review.
 Independent review is Grok Build (`grok`) or Antigravity CLI (`agy`) on a

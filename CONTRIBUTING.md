@@ -7,13 +7,16 @@ contributor workflow.
 Shared AI-agent policy lives in [`AGENTS.md`](AGENTS.md). That file is
 authoritative for agent hierarchy, agent roles, escalation, cost policy,
 deterministic validation, architecture, testing, naming, and change
-discipline.
+discipline. Architecture overview:
+[`docs/AI-AGENT-ARCHITECTURE.md`](docs/AI-AGENT-ARCHITECTURE.md).
 
 - Cursor environment overlay: [`.cursor/rules/`](.cursor/rules/)
 - GitHub Copilot specialist overlay:
   [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)
+- GitHub Copilot custom agents: [`.github/agents/`](.github/agents/)
 - Codex specialist overlay:
   [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
+- Antigravity workspace agents: [`.agents/agents/`](.agents/agents/)
 - Independent review (not implementation overlays):
   [`.github/grok/`](.github/grok/),
   [`.github/antigravity/`](.github/antigravity/)
@@ -80,7 +83,7 @@ Scope narrows the area of change:
 | `comfyui` | `scripts/70-comfyui-workflows.sh` |
 | `config` | `configs/` |
 | `architecture` | Architecture docs / high-level design |
-| `agents` | Agent policy and orchestration (`AGENTS.md`, `.cursor/`, `.github/instructions/`) |
+| `agents` | Agent policy and orchestration (`AGENTS.md`, `.cursor/`, `.github/agents/`, `.agents/`, `.github/instructions/`) |
 | `workflows` | `workflows/` |
 | `vscode` | VS Code workspace settings |
 | `release` | Release tooling and CI |
@@ -176,12 +179,15 @@ Release Please PRs (`autorelease:*` or `chore(release):`) are left untouched.
    Deterministic GitHub Actions (ShellCheck, portable tests, PR title lint,
    labels) never call an LLM.
 
-   Independent review:
+   Independent review (advisory; not a merge gate):
    - **Preferred (SuperGrok)**: Use Grok Build (`grok`, included with
      SuperGrok) for interactive, agentic PR review on the pull-request
      branch. See [`.github/grok/README.md`](.github/grok/README.md).
    - **Backup**: If Grok Build is unavailable, use Antigravity CLI (`agy`).
      See [`.github/antigravity/README.md`](.github/antigravity/README.md).
+   Cursor remains the primary development orchestrator; Antigravity is the
+   secondary/specialist for escalated implementation analysis. See
+   [`docs/AI-AGENT-ARCHITECTURE.md`](docs/AI-AGENT-ARCHITECTURE.md).
    GitHub Actions does not call xAI or Gemini and does not use
    `XAI_API_KEY` or `GEMINI_API_KEY`.
 

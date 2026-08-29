@@ -6,8 +6,9 @@ capability. It is not an instruction to invoke Cursor, Grok Build,
 Antigravity, and Copilot on the same ordinary task.
 
 [`AGENTS.md`](../AGENTS.md) remains authoritative for agent roles,
-escalation, and cost policy. This file is the setup and least-privilege
-contract for GitHub MCP clients.
+escalation, and cost policy. Architecture overview:
+[`docs/AI-AGENT-ARCHITECTURE.md`](../docs/AI-AGENT-ARCHITECTURE.md).
+This file is the setup and least-privilege contract for GitHub MCP clients.
 
 ## Endpoint and toolsets
 
@@ -40,10 +41,10 @@ Do not depend on deprecated Project tool names when defining policy.
 
 | Client | Role | GitHub Projects authorization | MCP write posture |
 | --- | --- | --- | --- |
-| Cursor | Primary development/orchestration | `project` (read and write) | Read/write Issues, PRs, and Projects where authorized |
-| Grok Build | Independent reviewer | `read:project` | `X-MCP-Readonly: true`; no Project, Issue, PR, or repository mutation by default |
-| Antigravity | Secondary/specialized implementation | `read:project` by default; `project` only when Project mutation is required | No `X-MCP-Readonly` by default so repository writes can work when the token allows them |
-| GitHub Copilot | GitHub-native assistant | GitHub OAuth / session scopes | Prefer OAuth; do not replace working OAuth with a PAT |
+| Cursor | Primary development orchestrator | `project` (read and write) | Read/write Issues, PRs, and Projects where authorized |
+| Grok Build | Independent reviewer (advisory) | `read:project` | `X-MCP-Readonly: true`; no Project, Issue, PR, or repository mutation by default |
+| Antigravity | Secondary / specialist | `read:project` by default; `project` only when Project mutation is required | No `X-MCP-Readonly` by default so repository writes can work when the token allows them |
+| GitHub Copilot | GitHub-native fallback / specialist | GitHub OAuth / session scopes | Prefer OAuth; do not replace working OAuth with a PAT |
 
 GitHub Projects is the source of truth for planned and workflow state
 where Projects are used. GitHub Actions is the source of truth for
