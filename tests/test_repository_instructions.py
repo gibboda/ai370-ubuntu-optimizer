@@ -519,6 +519,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("tests.test_agent_role_contract", self.agent_instructions)
         tests_readme = (ROOT / "tests/README.md").read_text(encoding="utf-8")
         self.assertIn("tests.test_agent_role_contract", tests_readme)
+        self.assertIn("tests.test_agent_work_allocation", portable_tests)
+        self.assertIn("tests.test_agent_work_allocation", self.agent_instructions)
+        self.assertIn("tests.test_agent_work_allocation", tests_readme)
 
         self.assertIn(
             "GitHub Actions does not call xAI or Gemini",
