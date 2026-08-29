@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "authority": "AGENTS.md",
+  "purpose": "Machine-readable contract derived from AGENTS.md; this file does not replace or override AGENTS.md.",
+  "policy_domains": {
+    "portable_multi_agent_governance": [
+      "precedence",
+      "agent_hierarchy",
+      "cost_and_least_agent_principle",
+      "multi_agent_roles",
+      "escalation",
+      "duplicate_ai_prevention",
+      "credential_domains",
+      "deterministic_validation_precedence",
+      "human_merge_authority"
+    ],
+    "repository_specific_policy": [
+      "contributor_commit_policy",
+      "documentation_authority",
+      "roadmap_and_stage_boundaries",
+      "hardware_portability",
+      "testing",
+      "naming",
+      "change_discipline"
+    ]
+  },
+  "roles": {
+    "control_plane": {"provider": "github", "implementation_agent": false},
+    "primary_orchestrator": {"provider": "cursor", "count": 1, "default_task_owner": true},
+    "deterministic_validation": {"provider": "repository_checks", "before_ai_escalation": true, "authoritative_for_machine_verifiable_facts": true},
+    "secondary_specialist": {"provider": "antigravity", "automatic": false},
+    "independent_reviewer": {"provider": "grok_build", "advisory": true, "merge_gate": false, "automatic": false},
+    "github_native_fallback": {"provider": "github_copilot", "automatic": false},
+    "specialist_pool": {"providers": ["codex", "maintainer_approved"], "automatic": false},
+    "merge_validation": {"provider": "github_actions_and_repository_checks", "deterministic": true},
+    "merge_authority": {"provider": "github_pr_governance", "ai_allowed": false, "human_final": true}
+  },
+  "invariants": {
+    "no_automatic_vendor_chaining": true,
+    "least_agent_principle": true,
+    "duplicate_routine_ai_work_prohibited": true,
+    "ai_reviews_advisory": true
+  }
+}
