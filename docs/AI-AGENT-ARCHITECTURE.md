@@ -101,7 +101,11 @@ every development operation.
 | Local environment credentials | Cursor, Antigravity, Grok Build, CLIs, MCP | `GITHUB_CURSOR_PAT`, `GITHUB_GROK_PAT`, `GITHUB_ANTIGRAVITY_PAT`, local Google/Gemini login |
 
 Never commit PATs, API keys, OAuth tokens, or passwords. Never put real
-values in `AGENTS.md`, MCP config, agent Markdown, or docs examples.
+values in `AGENTS.md`, tracked MCP config (`.cursor/mcp.json`,
+`.grok/config.toml`), agent Markdown, or docs examples. Untracked
+home-directory MCP files may hold a PAT only when the client cannot
+interpolate environment variables; see
+[`.github/github-mcp.md`](../.github/github-mcp.md).
 
 This repository's GitHub Actions do not call xAI or Gemini and do not use
 `XAI_API_KEY` or `GEMINI_API_KEY`. Independent Grok review uses SuperGrok
