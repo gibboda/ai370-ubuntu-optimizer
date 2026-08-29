@@ -9,6 +9,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "config/agent-roles.json"
+V1_FIXTURE = ROOT / "tests/fixtures/agent-role-contract/v1.json"
+SCHEMA_POLICY = ROOT / "docs/AGENT-ROLE-SCHEMA.md"
+MAX_SUPPORTED_SCHEMA_VERSION = 2
 _CREDENTIAL = re.compile(
     r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|"
     r"AIza[0-9A-Za-z_-]+|xai-[A-Za-z0-9]+"
@@ -37,6 +40,39 @@ class AgentRoleContractTests(unittest.TestCase):
 
     def test_contract_defers_to_agents_md(self) -> None:
         self.assertEqual(self.contract["authority"], "AGENTS.md")
+
+    def test_schema_version_is_explicitly_supported(self) -> None:
+        version = self.contract["schema_version"]
+        self.assertIsInstance(version, int)
+        self.assertGreater(version, 0)
+        self.assertLessEqual(
+            version,
+            MAX_SUPPORTED_SCHEMA_VERSION,
+            "Unknown future schema versions must fail closed until consumer support is added.",
+        )
+        self.assertEqual(version, MAX_SUPPORTED_SCHEMA_VERSION)
+
+    def test_schema_compatibility_policy_is_documented(self) -> None:
+        text = SCHEMA_POLICY.read_text(encoding="utf-8")
+        self.assertIn("`AGENTS.md`", text)
+        self.assertIn("fail closed", text)
+        self.assertIn("schema version 2", text)
+        self.assertIn("Version 1", text)
+        self.assertIn("Migration procedure", text)
+
+    def test_v1_fixture_preserves_v1_semantics_in_v2(self) -> None:
+        v1 = json.loads(V1_FIXTURE.read_text(encoding="utf-8"))
+        self.assertEqual(v1["schema_version"], 1)
+        self.assertEqual(self.contract["schema_version"], 2)
+        for key in ("authority", "policy_domains", "roles", "invariants"):
+            with self.subTest(key=key):
+                self.assertEqual(
+                    self.contract[key],
+                    v1[key],
+                    f"v2 must preserve v1 {key} semantics; incompatible changes require a new migration decision.",
+                )
+        self.assertNotIn("overlay_contract", v1)
+        self.assertIn("overlay_contract", self.contract)
 
     def test_exactly_one_primary_orchestrator(self) -> None:
         primary = self.roles["primary_orchestrator"]
