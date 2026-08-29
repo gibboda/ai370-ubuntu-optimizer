@@ -13,32 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **agents:** Add structured escalation records ([#259](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/259)) ([d76d089](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/d76d08948db15fe1a16e810c09072db4d4d7adaa))
 
-## [0.25.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.24.0...v0.25.0) (2026-08-23)
-
-
-### Features
-
-* **stage2:** Prefer S2-M7 in require_tier123_pass ([#203](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/203)) ([d190a81](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/d190a815b359334701b71aba0d8f941347f9e79a))
-
-### Added
-
-- `require_tier123_pass` prefers `s2-m7-platform-validation.json` and falls
-  back to `tier1-validation.json`.
-- `tests/test_s2_m7_gate.py` proves the S2-M7 preference and compat fallback.
-
-### Changed
-
-- `stage2-platform-validate`, `stage2-platform-inventory`, and legacy
-  `hardware` / `inventory` / `audit` / `baseline-plan` callers use
-  `stage1-probe` + `stage1-profile` instead of `10-detect-hardware.sh`.
-- Missing `tier1-hardware.json` / `tier1-npu.json` no longer demote S2-M7
-  when the Stage 1 profile is present.
-- ROADMAP marks S2-M7 **Implemented**. S2-M1/S2-M2/S2-M5 stay **In progress**.
-  Migration plan step 3 is done. `TASK_PROPOSALS.md` is a Stage/Milestone
-  compatibility backlog.
-
-## [Unreleased]
-
 ### Added
 
 - Structured AI escalation records in
@@ -152,8 +126,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stripping. `--print-prompt` emits metadata only and does not log
   untrusted PR text or credentials.
 
-### Changed
-
 - Align compatibility script labels, JSON `milestone`/`stage` fields, and user
   docs with ROADMAP owners (S3-M1 models, S3-M4/S3-M5/S3-M6 runtimes,
   S4-M1/S4-M3 applications). Compatibility wrappers emit deprecation warnings.
@@ -165,6 +137,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   high-level status matches ROADMAP (S2-M7 Implemented; S2-M1–S2-M6 In
   progress). Instruction tests compare README Stage 2 labels with ROADMAP
   milestone rows.
+
+## [Unreleased]
+
+## [0.25.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.24.0...v0.25.0) (2026-08-23)
+
+
+### Features
+
+* **stage2:** Prefer S2-M7 in require_tier123_pass ([#203](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/203)) ([d190a81](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/d190a815b359334701b71aba0d8f941347f9e79a))
+
+### Added
+
+- `require_tier123_pass` prefers `s2-m7-platform-validation.json` and falls
+  back to `tier1-validation.json`.
+- `tests/test_s2_m7_gate.py` proves the S2-M7 preference and compat fallback.
+
+### Changed
+
+- `stage2-platform-validate`, `stage2-platform-inventory`, and legacy
+  `hardware` / `inventory` / `audit` / `baseline-plan` callers use
+  `stage1-probe` + `stage1-profile` instead of `10-detect-hardware.sh`.
+- Missing `tier1-hardware.json` / `tier1-npu.json` no longer demote S2-M7
+  when the Stage 1 profile is present.
+- ROADMAP marks S2-M7 **Implemented**. S2-M1/S2-M2/S2-M5 stay **In progress**.
+  Migration plan step 3 is done. `TASK_PROPOSALS.md` is a Stage/Milestone
+  compatibility backlog.
 
 ## [0.24.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.23.0...v0.24.0) (2026-08-22)
 
