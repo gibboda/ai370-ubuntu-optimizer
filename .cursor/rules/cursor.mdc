@@ -38,9 +38,9 @@ Never commit secrets. Never put tokens in `mcp.json` or tracked docs.
 
 Do not require direct Cursor credentials for local independent review.
 Independent review is Grok Build (`grok`) or Antigravity CLI (`agy`) on a
-machine where those CLIs are logged in. Do not copy `XAI_API_KEY`,
-`GEMINI_API_KEY`, or other leftover GitHub Actions secrets into Cursor
-configuration. This repository's GitHub Actions do not call xAI or Gemini.
+machine where those CLIs are logged in. Do not copy vendor/model credentials
+or leftover GitHub Actions secrets into Cursor configuration. This repository's
+GitHub Actions do not call xAI or Gemini.
 
 Follow the shared escalation, cost, and default-implementation policy in
 `AGENTS.md`. Do not restate those rules here. See the Agent hierarchy in
@@ -72,7 +72,7 @@ source of truth.
 
 Desktop Cursor loads [`.cursor/mcp.json`](../mcp.json). That file uses the
 official hosted GitHub MCP endpoint `https://api.githubcopilot.com/mcp/`
-with `X-MCP-Toolsets: default,projects`. Set `GITHUB_CURSOR_PAT` in the
+with `X-MCP-Toolsets: default,projects`. Set `CURSOR_GH_PAT` in the
 local environment to a token with repository access as needed, plus
 `project` scope. Do not put tokens in `mcp.json` or `environment.json`.
 Shared MCP architecture is
@@ -83,7 +83,7 @@ in the Cloud Agent MCP dropdown or Dashboard → Integrations & MCP, then
 enable it for this environment:
 
 - URL: `https://api.githubcopilot.com/mcp/`
-- Header: `Authorization: Bearer <GITHUB_CURSOR_PAT>`
+- Header: `Authorization: Bearer <CURSOR_GH_PAT>`
 - Header: `X-MCP-Toolsets: default,projects`
 
 `mcpServerAllowlist` only permits a server; it does not install headers or

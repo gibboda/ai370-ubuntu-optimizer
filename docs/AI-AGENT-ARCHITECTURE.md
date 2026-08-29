@@ -98,30 +98,31 @@ every development operation.
 | --- | --- | --- |
 | GitHub Actions secrets | Workflows only | Not available to local Cursor/Antigravity/Grok |
 | GitHub Agents / Copilot environment secrets | GitHub-hosted Copilot environments | Separate from Actions and local shells |
-| Local environment credentials | Cursor, Antigravity, Grok Build, CLIs, MCP | `GITHUB_CURSOR_PAT`, `GITHUB_GROK_PAT`, `GITHUB_ANTIGRAVITY_PAT`, local Google/Gemini login |
+| Local environment credentials | Cursor, Antigravity, Grok Build, CLIs, MCP | `CURSOR_GH_PAT`, `GROK_GH_PAT`, `ANTIGRAVITY_GH_PAT`, local vendor login/token as required |
 
-Never commit PATs, API keys, OAuth tokens, or passwords. Never put real
+Never commit PATs, model tokens, OAuth tokens, or passwords. Never put real
 values in `AGENTS.md`, tracked MCP config (`.cursor/mcp.json`,
-`.grok/config.toml`), agent Markdown, or docs examples. Untracked
+`.grok/config.toml`), agent Markdown, or docs examples. Repository-defined
+secret names must not start with `GITHUB_` or end with `_API_KEY`. Untracked
 home-directory MCP files may hold a PAT only when the client cannot
 interpolate environment variables; see
 [`.github/github-mcp.md`](../.github/github-mcp.md).
 
 This repository's GitHub Actions do not call xAI or Gemini and do not use
-`XAI_API_KEY` or `GEMINI_API_KEY`. Independent Grok review uses SuperGrok
-CLI authentication, not an Actions-hosted API key path.
+vendor model credentials. Independent Grok review uses SuperGrok CLI
+authentication, not an Actions-hosted model-token path.
 
 ## Manual authentication prerequisites
 
 These steps cannot be completed from repository files alone:
 
-1. **Cursor GitHub MCP**: export `GITHUB_CURSOR_PAT` locally (repository
+1. **Cursor GitHub MCP**: export `CURSOR_GH_PAT` locally (repository
    access as needed + `project`), or complete Cloud Agent MCP header setup.
 2. **Grok Build**: sign in with a SuperGrok account; optionally export
-   `GITHUB_GROK_PAT` for read-only GitHub MCP.
-3. **Antigravity**: local Google/Gemini login or shell `GEMINI_API_KEY` for
-   the CLI; optionally configure `~/.gemini/antigravity/mcp_config.json`
-   with `GITHUB_ANTIGRAVITY_PAT` (that format does not interpolate env vars).
+   `GROK_GH_PAT` for read-only GitHub MCP.
+3. **Antigravity**: use local Google/Gemini authentication for the CLI as
+   required; optionally configure `~/.gemini/antigravity/mcp_config.json`
+   with `ANTIGRAVITY_GH_PAT` (that format does not interpolate env vars).
 4. **GitHub Copilot**: prefer GitHub-native OAuth for MCP; do not replace
    working OAuth with a hardcoded PAT.
 
