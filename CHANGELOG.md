@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Structured AI escalation records in
+  `config/agent-escalation-record.schema.json` and
+  `docs/AGENT-ESCALATION-RECORD.md`. Records are required before invoking
+  another AI agent, including explicitly requested review. They document
+  authorization and do not confer it. `maintainer_approved` selections
+  require a concrete `approved_resource` identifier.
 - Machine-readable multi-agent architecture contract in
   `config/agent-roles.json`, with portable CI coverage from
   `tests.test_agent_role_contract`.

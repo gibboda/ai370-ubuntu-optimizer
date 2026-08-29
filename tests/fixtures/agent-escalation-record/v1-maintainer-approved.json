@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "unresolved_gap": "A narrowly scoped specialist is needed after Cursor and deterministic checks.",
+  "deterministic_tooling_assessment": "Portable tests and CI do not cover the remaining provider-specific gap.",
+  "cursor_limit": "Cursor completed the practical pass; the remaining work needs a maintainer-named specialist.",
+  "missing_capability": "A unique specialist interface that named providers do not cover.",
+  "selected_resource": "maintainer_approved",
+  "approved_resource": "example-specialist",
+  "scope": "Use only the maintainer-approved specialist for the named gap; do not re-implement routine Cursor work.",
+  "completion_criterion": "Close the named gap or record that the specialist cannot answer it.",
+  "stop_condition": "Stop when the gap is closed, deterministic evidence answers it, the specialist is unavailable, or tests contradict the specialist."
+}

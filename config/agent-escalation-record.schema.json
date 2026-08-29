@@ -50,7 +50,12 @@
         "antigravity_cli",
         "maintainer_approved"
       ],
-      "description": "Which resource best matches the gap?"
+      "description": "Which resource best matches the gap? Use maintainer_approved only with approved_resource."
+    },
+    "approved_resource": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Concrete identifier of the maintainer-approved specialist. Required when selected_resource is maintainer_approved; forbidden otherwise."
     },
     "scope": {
       "type": "string",
@@ -76,6 +81,28 @@
         "commit": {"type": "string", "minLength": 1},
         "notes": {"type": "string", "minLength": 1}
       }
+    }
+  },
+  "if": {
+    "properties": {
+      "selected_resource": {
+        "const": "maintainer_approved"
+      }
+    },
+    "required": [
+      "selected_resource"
+    ]
+  },
+  "then": {
+    "required": [
+      "approved_resource"
+    ]
+  },
+  "else": {
+    "not": {
+      "required": [
+        "approved_resource"
+      ]
     }
   }
 }
