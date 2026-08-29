@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/gibboda/ai370-ubuntu-optimizer/config/agent-work-allocation.schema.json",
+  "title": "AI agent work allocation record",
+  "description": "Machine-readable duplicate-work safeguard derived from AGENTS.md. AGENTS.md remains authoritative.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "work_kind", "primary_resource", "additional_resource", "reuse_evidence"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "work_kind": {
+      "type": "string",
+      "enum": ["implementation", "independent_review", "parallel_analysis"]
+    },
+    "primary_resource": {"const": "cursor"},
+    "additional_resource": {
+      "type": "string",
+      "enum": ["antigravity", "github_copilot", "codex", "grok_build", "antigravity_cli", "maintainer_approved"]
+    },
+    "reuse_evidence": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["cursor_findings", "logs", "ci", "tests", "issue_discussion", "pr_discussion", "prior_agent_output"]
+      },
+      "description": "Existing evidence supplied to the additional resource instead of repeating completed work."
+    },
+    "escalation_record": {
+      "type": "object",
+      "description": "The structured escalation record required by config/agent-escalation-record.schema.json."
+    },
+    "independent_review_reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parallel_reason": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"work_kind": {"const": "implementation"}}, "required": ["work_kind"]},
+      "then": {"required": ["escalation_record"]}
+    },
+    {
+      "if": {"properties": {"work_kind": {"const": "independent_review"}}, "required": ["work_kind"]},
+      "then": {"required": ["escalation_record", "independent_review_reason"]}
+    },
+    {
+      "if": {"properties": {"work_kind": {"const": "parallel_analysis"}}, "required": ["work_kind"]},
+      "then": {"required": ["escalation_record", "parallel_reason"]}
+    }
+  ]
+}
