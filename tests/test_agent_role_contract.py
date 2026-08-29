@@ -2,11 +2,16 @@
 """Semantic contract tests for the machine-readable multi-agent architecture."""
 
 import json
+import re
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "config/agent-roles.json"
+_CREDENTIAL = re.compile(
+    r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|"
+    r"AIza[0-9A-Za-z_-]+|xai-[A-Za-z0-9]+"
+)
 
 
 class AgentRoleContractTests(unittest.TestCase):
@@ -15,6 +20,7 @@ class AgentRoleContractTests(unittest.TestCase):
         cls.contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
         cls.roles = cls.contract["roles"]
         cls.invariants = cls.contract["invariants"]
+        cls.overlay_contract = cls.contract["overlay_contract"]
 
     def test_contract_defers_to_agents_md(self) -> None:
         self.assertEqual(self.contract["authority"], "AGENTS.md")
@@ -59,6 +65,58 @@ class AgentRoleContractTests(unittest.TestCase):
         self.assertTrue(self.invariants["least_agent_principle"])
         self.assertTrue(self.invariants["duplicate_routine_ai_work_prohibited"])
         self.assertTrue(self.invariants["ai_reviews_advisory"])
+
+    def test_overlay_contract_roles_exist_in_manifest(self) -> None:
+        for overlay in self.overlay_contract["overlays"]:
+            with self.subTest(path=overlay["path"]):
+                self.assertIn(overlay["role"], self.roles)
+
+    def test_overlay_contract_paths_are_unique_and_exist(self) -> None:
+        paths = [entry["path"] for entry in self.overlay_contract["overlays"]]
+        self.assertEqual(len(paths), len(set(paths)))
+        for relative_path in paths:
+            with self.subTest(path=relative_path):
+                self.assertTrue((ROOT / relative_path).is_file(), relative_path)
+
+    def test_overlays_reference_canonical_authority(self) -> None:
+        self.assertTrue(self.overlay_contract["common"]["must_reference_authority"])
+        for overlay in self.overlay_contract["overlays"]:
+            text = (ROOT / overlay["path"]).read_text(encoding="utf-8")
+            with self.subTest(path=overlay["path"]):
+                self.assertIn("AGENTS.md", text)
+
+    def test_overlays_do_not_redefine_hierarchy_or_contain_credentials(self) -> None:
+        common = self.overlay_contract["common"]
+        self.assertTrue(common["must_not_define_agent_hierarchy_heading"])
+        self.assertTrue(common["must_not_contain_credentials"])
+        for overlay in self.overlay_contract["overlays"]:
+            text = (ROOT / overlay["path"]).read_text(encoding="utf-8")
+            with self.subTest(path=overlay["path"]):
+                self.assertNotIn("## Agent hierarchy", text)
+                self.assertNotRegex(text, _CREDENTIAL)
+
+    def test_overlays_match_declared_role_markers(self) -> None:
+        for overlay in self.overlay_contract["overlays"]:
+            text = (ROOT / overlay["path"]).read_text(encoding="utf-8")
+            markers = overlay["required_any"]
+            with self.subTest(path=overlay["path"], role=overlay["role"]):
+                self.assertTrue(
+                    any(marker in text for marker in markers),
+                    f"{overlay['path']} does not express role {overlay['role']}",
+                )
+
+    def test_overlays_cannot_claim_merge_authority(self) -> None:
+        self.assertTrue(self.overlay_contract["common"]["must_not_claim_merge_authority"])
+        forbidden = (
+            "final merge authority",
+            "AI agent is merge authority",
+            "AI agent is the merge authority",
+        )
+        for overlay in self.overlay_contract["overlays"]:
+            text = (ROOT / overlay["path"]).read_text(encoding="utf-8")
+            with self.subTest(path=overlay["path"]):
+                for phrase in forbidden:
+                    self.assertNotIn(phrase, text)
 
 
 if __name__ == "__main__":

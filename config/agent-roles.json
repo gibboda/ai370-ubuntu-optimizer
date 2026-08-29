@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "authority": "AGENTS.md",
   "purpose": "Machine-readable contract derived from AGENTS.md; this file does not replace or override AGENTS.md.",
   "policy_domains": {
@@ -34,6 +34,28 @@
     "specialist_pool": {"providers": ["codex", "maintainer_approved"], "automatic": false},
     "merge_validation": {"provider": "github_actions_and_repository_checks", "deterministic": true},
     "merge_authority": {"provider": "github_pr_governance", "ai_allowed": false, "human_final": true}
+  },
+  "overlay_contract": {
+    "common": {
+      "must_reference_authority": true,
+      "must_not_define_agent_hierarchy_heading": true,
+      "must_not_contain_credentials": true,
+      "must_not_claim_merge_authority": true
+    },
+    "overlays": [
+      {"path": ".cursor/rules/cursor.mdc", "role": "primary_orchestrator", "required_any": ["primary development orchestrator"]},
+      {"path": ".github/instructions/copilot.instructions.md", "role": "github_native_fallback", "required_any": ["GitHub-native fallback / specialist"]},
+      {"path": ".github/instructions/codex.instructions.md", "role": "specialist_pool", "required_any": ["specialist/escalation agent"]},
+      {"path": ".github/agents/reviewer.agent.md", "role": "github_native_fallback", "required_any": ["GitHub-native specialist"]},
+      {"path": ".github/agents/security-reviewer.agent.md", "role": "github_native_fallback", "required_any": ["GitHub Copilot custom agent"]},
+      {"path": ".github/agents/test-reviewer.agent.md", "role": "github_native_fallback", "required_any": ["GitHub Copilot custom agent"]},
+      {"path": ".agents/agents/architecture-reviewer/agent.md", "role": "secondary_specialist", "required_any": ["secondary/specialist"]},
+      {"path": ".agents/agents/security-reviewer/agent.md", "role": "secondary_specialist", "required_any": ["primary development orchestrator", "Do not re-implement routine Cursor work"]},
+      {"path": ".agents/agents/test-reviewer/agent.md", "role": "secondary_specialist", "required_any": ["primary development orchestrator", "Avoid unnecessary implementation duplication"]},
+      {"path": ".github/grok/README.md", "role": "independent_reviewer", "required_any": ["independent AI reviewer"]},
+      {"path": ".github/grok/policy.md", "role": "independent_reviewer", "required_any": ["Grok is advisory", "not a required merge gate"]},
+      {"path": ".github/antigravity/README.md", "role": "secondary_specialist", "required_any": ["Secondary / specialist", "Backup independent review"]}
+    ]
   },
   "invariants": {
     "no_automatic_vendor_chaining": true,
