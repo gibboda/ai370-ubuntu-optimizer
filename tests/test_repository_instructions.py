@@ -71,6 +71,8 @@ class RepositoryInstructionsTests(unittest.TestCase):
             ROOT / ".cursor/rules/cursor.mdc",
             ROOT / ".github/grok/README.md",
             ROOT / ".github/antigravity/README.md",
+            ROOT / ".github/github-mcp.md",
+            ROOT / ".grok/config.toml",
         ):
             with self.subTest(path=path):
                 self.assertTrue(path.is_file(), path)
@@ -483,7 +485,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertNotIn("If the task produces repository changes", self.agent_instructions)
 
-    def test_cursor_github_projects_mcp_has_no_secrets(self) -> None:
+    def test_cursor_github_mcp_uses_hosted_endpoint_without_secrets(self) -> None:
         mcp_path = ROOT / ".cursor/mcp.json"
         self.assertTrue(mcp_path.is_file(), mcp_path)
         raw = mcp_path.read_text(encoding="utf-8")
@@ -492,19 +494,72 @@ class RepositoryInstructionsTests(unittest.TestCase):
             r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|YOUR_GITHUB_PAT",
         )
         config = json.loads(raw)
-        server = config["mcpServers"]["github-projects"]
+        self.assertNotIn("github-projects", config["mcpServers"])
+        self.assertEqual(list(config["mcpServers"]), ["github"])
+        server = config["mcpServers"]["github"]
+        self.assertEqual(server["url"], "https://api.githubcopilot.com/mcp/")
         self.assertEqual(
-            server["url"],
-            "https://api.githubcopilot.com/mcp/x/projects",
+            server["headers"]["X-MCP-Toolsets"],
+            "default,projects",
         )
-        self.assertIn("${env:GITHUB_MCP_PAT}", server["headers"]["Authorization"])
-        self.assertIn("https://api.githubcopilot.com/mcp/x/projects", self.cursor_rules)
+        self.assertNotIn("all", server["headers"]["X-MCP-Toolsets"].split(","))
+        self.assertIn("${env:GITHUB_CURSOR_PAT}", server["headers"]["Authorization"])
+        self.assertIn("https://api.githubcopilot.com/mcp/", self.cursor_rules)
+        self.assertIn("X-MCP-Toolsets: default,projects", self.cursor_rules)
+        self.assertIn("GITHUB_CURSOR_PAT", self.cursor_rules)
+        self.assertNotIn("/mcp/x/projects", self.cursor_rules)
         self.assertIn("mcpServerAllowlist", self.cursor_rules)
         self.assertIn("Do not commit `.cursor/environment.json`", self.cursor_rules)
         self.assertFalse(
             (ROOT / ".cursor/environment.json").exists(),
             "A committed environment.json would override the dashboard Cloud Agent environment",
         )
+
+    def test_grok_github_mcp_is_readonly_and_secret_free(self) -> None:
+        grok_path = ROOT / ".grok/config.toml"
+        self.assertTrue(grok_path.is_file(), grok_path)
+        raw = grok_path.read_text(encoding="utf-8")
+        self.assertNotRegex(
+            raw,
+            r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|YOUR_GITHUB_PAT",
+        )
+        self.assertIn("https://api.githubcopilot.com/mcp/", raw)
+        self.assertIn('${GITHUB_GROK_PAT}', raw)
+        self.assertIn('"X-MCP-Toolsets" = "default,projects"', raw)
+        self.assertIn('"X-MCP-Readonly" = "true"', raw)
+        self.assertNotIn("XAI_API_KEY", raw.split("[mcp_servers.github]")[1])
+        self.assertNotRegex(raw, r'(?i)toolsets["\s=]+all\b|/mcp/x/all')
+
+    def test_github_mcp_architecture_doc_and_policy_boundaries(self) -> None:
+        doc = (ROOT / ".github/github-mcp.md").read_text(encoding="utf-8")
+        self.assertNotRegex(
+            doc,
+            r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+",
+        )
+        self.assertIn("https://api.githubcopilot.com/mcp/", doc)
+        self.assertIn("default,projects", doc)
+        self.assertIn("Do not enable", doc)
+        self.assertIn("`all`", doc)
+        self.assertIn("GITHUB_CURSOR_PAT", doc)
+        self.assertIn("GITHUB_GROK_PAT", doc)
+        self.assertIn("GITHUB_ANTIGRAVITY_PAT", doc)
+        self.assertIn("does **not** interpolate", doc)
+        self.assertIn("Prefer GitHub-native OAuth", doc)
+        self.assertIn("[`.github/github-mcp.md`](.github/github-mcp.md)", self.agent_instructions)
+        self.assertIn("GitHub MCP is the shared GitHub interface", self.agent_instructions)
+        self.assertIn(
+            "must not mutate Project state by default",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "MCP availability is capability",
+            self.agent_instructions,
+        )
+        self.assertNotIn("GITHUB_CURSOR_PAT", self.agent_instructions)
+        gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("*.secret", gitignore)
+        self.assertIn("*.secrets", gitignore)
+        self.assertIn("[`.github/github-mcp.md`](.github/github-mcp.md)", self.contributing)
 
     def test_codex_pr_title_requirements_live_in_codex_instructions(self) -> None:
         self.assertIn(
