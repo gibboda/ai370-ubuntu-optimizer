@@ -20,7 +20,7 @@ Version 1 established the authority, policy-domain, role, and invariant model. V
 
 For the version-1-to-version-2 transition:
 
-1. All version-1 top-level policy domains, roles, and invariants remain present and semantically equivalent in version 2.
+1. All version-1 top-level policy domains, roles, and invariants remain present and semantically equivalent in version 2. Version 2 may add safely ignorable fields inside those objects; it must not remove, rename, or change version-1 field values.
 2. Version 2 may add overlay validation data without changing version-1 role semantics.
 3. A version-1 consumer that only consumes version-1 fields can migrate by explicitly accepting version 2 only after verifying that the fields it consumes retain the expected shape and semantics.
 4. A consumer that requires `overlay_contract` must require schema version 2 or newer and must still reject unknown future versions until support is added.

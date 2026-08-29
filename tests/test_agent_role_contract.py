@@ -60,19 +60,61 @@ class AgentRoleContractTests(unittest.TestCase):
         self.assertIn("Version 1", text)
         self.assertIn("Migration procedure", text)
 
+    def _assert_v1_semantics_preserved(self, actual, expected, path: str) -> None:
+        """Require every v1 value to remain; allow safely ignorable additive fields."""
+        if isinstance(expected, dict):
+            self.assertIsInstance(
+                actual,
+                dict,
+                f"v2 changed the type of {path}; incompatible changes require a new migration decision.",
+            )
+            for key, value in expected.items():
+                child = f"{path}.{key}" if path else key
+                self.assertIn(
+                    key,
+                    actual,
+                    f"v2 is missing v1 field {child}; incompatible changes require a new migration decision.",
+                )
+                self._assert_v1_semantics_preserved(actual[key], value, child)
+            return
+        self.assertEqual(
+            actual,
+            expected,
+            f"v2 must preserve v1 {path} semantics; incompatible changes require a new migration decision.",
+        )
+
     def test_v1_fixture_preserves_v1_semantics_in_v2(self) -> None:
         v1 = json.loads(V1_FIXTURE.read_text(encoding="utf-8"))
         self.assertEqual(v1["schema_version"], 1)
         self.assertEqual(self.contract["schema_version"], 2)
         for key in ("authority", "policy_domains", "roles", "invariants"):
             with self.subTest(key=key):
-                self.assertEqual(
-                    self.contract[key],
-                    v1[key],
-                    f"v2 must preserve v1 {key} semantics; incompatible changes require a new migration decision.",
-                )
+                self._assert_v1_semantics_preserved(self.contract[key], v1[key], key)
         self.assertNotIn("overlay_contract", v1)
         self.assertIn("overlay_contract", self.contract)
+
+    def test_compatible_additive_fields_do_not_require_migration(self) -> None:
+        v1_roles = {"primary_orchestrator": {"provider": "cursor", "count": 1}}
+        v2_roles = {
+            "primary_orchestrator": {
+                "provider": "cursor",
+                "count": 1,
+                "notes": "optional metadata",
+            },
+            "new_optional_role": {"provider": "example"},
+        }
+        self._assert_v1_semantics_preserved(v2_roles, v1_roles, "roles")
+
+    def test_removed_or_changed_v1_fields_are_incompatible(self) -> None:
+        v1_roles = {"primary_orchestrator": {"provider": "cursor", "count": 1}}
+        missing_field = {"primary_orchestrator": {"provider": "cursor"}}
+        changed_value = {"primary_orchestrator": {"provider": "other", "count": 1}}
+        with self.assertRaises(self.failureException):
+            self._assert_v1_semantics_preserved(missing_field, v1_roles, "roles")
+        with self.assertRaises(self.failureException):
+            self._assert_v1_semantics_preserved(changed_value, v1_roles, "roles")
+        with self.assertRaises(self.failureException):
+            self._assert_v1_semantics_preserved(["cursor"], v1_roles, "roles")
 
     def test_exactly_one_primary_orchestrator(self) -> None:
         primary = self.roles["primary_orchestrator"]
