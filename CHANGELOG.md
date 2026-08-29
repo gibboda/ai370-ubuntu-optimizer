@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Machine-readable multi-agent architecture contract in
+  `config/agent-roles.json`, with portable CI coverage from
+  `tests.test_agent_role_contract`.
 - Vendor-neutral multi-agent architecture overview in
   `docs/AI-AGENT-ARCHITECTURE.md` (Cursor orchestrator flow, secrets
   domains, and manual authentication prerequisites).
