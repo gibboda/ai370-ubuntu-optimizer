@@ -22,6 +22,18 @@ class AgentRoleContractTests(unittest.TestCase):
         cls.invariants = cls.contract["invariants"]
         cls.overlay_contract = cls.contract["overlay_contract"]
 
+    def _discover_overlay_paths(self) -> set[str]:
+        discovery = self.overlay_contract["discovery"]
+        discovered: set[str] = set()
+        for root_spec in discovery["roots"]:
+            root = ROOT / root_spec["path"]
+            self.assertTrue(root.is_dir(), f"overlay discovery root does not exist: {root_spec['path']}")
+            for pattern in root_spec["patterns"]:
+                for path in root.glob(pattern):
+                    if path.is_file():
+                        discovered.add(path.relative_to(ROOT).as_posix())
+        return discovered
+
     def test_contract_defers_to_agents_md(self) -> None:
         self.assertEqual(self.contract["authority"], "AGENTS.md")
 
@@ -77,6 +89,29 @@ class AgentRoleContractTests(unittest.TestCase):
         for relative_path in paths:
             with self.subTest(path=relative_path):
                 self.assertTrue((ROOT / relative_path).is_file(), relative_path)
+
+    def test_discovered_overlays_exactly_match_manifest_plus_exclusions(self) -> None:
+        discovery = self.overlay_contract["discovery"]
+        declared = {entry["path"] for entry in self.overlay_contract["overlays"]}
+        exclusions = set(discovery["exclusions"])
+        discovered = self._discover_overlay_paths()
+
+        self.assertFalse(
+            declared & exclusions,
+            "an overlay cannot be both declared and excluded",
+        )
+        self.assertEqual(
+            discovered,
+            declared | exclusions,
+            "Every discovered overlay must be declared or explicitly excluded, and stale manifest/exclusion paths are forbidden.",
+        )
+
+    def test_overlay_discovery_configuration_is_unique(self) -> None:
+        discovery = self.overlay_contract["discovery"]
+        roots = [entry["path"] for entry in discovery["roots"]]
+        exclusions = discovery["exclusions"]
+        self.assertEqual(len(roots), len(set(roots)))
+        self.assertEqual(len(exclusions), len(set(exclusions)))
 
     def test_overlays_reference_canonical_authority(self) -> None:
         self.assertTrue(self.overlay_contract["common"]["must_reference_authority"])
