@@ -220,6 +220,31 @@ artifacts, or deterministic checks have already answered.
   developer request to compare named agents or a provider-specific capability
   that one agent cannot cover. Without that reason, invoke one agent at a
   time.
+- Connecting multiple agents to GitHub MCP does not mean every agent should
+  independently perform every task. MCP availability is capability, not an
+  instruction to consume Cursor, Grok Build, Antigravity, and Copilot
+  together.
+
+### GitHub MCP and Projects
+
+GitHub MCP is the shared GitHub interface for repositories, Issues, pull
+requests, and Projects. GitHub Projects is the source of truth for planned
+and workflow state where Projects are used. GitHub Actions remains the
+source of truth for deterministic validation. GitHub rulesets and branch
+protection remain the final merge authority. These layers stay separate.
+MCP access cannot bypass protected branches, required checks, or required
+reviews.
+
+Cursor may read and write Projects when authorized. Grok Build inspects
+Project structure, fields, and items independently and must not mutate
+Project state by default. Antigravity uses Project read access by default
+and receives Project write only when that mutation is explicitly required.
+GitHub Copilot uses GitHub-native authorization subject to repository
+rules.
+
+Client setup, toolsets, and credential names live in
+[`.github/github-mcp.md`](.github/github-mcp.md). Do not put tokens in
+this file.
 
 ### Cost and capacity
 

@@ -24,7 +24,13 @@ Do not commit `~/.gemini/antigravity-cli/settings.json` or a repo-root
 Authenticate `agy` with a local Google/Gemini login or a **shell**
 `GEMINI_API_KEY` if your CLI build requires one. That local credential is
 not a GitHub Actions secret. GitHub Actions does not call Gemini and does
-not run `agy`.
+not run `agy`. Do not use `GEMINI_API_KEY` for GitHub MCP.
+
+Antigravity IDE GitHub MCP lives in
+`~/.gemini/antigravity/mcp_config.json` and uses `serverUrl`. That format
+does not interpolate environment variables in headers. Do not commit it
+with a token. Default Project authorization is `read:project`. See
+[`.github/github-mcp.md`](../github-mcp.md).
 
 ## Files
 
@@ -34,4 +40,5 @@ not run `agy`.
 | `../grok/policy.md` | Shared local independent-review policy |
 
 `agy` must not merge pull requests, approve as a maintainer, or change
-repository settings, labels, issues, or milestones.
+repository settings, labels, issues, milestones, or GitHub Project state
+unless Project write is explicitly required.

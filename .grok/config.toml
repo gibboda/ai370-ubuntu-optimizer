@@ -1,0 +1,13 @@
+# Project-scoped Grok Build GitHub MCP.
+# This file ships with the repository and must contain no secrets.
+# Grok expands ${VAR} in url, command, args, env, and headers.
+# Do not use XAI_API_KEY for GitHub authorization.
+#
+# Project .grok/config.toml may only contribute [mcp_servers], [plugins],
+# and [permission]. Put [compat.cursor] in ~/.grok/config.toml so Grok
+# does not import Cursor's GITHUB_CURSOR_PAT from .cursor/mcp.json.
+# See .github/github-mcp.md.
+
+[mcp_servers.github]
+url = "https://api.githubcopilot.com/mcp/"
+headers = { Authorization = "Bearer ${GITHUB_GROK_PAT}", "X-MCP-Toolsets" = "default,projects", "X-MCP-Readonly" = "true" }
