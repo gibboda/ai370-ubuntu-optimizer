@@ -9,8 +9,8 @@ The machine-readable shape is `config/agent-escalation-record.schema.json`.
 Create a record before invoking another AI agent. That includes secondary
 or specialist use for an unresolved gap and any explicitly requested named
 secondary, specialist, or independent-review agent. The record remains
-required for those explicitly requested reviews; it does not turn advisory
-review into a merge gate.
+required for those explicitly requested reviews; it
+does not turn advisory review into a merge gate.
 
 Do not create an escalation merely to justify duplicate routine analysis. Reuse Cursor findings, deterministic evidence, logs, tests, issue/PR discussion, and prior agent output first.
 
