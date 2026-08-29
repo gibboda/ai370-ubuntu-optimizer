@@ -515,6 +515,10 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertNotIn("tests.test_gemini_pr_review", portable_tests)
         self.assertNotIn("tests.test_grok_pr_review", self.agent_instructions)
         self.assertNotIn("tests.test_gemini_pr_review", self.agent_instructions)
+        self.assertIn("tests.test_agent_role_contract", portable_tests)
+        self.assertIn("tests.test_agent_role_contract", self.agent_instructions)
+        tests_readme = (ROOT / "tests/README.md").read_text(encoding="utf-8")
+        self.assertIn("tests.test_agent_role_contract", tests_readme)
 
         self.assertIn(
             "GitHub Actions does not call xAI or Gemini",
