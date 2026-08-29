@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/gibboda/ai370-ubuntu-optimizer/config/agent-escalation-record.schema.json",
+  "title": "AI agent escalation record",
+  "description": "Structured record derived from AGENTS.md for justified secondary or specialist AI use. AGENTS.md remains authoritative.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "unresolved_gap",
+    "deterministic_tooling_assessment",
+    "cursor_limit",
+    "missing_capability",
+    "selected_resource",
+    "scope",
+    "completion_criterion",
+    "stop_condition"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "unresolved_gap": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What remains unresolved?"
+    },
+    "deterministic_tooling_assessment": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Can deterministic tooling answer it, and what evidence was checked?"
+    },
+    "cursor_limit": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why cannot Cursor reliably resolve it after a practical attempt?"
+    },
+    "missing_capability": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What capability is missing?"
+    },
+    "selected_resource": {
+      "type": "string",
+      "enum": [
+        "antigravity",
+        "github_copilot",
+        "codex",
+        "grok_build",
+        "antigravity_cli",
+        "maintainer_approved"
+      ],
+      "description": "Which resource best matches the gap?"
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What exact scope should the selected resource receive?"
+    },
+    "completion_criterion": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What constitutes completion?"
+    },
+    "stop_condition": {
+      "type": "string",
+      "minLength": 1,
+      "description": "When does escalation stop?"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "issue": {"type": "string", "minLength": 1},
+        "pull_request": {"type": "string", "minLength": 1},
+        "commit": {"type": "string", "minLength": 1},
+        "notes": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
