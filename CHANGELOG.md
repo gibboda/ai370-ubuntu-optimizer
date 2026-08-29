@@ -67,6 +67,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Align specialist overlay shape in `AGENTS.md`: GitHub Copilot and Codex
+  are the named specialist products with instruction overlays. Other
+  agents require explicit maintainer approval and a unique gap. Independent
+  review docs (`.github/grok/`, `.github/antigravity/`) are not
+  implementation overlays. The capability-routing table replaces the Claude
+  row with an "other explicitly approved agent" escape hatch. Claude and
+  Gemini remain named only as anti-patterns (vendor ladder, Gemini CLI
+  product name, GitHub `GEMINI_API_KEY`). `CONTRIBUTING.md` lists the same
+  overlay map.
+
 - Remove the S5-M6 xAI and Gemini GitHub Actions advisory reviewers
   (`grok-pr-review.yml`, `gemini-pr-review.yml`, `scripts/grok_pr_review.py`,
   `scripts/gemini_pr_review.py`). Independent review is local Grok Build

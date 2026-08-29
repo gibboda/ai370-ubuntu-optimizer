@@ -69,9 +69,21 @@ class RepositoryInstructionsTests(unittest.TestCase):
             ROOT / ".github/instructions/copilot.instructions.md",
             ROOT / ".github/instructions/codex.instructions.md",
             ROOT / ".cursor/rules/cursor.mdc",
+            ROOT / ".github/grok/README.md",
+            ROOT / ".github/antigravity/README.md",
         ):
             with self.subTest(path=path):
                 self.assertTrue(path.is_file(), path)
+
+        instruction_names = sorted(
+            path.name
+            for path in (ROOT / ".github/instructions").iterdir()
+            if path.is_file()
+        )
+        self.assertEqual(
+            instruction_names,
+            ["codex.instructions.md", "copilot.instructions.md"],
+        )
 
     def test_all_contributors_must_follow_commit_policy(self) -> None:
         for policy in (
@@ -241,9 +253,13 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn("AI reviews are advisory", self.agent_instructions)
         self.assertIn("not required merge gates", self.agent_instructions)
-        self.assertIn("GitHub Copilot, Codex, Claude", self.agent_instructions)
         self.assertIn(
-            "GitHub Copilot, Codex, Claude, Gemini", self.agent_instructions
+            "**GitHub Copilot** and **Codex** are specialist/escalation resources",
+            self.agent_instructions,
+        )
+        self.assertNotIn(
+            "GitHub Copilot, Codex, Claude, Gemini, and other approved agents",
+            self.agent_instructions,
         )
 
     def test_agent_hierarchy_and_duplicate_usage_policy(self) -> None:
@@ -314,6 +330,25 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn(
             "Do not treat this map as Cursor → Grok Build → Claude → Gemini → Codex",
             self.agent_instructions,
+        )
+        self.assertIn(
+            "explicitly approved agents → AI execution (specialist/escalation)",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "Independent review is not an implementation overlay",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "Do not add an implementation overlay for a vendor until",
+            self.agent_instructions,
+        )
+        self.assertIn("| Other explicitly approved agent |", self.agent_instructions)
+        self.assertNotIn("| Claude | Specialist |", self.agent_instructions)
+        self.assertIn("Gemini-backed local CLI", self.agent_instructions)
+        self.assertIn(
+            "Independent review (not implementation overlays)",
+            self.contributing,
         )
         self.assertIn("What remains unresolved?", self.agent_instructions)
         self.assertIn(

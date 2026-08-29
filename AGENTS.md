@@ -8,17 +8,27 @@ testing, naming, and change discipline.
 Agent-specific files must not restate this policy. They may only add
 behavior that applies to that agent or environment:
 
-- Cursor-specific notes: [`.cursor/rules/`](.cursor/rules/)
-- GitHub Copilot: [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)
-- Codex: [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
+- Cursor environment overlay: [`.cursor/rules/`](.cursor/rules/)
+- GitHub Copilot specialist overlay:
+  [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)
+- Codex specialist overlay:
+  [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
 - Conventional Commit types, scopes, and human contributor workflow:
   [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
+Independent review is not an implementation overlay:
+
+- Preferred: [`.github/grok/`](.github/grok/)
+- Backup when Grok Build is unavailable:
+  [`.github/antigravity/`](.github/antigravity/)
+
 Nested `AGENTS.md` files remain in force for their directories.
 `.github/copilot-instructions.md` is a compatibility pointer, not a second
-policy surface. Do not treat this repository as Cursor-exclusive: other
-agents may work here when escalated, but routine work stays with Cursor
-whenever practical.
+policy surface. Do not add an implementation overlay for a vendor until
+that product has a unique interface or workflow this repository uses.
+Do not treat this repository as Cursor-exclusive: other agents may work
+here when escalated, but routine work stays with Cursor whenever
+practical.
 
 ## Contributor commit policy
 
@@ -67,10 +77,11 @@ GitHub is not an implementation agent. Cursor remains the default task owner.
    agent is invoked.
 4. **Grok Build** is the preferred secondary agent when available, if
    escalation is justified.
-5. **GitHub Copilot, Codex, Claude, Gemini, and other approved agents** are
-   specialist/escalation resources. Specialist use must be narrowly scoped
-   and capability-driven. They must not be invoked automatically for
-   routine work.
+5. **GitHub Copilot** and **Codex** are specialist/escalation resources.
+   Other agents may be used only when the maintainer explicitly approves
+   them and they uniquely cover a gap. Specialist use must be narrowly
+   scoped and capability-driven. They must not be invoked automatically
+   for routine work.
 6. **GitHub Actions and repository checks** are the deterministic merge
    validation surface. They remain authoritative for facts they can verify.
 7. **GitHub pull-request governance** (rulesets, branch protection, required
@@ -87,9 +98,8 @@ because it is the control plane, not a step in an agent ladder:
 2 Cursor                     → AI execution (Primary)
 3 Deterministic validation   → Validation / evidence
 4 Grok Build                 → AI execution (preferred Secondary)
-5 Copilot, Codex, Claude,
-  Gemini, and other approved
-  agents                     → AI execution (specialist/escalation)
+5 Copilot, Codex, and other
+  explicitly approved agents → AI execution (specialist/escalation)
 6 GitHub Actions and
   repository checks          → Validation / evidence
 7 PR governance and human
@@ -106,15 +116,16 @@ Do not treat this map as Cursor → Grok Build → Claude → Gemini → Codex.
 - Grok Build is the preferred secondary agent when available, if Cursor cannot
   complete the work and a second implementation path is still warranted. It is
   also the preferred independent review tool for SuperGrok subscribers.
-- GitHub Copilot, Codex, Claude, Gemini, and other metered cloud agents
-  are specialist/escalation resources.
+- GitHub Copilot and Codex are specialist/escalation resources. Other
+  agents may be used only when explicitly approved and uniquely required.
   They must not be invoked automatically for routine work. If Grok Build is
   unavailable, an available specialist agent may be used for a narrowly
   scoped, capability-driven escalation need.
   If Grok Build is available, a specialist may be used only when
   it uniquely provides a required capability that Grok Build cannot.
-  Approved specialists include Antigravity when a Gemini-backed local tool
-  is the capability being requested.
+  If the requested capability is a Gemini-backed local CLI, Antigravity
+  (`agy`) may fill that specialist gap. That does not make `agy` a default
+  peer to Grok Build.
 - GitHub remains the source of truth and control plane for repositories,
   Issues and Projects, branches and pull requests, GitHub Actions, rulesets
   and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
@@ -137,7 +148,7 @@ Keep routine work with Cursor whenever practical. Cursor handles:
 - pull-request preparation
 
 Do not auto-escalate those tasks to Grok Build, GitHub Copilot, Codex,
-Claude, Gemini, or other metered cloud agents.
+or other specialist agents.
 
 ### Escalation and secondary use
 
@@ -175,8 +186,8 @@ order when escalation is justified:
 3. Use Grok Build as the preferred secondary implementation agent when
    available.
 4. If Grok Build is unavailable, use an available specialist agent such as
-   GitHub Copilot, Codex, Claude, Gemini, or another explicitly approved agent
-   for the narrowly scoped escalation need. If Grok Build is available, use a
+   GitHub Copilot, Codex, or another explicitly approved agent for the
+   narrowly scoped escalation need. If Grok Build is available, use a
    specialist only when that specialist uniquely provides a required
    capability that Grok Build cannot. Specialist use must be narrowly
    scoped and capability-driven.
@@ -189,9 +200,9 @@ Capability routing does not change the preferred order above:
 | Deterministic tests and CI | Evidence | Before any second AI agent | Asking an LLM to re-run ShellCheck or unittest |
 | Grok Build | Preferred secondary; SuperGrok interactive review | Defined gap after Cursor, or independent review | Routine Cursor work; as a merge gate; treating a GitHub API key as Grok Build |
 | Antigravity CLI (`agy`) | Backup independent review | Grok Build unavailable, including weekly limit | Default peer to Grok Build; using Gemini CLI as the product name; GitHub `GEMINI_API_KEY` |
-| Codex | Specialist implementation | Codex interface or PR path is the gap | Default second opinion |
 | GitHub Copilot | GitHub specialist | Coding agent, pull-request review, or Projects MCP | Parallel routine analysis |
-| Claude | Specialist | Maintainer names it, or a unique capability gap | Default peer to Grok Build |
+| Codex | Specialist implementation | Codex interface or PR path is the gap | Default second opinion |
+| Other explicitly approved agent | Specialist | Maintainer names it, and it uniquely covers a gap Grok Build cannot | Automatic vendor chaining; default peer to Grok Build |
 
 ### Prevent duplicate AI usage
 

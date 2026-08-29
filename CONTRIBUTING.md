@@ -9,9 +9,14 @@ authoritative for agent hierarchy, agent roles, escalation, cost policy,
 deterministic validation, architecture, testing, naming, and change
 discipline.
 
-- Cursor-specific environment notes: [`.cursor/rules/`](.cursor/rules/)
-- GitHub Copilot: [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)
-- Codex PR creation: [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
+- Cursor environment overlay: [`.cursor/rules/`](.cursor/rules/)
+- GitHub Copilot specialist overlay:
+  [`.github/instructions/copilot.instructions.md`](.github/instructions/copilot.instructions.md)
+- Codex specialist overlay:
+  [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
+- Independent review (not implementation overlays):
+  [`.github/grok/`](.github/grok/),
+  [`.github/antigravity/`](.github/antigravity/)
 
 Do not copy shared agent policy into those files.
 
