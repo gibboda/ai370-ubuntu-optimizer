@@ -2,26 +2,11 @@
   "schema_version": 1,
   "authority": "AGENTS.md",
   "purpose": "Coverage manifest for critical multi-agent architecture invariants. This file records validation evidence and does not define policy.",
-  "requirements": {
-    "minimum_evidence_types": ["positive", "mutation"],
-    "all_declared_role_invariants_must_be_covered": true
-  },
+  "requirements": {"minimum_evidence_types": ["positive", "mutation"], "all_declared_role_invariants_must_be_covered": true},
   "coverage": {
-    "no_automatic_vendor_chaining": {
-      "positive": ["tests/test_agent_architecture_conformance.py"],
-      "mutation": ["tests/test_agent_architecture_mutations.py"]
-    },
-    "least_agent_principle": {
-      "positive": ["tests/test_agent_role_contract.py", "tests/test_agent_work_allocation.py"],
-      "mutation": []
-    },
-    "duplicate_routine_ai_work_prohibited": {
-      "positive": ["tests/test_agent_architecture_conformance.py", "tests/test_agent_work_allocation.py"],
-      "mutation": []
-    },
-    "ai_reviews_advisory": {
-      "positive": ["tests/test_agent_architecture_conformance.py", "tests/test_pr_governance_contract.py"],
-      "mutation": ["tests/test_agent_architecture_mutations.py"]
-    }
+    "no_automatic_vendor_chaining": {"positive": ["tests/test_agent_architecture_conformance.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
+    "least_agent_principle": {"positive": ["tests/test_agent_role_contract.py", "tests/test_agent_work_allocation.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
+    "duplicate_routine_ai_work_prohibited": {"positive": ["tests/test_agent_architecture_conformance.py", "tests/test_agent_work_allocation.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
+    "ai_reviews_advisory": {"positive": ["tests/test_agent_architecture_conformance.py", "tests/test_pr_governance_contract.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]}
   }
 }
