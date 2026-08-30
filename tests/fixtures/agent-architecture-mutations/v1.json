@@ -9,6 +9,7 @@
     {"id":"vendor-chaining-enabled","target":"roles","path":"invariants.no_automatic_vendor_chaining","value":false,"expected_rule":"no_vendor_chaining"},
     {"id":"least-agent-disabled","target":"roles","path":"invariants.least_agent_principle","value":false,"expected_rule":"least_agent_principle"},
     {"id":"duplicate-routine-work-enabled","target":"roles","path":"invariants.duplicate_routine_ai_work_prohibited","value":false,"expected_rule":"duplicate_routine_ai_work"},
+    {"id":"advisory-review-invariant-disabled","target":"roles","path":"invariants.ai_reviews_advisory","value":false,"expected_rule":"ai_reviews_advisory"},
     {"id":"overlay-removed","target":"roles","operation":"remove_overlay","value":".cursor/rules/cursor.mdc","expected_rule":"overlay_completeness"},
     {"id":"compatibility-authority-replaced","target":"compatibility","path":"authority","value":"config/agent-roles.json","expected_rule":"canonical_authority"},
     {"id":"compatibility-contract-removed","target":"compatibility","operation":"remove_contract","value":"mcp","expected_rule":"contract_coverage"},
