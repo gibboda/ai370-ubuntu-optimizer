@@ -84,6 +84,7 @@ Scope narrows the area of change:
 | `config` | `configs/` |
 | `architecture` | Architecture docs / high-level design |
 | `agents` | Agent policy and orchestration (`AGENTS.md`, `.cursor/`, `.github/agents/`, `.agents/`, `.github/instructions/`) |
+| `governance` | GitHub PR governance, rulesets, required checks, and advisory AI review |
 | `workflows` | `workflows/` |
 | `vscode` | VS Code workspace settings |
 | `release` | Release tooling and CI |
@@ -105,6 +106,7 @@ feat(comfyui): Add SDXL LoRA workflow template
 fix(rocm): Correct iGPU device path detection
 chore(deps): Bump onnx in configs/ai-runtime
 chore(agents): Define Cursor hybrid orchestration boundary
+test(governance): Verify advisory AI review boundary
 chore: Bump stefanzweifel/git-auto-commit-action to v5.1
 docs: Clarify safe-mode defaults in README
 ci(release): Pin checkout action to v4
