@@ -8,7 +8,7 @@ Lightweight smoke tests for the ai370-ubuntu-optimizer tier commands and artifac
 bash tests/smoke_tier1.sh
 bash tests/smoke_stage2_platform.sh
 bash tests/smoke_tier2.sh
-python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities tests.test_agent_mcp_contract tests.test_pr_governance_contract tests.test_agent_cross_contract_consistency tests.test_agent_contract_compatibility
+python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities tests.test_agent_mcp_contract tests.test_pr_governance_contract tests.test_agent_cross_contract_consistency tests.test_agent_contract_compatibility tests.test_agent_distribution_contract
 python3 -m unittest tests.test_agent_architecture_conformance
 python3 -m unittest tests.test_agent_architecture_coverage
 python3 -m unittest discover -s tests -p 'test_agent_architecture_mutations*.py'
@@ -35,74 +35,17 @@ Or from repo root after making executable:
   from `stage2-platform-inventory`
 - Runs `40-platform-tuning` plan-only and asserts platform-tuning artifacts
 - Direct `90-validate.sh` full-scope contract (no AI smoke required by default)
-- Asserts `s2-m7-platform-validation.json` after the S2-M7 publisher shim
 - Strict mode (`AI370_STAGE1_STRICT=true`) elevates missing gfx1150/NPU to FAIL
 - Presence + structure of `reports/latest/tier1-*.json` gate artifacts
 - Apply path is `stage2-optimize-apply --approve --dry-run`
-- Fixture-style classification tests for the versioned system profile are in
-  `test_system_profile.py` and do not depend on host hardware
-- Canonical Stage 1 owner tests: `test_s1_m1_probe.py`,
-  `test_s1_m2_normalize.py`, `test_s1_m3_classify.py`,
-  `test_s1_m4_capabilities.py`, `test_s1_m5_publish.py`
-- Stage 2 visibility tests: `test_capability_ladder.py`,
-  `test_s2_visibility_schemas.py`, `test_s2_m3_gpu_visibility.py`,
-  `test_s2_m4_npu_visibility.py`
-- Stage 2 platform aggregate tests: `test_s2_m7_platform_validation.py`
-  (fixture milestone JSONs; no live PCI/NPU re-detection) and
-  `test_s2_m7_gate.py` (`require_tier123_pass` prefers S2-M7)
-- Stage 2 firmware policy tests: `test_s2_m1_firmware.py` (classified
-  `platform_id`, consumed fingerprint, facts vs policy, canonical publisher)
-- Stage 2 kernel/driver tests: `test_s2_m2_kernel_driver.py` (canonical
-  S2-M2 JSON plus compatibility `tier1-kernel-plan.json`)
-- Stage 2 optimize profile tests: `test_s2_optimize_profile.py` (plan-only
-  wrapper records classified `platform_id` and consumed fingerprint)
-- Stage 2 tuning boundary tests: `test_s2_m5_optimization_plan.py`
-  (plan-only, no mutation) and `test_s2_m6_optimization_apply.py`
-  (apply requires `--approve`)
-- GitHub label policy tests: `test_github_label_policy.py` (issue/PR open
-  and close label mutations from `.github/label-policy.json`)
-- Agent-role contract tests: `test_agent_role_contract.py` (machine-readable
-  multi-agent architecture in `config/agent-roles.json`)
-- Agent work-allocation tests: `test_agent_work_allocation.py` (duplicate-agent
-  allocation contract in `config/agent-work-allocation.schema.json`)
-- Agent credential-capability tests: `test_agent_credential_capabilities.py`
-  (machine-readable GitHub authorization boundaries in
-  `config/agent-credential-capabilities.json`)
-- Agent MCP drift tests: `test_agent_mcp_contract.py` (tracked Cursor/Grok
-  GitHub MCP configuration against `config/agent-mcp-contract.json`)
-- PR governance contract tests: `test_pr_governance_contract.py`
-  (repository-owned expected GitHub merge-governance contract in
-  `config/pr-governance.json`)
-- Agent cross-contract consistency tests:
-  `test_agent_cross_contract_consistency.py` (existing machine-readable
-  agent contracts must agree with one another and continue to defer to
-  `AGENTS.md`)
-- Agent contract compatibility tests:
-  `test_agent_contract_compatibility.py` (architecture-contract version
-  and repository-release class metadata in
-  `config/agent-contract-compatibility.json`; `AGENTS.md` remains
-  authoritative)
-- Agent architecture conformance tests:
-  `test_agent_architecture_conformance.py` (end-to-end contract graph,
-  overlay discovery, architecture documentation, portable CI registration,
-  deterministic/secret-free validation, and canonical authority checks)
-- Agent architecture coverage tests:
-  `test_agent_architecture_coverage.py` (coverage manifest in
-  `config/agent-architecture-coverage.json` records positive and mutation
-  evidence for every declared role invariant; `AGENTS.md` remains
-  authoritative)
-- Agent architecture mutation tests:
-  `test_agent_architecture_mutations.py` with versioned fixtures under
-  `tests/fixtures/agent-architecture-mutations/` deliberately corrupts
-  authority, primary ownership, validation precedence, advisory-review and
-  human-merge boundaries, vendor chaining, overlay completeness, contract
-  coverage, and schema-version declarations to prove validation fails closed.
-  CI discovers mutation suites by the `test_agent_architecture_mutations*.py`
-  pattern, so adding mutation cases or additional mutation-suite files does
-  not require duplicating their module names in `AGENTS.md` or migration docs.
+- Agent architecture contract tests include role, allocation, credential, MCP,
+  PR governance, cross-contract, compatibility, distribution, conformance,
+  coverage, and mutation validation.
+- `test_agent_distribution_contract.py` validates the portable-vs-local package
+  boundary, immutable source lock, PR-only synchronization, fail-and-review
+  drift handling, and the prohibition on overwriting repository-local policy.
 - Independent review is local Grok Build (advisory) / Antigravity CLI backup.
-  GitHub Actions does not call xAI or Gemini; there are no
-  `test_grok_pr_review.py` or `test_gemini_pr_review.py` suites.
+  GitHub Actions does not call xAI or Gemini.
 
 ### Stage 2 platform (`smoke_stage2_platform.sh`)
 
@@ -112,29 +55,16 @@ Or from repo root after making executable:
 - Seeds `tests/fixtures/system-profile/v3/valid-reference.json` and runs
   `stage2-firmware-validate` / `stage2-kernel-validate` / `stage2-optimize-plan`
   without host Stage 1 probing
-- Asserts BIOS policy from classified `platform_id` (not CLI `--profile`)
-  and the consumed Stage 1 fingerprint, plus `s2-m1-firmware-validation.json`
-- Asserts `s2-m2-kernel-driver-validation.json` from `stage2-kernel-validate`
-- Asserts optimize plan records classified identity + fingerprint, writes
-  `s2-m5-optimization-plan.json`, and stays plan-only
 - `stage2-optimize-apply --dry-run --approve` writes
   `s2-m6-optimization-application.json` without applying commands
-- Does not invoke live `stage1` or `stage2-platform-validate` (those probe
-  `/sys` / PCI / modules; keep them on `smoke_tier1.sh` / integration)
 
 ### Stage 2 runtime (`smoke_tier2.sh` — Package D)
 
 - Syntax for Stage 2 installers, validators, Lemonade/Digest/RAG scripts, and libs
 - Manifest parse + chat/coding/embedding categories
-- `155` model layout staging (no downloads) + `150` offline storage validate
-- `145` tier2 + `240` tier3 aggregators
-- `stage1-probe` + `stage1-profile` then `s2-m4-validate-npu-stack.sh` visibility-only publisher (no 230)
 - Structure checks for gate JSON (`tier2-validation`, `tier3-validation`, offline storage)
-- Orchestrator help mentions `stage1-inventory` and `--with-lemonade`
 
-These help prevent regressions in script generation, JSON writers, and the cross-tier gate.
-
-See `TASK_PROPOSALS.md` and the main implementation plan for additional test ideas (real execution benchmarks, persistent tuning, etc.).
+See `TASK_PROPOSALS.md` and the main implementation plan for additional test ideas.
 
 ## Conventions
 
