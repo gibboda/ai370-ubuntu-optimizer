@@ -16,6 +16,27 @@ MCP_DOC = ROOT / ".github/github-mcp.md"
 SECRET_VALUE = re.compile(r"github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9_]+|Bearer\s+(?!\$|<|PASTE_)[A-Za-z0-9_.-]{20,}")
 
 
+def _markdown_section(text: str, heading: str) -> str:
+    match = re.search(
+        rf"^## {re.escape(heading)}\n(.*?)(?=^## |\Z)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    if match is None:
+        raise AssertionError(f"missing markdown section: {heading}")
+    return match.group(1)
+
+
+def _first_json_block(section: str) -> dict:
+    match = re.search(r"```json\n(.*?)```", section, re.DOTALL)
+    if match is None:
+        raise AssertionError("missing json example in section")
+    parsed = json.loads(match.group(1))
+    if not isinstance(parsed, dict):
+        raise AssertionError("json example must be an object")
+    return parsed
+
+
 class AgentMcpContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -24,6 +45,12 @@ class AgentMcpContractTests(unittest.TestCase):
         cls.cursor = json.loads(CURSOR.read_text(encoding="utf-8"))["mcpServers"]["github"]
         cls.grok = tomllib.loads(GROK.read_text(encoding="utf-8"))["mcp_servers"]["github"]
         cls.doc = MCP_DOC.read_text(encoding="utf-8")
+        cls.antigravity_example = _first_json_block(
+            _markdown_section(cls.doc, "Antigravity")
+        )
+        cls.copilot_example = _first_json_block(
+            _markdown_section(cls.doc, "GitHub Copilot / VS Code")
+        )
 
     def test_contract_defers_to_policy_and_capability_contract(self) -> None:
         self.assertEqual(self.contract["authority"], "AGENTS.md")
@@ -69,6 +96,14 @@ class AgentMcpContractTests(unittest.TestCase):
             "Keep the token at `read:project` unless Project mutation is explicitly",
         ):
             self.assertIn(marker, self.doc)
+        headers = self.antigravity_example["mcpServers"]["github"]["headers"]
+        self.assertEqual(
+            self.antigravity_example["mcpServers"]["github"][expected["endpoint_field"]],
+            self.contract["endpoint"],
+        )
+        self.assertEqual(headers.get("X-MCP-Toolsets"), ",".join(self.contract["toolsets"]))
+        self.assertNotIn("all", headers.get("X-MCP-Toolsets", "").split(","))
+        self.assertNotIn("X-MCP-Readonly", headers)
 
     def test_documented_copilot_expectation_matches_native_auth_contract(self) -> None:
         expected = self.contract["clients"]["github_copilot"]
@@ -77,14 +112,35 @@ class AgentMcpContractTests(unittest.TestCase):
         self.assertIsNone(capability["github_auth"]["credential_variable"])
         self.assertIn("Prefer GitHub-native OAuth", self.doc)
         self.assertIn("OAuth configuration (no Authorization header):", self.doc)
-        self.assertIn('"X-MCP-Toolsets": "default,projects"', self.doc)
+        headers = self.copilot_example["servers"]["github"]["headers"]
+        self.assertEqual(
+            self.copilot_example["servers"]["github"][expected["endpoint_field"]],
+            self.contract["endpoint"],
+        )
+        self.assertEqual(headers.get("X-MCP-Toolsets"), ",".join(self.contract["toolsets"]))
+        self.assertNotIn("all", headers.get("X-MCP-Toolsets", "").split(","))
+        self.assertNotIn("Authorization", headers)
 
     def test_toolset_and_endpoint_drift_is_rejected(self) -> None:
+        expected = ",".join(self.contract["toolsets"])
         self.assertEqual(self.contract["toolsets"], ["default", "projects"])
         self.assertNotIn("all", self.contract["toolsets"])
         self.assertFalse(self.contract["endpoint"].endswith("/mcp/x/projects"))
-        self.assertNotEqual(self.cursor["headers"]["X-MCP-Toolsets"], "all")
-        self.assertNotEqual(self.grok["headers"]["X-MCP-Toolsets"], "all")
+        documented = {
+            "cursor": self.cursor["headers"]["X-MCP-Toolsets"],
+            "grok_build": self.grok["headers"]["X-MCP-Toolsets"],
+            "antigravity": self.antigravity_example["mcpServers"]["github"]["headers"].get(
+                "X-MCP-Toolsets"
+            ),
+            "github_copilot": self.copilot_example["servers"]["github"]["headers"].get(
+                "X-MCP-Toolsets"
+            ),
+        }
+        for client, toolsets in documented.items():
+            with self.subTest(client=client):
+                self.assertEqual(toolsets, expected)
+                self.assertNotEqual(toolsets, "all")
+                self.assertNotIn("all", (toolsets or "").split(","))
 
     def test_tracked_configs_are_secret_free_and_use_portable_names(self) -> None:
         for path in (CURSOR, GROK):
