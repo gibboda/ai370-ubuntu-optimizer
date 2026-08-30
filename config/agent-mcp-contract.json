@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "authority": "AGENTS.md",
+  "capability_contract": "config/agent-credential-capabilities.json",
+  "endpoint": "https://api.githubcopilot.com/mcp/",
+  "toolsets": ["default", "projects"],
+  "clients": {
+    "cursor": {
+      "configuration": "tracked",
+      "path": ".cursor/mcp.json",
+      "endpoint_field": "url",
+      "credential_syntax": "Bearer ${env:CURSOR_GH_PAT}",
+      "readonly_header": "absent"
+    },
+    "grok_build": {
+      "configuration": "tracked",
+      "path": ".grok/config.toml",
+      "endpoint_field": "url",
+      "credential_syntax": "Bearer ${GROK_GH_PAT}",
+      "readonly_header": "true"
+    },
+    "antigravity": {
+      "configuration": "documented_untracked",
+      "path": "~/.gemini/antigravity/mcp_config.json",
+      "endpoint_field": "serverUrl",
+      "credential_variable": "ANTIGRAVITY_GH_PAT",
+      "readonly_header": "absent_by_default"
+    },
+    "github_copilot": {
+      "configuration": "documented_untracked",
+      "path": ".vscode/mcp.json or user profile MCP configuration",
+      "endpoint_field": "url",
+      "auth_mode": "oauth_or_session",
+      "authorization_header": "absent"
+    }
+  },
+  "invariants": {
+    "tracked_configs_secret_free": true,
+    "no_live_write_probe": true,
+    "no_all_toolset": true,
+    "no_single_projects_endpoint": true,
+    "no_reserved_credential_prefix": true,
+    "no_api_key_suffix": true,
+    "no_shared_unrestricted_pat": true,
+    "capability_contract_is_upper_bound": true
+  }
+}

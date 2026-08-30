@@ -341,6 +341,7 @@ feature is not treated as implemented unless code exists.
 | `tests/test_agent_role_contract.py` | IMPLEMENTED | Machine-readable multi-agent architecture contract |
 | `tests/test_agent_work_allocation.py` | IMPLEMENTED | Duplicate-agent work-allocation contract |
 | `tests/test_agent_credential_capabilities.py` | IMPLEMENTED | Client credential capability contract |
+| `tests/test_agent_mcp_contract.py` | IMPLEMENTED | GitHub MCP configuration drift contract |
 | `scripts/legacy/*` | DEPRECATED | Frozen archive; no new behavior |
 
 ------------------------------------------------------------------------
@@ -595,7 +596,7 @@ opt-in. Required fixture classes for hardware-classification changes:
 
 Current automated coverage to retain until replaced by owner-specific tests:
 
-- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities`
+- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities tests.test_agent_mcp_contract`
 - `bash tests/smoke_tier1.sh`
 - `bash tests/smoke_stage2_platform.sh`
 - `bash tests/smoke_tier2.sh`
