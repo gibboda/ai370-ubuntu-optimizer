@@ -18,6 +18,18 @@ _README_S2_IN_PROGRESS_GROUP = re.compile(
 _README_S2_IMPLEMENTED = re.compile(
     r"(S2-M\d+)(?: is \*\*Implemented\*\*|\nImplemented| Implemented)"
 )
+_PORTABLE_UNITTEST_CMD = re.compile(
+    r"python3 -m unittest\s+((?:\\\n\s*)?(?:tests\.test_[a-z0-9_]+(?:\s+|\\\n\s*)*)+)",
+    re.MULTILINE,
+)
+
+
+def parse_portable_unittest_modules(text: str) -> list[str]:
+    """Return the module list from the first documented portable unittest command."""
+    match = _PORTABLE_UNITTEST_CMD.search(text)
+    if match is None:
+        return []
+    return re.findall(r"tests\.test_[a-z0-9_]+", match.group(1))
 
 
 def parse_roadmap_milestone_statuses(roadmap: str) -> dict[str, str]:
@@ -531,6 +543,25 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("tests.test_pr_governance_contract", portable_tests)
         self.assertIn("tests.test_pr_governance_contract", self.agent_instructions)
         self.assertIn("tests.test_pr_governance_contract", tests_readme)
+        self.assertIn("tests.test_agent_cross_contract_consistency", portable_tests)
+        self.assertIn(
+            "tests.test_agent_cross_contract_consistency", self.agent_instructions
+        )
+        self.assertIn("tests.test_agent_cross_contract_consistency", tests_readme)
+
+        workflow_modules = parse_portable_unittest_modules(portable_tests)
+        agents_modules = parse_portable_unittest_modules(self.agent_instructions)
+        readme_modules = parse_portable_unittest_modules(tests_readme)
+        migration_plan = (
+            ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md"
+        ).read_text(encoding="utf-8")
+        plan_modules = parse_portable_unittest_modules(migration_plan)
+        self.assertEqual(workflow_modules, agents_modules)
+        self.assertEqual(workflow_modules, readme_modules)
+        self.assertEqual(workflow_modules, plan_modules)
+        self.assertIn(
+            "tests.test_agent_cross_contract_consistency", workflow_modules
+        )
 
         self.assertIn(
             "GitHub Actions does not call xAI or Gemini",
