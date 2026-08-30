@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "authority": "AGENTS.md",
+  "purpose": "Architecture-level compatibility metadata for the machine-readable multi-agent contracts. This file validates compatible contract combinations and release impact; it does not replace or override AGENTS.md.",
+  "architecture_contract_version": 1,
+  "introduced_repository_version": "0.27.0",
+  "contracts": {
+    "roles": {
+      "path": "config/agent-roles.json",
+      "schema_version": 2
+    },
+    "escalation": {
+      "path": "config/agent-escalation-record.schema.json",
+      "schema_version": 1
+    },
+    "work_allocation": {
+      "path": "config/agent-work-allocation.schema.json",
+      "schema_version": 1
+    },
+    "credential_capabilities": {
+      "path": "config/agent-credential-capabilities.json",
+      "schema_version": 1
+    },
+    "mcp": {
+      "path": "config/agent-mcp-contract.json",
+      "schema_version": 1
+    },
+    "pr_governance": {
+      "path": "config/pr-governance.json",
+      "schema_version": 1
+    }
+  },
+  "change_classes": {
+    "documentation_only": {
+      "minimum_repository_release": "patch",
+      "architecture_contract_version_change": "none"
+    },
+    "backward_compatible": {
+      "minimum_repository_release": "minor",
+      "architecture_contract_version_change": "none"
+    },
+    "breaking": {
+      "minimum_repository_release": "major",
+      "architecture_contract_version_change": "increment"
+    }
+  },
+  "breaking_changes": [
+    "removing_or_renaming_required_contract_fields",
+    "changing_existing_field_semantics_or_authority",
+    "weakening_security_or_governance_invariants",
+    "changing_canonical_role_ownership_or_merge_authority",
+    "making_advisory_ai_review_a_required_merge_gate",
+    "removing_previously_supported_contract_resources_or_clients"
+  ],
+  "backward_compatible_changes": [
+    "adding_optional_contract_fields_with_safe_defaults",
+    "adding_new_specialist_resources_without_changing_existing_role_semantics",
+    "tightening_validation_without_invalidating_valid_existing_records",
+    "adding_new_cross_contract_invariants_consistent_with_AGENTS_md"
+  ],
+  "invariants": {
+    "agents_md_remains_authoritative": true,
+    "listed_contract_versions_are_exact": true,
+    "breaking_change_requires_architecture_version_increment": true,
+    "breaking_change_requires_repository_major_release": true,
+    "compatible_contract_change_requires_repository_minor_release": true,
+    "documentation_only_change_may_use_repository_patch_release": true
+  }
+}
