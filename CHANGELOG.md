@@ -52,6 +52,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   continue to defer to `AGENTS.md`.
   `tests.test_agent_cross_contract_consistency` is part of the portable
   suite.
+- Architecture-level agent-contract compatibility metadata in
+  `config/agent-contract-compatibility.json` and
+  `docs/AGENT-CONTRACT-COMPATIBILITY.md`. It records the compatible
+  contract schema set and the repository release class for contract
+  changes. `AGENTS.md` remains authoritative. Introduction is
+  backward-compatible and first ships in `0.28.0`.
+  `tests.test_agent_contract_compatibility` is part of the portable
+  suite.
 
 ## [0.26.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.25.0...v0.26.0) (2026-08-29)
 

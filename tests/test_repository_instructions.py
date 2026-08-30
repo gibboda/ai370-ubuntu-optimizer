@@ -548,6 +548,11 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "tests.test_agent_cross_contract_consistency", self.agent_instructions
         )
         self.assertIn("tests.test_agent_cross_contract_consistency", tests_readme)
+        self.assertIn("tests.test_agent_contract_compatibility", portable_tests)
+        self.assertIn(
+            "tests.test_agent_contract_compatibility", self.agent_instructions
+        )
+        self.assertIn("tests.test_agent_contract_compatibility", tests_readme)
 
         workflow_modules = parse_portable_unittest_modules(portable_tests)
         agents_modules = parse_portable_unittest_modules(self.agent_instructions)
@@ -561,6 +566,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertEqual(workflow_modules, plan_modules)
         self.assertIn(
             "tests.test_agent_cross_contract_consistency", workflow_modules
+        )
+        self.assertIn(
+            "tests.test_agent_contract_compatibility", workflow_modules
         )
 
         self.assertIn(

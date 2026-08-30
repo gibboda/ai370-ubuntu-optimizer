@@ -91,6 +91,7 @@ every development operation.
 | `.grok/config.toml` | Grok GitHub MCP (read-only; env-var auth) |
 | `.github/github-mcp.md` | Shared MCP least-privilege setup |
 | `.github/workflows/` | Deterministic CI only (no LLM calls) |
+| `config/agent-contract-compatibility.json` | Architecture-contract compatibility and release-class metadata (validation only; does not override `AGENTS.md`) |
 
 ## Secrets model
 
