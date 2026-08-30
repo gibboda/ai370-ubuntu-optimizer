@@ -607,6 +607,11 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "tests.test_agent_contract_compatibility", self.agent_instructions
         )
         self.assertIn("tests.test_agent_contract_compatibility", tests_readme)
+        self.assertIn("tests.test_agent_distribution_contract", portable_tests)
+        self.assertIn(
+            "tests.test_agent_distribution_contract", self.agent_instructions
+        )
+        self.assertIn("tests.test_agent_distribution_contract", tests_readme)
         self.assertIn("tests.test_agent_architecture_conformance", portable_tests)
         self.assertIn(
             "tests.test_agent_architecture_conformance", self.agent_instructions
@@ -628,6 +633,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn(
             "tests.test_agent_contract_compatibility", workflow_modules
+        )
+        self.assertIn(
+            "tests.test_agent_distribution_contract", workflow_modules
         )
         self.assertIn(
             "tests.test_agent_architecture_conformance", workflow_modules
