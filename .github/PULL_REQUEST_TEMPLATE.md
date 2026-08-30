@@ -36,3 +36,7 @@
   label matches the intended release
 - [ ] Changes are tested locally where applicable
 - [ ] `CHANGELOG.md` `[Unreleased]` section updated if needed
+- [ ] CODEOWNER @gibboda requested as reviewer
+- [ ] CODEOWNER assigned Grok and/or Antigravity for a second look (or recorded why neither was needed)
+- [ ] Copilot and/or Codex completed a final advisory specialist pass (or recorded unavailability)
+- [ ] No AI approval is being used as merge authority

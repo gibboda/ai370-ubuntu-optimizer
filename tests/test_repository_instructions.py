@@ -367,6 +367,38 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertNotIn(
             "### Prevent duplicate AI usage", self.codex_instructions
         )
+        self.assertEqual(self.agent_instructions.count("## Agent hierarchy"), 1)
+        self.assertIn("### CODEOWNER review assignment", self.agent_instructions)
+        self.assertIn(
+            "`@gibboda` is the only GitHub CODEOWNER identity",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "must not APPROVE in a way that satisfies branch protection",
+            self.agent_instructions,
+        )
+        self.assertIn("process-required, result-advisory", self.agent_instructions)
+        self.assertIn(
+            "AI unavailability must not block merge",
+            self.agent_instructions,
+        )
+        self.assertIn("No AI agent is merge authority", self.agent_instructions)
+        self.assertIn(
+            "CODEOWNER @gibboda requested as reviewer",
+            self.pull_request_template,
+        )
+        self.assertIn(
+            "CODEOWNER assigned Grok and/or Antigravity for a second look",
+            self.pull_request_template,
+        )
+        self.assertIn(
+            "Copilot and/or Codex completed a final advisory specialist pass",
+            self.pull_request_template,
+        )
+        self.assertIn(
+            "No AI approval is being used as merge authority",
+            self.pull_request_template,
+        )
         self.assertIn("See the Agent hierarchy", self.cursor_rules)
         self.assertIn("See the Agent hierarchy", self.copilot_instructions)
         self.assertIn("See the Agent hierarchy", self.codex_instructions)
@@ -501,6 +533,8 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("GitHub Actions", architecture)
         self.assertIn("Independent", architecture)
         self.assertIn("`AGENTS.md`", architecture)
+        self.assertIn("CODEOWNER @gibboda", architecture)
+        self.assertIn("control plane", architecture.casefold())
         self.assertIn("CURSOR_GH_PAT", architecture)
         self.assertNotRegex(
             architecture,

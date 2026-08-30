@@ -12,48 +12,54 @@ Developer
     v
 Cursor
 Primary Development Orchestrator
-    |
-    +-------------------+
-    |                   |
-    v                   v
-Antigravity          Specialist tools
-Specialist
-    |
-    v
-Implementation
+implements, tests, opens/updates PR,
+requests CODEOWNER @gibboda
     |
     v
 GitHub Pull Request
     |
-    +------------------------+
-    |                        |
-    v                        v
-GitHub Actions             Grok
-Deterministic             Independent
-Validation                 Review
-    |                        |
-    +-----------+------------+
-                |
-                v
-        Branch Protection /
-        Human Merge Decision
+    +-------------------+-------------------+
+    |                   |                   |
+    v                   v                   v
+GitHub Actions     CODEOWNER           Copilot and/or
+Deterministic      @gibboda may        Codex
+Validation         assign Grok         Final advisory
+(required checks)  and/or              specialist pass
+                   Antigravity         COMMENT only
+                   for a second look
+    |                   |                   |
+    +-------------------+-------------------+
+                        |
+                        v
+            Branch Protection /
+            CODEOWNER @gibboda
+            Human Merge Decision
 ```
+
+GitHub remains the control plane. Cursor remains the primary development
+orchestrator. CODEOWNER `@gibboda` is the required human reviewer and the
+only GitHub CODEOWNERS identity. GitHub CODEOWNERS cannot name AI
+products; Grok, Antigravity, Copilot, and Codex assignment is policy.
 
 GitHub Copilot is the GitHub-native fallback / specialist. It is available
 when work starts on GitHub, Cursor is unavailable, or an explicit
 independent GitHub-side implementation is desired. It is not inserted into
-every development operation.
+every development operation. Copilot and/or Codex also make a
+process-required, result-advisory final specialist pass (COMMENT or
+suggestions only). That pass must not APPROVE in a way that satisfies
+branch protection.
 
 ## Roles
 
 | Role | Owner | Mandatory for ordinary work? |
 | --- | --- | --- |
 | Primary development orchestrator | Cursor | Yes for default local development |
-| Secondary / specialist | Google Antigravity | No; escalate only when justified |
-| Independent AI reviewer | Grok / Grok Build (`grok`) | No; advisory. Backup: Antigravity CLI (`agy`) |
+| Required GitHub reviewer | CODEOWNER `@gibboda` | Yes on every pull request |
+| Secondary / specialist | Google Antigravity | No; escalate only when justified. CODEOWNER may assign a second look |
+| Independent AI reviewer | Grok / Grok Build (`grok`) | No; advisory. Backup: Antigravity CLI (`agy`). CODEOWNER may assign a second look |
 | Deterministic validation | GitHub Actions + local scripts | Yes for merge eligibility facts it can verify |
-| GitHub-native fallback | GitHub Copilot | No; use when GitHub-native path is the gap |
-| Narrow specialist | Codex or other maintainer-approved agent | No; capability-driven only |
+| GitHub-native fallback | GitHub Copilot | No for implementation; process-required COMMENT-only final specialist pass with Codex |
+| Narrow specialist | Codex or other maintainer-approved agent | No for implementation; may share the advisory final specialist pass |
 
 ## Principles
 
@@ -67,6 +73,12 @@ every development operation.
   governance explicitly changes that.
 - Cursor is an external development orchestrator. It is not a GitHub-hosted
   Copilot custom agent.
+- CODEOWNER `@gibboda` may assign Grok Build and/or Antigravity for a
+  second look. Copilot and/or Codex must make a final advisory specialist
+  pass. Neither assignment is a GitHub CODEOWNERS identity, required
+  status check, or merge authority.
+- AI unavailability must not block merge when required deterministic
+  checks pass and the CODEOWNER has reviewed.
 
 ## Precedence
 
@@ -96,7 +108,8 @@ every development operation.
 | `config/agent-work-allocation.schema.json` | Duplicate-agent work-allocation evidence schema |
 | `config/agent-credential-capabilities.json` | Per-client credential and authorization capability boundaries |
 | `config/agent-mcp-contract.json` | GitHub MCP configuration and drift contract |
-| `config/pr-governance.json` | Expected PR merge-governance and advisory-review boundary |
+| `config/pr-governance.json` | Expected PR merge-governance, CODEOWNER review pipeline, and advisory-review boundary |
+| `.github/CODEOWNERS` | Human path owners; `@gibboda` only. AI assignment is policy, not a CODEOWNERS identity |
 | `config/agent-contract-compatibility.json` | Architecture-contract compatibility and release-class metadata (validation only; does not override `AGENTS.md`) |
 
 The machine-readable files are validation contracts derived from `AGENTS.md`.

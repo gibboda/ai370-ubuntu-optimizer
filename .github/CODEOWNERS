@@ -1,3 +1,17 @@
+# Human CODEOWNER is @gibboda on every path below.
+# GitHub CODEOWNERS cannot name AI products. Do not add Grok, Antigravity,
+# Copilot, or Codex as CODEOWNERS identities.
+#
+# The CODEOWNER may assign Grok Build and/or Antigravity (including agy)
+# as independent reviewer and/or secondary specialist for a second look
+# at Cursor's change. That assignment is policy, not a GitHub required
+# reviewer. Findings stay advisory and are not a merge gate.
+#
+# Copilot and/or Codex must make a final specialist pass before the
+# CODEOWNER treats the PR as ready. That pass is advisory: COMMENT or
+# suggestions only, not an approval that satisfies branch protection.
+# AI is never merge authority.
+
 # Default owner for all repository files.
 * @gibboda
 

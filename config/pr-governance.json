@@ -33,6 +33,28 @@
       "llm"
     ]
   },
+  "review_pipeline": {
+    "required_github_reviewer": "gibboda",
+    "required_github_reviewer_is_codeowner": true,
+    "second_look": {
+      "assignable_by": "codeowner",
+      "providers": ["grok_build", "antigravity", "antigravity_cli"],
+      "allowed_roles": ["independent_reviewer", "secondary_specialist"],
+      "selection": "any_or_both",
+      "github_codeowners_identity": false,
+      "merge_gate": false,
+      "required_status_check": false
+    },
+    "final_advisory_specialist_pass": {
+      "process_required": true,
+      "providers": ["github_copilot", "codex"],
+      "selection": "any_or_both",
+      "github_review_state": "comment_only",
+      "satisfies_branch_protection": false,
+      "merge_gate": false,
+      "required_status_check": false
+    }
+  },
   "invariants": {
     "human_final_authority": true,
     "deterministic_checks_authoritative_for_machine_verifiable_facts": true,
