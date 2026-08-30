@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/AGENT-MCP-DRIFT-VALIDATION.md`. Tracked Cursor and Grok MCP
   configuration is parsed against the credential capability contract.
   `tests.test_agent_mcp_contract` is part of the portable suite.
+- Repository-owned PR governance contract in `config/pr-governance.json`.
+  It records the expected `Protect main` ruleset, pins `ShellCheck` as
+  the required deterministic check, and keeps AI review advisory.
+  `tests.test_pr_governance_contract` is part of the portable suite.
 
 ## [0.26.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.25.0...v0.26.0) (2026-08-29)
 
