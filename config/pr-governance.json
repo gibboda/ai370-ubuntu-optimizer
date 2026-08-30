@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "authority": "AGENTS.md",
+  "target_branch": "main",
+  "ruleset": {
+    "name": "Protect main",
+    "enforcement": "active",
+    "require_pull_request": true,
+    "minimum_approving_reviews": 1,
+    "require_review_thread_resolution": true,
+    "required_status_checks": [
+      "ShellCheck"
+    ]
+  },
+  "advisory_ai_review": {
+    "merge_gate": false,
+    "required_status_check": false,
+    "providers": [
+      "grok_build",
+      "antigravity",
+      "antigravity_cli",
+      "github_copilot",
+      "codex",
+      "maintainer_approved"
+    ],
+    "forbidden_required_check_terms": [
+      "grok",
+      "antigravity",
+      "gemini",
+      "copilot",
+      "codex",
+      "ai review",
+      "llm"
+    ]
+  },
+  "invariants": {
+    "human_final_authority": true,
+    "deterministic_checks_authoritative_for_machine_verifiable_facts": true,
+    "optional_ai_unavailability_must_not_block_merge": true,
+    "mcp_access_does_not_bypass_governance": true
+  }
+}
