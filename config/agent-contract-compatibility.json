@@ -3,7 +3,10 @@
   "authority": "AGENTS.md",
   "purpose": "Architecture-level compatibility metadata for the machine-readable multi-agent contracts. This file validates compatible contract combinations and release impact; it does not replace or override AGENTS.md.",
   "architecture_contract_version": 1,
-  "introduced_repository_version": "0.27.0",
+  "previous_architecture_contract_version": 0,
+  "previous_repository_version": "0.27.0",
+  "introduced_repository_version": "0.28.0",
+  "current_change_class": "backward_compatible",
   "contracts": {
     "roles": {
       "path": "config/agent-roles.json",
