@@ -30,7 +30,7 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertTrue(ruleset["require_pull_request"])
         self.assertGreaterEqual(ruleset["minimum_approving_reviews"], 1)
         self.assertTrue(ruleset["require_review_thread_resolution"])
-        self.assertTrue(ruleset["required_status_checks"])
+        self.assertEqual(ruleset["required_status_checks"], ["ShellCheck"])
 
     def test_required_checks_do_not_include_advisory_ai(self) -> None:
         advisory = self.contract["advisory_ai_review"]
@@ -66,10 +66,12 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertIn("MCP access cannot bypass protected branches", agents)
 
     def test_mcp_document_preserves_governance_boundary(self) -> None:
-        text = MCP_POLICY.read_text(encoding="utf-8")
-        self.assertIn("AGENTS.md", text)
-        self.assertIn("ruleset", text.casefold())
-        self.assertIn("required", text.casefold())
+        text = " ".join(MCP_POLICY.read_text(encoding="utf-8").split())
+        self.assertIn(
+            "GitHub rulesets and branch protection remain the final merge authority",
+            text,
+        )
+        self.assertIn("MCP credentials must not bypass those controls", text)
 
 
 if __name__ == "__main__":
