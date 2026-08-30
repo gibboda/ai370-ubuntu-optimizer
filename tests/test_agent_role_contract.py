@@ -361,6 +361,7 @@ class AgentRoleContractTests(unittest.TestCase):
         for overlay in self.overlay_contract["overlays"]:
             text = (ROOT / overlay["path"]).read_text(encoding="utf-8")
             with self.subTest(path=overlay["path"]):
+                self.assertNotIn("## Agent hierarchy", text)
                 for phrase in forbidden:
                     self.assertNotIn(phrase, text)
 

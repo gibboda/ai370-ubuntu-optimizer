@@ -10,7 +10,7 @@
     "schema_version": {"const": 1},
     "work_kind": {
       "type": "string",
-      "enum": ["implementation", "independent_review", "parallel_analysis"]
+      "enum": ["implementation", "independent_review", "specialist_review", "parallel_analysis"]
     },
     "primary_resource": {"const": "cursor"},
     "additional_resource": {
@@ -35,6 +35,10 @@
       "type": "string",
       "minLength": 1
     },
+    "specialist_review_reason": {
+      "type": "string",
+      "minLength": 1
+    },
     "parallel_reason": {
       "type": "string",
       "minLength": 1
@@ -48,6 +52,10 @@
     {
       "if": {"properties": {"work_kind": {"const": "independent_review"}}, "required": ["work_kind"]},
       "then": {"required": ["escalation_record", "independent_review_reason"]}
+    },
+    {
+      "if": {"properties": {"work_kind": {"const": "specialist_review"}}, "required": ["work_kind"]},
+      "then": {"required": ["escalation_record", "specialist_review_reason"]}
     },
     {
       "if": {"properties": {"work_kind": {"const": "parallel_analysis"}}, "required": ["work_kind"]},

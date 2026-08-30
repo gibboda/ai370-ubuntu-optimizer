@@ -158,6 +158,36 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertTrue(self.credentials["invariants"]["github_governance_not_bypassable"])
         self.assertTrue(self.governance["invariants"]["mcp_access_does_not_bypass_governance"])
 
+    def test_review_pipeline_providers_remain_advisory_and_not_merge_gates(self):
+        pipeline = self.governance["review_pipeline"]
+        advisory = self.governance["advisory_ai_review"]
+        advisory_providers = set(advisory["providers"])
+        second_look = pipeline["second_look"]
+        final_pass = pipeline["final_advisory_specialist_pass"]
+        required_checks = self.governance["ruleset"]["required_status_checks"]
+
+        self.assertEqual(pipeline["required_github_reviewer"], "gibboda")
+        self.assertTrue(pipeline["required_github_reviewer_is_codeowner"])
+        self.assertTrue(self.governance["ruleset"]["require_code_owner_reviews"])
+        self.assertTrue(set(second_look["providers"]).issubset(advisory_providers))
+        self.assertNotIn("antigravity_cli", second_look["providers"])
+        fallback = second_look["independent_reviewer_fallback"]
+        self.assertEqual(fallback["provider"], "antigravity_cli")
+        self.assertEqual(fallback["when"], "grok_build_unavailable")
+        self.assertEqual(fallback["replaces"], "grok_build")
+        self.assertFalse(fallback["peer_of_grok_build"])
+        self.assertIn(fallback["provider"], advisory_providers)
+        self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
+        self.assertFalse(second_look["merge_gate"])
+        self.assertFalse(second_look["required_status_check"])
+        self.assertFalse(final_pass["satisfies_branch_protection"])
+        self.assertFalse(final_pass["merge_gate"])
+        self.assertFalse(final_pass["required_status_check"])
+        self.assertFalse(advisory["merge_gate"])
+        self.assertFalse(advisory["required_status_check"])
+        for provider in set(second_look["providers"]) | {fallback["provider"]} | set(final_pass["providers"]):
+            self.assertNotIn(provider, required_checks)
+
     def test_deterministic_validation_precedence_is_consistent(self):
         validation = self.roles["roles"]["deterministic_validation"]
         merge_validation = self.roles["roles"]["merge_validation"]

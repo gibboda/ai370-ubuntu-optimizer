@@ -135,6 +135,41 @@ because it is the control plane, not a step in an agent ladder:
 
 Do not treat this map as Cursor → Grok Build → Claude → Gemini → Codex.
 
+### CODEOWNER review assignment
+
+`@gibboda` is the only GitHub CODEOWNER identity and the required human
+reviewer on every pull request. GitHub CODEOWNERS can name only GitHub
+users or teams. Do not add Grok, Antigravity, Copilot, Codex, or fake bot
+identities to `CODEOWNERS`. Encode AI assignment in policy, docs,
+contracts, and the pull-request template only.
+
+The pull-request review pipeline is:
+
+1. Cursor implements, tests, opens or updates the pull request, and
+   requests `@gibboda` as reviewer. Cursor may leave suggestions. Cursor
+   must not APPROVE in a way that satisfies branch protection and must
+   not merge.
+2. CODEOWNER `@gibboda` may assign Grok Build and/or Antigravity
+   (`agy` if Grok is unavailable) as independent reviewer and/or
+   secondary specialist for a second look at Cursor's change. That
+   assignment is policy, not a GitHub CODEOWNERS user or required
+   reviewer. Findings stay advisory and are not a merge gate.
+3. Copilot and/or Codex must perform a final specialist pass
+   (process-required, result-advisory). COMMENT or suggestions only.
+   They must not APPROVE in a way that satisfies branch protection.
+4. Deterministic checks remain authoritative for machine-verifiable
+   facts. The current required check stays ShellCheck unless repository
+   governance already lists others.
+5. `@gibboda` reviews and merges. AI unavailability must not block merge
+   when required deterministic checks pass and the CODEOWNER has
+   reviewed.
+
+AI must never merge, never satisfy branch protection, and never become a
+required status check. No AI agent is merge authority. The expected
+`Protect main` ruleset requires review from Code Owners
+(`require_code_owner_reviews`). That merge rule is separate from GitHub's
+refusal to request a pull-request author as reviewer.
+
 ## Cost and least-agent principle
 
 Use the least expensive capable agent for the task. Do not invoke multiple
@@ -152,17 +187,22 @@ resources, not parallel reviewers for every change.
 
 - Cursor is the primary development orchestrator. It explores the repository,
   implements, refactors, debugs, creates tests, updates implementation-related
-  documentation, prepares commits and pull requests, and coordinates
-  specialists only when justified.
+  documentation, prepares commits and pull requests, requests CODEOWNER
+  `@gibboda` as reviewer, and coordinates specialists only when justified.
+  Cursor may leave suggestions. Cursor must not APPROVE in a way that
+  satisfies branch protection and must not merge.
 - Antigravity is the secondary / specialist agent for architecture analysis,
   difficult debugging, security analysis, specialized repository research,
   complex test analysis, and independent technical investigation. It must not
   duplicate work Cursor has already completed unless independent verification
-  is specifically useful.
+  is specifically useful. The CODEOWNER may assign Antigravity for a second
+  look at Cursor's change; that assignment is policy, not a GitHub
+  CODEOWNERS identity.
 - Grok Build (`grok`) is primarily an independent reviewer for pull-request
   review, architectural criticism, regression detection, overlooked edge
   cases, questionable assumptions, and substantial-change review. Do not make
-  Grok part of the mandatory implementation path.
+  Grok part of the mandatory implementation path. The CODEOWNER may assign
+  Grok Build for a second look; findings remain advisory.
 - When Grok Build is unavailable for independent review, use Antigravity CLI
   (`agy`) as backup review. That backup-review role does not make `agy` a
   default peer to Grok Build when Grok is available, and it does not replace
@@ -170,10 +210,15 @@ resources, not parallel reviewers for every change.
 - GitHub Copilot is the GitHub-native fallback / specialist when work starts
   on GitHub, a GitHub-native coding agent is specifically useful, Cursor is
   unavailable, or explicit independent implementation is desired. Copilot
-  must not automatically duplicate Cursor's normal development work.
+  must not automatically duplicate Cursor's normal development work. Copilot
+  and/or Codex must make a process-required, result-advisory final specialist
+  pass (COMMENT or suggestions only) before the CODEOWNER treats a PR as
+  ready. That pass is not duplicate routine implementation and must not
+  APPROVE in a way that satisfies branch protection.
 - Codex and other agents may be used only when the maintainer explicitly
   approves them and they uniquely cover a gap. Specialist use must be narrowly
-  scoped and capability-driven.
+  scoped and capability-driven. Codex may participate in the final advisory
+  specialist pass; it is not merge authority.
 - GitHub remains the source of truth and control plane for repositories,
   Issues and Projects, branches and pull requests, GitHub Actions, rulesets
   and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
@@ -194,9 +239,12 @@ Keep routine work with Cursor whenever practical. Cursor handles:
 - documentation
 - commit preparation
 - pull-request preparation
+- requesting CODEOWNER `@gibboda` as reviewer
 
 Do not auto-escalate those tasks to Antigravity, Grok Build, GitHub Copilot,
-Codex, or other specialist agents.
+Codex, or other specialist agents. A CODEOWNER-assigned second look and the
+Copilot/Codex final specialist pass are review assignments, not automatic
+vendor chaining or duplicate routine implementation.
 
 ### Escalation and secondary use
 
@@ -273,6 +321,13 @@ artifacts, or deterministic checks have already answered.
   independently perform every task. MCP availability is capability, not an
   instruction to consume Cursor, Grok Build, Antigravity, and Copilot
   together.
+- A CODEOWNER-assigned Grok Build second look is `independent_review`.
+  A CODEOWNER-assigned Antigravity second look is `specialist_review`.
+  `agy` used as Grok-unavailable fallback remains `independent_review`.
+  A Copilot/Codex final specialist pass is process-required and
+  result-advisory; it is not `implementation` and not a merge gate.
+  When an allocation record is created for that pass, it uses
+  `specialist_review`.
 
 ### Secrets model
 
@@ -336,8 +391,10 @@ AI reviews are advisory. They are not required merge gates. GitHub Actions
 and repository checks remain the deterministic merge validation surface.
 GitHub pull-request governance is the final merge authority. Exhaustion of an
 optional AI agent's quota must not block development when required
-deterministic validation passes. Do not spend paid-agent capacity on review
-when the required checks already answer the question.
+deterministic validation passes. AI unavailability must not block merge when
+required deterministic checks pass and the CODEOWNER has reviewed. Do not
+spend paid-agent capacity on review when the required checks already answer
+the question.
 
 Independent pull-request review is local Grok Build (`grok`), authenticated
 by a SuperGrok account. If Grok Build is unavailable, use Antigravity CLI
