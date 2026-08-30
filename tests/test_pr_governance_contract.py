@@ -32,6 +32,7 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertEqual(ruleset["enforcement"], "active")
         self.assertTrue(ruleset["require_pull_request"])
         self.assertGreaterEqual(ruleset["minimum_approving_reviews"], 1)
+        self.assertTrue(ruleset["require_code_owner_reviews"])
         self.assertTrue(ruleset["require_review_thread_resolution"])
         self.assertEqual(ruleset["required_status_checks"], ["ShellCheck"])
 
@@ -85,6 +86,7 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
 
         self.assertEqual(pipeline["required_github_reviewer"], "gibboda")
         self.assertTrue(pipeline["required_github_reviewer_is_codeowner"])
+        self.assertTrue(self.contract["ruleset"]["require_code_owner_reviews"])
 
         second_look = pipeline["second_look"]
         final_pass = pipeline["final_advisory_specialist_pass"]

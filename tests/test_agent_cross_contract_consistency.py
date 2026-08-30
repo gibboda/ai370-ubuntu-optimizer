@@ -168,6 +168,7 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
 
         self.assertEqual(pipeline["required_github_reviewer"], "gibboda")
         self.assertTrue(pipeline["required_github_reviewer_is_codeowner"])
+        self.assertTrue(self.governance["ruleset"]["require_code_owner_reviews"])
         self.assertTrue(set(second_look["providers"]).issubset(advisory_providers))
         self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
         self.assertFalse(second_look["merge_gate"])

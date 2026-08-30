@@ -7,6 +7,7 @@
     "enforcement": "active",
     "require_pull_request": true,
     "minimum_approving_reviews": 1,
+    "require_code_owner_reviews": true,
     "require_review_thread_resolution": true,
     "required_status_checks": [
       "ShellCheck"

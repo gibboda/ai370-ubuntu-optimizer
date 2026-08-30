@@ -165,7 +165,10 @@ The pull-request review pipeline is:
    reviewed.
 
 AI must never merge, never satisfy branch protection, and never become a
-required status check. No AI agent is merge authority.
+required status check. No AI agent is merge authority. The expected
+`Protect main` ruleset requires review from Code Owners
+(`require_code_owner_reviews`). That merge rule is separate from GitHub's
+refusal to request a pull-request author as reviewer.
 
 ## Cost and least-agent principle
 
