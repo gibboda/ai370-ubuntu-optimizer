@@ -46,6 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It records the expected `Protect main` ruleset, pins `ShellCheck` as
   the required deterministic check, and keeps AI review advisory.
   `tests.test_pr_governance_contract` is part of the portable suite.
+- Deterministic cross-contract consistency checks in
+  `tests/test_agent_cross_contract_consistency.py`. Existing
+  machine-readable agent contracts must agree with one another and
+  continue to defer to `AGENTS.md`.
+  `tests.test_agent_cross_contract_consistency` is part of the portable
+  suite.
 
 ## [0.26.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.25.0...v0.26.0) (2026-08-29)
 
