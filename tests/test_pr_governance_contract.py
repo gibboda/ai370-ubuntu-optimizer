@@ -90,6 +90,9 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
 
         second_look = pipeline["second_look"]
         final_pass = pipeline["final_advisory_specialist_pass"]
+        fallback = second_look["independent_reviewer_fallback"]
+        self.assertEqual(set(second_look["providers"]), {"grok_build", "antigravity"})
+        self.assertNotIn("antigravity_cli", second_look["providers"])
         self.assertTrue(set(second_look["providers"]).issubset(advisory_providers))
         self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
         self.assertEqual(second_look["assignable_by"], "codeowner")
@@ -98,6 +101,12 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
             set(second_look["allowed_roles"]),
             {"independent_reviewer", "secondary_specialist"},
         )
+        self.assertEqual(fallback["provider"], "antigravity_cli")
+        self.assertEqual(fallback["when"], "grok_build_unavailable")
+        self.assertEqual(fallback["replaces"], "grok_build")
+        self.assertEqual(fallback["does_not_replace"], "antigravity")
+        self.assertFalse(fallback["peer_of_grok_build"])
+        self.assertIn(fallback["provider"], advisory_providers)
         self.assertFalse(second_look["github_codeowners_identity"])
         self.assertFalse(second_look["merge_gate"])
         self.assertFalse(second_look["required_status_check"])
@@ -110,7 +119,11 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertFalse(advisory["merge_gate"])
         self.assertFalse(advisory["required_status_check"])
 
-        pipeline_providers = set(second_look["providers"]) | set(final_pass["providers"])
+        pipeline_providers = (
+            set(second_look["providers"])
+            | {fallback["provider"]}
+            | set(final_pass["providers"])
+        )
         for provider in pipeline_providers:
             with self.subTest(provider=provider):
                 self.assertNotIn(provider, required_checks)

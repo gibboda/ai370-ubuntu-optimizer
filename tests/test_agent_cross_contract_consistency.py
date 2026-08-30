@@ -170,6 +170,13 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertTrue(pipeline["required_github_reviewer_is_codeowner"])
         self.assertTrue(self.governance["ruleset"]["require_code_owner_reviews"])
         self.assertTrue(set(second_look["providers"]).issubset(advisory_providers))
+        self.assertNotIn("antigravity_cli", second_look["providers"])
+        fallback = second_look["independent_reviewer_fallback"]
+        self.assertEqual(fallback["provider"], "antigravity_cli")
+        self.assertEqual(fallback["when"], "grok_build_unavailable")
+        self.assertEqual(fallback["replaces"], "grok_build")
+        self.assertFalse(fallback["peer_of_grok_build"])
+        self.assertIn(fallback["provider"], advisory_providers)
         self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
         self.assertFalse(second_look["merge_gate"])
         self.assertFalse(second_look["required_status_check"])
@@ -178,7 +185,7 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertFalse(final_pass["required_status_check"])
         self.assertFalse(advisory["merge_gate"])
         self.assertFalse(advisory["required_status_check"])
-        for provider in set(second_look["providers"]) | set(final_pass["providers"]):
+        for provider in set(second_look["providers"]) | {fallback["provider"]} | set(final_pass["providers"]):
             self.assertNotIn(provider, required_checks)
 
     def test_deterministic_validation_precedence_is_consistent(self):

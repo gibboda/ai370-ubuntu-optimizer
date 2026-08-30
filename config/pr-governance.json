@@ -39,9 +39,16 @@
     "required_github_reviewer_is_codeowner": true,
     "second_look": {
       "assignable_by": "codeowner",
-      "providers": ["grok_build", "antigravity", "antigravity_cli"],
+      "providers": ["grok_build", "antigravity"],
       "allowed_roles": ["independent_reviewer", "secondary_specialist"],
       "selection": "any_or_both",
+      "independent_reviewer_fallback": {
+        "provider": "antigravity_cli",
+        "when": "grok_build_unavailable",
+        "replaces": "grok_build",
+        "does_not_replace": "antigravity",
+        "peer_of_grok_build": false
+      },
       "github_codeowners_identity": false,
       "merge_gate": false,
       "required_status_check": false
