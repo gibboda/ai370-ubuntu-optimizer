@@ -25,11 +25,15 @@ _PORTABLE_UNITTEST_CMD = re.compile(
 
 
 def parse_portable_unittest_modules(text: str) -> list[str]:
-    """Return the module list from the first documented portable unittest command."""
-    match = _PORTABLE_UNITTEST_CMD.search(text)
-    if match is None:
-        return []
-    return re.findall(r"tests\.test_[a-z0-9_]+", match.group(1))
+    """Return portable unittest modules from every documented invocation."""
+    modules = []
+    seen = set()
+    for match in _PORTABLE_UNITTEST_CMD.finditer(text):
+        for module in re.findall(r"tests\.test_[a-z0-9_]+", match.group(1)):
+            if module not in seen:
+                seen.add(module)
+                modules.append(module)
+    return modules
 
 
 def parse_roadmap_milestone_statuses(roadmap: str) -> dict[str, str]:
@@ -51,6 +55,22 @@ def parse_roadmap_milestone_statuses(roadmap: str) -> dict[str, str]:
 def _milestone_sort_key(milestone_id: str) -> tuple[int, int]:
     stage, mile = milestone_id.split("-M")
     return int(stage[1:]), int(mile)
+
+
+class PortableUnittestModuleParseTests(unittest.TestCase):
+    def test_collects_modules_from_every_unittest_invocation(self) -> None:
+        text = (
+            "python3 -m unittest \\\n"
+            "  tests.test_agent_contract_compatibility\n"
+            "python3 -m unittest tests.test_agent_architecture_conformance\n"
+        )
+        self.assertEqual(
+            parse_portable_unittest_modules(text),
+            [
+                "tests.test_agent_contract_compatibility",
+                "tests.test_agent_architecture_conformance",
+            ],
+        )
 
 
 class RepositoryInstructionsTests(unittest.TestCase):
@@ -553,6 +573,11 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "tests.test_agent_contract_compatibility", self.agent_instructions
         )
         self.assertIn("tests.test_agent_contract_compatibility", tests_readme)
+        self.assertIn("tests.test_agent_architecture_conformance", portable_tests)
+        self.assertIn(
+            "tests.test_agent_architecture_conformance", self.agent_instructions
+        )
+        self.assertIn("tests.test_agent_architecture_conformance", tests_readme)
 
         workflow_modules = parse_portable_unittest_modules(portable_tests)
         agents_modules = parse_portable_unittest_modules(self.agent_instructions)
@@ -569,6 +594,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn(
             "tests.test_agent_contract_compatibility", workflow_modules
+        )
+        self.assertIn(
+            "tests.test_agent_architecture_conformance", workflow_modules
         )
 
         self.assertIn(
