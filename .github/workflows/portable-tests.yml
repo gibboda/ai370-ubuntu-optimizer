@@ -50,7 +50,8 @@ jobs:
             tests.test_agent_role_contract \
             tests.test_agent_work_allocation \
             tests.test_agent_credential_capabilities \
-            tests.test_agent_mcp_contract
+            tests.test_agent_mcp_contract \
+            tests.test_pr_governance_contract
 
       - name: Run portable smoke tests
         shell: bash
