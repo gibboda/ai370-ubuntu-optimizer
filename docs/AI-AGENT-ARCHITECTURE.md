@@ -91,7 +91,19 @@ every development operation.
 | `.grok/config.toml` | Grok GitHub MCP (read-only; env-var auth) |
 | `.github/github-mcp.md` | Shared MCP least-privilege setup |
 | `.github/workflows/` | Deterministic CI only (no LLM calls) |
+| `config/agent-roles.json` | Canonical machine-readable role, overlay-discovery, and architecture invariants derived from `AGENTS.md` |
+| `config/agent-escalation-record.schema.json` | Structured escalation evidence schema |
+| `config/agent-work-allocation.schema.json` | Duplicate-agent work-allocation evidence schema |
+| `config/agent-credential-capabilities.json` | Per-client credential and authorization capability boundaries |
+| `config/agent-mcp-contract.json` | GitHub MCP configuration and drift contract |
+| `config/pr-governance.json` | Expected PR merge-governance and advisory-review boundary |
 | `config/agent-contract-compatibility.json` | Architecture-contract compatibility and release-class metadata (validation only; does not override `AGENTS.md`) |
+
+The machine-readable files are validation contracts derived from `AGENTS.md`.
+They form one contract graph and must remain mutually consistent, but none of
+them becomes an independent policy authority. Portable tests validate each
+contract, their cross-contract invariants, and end-to-end architecture
+conformance.
 
 ## Secrets model
 
