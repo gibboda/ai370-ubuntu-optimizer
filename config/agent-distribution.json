@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "authority": "AGENTS.md",
+  "purpose": "Distribution metadata for the portable multi-agent architecture. This contract controls packaging and synchronization; it does not define policy or silently overwrite repository-local configuration.",
+  "package": {
+    "name": "multi-agent-architecture",
+    "version": 1,
+    "source_repository": "gibboda/ai370-ubuntu-optimizer",
+    "source_ref_policy": "immutable_commit_or_release_tag"
+  },
+  "portable": [
+    "config/agent-roles.json",
+    "config/agent-escalation-record.schema.json",
+    "config/agent-work-allocation.schema.json",
+    "config/agent-credential-capabilities.json",
+    "config/agent-mcp-contract.json"
+  ],
+  "repository_local": [
+    "AGENTS.md",
+    "config/pr-governance.json",
+    "config/agent-contract-compatibility.json",
+    "config/agent-architecture-coverage.json",
+    ".github/CODEOWNERS",
+    ".github/workflows/portable-tests.yml"
+  ],
+  "sync": {
+    "mode": "pull_request_only",
+    "automatic_merge": false,
+    "overwrite_repository_local": false,
+    "require_clean_base_for_managed_files": true,
+    "require_source_version_pin": true,
+    "drift_policy": "fail_and_review",
+    "consumer_manifest": "config/agent-distribution-lock.json"
+  },
+  "invariants": {
+    "agents_md_remains_consumer_authority": true,
+    "portable_contracts_may_not_override_local_governance": true,
+    "synchronization_requires_human_review": true,
+    "source_must_be_immutably_pinned": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "package": "multi-agent-architecture",
+  "package_version": 1,
+  "source_repository": "gibboda/ai370-ubuntu-optimizer",
+  "source_ref": "b03095ef95d81f7809e420ef99e6f037702ee418",
+  "role": "source",
+  "managed_files": [
+    "config/agent-roles.json",
+    "config/agent-escalation-record.schema.json",
+    "config/agent-work-allocation.schema.json",
+    "config/agent-credential-capabilities.json",
+    "config/agent-mcp-contract.json"
+  ]
+}
