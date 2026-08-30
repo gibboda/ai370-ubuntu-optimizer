@@ -528,6 +528,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("tests.test_agent_mcp_contract", portable_tests)
         self.assertIn("tests.test_agent_mcp_contract", self.agent_instructions)
         self.assertIn("tests.test_agent_mcp_contract", tests_readme)
+        self.assertIn("tests.test_pr_governance_contract", portable_tests)
+        self.assertIn("tests.test_pr_governance_contract", self.agent_instructions)
+        self.assertIn("tests.test_pr_governance_contract", tests_readme)
 
         self.assertIn(
             "GitHub Actions does not call xAI or Gemini",
@@ -1200,6 +1203,7 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         "config",
         "architecture",
         "agents",
+        "governance",
         "workflows",
         "vscode",
         "release",
@@ -1263,6 +1267,34 @@ class ConventionalCommitScopeTests(unittest.TestCase):
                 "bash",
                 str(ROOT / "scripts/validate-commit-subject.sh"),
                 "chore(agents): Define Cursor hybrid orchestration boundary",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_pr_title_accepts_governance_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "test(governance): Verify advisory AI review boundary",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_commit_subject_accepts_governance_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "test(governance): Verify advisory review boundary",
             ],
             check=False,
             capture_output=True,
