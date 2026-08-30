@@ -57,7 +57,10 @@ jobs:
 
       - name: Run multi-agent architecture conformance
         shell: bash
-        run: python3 -m unittest tests.test_agent_architecture_conformance
+        run: |
+          python3 -m unittest \
+            tests.test_agent_architecture_conformance \
+            tests.test_agent_architecture_mutations
 
       - name: Run portable smoke tests
         shell: bash
