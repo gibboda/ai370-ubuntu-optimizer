@@ -53,8 +53,11 @@ jobs:
             tests.test_agent_mcp_contract \
             tests.test_pr_governance_contract \
             tests.test_agent_cross_contract_consistency \
-            tests.test_agent_contract_compatibility \
-            tests.test_agent_architecture_conformance
+            tests.test_agent_contract_compatibility
+
+      - name: Run multi-agent architecture conformance
+        shell: bash
+        run: python3 -m unittest tests.test_agent_architecture_conformance
 
       - name: Run portable smoke tests
         shell: bash
