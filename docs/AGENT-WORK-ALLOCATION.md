@@ -12,9 +12,9 @@ Routine duplicate implementation is prohibited. A second implementation resource
 
 Independent review is not duplicate implementation. It remains intentionally separate because its purpose is to challenge an existing change rather than independently reproduce the implementation. It still requires the escalation record required by repository policy plus a concrete `independent_review_reason`, and it remains advisory.
 
-A CODEOWNER-assigned second look at Cursor's change is `independent_review` and/or specialist work. The CODEOWNER may assign Grok Build as independent reviewer, Antigravity as secondary specialist, or both. That assignment is policy, not a GitHub CODEOWNERS identity, and findings stay advisory.
+A CODEOWNER-assigned second look at Cursor's change records Grok Build as `independent_review` and Antigravity as `specialist_review`. The CODEOWNER may assign either or both. `agy` used only when Grok Build is unavailable remains `independent_review` (independent-reviewer fallback) and is not `specialist_review`. That assignment is policy, not a GitHub CODEOWNERS identity, and findings stay advisory.
 
-A Copilot and/or Codex final advisory specialist pass is process-required and result-advisory. It is COMMENT or suggestions only. It is not duplicate routine implementation, not an approval that satisfies branch protection, and not a merge gate.
+A Copilot and/or Codex final advisory specialist pass is process-required and result-advisory. It is COMMENT or suggestions only. It is not `implementation`, not duplicate routine implementation, not an approval that satisfies branch protection, and not a merge gate. When an allocation record is created for that pass, it uses `specialist_review`.
 
 Parallel multi-agent analysis is exceptional. It requires both a valid escalation record and a concrete `parallel_reason`. The existence of multiple GitHub MCP connections is not sufficient justification. The CODEOWNER review pipeline is sequential assignment, not parallel multi-agent analysis.
 
@@ -40,9 +40,13 @@ Use when another AI is asked to modify, implement, refactor, debug, or otherwise
 
 ### `independent_review`
 
-Use when an additional AI examines an existing implementation to find correctness, architecture, security, testing, or policy issues. `escalation_record` and `independent_review_reason` are mandatory. Review findings are advisory and do not become a required merge gate. A CODEOWNER-assigned Grok Build second look uses this work kind.
+Use when an additional AI examines an existing implementation to find correctness, architecture, security, testing, or policy issues. `escalation_record` and `independent_review_reason` are mandatory. Review findings are advisory and do not become a required merge gate. A CODEOWNER-assigned Grok Build second look uses this work kind with `additional_resource` `grok_build`. `agy` used as Grok-unavailable fallback uses this work kind with `additional_resource` `antigravity_cli`.
 
-A CODEOWNER-assigned Antigravity second look may use specialist investigation rather than this work kind. Copilot/Codex final advisory specialist passes are not recorded as `implementation` and are not duplicate routine implementation.
+### `specialist_review`
+
+Use when an additional AI performs specialist inspection of an existing implementation rather than independent review or a second implementation. `escalation_record` and `specialist_review_reason` are mandatory. Findings are advisory and do not become a required merge gate. This kind is not `implementation` and not `parallel_analysis`.
+
+A CODEOWNER-assigned Antigravity second look uses this work kind with `additional_resource` `antigravity`. Copilot/Codex final advisory specialist passes are not recorded as `implementation`; when an allocation record is created for that pass, it uses this work kind with `additional_resource` `github_copilot` or `codex`.
 
 ### `parallel_analysis`
 

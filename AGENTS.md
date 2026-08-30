@@ -321,10 +321,13 @@ artifacts, or deterministic checks have already answered.
   independently perform every task. MCP availability is capability, not an
   instruction to consume Cursor, Grok Build, Antigravity, and Copilot
   together.
-- A CODEOWNER-assigned second look is `independent_review` and/or specialist
-  work, not duplicate routine implementation. A Copilot/Codex final
-  specialist pass is process-required and result-advisory; it is not
-  duplicate routine implementation and not a merge gate.
+- A CODEOWNER-assigned Grok Build second look is `independent_review`.
+  A CODEOWNER-assigned Antigravity second look is `specialist_review`.
+  `agy` used as Grok-unavailable fallback remains `independent_review`.
+  A Copilot/Codex final specialist pass is process-required and
+  result-advisory; it is not `implementation` and not a merge gate.
+  When an allocation record is created for that pass, it uses
+  `specialist_review`.
 
 ### Secrets model
 

@@ -43,8 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the pull-request template. The expected `Protect main` ruleset requires
   CODEOWNER reviews (`require_code_owner_reviews`). Second-look `agy` is a
   Grok-unavailable independent-reviewer fallback, not a peer of Grok Build.
-  AI remains advisory and cannot be a merge gate or required status check.
-  `@gibboda` remains the only GitHub CODEOWNER.
+  Allocation records use `independent_review` for Grok/`agy` and
+  `specialist_review` for an Antigravity second look (and for a recorded
+  Copilot/Codex COMMENT pass). AI remains advisory and cannot be a merge
+  gate or required status check. `@gibboda` remains the only GitHub
+  CODEOWNER.
 - Deterministic GitHub MCP configuration drift validation in
   `config/agent-mcp-contract.json` and
   `docs/AGENT-MCP-DRIFT-VALIDATION.md`. Tracked Cursor and Grok MCP

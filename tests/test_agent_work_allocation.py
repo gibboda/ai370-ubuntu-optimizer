@@ -124,6 +124,22 @@ class AgentWorkAllocationTests(unittest.TestCase):
         self.assertTrue(self.roles["invariants"]["ai_reviews_advisory"])
         self.assertFalse(self.roles["roles"]["independent_reviewer"]["merge_gate"])
 
+    def test_specialist_review_is_distinct_and_justified(self) -> None:
+        kinds = set(self.allocation["properties"]["work_kind"]["enum"])
+        self.assertIn("specialist_review", kinds)
+        self.assertNotEqual(
+            self._requirements_for("specialist_review"),
+            self._requirements_for("independent_review"),
+        )
+        requirements = self._requirements_for("specialist_review")
+        self.assertIn("escalation_record", requirements)
+        self.assertIn("specialist_review_reason", requirements)
+        self.assertNotIn("independent_review_reason", requirements)
+        self.assertNotIn("parallel_reason", requirements)
+        self.assertTrue(self.roles["invariants"]["ai_reviews_advisory"])
+        self.assertFalse(self.roles["roles"]["independent_reviewer"]["merge_gate"])
+        self.assertFalse(self.roles["roles"]["secondary_specialist"]["automatic"])
+
     def test_parallel_analysis_requires_explicit_reason(self) -> None:
         requirements = self._requirements_for("parallel_analysis")
         self.assertIn("escalation_record", requirements)
@@ -144,6 +160,21 @@ class AgentWorkAllocationTests(unittest.TestCase):
     def test_valid_allocation_fixture_passes(self) -> None:
         record = json.loads((FIXTURES / "v1-implementation.json").read_text(encoding="utf-8"))
         self.assertEqual(self._allocation_errors(record), [])
+
+    def test_valid_specialist_review_fixture_passes(self) -> None:
+        record = json.loads((FIXTURES / "v1-specialist-review.json").read_text(encoding="utf-8"))
+        self.assertEqual(record["work_kind"], "specialist_review")
+        self.assertEqual(record["additional_resource"], "antigravity")
+        self.assertIn("specialist_review_reason", record)
+        self.assertEqual(self._allocation_errors(record), [])
+
+    def test_specialist_review_without_reason_is_rejected(self) -> None:
+        record = json.loads((FIXTURES / "v1-specialist-review.json").read_text(encoding="utf-8"))
+        del record["specialist_review_reason"]
+        self.assertIn(
+            "missing required property 'specialist_review_reason'",
+            self._allocation_errors(record),
+        )
 
     def test_empty_escalation_record_is_rejected(self) -> None:
         record = json.loads((FIXTURES / "v1-implementation.json").read_text(encoding="utf-8"))
@@ -173,9 +204,16 @@ class AgentWorkAllocationTests(unittest.TestCase):
         self.assertIn("Routine duplicate implementation is prohibited", text)
         self.assertIn("Independent review is not duplicate implementation", text)
         self.assertIn("CODEOWNER-assigned second look", text)
-        self.assertIn("`independent_review` and/or specialist work", text)
+        self.assertIn("records Grok Build as `independent_review`", text)
+        self.assertIn("Antigravity as `specialist_review`", text)
+        self.assertIn("remains `independent_review` (independent-reviewer fallback)", text)
+        self.assertIn("is not `specialist_review`", text)
+        self.assertIn("### `specialist_review`", text)
+        self.assertIn("`specialist_review_reason`", text)
+        self.assertIn("A CODEOWNER-assigned Antigravity second look uses this work kind", text)
         self.assertIn("final advisory specialist pass", text)
         self.assertIn("not duplicate routine implementation", text)
+        self.assertIn("not recorded as `implementation`", text)
         self.assertIn("Parallel multi-agent analysis is exceptional", text)
         self.assertIn("does not confer authorization", text)
         self.assertIn("does not invoke agents", text)
@@ -192,6 +230,10 @@ class AgentWorkAllocationTests(unittest.TestCase):
             "Parallel multi-agent analysis requires an explicit reason",
             "Connecting multiple agents to GitHub MCP does not mean every agent should",
             "MCP availability is capability, not an",
+            "A CODEOWNER-assigned Grok Build second look is `independent_review`",
+            "A CODEOWNER-assigned Antigravity second look is `specialist_review`",
+            "`agy` used as Grok-unavailable fallback remains `independent_review`",
+            "When an allocation record is created for that pass, it uses",
         ):
             self.assertIn(phrase, text)
 
