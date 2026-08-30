@@ -525,6 +525,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("tests.test_agent_credential_capabilities", portable_tests)
         self.assertIn("tests.test_agent_credential_capabilities", self.agent_instructions)
         self.assertIn("tests.test_agent_credential_capabilities", tests_readme)
+        self.assertIn("tests.test_agent_mcp_contract", portable_tests)
+        self.assertIn("tests.test_agent_mcp_contract", self.agent_instructions)
+        self.assertIn("tests.test_agent_mcp_contract", tests_readme)
 
         self.assertIn(
             "GitHub Actions does not call xAI or Gemini",

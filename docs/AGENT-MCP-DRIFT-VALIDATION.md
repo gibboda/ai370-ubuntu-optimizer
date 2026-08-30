@@ -32,7 +32,7 @@ Tracked MCP files must contain no credential values. Client credential variables
 
 ## Validation boundary
 
-The deterministic test suite parses tracked JSON/TOML configuration and compares it to both machine-readable contracts. It checks the documented expectations for untracked clients because repository CI cannot safely inspect a maintainer's home-directory credential configuration.
+The deterministic test suite `tests.test_agent_mcp_contract` parses tracked JSON/TOML configuration and compares it to both machine-readable contracts. It is part of the portable suite listed in `AGENTS.md` and `tests/README.md`. It checks the documented expectations for untracked clients because repository CI cannot safely inspect a maintainer's home-directory credential configuration.
 
 The test suite must not make a live MCP write call. Connectivity testing starts with harmless reads, and a Project must never be modified merely to prove access. A failing validation must not be fixed by broadening a PAT, enabling `all`, weakening rulesets, or weakening branch protection.
 
