@@ -13,34 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * **agents:** Define controlled cross-repository distribution ([#272](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/272)) ([c69e12a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/c69e12a407315b786da4f85bde695d6c6c2b7059))
 
-## [0.27.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.26.0...v0.27.0) (2026-08-30)
+### Documentation
 
-
-### Features
-
-* **agents:** Define credential capability contract ([#262](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/262)) ([4db075f](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/4db075f4262852e479ecd1f65630d92e8172922e))
+* **governance:** Add CODEOWNER AI second-look and advisory final pass ([#271](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/271)) ([b03095e](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/b03095ef95d81f7809e420ef99e6f037702ee418))
 
 ### Tests
 
-* **agents:** Enforce duplicate-agent allocation ([#261](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/261)) ([7f1082a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/7f1082a7b8fd98ba95a58c87f261521ab491ecaf))
-
-### Added
-
-- Public agent work-allocation schema in
-  `config/agent-work-allocation.schema.json` and
-  `docs/AGENT-WORK-ALLOCATION.md`. Records document duplicate-agent
-  allocation under `AGENTS.md` and do not confer authorization. Nested
-  escalation records must be complete, and `additional_resource` must
-  match `selected_resource`. `tests.test_agent_work_allocation` is part
-  of the portable suite.
-- Machine-readable credential capability contract in
-  `config/agent-credential-capabilities.json` and
-  `docs/AGENT-CREDENTIAL-CAPABILITIES.md`. It names client authorization
-  boundaries and portable secret names; it does not grant permissions
-  or store credential values. `tests.test_agent_credential_capabilities`
-  is part of the portable suite.
-
-## [Unreleased]
+* **agents:** Validate MCP configuration drift ([#264](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/264)) ([d295b79](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/d295b79c86a06a270287f623b7808e1afe370a01))
+* **governance:** Verify advisory AI review boundary ([#265](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/265)) ([bf0cd5f](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/bf0cd5f6a7786f033f425a6dc1b51c32998c9b6b))
+* **agents:** Enforce cross-contract consistency ([#266](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/266)) ([3d4d5fd](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/3d4d5fdc2e062c8f8f06a9a277c60492097a2ace))
+* **agents:** Enforce contract release compatibility ([#267](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/267)) ([b3707a3](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/b3707a36b951a7ce825b11efaf919aab295b509e))
+* **agents:** Add architecture conformance gate ([#268](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/268)) ([f44c166](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/f44c1661ad9ef7715ea9bcf27dc5f983c5d9b8c9))
+* **agents:** Add architecture mutation coverage ([#269](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/269)) ([c5f24ae](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/c5f24ae4fd9326e721aa38a13b7a3bd7f8a7b210))
+* **agents:** Audit architecture contract coverage ([#270](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/270)) ([8168842](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/81688420fdc17b8c11b1ccb8206b2f34d14f0043))
 
 ### Added
 
@@ -87,6 +72,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   local. Synchronization is PR-only, fail-and-review on local drift, and
   never auto-merged. `tests.test_agent_distribution_contract` is part of
   the portable suite.
+
+## [Unreleased]
+
+## [0.27.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.26.0...v0.27.0) (2026-08-30)
+
+
+### Features
+
+* **agents:** Define credential capability contract ([#262](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/262)) ([4db075f](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/4db075f4262852e479ecd1f65630d92e8172922e))
+
+### Tests
+
+* **agents:** Enforce duplicate-agent allocation ([#261](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/261)) ([7f1082a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/7f1082a7b8fd98ba95a58c87f261521ab491ecaf))
+
+### Added
+
+- Public agent work-allocation schema in
+  `config/agent-work-allocation.schema.json` and
+  `docs/AGENT-WORK-ALLOCATION.md`. Records document duplicate-agent
+  allocation under `AGENTS.md` and do not confer authorization. Nested
+  escalation records must be complete, and `additional_resource` must
+  match `selected_resource`. `tests.test_agent_work_allocation` is part
+  of the portable suite.
+- Machine-readable credential capability contract in
+  `config/agent-credential-capabilities.json` and
+  `docs/AGENT-CREDENTIAL-CAPABILITIES.md`. It names client authorization
+  boundaries and portable secret names; it does not grant permissions
+  or store credential values. `tests.test_agent_credential_capabilities`
+  is part of the portable suite.
 
 ## [0.26.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.25.0...v0.26.0) (2026-08-29)
 
