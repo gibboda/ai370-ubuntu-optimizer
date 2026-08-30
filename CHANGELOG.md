@@ -6,6 +6,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.26.0...v0.27.0) (2026-08-30)
+
+
+### Features
+
+* **agents:** Define credential capability contract ([#262](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/262)) ([4db075f](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/4db075f4262852e479ecd1f65630d92e8172922e))
+
+### Tests
+
+* **agents:** Enforce duplicate-agent allocation ([#261](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/261)) ([7f1082a](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/7f1082a7b8fd98ba95a58c87f261521ab491ecaf))
+
+### Added
+
+- Public agent work-allocation schema in
+  `config/agent-work-allocation.schema.json` and
+  `docs/AGENT-WORK-ALLOCATION.md`. Records document duplicate-agent
+  allocation under `AGENTS.md` and do not confer authorization. Nested
+  escalation records must be complete, and `additional_resource` must
+  match `selected_resource`. `tests.test_agent_work_allocation` is part
+  of the portable suite.
+- Machine-readable credential capability contract in
+  `config/agent-credential-capabilities.json` and
+  `docs/AGENT-CREDENTIAL-CAPABILITIES.md`. It names client authorization
+  boundaries and portable secret names; it does not grant permissions
+  or store credential values. `tests.test_agent_credential_capabilities`
+  is part of the portable suite.
+
+## [Unreleased]
+
 ## [0.26.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.25.0...v0.26.0) (2026-08-29)
 
 
@@ -137,8 +166,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   high-level status matches ROADMAP (S2-M7 Implemented; S2-M1–S2-M6 In
   progress). Instruction tests compare README Stage 2 labels with ROADMAP
   milestone rows.
-
-## [Unreleased]
 
 ## [0.25.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.24.0...v0.25.0) (2026-08-23)
 
