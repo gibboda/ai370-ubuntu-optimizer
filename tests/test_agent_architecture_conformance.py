@@ -32,6 +32,16 @@ def schema_version(contract):
     return contract.get("properties", {}).get("schema_version", {}).get("const")
 
 
+def collapsed_yaml_comments(text):
+    """Join YAML comment wraps so phrase checks survive line breaks."""
+    comments = []
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            comments.append(stripped[1:].strip())
+    return " ".join(comments)
+
+
 class AgentArchitectureConformanceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -118,10 +128,21 @@ class AgentArchitectureConformanceTests(unittest.TestCase):
         self.assertIn("test_agent_architecture_conformance.py", self.tests_readme)
 
     def test_portable_ci_remains_deterministic_and_secret_free(self):
-        self.assertIn("Deterministic validation only", self.workflow)
-        self.assertIn("does not need repository secrets", self.workflow)
+        comments = collapsed_yaml_comments(self.workflow)
+        self.assertIn("Deterministic validation only", comments)
+        self.assertIn("does not need repository secrets", comments)
         self.assertNotRegex(self.workflow, r"(?i)\b(?:xai|gemini|openai|anthropic)_api_key\b")
         self.assertNotRegex(self.workflow, r"(?i)\b(?:grok|antigravity|cursor)_gh_pat\b")
+
+    def test_collapsed_yaml_comments_join_wrapped_secret_free_phrase(self):
+        wrapped = (
+            "# Deterministic validation only. This workflow never calls an LLM and does\n"
+            "# not need repository secrets.\n"
+        )
+        self.assertIn(
+            "does not need repository secrets",
+            collapsed_yaml_comments(wrapped),
+        )
 
 
 if __name__ == "__main__":
