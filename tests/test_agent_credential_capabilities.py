@@ -3,6 +3,7 @@
 
 import json
 import re
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -122,17 +123,23 @@ class AgentCredentialCapabilityTests(unittest.TestCase):
         self.assertIn("Consumers must fail closed", policy)
 
     def test_tracked_mcp_configs_use_declared_client_variables(self) -> None:
-        cursor = CURSOR_MCP.read_text(encoding="utf-8")
-        grok = GROK_MCP.read_text(encoding="utf-8")
-        self.assertIn(self.clients["cursor"]["github_auth"]["credential_variable"], cursor)
-        self.assertIn(self.clients["grok_build"]["github_auth"]["credential_variable"], grok)
-        self.assertNotIn("GROK_GH_PAT", cursor)
-        self.assertNotIn("CURSOR_GH_PAT", grok)
-        self.assertNotIn("GITHUB_", cursor)
-        self.assertNotIn("GITHUB_", grok)
-        self.assertNotIn("_API_KEY", cursor)
-        self.assertNotIn("_API_KEY", grok)
-        self.assertIn('"X-MCP-Readonly" = "true"', grok)
+        cursor_var = self.clients["cursor"]["github_auth"]["credential_variable"]
+        grok_var = self.clients["grok_build"]["github_auth"]["credential_variable"]
+        cursor_auth = json.loads(CURSOR_MCP.read_text(encoding="utf-8"))[
+            "mcpServers"
+        ]["github"]["headers"]["Authorization"]
+        grok_headers = tomllib.loads(GROK_MCP.read_text(encoding="utf-8"))[
+            "mcp_servers"
+        ]["github"]["headers"]
+        grok_auth = grok_headers["Authorization"]
+        self.assertIn(f"${{env:{cursor_var}}}", cursor_auth)
+        self.assertEqual(grok_auth, f"Bearer ${{{grok_var}}}")
+        self.assertNotIn(grok_var, cursor_auth)
+        self.assertNotIn(cursor_var, grok_auth)
+        for auth in (cursor_auth, grok_auth):
+            self.assertNotIn("GITHUB_", auth)
+            self.assertNotIn("_API_KEY", auth)
+        self.assertEqual(grok_headers["X-MCP-Readonly"], "true")
 
 
 if __name__ == "__main__":

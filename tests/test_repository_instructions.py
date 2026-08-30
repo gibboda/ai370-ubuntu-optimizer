@@ -469,7 +469,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("GitHub Actions", architecture)
         self.assertIn("Independent", architecture)
         self.assertIn("`AGENTS.md`", architecture)
-        self.assertIn("GITHUB_CURSOR_PAT", architecture)
+        self.assertIn("CURSOR_GH_PAT", architecture)
         self.assertNotRegex(
             architecture,
             r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+",
@@ -522,14 +522,17 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("tests.test_agent_work_allocation", portable_tests)
         self.assertIn("tests.test_agent_work_allocation", self.agent_instructions)
         self.assertIn("tests.test_agent_work_allocation", tests_readme)
+        self.assertIn("tests.test_agent_credential_capabilities", portable_tests)
+        self.assertIn("tests.test_agent_credential_capabilities", self.agent_instructions)
+        self.assertIn("tests.test_agent_credential_capabilities", tests_readme)
 
         self.assertIn(
             "GitHub Actions does not call xAI or Gemini",
             self.contributing,
         )
-        self.assertIn(
-            "This repository's GitHub Actions do not call xAI or Gemini",
+        self.assertRegex(
             self.cursor_rules,
+            r"This repository's\s+GitHub Actions do not call xAI or Gemini",
         )
 
     def test_cursor_cloud_notes_live_in_cursor_rules(self) -> None:
@@ -549,8 +552,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("Hybrid orchestration boundary", self.cursor_rules)
         self.assertIn("If the task produces repository changes", self.cursor_rules)
         self.assertIn("automated orchestration boundary", self.cursor_rules)
-        self.assertIn("XAI_API_KEY", self.cursor_rules)
-        self.assertIn("GEMINI_API_KEY", self.cursor_rules)
+        self.assertIn("vendor/model credentials", self.cursor_rules)
+        self.assertNotIn("XAI_API_KEY", self.cursor_rules)
+        self.assertNotIn("GEMINI_API_KEY", self.cursor_rules)
         self.assertIn(
             "Follow the shared escalation, cost, and default-implementation policy",
             self.cursor_rules,
@@ -583,10 +587,10 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "default,projects",
         )
         self.assertNotIn("all", server["headers"]["X-MCP-Toolsets"].split(","))
-        self.assertIn("${env:GITHUB_CURSOR_PAT}", server["headers"]["Authorization"])
+        self.assertIn("${env:CURSOR_GH_PAT}", server["headers"]["Authorization"])
         self.assertIn("https://api.githubcopilot.com/mcp/", self.cursor_rules)
         self.assertIn("X-MCP-Toolsets: default,projects", self.cursor_rules)
-        self.assertIn("GITHUB_CURSOR_PAT", self.cursor_rules)
+        self.assertIn("CURSOR_GH_PAT", self.cursor_rules)
         self.assertIn(
             "repository access as needed, plus\n`project` scope",
             self.cursor_rules,
@@ -608,7 +612,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|YOUR_GITHUB_PAT",
         )
         self.assertIn("https://api.githubcopilot.com/mcp/", raw)
-        self.assertIn('${GITHUB_GROK_PAT}', raw)
+        self.assertIn("${GROK_GH_PAT}", raw)
         self.assertIn('"X-MCP-Toolsets" = "default,projects"', raw)
         self.assertIn('"X-MCP-Readonly" = "true"', raw)
         self.assertNotIn("XAI_API_KEY", raw.split("[mcp_servers.github]")[1])
@@ -624,9 +628,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("default,projects", doc)
         self.assertIn("Do not enable", doc)
         self.assertIn("`all`", doc)
-        self.assertIn("GITHUB_CURSOR_PAT", doc)
-        self.assertIn("GITHUB_GROK_PAT", doc)
-        self.assertIn("GITHUB_ANTIGRAVITY_PAT", doc)
+        self.assertIn("CURSOR_GH_PAT", doc)
+        self.assertIn("GROK_GH_PAT", doc)
+        self.assertIn("ANTIGRAVITY_GH_PAT", doc)
         self.assertIn("does **not** interpolate", doc)
         self.assertIn("Prefer GitHub-native OAuth", doc)
         self.assertIn("[`.github/github-mcp.md`](.github/github-mcp.md)", self.agent_instructions)
@@ -639,6 +643,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "MCP availability is capability",
             self.agent_instructions,
         )
+        self.assertNotIn("CURSOR_GH_PAT", self.agent_instructions)
         self.assertNotIn("GITHUB_CURSOR_PAT", self.agent_instructions)
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("*.secret", gitignore)

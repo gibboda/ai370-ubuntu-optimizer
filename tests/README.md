@@ -8,7 +8,7 @@ Lightweight smoke tests for the ai370-ubuntu-optimizer tier commands and artifac
 bash tests/smoke_tier1.sh
 bash tests/smoke_stage2_platform.sh
 bash tests/smoke_tier2.sh
-python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation
+python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities
 ```
 
 Or from repo root after making executable:
@@ -62,6 +62,9 @@ Or from repo root after making executable:
   multi-agent architecture in `config/agent-roles.json`)
 - Agent work-allocation tests: `test_agent_work_allocation.py` (duplicate-agent
   allocation contract in `config/agent-work-allocation.schema.json`)
+- Agent credential-capability tests: `test_agent_credential_capabilities.py`
+  (machine-readable GitHub authorization boundaries in
+  `config/agent-credential-capabilities.json`)
 - Independent review is local Grok Build (advisory) / Antigravity CLI backup.
   GitHub Actions does not call xAI or Gemini; there are no
   `test_grok_pr_review.py` or `test_gemini_pr_review.py` suites.
