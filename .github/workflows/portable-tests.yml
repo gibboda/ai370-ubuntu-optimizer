@@ -59,6 +59,7 @@ jobs:
         shell: bash
         run: |
           python3 -m unittest tests.test_agent_architecture_conformance
+          python3 -m unittest tests.test_agent_architecture_coverage
           python3 -m unittest discover -s tests -p 'test_agent_architecture_mutations*.py'
 
       - name: Run portable smoke tests
