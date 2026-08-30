@@ -372,12 +372,60 @@ detail for what this repository requires those checks to cover.
 Read these sources in order, then any nested `AGENTS.md` that applies to the
 files being changed:
 
-1. This file (`AGENTS.md`)
-2. `CONTRIBUTING.md`
-3. `docs/ROADMAP.md`
-4. `docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md`
-5. `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`
-6. `docs/AI-AGENT-ARCHITECTURE.md`
+1. This file (`AGENTS.md`).
+2. `docs/ROADMAP.md`.
+3. `docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md` for the target platform
+   architecture.
+4. `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md` for the current-to-target
+   inventory and file mapping.
+5. The profile schema relevant to the change (the canonical system profile is
+   `configs/schemas/system-profile.schema.json`).
+
+Use this file as the complete shared policy. Agent-specific files add only
+the extra steps that apply to that agent.
+
+## Stage 1 boundary
+
+- Stage 1 is read-only.
+- Stage 1 may collect facts, normalize data, classify hardware, derive
+  capability candidates, validate the profile contract, and publish reports.
+- Stage 1 must not install packages, modify configuration, apply tuning, start
+  services, download artifacts, or run AI workload benchmarks.
+- BIOS, firmware, kernel, driver, GPU, NPU, and runtime observations collected
+  in Stage 1 are facts, not reference-machine success requirements.
+
+## System-profile contract
+
+- Stage 2 and later must consume the canonical Stage 1 system profile.
+- Later stages may not infer capabilities solely from a CLI profile name.
+- Hardware identity, device visibility, driver binding, runtime availability,
+  and workload execution must remain separate states.
+- Every later-stage result must record the consumed profile schema version and
+  hardware fingerprint.
+
+## Hardware portability
+
+- The Minisforum EliteMini AI370 is the reference development and physical
+  integration-test system, not a universal hardware assumption.
+- Generic collectors must not require HX 370, Radeon 890M, `gfx1150`, BIOS
+  2.01, Strix Point, or XDNA2.
+- Prefer normalized PCI/sysfs/DMI identifiers and declarative platform
+  definitions over marketing-name parsing.
+- Unknown or future Ryzen AI systems must produce valid profiles with explicit
+  unknown or unsupported states.
+- Supporting a newer Ryzen AI platform should normally require profile/device
+  data and fixtures rather than collector rewrites.
+
+## Naming
+
+- Canonical public naming uses `stageN` and `SN-MN`.
+- Canonical names come from `docs/ROADMAP.md`; do not introduce new Tier-named
+  commands, scripts, reports, tests, functions, JSON fields, or documentation
+  sections.
+- Existing Tier names are compatibility surfaces only and may be changed solely
+  through the documented migration plan.
+- Every new script and artifact must identify its owning Stage and Milestone.
+- Do not add public `stage6` through `stage11` commands.
 
 ## Repository shape
 
@@ -404,8 +452,9 @@ directory is gitignored).
   run without AI370 hardware and without network:
 
   ```bash
-  python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities tests.test_agent_mcp_contract tests.test_pr_governance_contract tests.test_agent_cross_contract_consistency tests.test_agent_contract_compatibility tests.test_agent_architecture_coverage
+  python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities tests.test_agent_mcp_contract tests.test_pr_governance_contract tests.test_agent_cross_contract_consistency tests.test_agent_contract_compatibility
   python3 -m unittest tests.test_agent_architecture_conformance
+  python3 -m unittest tests.test_agent_architecture_coverage
   bash tests/smoke_tier1.sh
   bash tests/smoke_stage2_platform.sh
   bash tests/smoke_tier2.sh
