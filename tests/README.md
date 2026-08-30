@@ -9,7 +9,8 @@ bash tests/smoke_tier1.sh
 bash tests/smoke_stage2_platform.sh
 bash tests/smoke_tier2.sh
 python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities tests.test_agent_mcp_contract tests.test_pr_governance_contract tests.test_agent_cross_contract_consistency tests.test_agent_contract_compatibility
-python3 -m unittest tests.test_agent_architecture_conformance tests.test_agent_architecture_mutations
+python3 -m unittest tests.test_agent_architecture_conformance
+python3 -m unittest discover -s tests -p 'test_agent_architecture_mutations*.py'
 ```
 
 Or from repo root after making executable:
@@ -90,6 +91,9 @@ Or from repo root after making executable:
   authority, primary ownership, validation precedence, advisory-review and
   human-merge boundaries, vendor chaining, overlay completeness, contract
   coverage, and schema-version declarations to prove validation fails closed.
+  CI discovers mutation suites by the `test_agent_architecture_mutations*.py`
+  pattern, so adding mutation cases or additional mutation-suite files does
+  not require duplicating their module names in `AGENTS.md` or migration docs.
 - Independent review is local Grok Build (advisory) / Antigravity CLI backup.
   GitHub Actions does not call xAI or Gemini; there are no
   `test_grok_pr_review.py` or `test_gemini_pr_review.py` suites.
