@@ -13,12 +13,12 @@
     "config/agent-escalation-record.schema.json",
     "config/agent-work-allocation.schema.json",
     "config/agent-credential-capabilities.json",
-    "config/agent-mcp-contract.json",
-    "config/agent-contract-compatibility.json"
+    "config/agent-mcp-contract.json"
   ],
   "repository_local": [
     "AGENTS.md",
     "config/pr-governance.json",
+    "config/agent-contract-compatibility.json",
     "config/agent-architecture-coverage.json",
     ".github/CODEOWNERS",
     ".github/workflows/portable-tests.yml"

@@ -35,6 +35,7 @@ class AgentDistributionContractTests(unittest.TestCase):
         self.assertFalse(portable & local)
         self.assertIn("AGENTS.md", local)
         self.assertIn("config/pr-governance.json", local)
+        self.assertIn("config/agent-contract-compatibility.json", local)
 
     def test_portable_files_exist_and_are_machine_readable_contracts(self):
         for relative_path in self.distribution["portable"]:
@@ -49,8 +50,17 @@ class AgentDistributionContractTests(unittest.TestCase):
             if name != "pr_governance"
         }
         portable = set(self.distribution["portable"])
+        local = set(self.distribution["repository_local"])
         self.assertTrue(compatibility_paths <= portable)
-        self.assertIn("config/agent-contract-compatibility.json", portable)
+        self.assertIn("config/agent-contract-compatibility.json", local)
+        self.assertNotIn("config/agent-contract-compatibility.json", portable)
+
+    def test_portable_files_do_not_embed_repository_release_history(self):
+        for relative_path in self.distribution["portable"]:
+            payload = load(ROOT / relative_path)
+            with self.subTest(path=relative_path):
+                self.assertNotIn("previous_repository_version", payload)
+                self.assertNotIn("introduced_repository_version", payload)
 
     def test_sync_is_reviewed_fail_closed_and_never_overwrites_local_policy(self):
         sync = self.distribution["sync"]

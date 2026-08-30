@@ -71,6 +71,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   backward-compatible and first ships in `0.28.0`.
   `tests.test_agent_contract_compatibility` is part of the portable
   suite.
+- Controlled cross-repository architecture distribution in
+  `config/agent-distribution.json`, `config/agent-distribution-lock.json`,
+  and `docs/AI-AGENT-DISTRIBUTION.md`. The portable package is the
+  vendor-neutral role, escalation, work-allocation, credential, and MCP
+  contracts. `AGENTS.md`, PR governance, CODEOWNERS, CI composition,
+  coverage evidence, and repository-release compatibility metadata stay
+  local. Synchronization is PR-only, fail-and-review on local drift, and
+  never auto-merged. `tests.test_agent_distribution_contract` is part of
+  the portable suite.
 
 ## [0.26.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.25.0...v0.26.0) (2026-08-29)
 

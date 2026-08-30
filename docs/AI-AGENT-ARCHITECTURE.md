@@ -110,13 +110,16 @@ branch protection.
 | `config/agent-mcp-contract.json` | GitHub MCP configuration and drift contract |
 | `config/pr-governance.json` | Expected PR merge-governance, CODEOWNER review pipeline, and advisory-review boundary |
 | `.github/CODEOWNERS` | Human path owners; `@gibboda` only. AI assignment is policy, not a CODEOWNERS identity |
-| `config/agent-contract-compatibility.json` | Architecture-contract compatibility and release-class metadata (validation only; does not override `AGENTS.md`) |
+| `config/agent-contract-compatibility.json` | Repository-local architecture-contract compatibility and release-class metadata (validation only; does not override `AGENTS.md` or travel in the portable package) |
+| `config/agent-distribution.json` | Portable-versus-local package boundary for controlled cross-repository architecture sync; not policy authority |
+| `config/agent-distribution-lock.json` | Immutable source pin and exact managed-file list for the distribution package |
 
 The machine-readable files are validation contracts derived from `AGENTS.md`.
 They form one contract graph and must remain mutually consistent, but none of
 them becomes an independent policy authority. Portable tests validate each
 contract, their cross-contract invariants, and end-to-end architecture
-conformance.
+conformance. Cross-repository packaging is documented in
+[`AI-AGENT-DISTRIBUTION.md`](AI-AGENT-DISTRIBUTION.md).
 
 ## Secrets model
 

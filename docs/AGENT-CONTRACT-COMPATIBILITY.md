@@ -4,7 +4,10 @@
 `config/agent-contract-compatibility.json` define only the deterministic
 compatibility and release rules for the machine-readable contracts derived
 from that policy. The JSON file is validation metadata. It does not grant
-permissions, alter GitHub governance, or replace `AGENTS.md`.
+permissions, alter GitHub governance, or replace `AGENTS.md`. It is
+repository-local: it records this repository's release history and the local
+`config/pr-governance.json` schema, and it is not part of the portable
+cross-repository architecture package.
 
 ## Architecture contract version
 

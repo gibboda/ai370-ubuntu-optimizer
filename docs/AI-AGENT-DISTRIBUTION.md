@@ -6,7 +6,7 @@
 
 The source repository publishes the package boundary in `config/agent-distribution.json`. Consumers pin an immutable source commit or release tag in `config/agent-distribution-lock.json`.
 
-Portable contracts are the vendor-neutral role, escalation, work-allocation, credential-capability, MCP, and compatibility contracts. Repository-local policy and governance remain local, including `AGENTS.md`, PR governance, CODEOWNERS, CI composition, and architecture coverage evidence.
+Portable contracts are the vendor-neutral role, escalation, work-allocation, credential-capability, and MCP contracts. Repository-local policy and governance remain local, including `AGENTS.md`, PR governance, CODEOWNERS, CI composition, architecture coverage evidence, and repository-release compatibility metadata in `config/agent-contract-compatibility.json`. That compatibility file embeds this repository's release history and pins the local `config/pr-governance.json` schema, so copying it would fail consumers that keep their own `VERSION` or governance contract.
 
 ## Controlled synchronization
 
