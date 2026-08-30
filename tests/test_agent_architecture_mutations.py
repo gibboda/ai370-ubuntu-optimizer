@@ -10,14 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ROLES_PATH = ROOT / "config/agent-roles.json"
 COMPATIBILITY_PATH = ROOT / "config/agent-contract-compatibility.json"
 FIXTURE_PATH = ROOT / "tests/fixtures/agent-architecture-mutations/v1.json"
-EXPECTED_CONTRACTS = {
-    "roles",
-    "escalation",
-    "work_allocation",
-    "credential_capabilities",
-    "mcp",
-    "pr_governance",
-}
+EXPECTED_CONTRACTS = {"roles", "escalation", "work_allocation", "credential_capabilities", "mcp", "pr_governance"}
 
 
 def load(path):
@@ -42,7 +35,6 @@ def validate(roles, compatibility):
     failures = set()
     if roles.get("authority") != "AGENTS.md" or compatibility.get("authority") != "AGENTS.md":
         failures.add("canonical_authority")
-
     role_map = roles.get("roles", {})
     primary = role_map.get("primary_orchestrator", {})
     if primary.get("provider") != "cursor" or primary.get("count") != 1 or not primary.get("default_task_owner"):
@@ -55,9 +47,15 @@ def validate(roles, compatibility):
     authority = role_map.get("merge_authority", {})
     if authority.get("ai_allowed") or not authority.get("human_final"):
         failures.add("human_merge_authority")
-    if not roles.get("invariants", {}).get("no_automatic_vendor_chaining"):
+    invariants = roles.get("invariants", {})
+    if not invariants.get("no_automatic_vendor_chaining"):
         failures.add("no_vendor_chaining")
-
+    if not invariants.get("least_agent_principle"):
+        failures.add("least_agent_principle")
+    if not invariants.get("duplicate_routine_ai_work_prohibited"):
+        failures.add("duplicate_routine_ai_work")
+    if not invariants.get("ai_reviews_advisory"):
+        failures.add("ai_reviews_advisory")
     overlay_contract = roles.get("overlay_contract", {})
     declared = {entry.get("path") for entry in overlay_contract.get("overlays", [])}
     discovered = set()
@@ -68,7 +66,6 @@ def validate(roles, compatibility):
     exclusions = set(overlay_contract.get("discovery", {}).get("exclusions", []))
     if discovered != declared | exclusions or declared & exclusions:
         failures.add("overlay_completeness")
-
     contracts = compatibility.get("contracts", {})
     if set(contracts) != EXPECTED_CONTRACTS:
         failures.add("contract_coverage")
@@ -88,10 +85,7 @@ def apply_mutation(roles, compatibility, mutation):
     if operation == "set":
         set_path(target, mutation["path"], mutation["value"])
     elif operation == "remove_overlay":
-        target["overlay_contract"]["overlays"] = [
-            entry for entry in target["overlay_contract"]["overlays"]
-            if entry["path"] != mutation["value"]
-        ]
+        target["overlay_contract"]["overlays"] = [entry for entry in target["overlay_contract"]["overlays"] if entry["path"] != mutation["value"]]
     elif operation == "remove_contract":
         target["contracts"].pop(mutation["value"])
     else:
@@ -110,9 +104,8 @@ class AgentArchitectureMutationTests(unittest.TestCase):
 
     def test_fixture_is_versioned_and_has_unique_mutation_ids(self):
         self.assertEqual(self.fixture["schema_version"], 1)
-        mutations = self.fixture["mutations"]
-        ids = [mutation["id"] for mutation in mutations]
-        self.assertGreaterEqual(len(ids), 10)
+        ids = [mutation["id"] for mutation in self.fixture["mutations"]]
+        self.assertGreaterEqual(len(ids), 12)
         self.assertEqual(len(ids), len(set(ids)))
 
     def test_every_mutation_is_rejected_by_expected_fail_closed_rule(self):
@@ -127,20 +120,7 @@ class AgentArchitectureMutationTests(unittest.TestCase):
 
     def test_mutations_cover_critical_architecture_boundaries(self):
         covered = {mutation["expected_rule"] for mutation in self.fixture["mutations"]}
-        self.assertEqual(
-            covered,
-            {
-                "canonical_authority",
-                "primary_orchestrator",
-                "deterministic_before_escalation",
-                "advisory_review",
-                "human_merge_authority",
-                "no_vendor_chaining",
-                "overlay_completeness",
-                "contract_coverage",
-                "schema_version_match",
-            },
-        )
+        self.assertEqual(covered, {"canonical_authority", "primary_orchestrator", "deterministic_before_escalation", "advisory_review", "human_merge_authority", "no_vendor_chaining", "least_agent_principle", "duplicate_routine_ai_work", "ai_reviews_advisory", "overlay_completeness", "contract_coverage", "schema_version_match"})
 
 
 if __name__ == "__main__":
