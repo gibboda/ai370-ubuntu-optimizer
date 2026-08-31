@@ -87,6 +87,7 @@ jobs:
             governance
             workflows
             vscode
+            settings
             release
             deps
             stage
@@ -114,7 +115,7 @@ jobs:
         with:
           script: |
             const allowedTypes = ['feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci', 'perf'];
-            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'architecture', 'agents', 'governance', 'workflows', 'vscode', 'release', 'deps', 'stage', 'stage1', 'stage2', 'stage3', 'stage4', 'stage5', 'tier', 'tier1', 'tier2'];
+            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'architecture', 'agents', 'governance', 'workflows', 'vscode', 'settings', 'release', 'deps', 'stage', 'stage1', 'stage2', 'stage3', 'stage4', 'stage5', 'tier', 'tier1', 'tier2'];
             const commitSubjectPattern = new RegExp(
               `^(?:${allowedTypes.join('|')})(?:\\((?:${allowedScopes.join('|')})\\))?!?: [A-Za-z].+$`
             );
@@ -198,7 +199,7 @@ jobs:
                   'The following commit subjects do not follow the required format `type(scope): Subject`:',
                   ...invalidSubjects.map(({ sha, subject }) => `- ${sha} ${subject}`),
                   'Allowed types: feat, fix, chore, refactor, docs, test, ci, perf.',
-                  'Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, architecture, agents, governance, workflows, vscode, release, deps, stage, stage1, stage2, stage3, stage4, stage5, tier, tier1, tier2.',
+                  'Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, architecture, agents, governance, workflows, vscode, settings, release, deps, stage, stage1, stage2, stage3, stage4, stage5, tier, tier1, tier2.',
                   'The subject must start with a letter.',
                 ].join('\n')
               );

@@ -59,6 +59,7 @@
     "rocm": ["area:gpu"],
     "comfyui": ["area:image-generation"],
     "vscode": ["area:dev-environment"],
+    "settings": ["area:dev-environment"],
     "release": ["area:ci"],
     "ci": ["area:ci"],
     "deps": ["dependencies"],
