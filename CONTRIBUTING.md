@@ -87,6 +87,7 @@ Scope narrows the area of change:
 | `governance` | GitHub PR governance, rulesets, required checks, and advisory AI review |
 | `workflows` | `workflows/` |
 | `vscode` | VS Code workspace settings |
+| `settings` | Editor and plugin settings (`.cursor/settings.json`) |
 | `release` | Release tooling and CI |
 | `deps` | Dependency updates (Dependabot and manual bumps) |
 | `stage` | Cross-stage architecture and policy |
@@ -107,6 +108,7 @@ fix(rocm): Correct iGPU device path detection
 chore(deps): Bump onnx in configs/ai-runtime
 chore(agents): Define Cursor hybrid orchestration boundary
 test(governance): Verify advisory AI review boundary
+feat(settings): Add snyk-secure-development plugin configuration
 chore: Bump stefanzweifel/git-auto-commit-action to v5.1
 docs: Clarify safe-mode defaults in README
 ci(release): Pin checkout action to v4
