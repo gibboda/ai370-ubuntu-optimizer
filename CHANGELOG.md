@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.28.0...v0.29.0) (2026-08-31)
+
+
+### Features
+
+* **settings:** add snyk-secure-development plugin configuration ([#274](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/274)) ([4321b30](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/4321b30c1e68877f8af555b9bd802a3279f15a38))
+
 ## [0.28.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.27.0...v0.28.0) (2026-08-30)
 
 
