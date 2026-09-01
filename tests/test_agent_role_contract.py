@@ -10,12 +10,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "config/agent-roles.json"
 V1_FIXTURE = ROOT / "tests/fixtures/agent-role-contract/v1.json"
+V2_FIXTURE = ROOT / "tests/fixtures/agent-role-contract/v2.json"
 SCHEMA_POLICY = ROOT / "docs/AGENT-ROLE-SCHEMA.md"
 ESCALATION_SCHEMA = ROOT / "config/agent-escalation-record.schema.json"
 ESCALATION_POLICY = ROOT / "docs/AGENT-ESCALATION-RECORD.md"
 ESCALATION_FIXTURES = ROOT / "tests/fixtures/agent-escalation-record"
 AGENTS_POLICY = ROOT / "AGENTS.md"
-MAX_SUPPORTED_SCHEMA_VERSION = 2
+MAX_SUPPORTED_SCHEMA_VERSION = 3
 _CREDENTIAL = re.compile(
     r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|"
     r"AIza[0-9A-Za-z_-]+|xai-[A-Za-z0-9]+"
@@ -60,7 +61,7 @@ class AgentRoleContractTests(unittest.TestCase):
         text = SCHEMA_POLICY.read_text(encoding="utf-8")
         self.assertIn("`AGENTS.md`", text)
         self.assertIn("fail closed", text)
-        self.assertIn("schema version 2", text)
+        self.assertIn("schema version 3", text)
         self.assertIn("Version 1", text)
         self.assertIn("Migration procedure", text)
 
@@ -90,12 +91,20 @@ class AgentRoleContractTests(unittest.TestCase):
     def test_v1_fixture_preserves_v1_semantics_in_v2(self) -> None:
         v1 = json.loads(V1_FIXTURE.read_text(encoding="utf-8"))
         self.assertEqual(v1["schema_version"], 1)
-        self.assertEqual(self.contract["schema_version"], 2)
+        self.assertEqual(self.contract["schema_version"], 3)
         for key in ("authority", "policy_domains", "roles", "invariants"):
             with self.subTest(key=key):
                 self._assert_v1_semantics_preserved(self.contract[key], v1[key], key)
         self.assertNotIn("overlay_contract", v1)
         self.assertIn("overlay_contract", self.contract)
+
+    def test_v2_fixture_preserves_v2_semantics_in_v3(self) -> None:
+        v2 = json.loads(V2_FIXTURE.read_text(encoding="utf-8"))
+        self.assertEqual(v2["schema_version"], 2)
+        self.assertEqual(self.contract["schema_version"], 3)
+        for key in ("authority", "policy_domains", "roles", "invariants", "overlay_contract"):
+            with self.subTest(key=key):
+                self._assert_v1_semantics_preserved(self.contract[key], v2[key], key)
 
     def test_compatible_additive_fields_do_not_require_migration(self) -> None:
         v1_roles = {"primary_orchestrator": {"provider": "cursor", "count": 1}}

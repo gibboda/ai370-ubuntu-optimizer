@@ -110,8 +110,10 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
             set(second_look["cli_advisory_reviewers"]),
             {"grok_build", "antigravity_cli"},
         )
-        self.assertEqual(second_look["github_review_state"], "comment_only")
         advice_record = second_look["advice_record"]
+        form_constraints = advice_record["form_constraints"]
+        self.assertEqual(form_constraints["comment_review"]["github_review_state"], "comment_only")
+        self.assertIsNone(form_constraints["pull_request_comment"]["github_review_state"])
         self.assertTrue(advice_record["required_when_assigned"])
         self.assertEqual(
             set(advice_record["forms"]),

@@ -86,7 +86,9 @@ class AgentCredentialCapabilityTests(unittest.TestCase):
         self.assertEqual(antigravity["default_posture"], "read_by_default")
         self.assertEqual(antigravity["capabilities"]["projects"], "read_only_by_default")
         self.assertIn("explicit project permission", antigravity["mutation_condition"])
-        advice = antigravity["advice_record"]
+        cli_review = antigravity["cli_advisory_review"]
+        self.assertEqual(cli_review["applies_to_client"], "antigravity_cli")
+        advice = cli_review["advice_record"]
         self.assertTrue(advice["required_when_assigned"])
         self.assertEqual(advice["github_review_state"], "comment_only")
         self.assertFalse(advice["mcp_write"])

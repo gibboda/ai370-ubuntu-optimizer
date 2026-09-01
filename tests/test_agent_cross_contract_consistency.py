@@ -180,7 +180,10 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertEqual(fallback["replaces"], "grok_build")
         self.assertFalse(fallback["peer_of_grok_build"])
         self.assertTrue(fallback["may_be_assigned_when_grok_available"])
-        self.assertEqual(second_look["github_review_state"], "comment_only")
+        self.assertEqual(
+            second_look["advice_record"]["form_constraints"]["comment_review"]["github_review_state"],
+            "comment_only",
+        )
         self.assertTrue(second_look["advice_record"]["required_when_assigned"])
         self.assertFalse(second_look["advice_record"]["satisfies_branch_protection"])
         self.assertIn(fallback["provider"], advisory_providers)

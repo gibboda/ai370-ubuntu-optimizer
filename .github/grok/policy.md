@@ -115,13 +115,13 @@ permissions beyond the least privilege required for a change.
 ## Advice record
 
 Assigned `grok` and `agy` review is not complete until a durable record of
-the advice exists on the pull request. The record must use GitHub review
-state COMMENT. It must not APPROVE, REQUEST_CHANGES, or merge.
+the advice exists on the pull request. It must not APPROVE, REQUEST_CHANGES,
+or merge.
 
 Post one of:
 
-- a pull-request issue comment
-- a COMMENT-only pull-request review
+- a pull-request issue comment (no GitHub review state)
+- a COMMENT-only pull-request review (GitHub review state: COMMENT)
 
 Attribute the CLI (`grok` or `agy`) and the assigned role (independent
 reviewer, specialist advisor, or both). GitHub MCP for Grok remains
