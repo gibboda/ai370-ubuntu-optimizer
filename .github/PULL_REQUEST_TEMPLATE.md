@@ -38,6 +38,6 @@
 - [ ] `CHANGELOG.md` `[Unreleased]` section updated if needed
 - [ ] CODEOWNER @gibboda requested as reviewer
 - [ ] CODEOWNER assigned Grok and/or `agy` for advisory review (or recorded why neither was needed)
-- [ ] Assigned `grok`/`agy` advice recorded as a COMMENT-only PR comment or COMMENT review
+- [ ] Assigned `grok`/`agy` advice recorded as a COMMENT-only PR comment or COMMENT review (or N/A if neither was assigned)
 - [ ] Copilot and/or Codex completed a final advisory specialist pass (or recorded unavailability)
 - [ ] No AI approval is being used as merge authority

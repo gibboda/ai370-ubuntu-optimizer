@@ -36,7 +36,10 @@
       "advisory": true,
       "merge_gate": false,
       "automatic": false,
-      "github_review_state": "comment_only",
+      "form_constraints": {
+        "comment_review": {"github_review_state": "comment_only"},
+        "pull_request_comment": {"github_review_state": null}
+      },
       "advice_record_required": true
     },
     "github_native_fallback": {"provider": "github_copilot", "automatic": false},

@@ -273,7 +273,9 @@ class AgentRoleContractTests(unittest.TestCase):
         self.assertTrue(reviewer["advisory"])
         self.assertFalse(reviewer["merge_gate"])
         self.assertFalse(reviewer["automatic"])
-        self.assertEqual(reviewer["github_review_state"], "comment_only")
+        form_constraints = reviewer["form_constraints"]
+        self.assertEqual(form_constraints["comment_review"]["github_review_state"], "comment_only")
+        self.assertIsNone(form_constraints["pull_request_comment"]["github_review_state"])
         self.assertTrue(reviewer["advice_record_required"])
 
     def test_ai_cannot_be_merge_authority(self) -> None:

@@ -107,7 +107,9 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertEqual(mcp["readonly_header"], "true")
         self.assertFalse(credential["advice_record"]["mcp_write"])
         self.assertTrue(credential["advice_record"]["required_when_assigned"])
-        self.assertEqual(credential["advice_record"]["github_review_state"], "comment_only")
+        advice_fc = credential["advice_record"]["form_constraints"]
+        self.assertEqual(advice_fc["comment_review"]["github_review_state"], "comment_only")
+        self.assertIsNone(advice_fc["pull_request_comment"]["github_review_state"])
         self.assertFalse(self.governance["advisory_ai_review"]["merge_gate"])
         self.assertFalse(self.governance["advisory_ai_review"]["required_status_check"])
         self.assertIn(provider, self.governance["advisory_ai_review"]["providers"])

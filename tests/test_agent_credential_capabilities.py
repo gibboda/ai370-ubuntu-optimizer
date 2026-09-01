@@ -76,7 +76,9 @@ class AgentCredentialCapabilityTests(unittest.TestCase):
         self.assertFalse(self.roles["independent_reviewer"]["merge_gate"])
         advice = grok["advice_record"]
         self.assertTrue(advice["required_when_assigned"])
-        self.assertEqual(advice["github_review_state"], "comment_only")
+        form_constraints = advice["form_constraints"]
+        self.assertEqual(form_constraints["comment_review"]["github_review_state"], "comment_only")
+        self.assertIsNone(form_constraints["pull_request_comment"]["github_review_state"])
         self.assertFalse(advice["mcp_write"])
         self.assertTrue(advice["out_of_band_comment_allowed"])
         self.assertEqual(set(advice["proxy_posters"]), {"cursor", "codeowner"})
@@ -90,7 +92,9 @@ class AgentCredentialCapabilityTests(unittest.TestCase):
         self.assertEqual(cli_review["applies_to_client"], "antigravity_cli")
         advice = cli_review["advice_record"]
         self.assertTrue(advice["required_when_assigned"])
-        self.assertEqual(advice["github_review_state"], "comment_only")
+        form_constraints = advice["form_constraints"]
+        self.assertEqual(form_constraints["comment_review"]["github_review_state"], "comment_only")
+        self.assertIsNone(form_constraints["pull_request_comment"]["github_review_state"])
         self.assertFalse(advice["mcp_write"])
 
     def test_cursor_projects_require_authorization(self) -> None:

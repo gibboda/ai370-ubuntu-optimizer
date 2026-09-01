@@ -41,7 +41,7 @@
       "assignable_by": "codeowner",
       "providers": ["grok_build", "antigravity"],
       "cli_advisory_reviewers": ["grok_build", "antigravity_cli"],
-      "allowed_roles": ["independent_reviewer", "secondary_specialist", "specialist_advisor"],
+      "allowed_roles": ["independent_reviewer", "secondary_specialist"],
       "selection": "any_or_both",
       "advice_record": {
         "required_when_assigned": true,

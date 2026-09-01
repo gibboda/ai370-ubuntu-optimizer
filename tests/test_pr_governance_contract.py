@@ -57,7 +57,9 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertFalse(reviewer["automatic"])
         self.assertEqual(set(reviewer["providers"]), {"grok_build", "antigravity_cli"})
         self.assertEqual(reviewer["also_serves"], ["specialist_advisor"])
-        self.assertEqual(reviewer["github_review_state"], "comment_only")
+        form_constraints = reviewer["form_constraints"]
+        self.assertEqual(form_constraints["comment_review"]["github_review_state"], "comment_only")
+        self.assertIsNone(form_constraints["pull_request_comment"]["github_review_state"])
         self.assertTrue(reviewer["advice_record_required"])
 
     def test_governance_invariants_match_agent_policy(self) -> None:
@@ -104,7 +106,7 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertEqual(second_look["selection"], "any_or_both")
         self.assertEqual(
             set(second_look["allowed_roles"]),
-            {"independent_reviewer", "secondary_specialist", "specialist_advisor"},
+            {"independent_reviewer", "secondary_specialist"},
         )
         self.assertEqual(
             set(second_look["cli_advisory_reviewers"]),
