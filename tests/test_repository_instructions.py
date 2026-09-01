@@ -24,6 +24,34 @@ _PORTABLE_UNITTEST_CMD = re.compile(
 )
 
 
+def parse_requirement_pins(path: Path) -> dict[str, str]:
+    """Parse `name==version` pins, ignoring comments and blank lines."""
+    pins: dict[str, str] = {}
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "==" not in line:
+            continue
+        name, version = line.split("==", 1)
+        pins[name.strip()] = version.strip()
+    return pins
+
+
+def numeric_version(version: str) -> tuple[int, ...]:
+    """Return the leading numeric dotted version as an int tuple."""
+    parts: list[int] = []
+    for token in version.split("."):
+        digits = ""
+        for char in token:
+            if char.isdigit():
+                digits += char
+            else:
+                break
+        if not digits:
+            break
+        parts.append(int(digits))
+    return tuple(parts)
+
+
 def parse_portable_unittest_modules(text: str) -> list[str]:
     """Return portable unittest modules from every documented invocation."""
     modules = []
@@ -1493,6 +1521,38 @@ class ConventionalCommitScopeTests(unittest.TestCase):
                 self.assertIn(f"`{scope}`", contributing)
                 self.assertRegex(workflow, rf"(?m)^\s+{re.escape(scope)}$")
                 self.assertIn(scope, template)
+
+
+class OfflineAiRuntimePinTests(unittest.TestCase):
+    """Keep the S3 offline CPU pin file installable with transformers 5.5.0."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.pins = parse_requirement_pins(
+            ROOT / "configs/ai-runtime/requirements-offline.txt"
+        )
+
+    def test_huggingface_hub_satisfies_transformers_5_5_0(self) -> None:
+        # transformers==5.5.0 requires huggingface-hub>=1.5.0,<2.0
+        hub = self.pins["huggingface-hub"]
+        numeric = numeric_version(hub)
+        self.assertGreaterEqual(numeric, (1, 5, 0), hub)
+        self.assertLess(numeric, (2, 0, 0), hub)
+
+    def test_tokenizers_satisfies_transformers_5_5_0(self) -> None:
+        # transformers==5.5.0 requires tokenizers>=0.22.0,<=0.23.0
+        tokenizers = self.pins["tokenizers"]
+        numeric = numeric_version(tokenizers)
+        self.assertGreaterEqual(numeric, (0, 22, 0), tokenizers)
+        self.assertLessEqual(numeric, (0, 23, 0), tokenizers)
+
+    def test_migration_plan_describes_current_transformers_pin(self) -> None:
+        plan = (ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("transformers==5.5.0", plan)
+        self.assertIn("huggingface-hub==1.29.0", plan)
+        self.assertNotIn("transformers 4.52.4", plan)
 
 
 if __name__ == "__main__":
