@@ -12,7 +12,7 @@ Routine duplicate implementation is prohibited. A second implementation resource
 
 Independent review is not duplicate implementation. It remains intentionally separate because its purpose is to challenge an existing change rather than independently reproduce the implementation. It still requires the escalation record required by repository policy plus a concrete `independent_review_reason`, and it remains advisory.
 
-A CODEOWNER-assigned second look at Cursor's change records Grok Build as `independent_review` and Antigravity as `specialist_review`. The CODEOWNER may assign either or both. `agy` used only when Grok Build is unavailable remains `independent_review` (independent-reviewer fallback) and is not `specialist_review`. That assignment is policy, not a GitHub CODEOWNERS identity, and findings stay advisory.
+A CODEOWNER-assigned second look at Cursor's change records Grok Build as `independent_review` by default and Antigravity as `specialist_review`. The CODEOWNER may assign either or both. The CODEOWNER may also assign Grok Build as `specialist_review` and Antigravity CLI (`agy`) as `independent_review` or `specialist_review` when Grok is available. `agy` used as Grok-unavailable fallback remains `independent_review` (independent-reviewer fallback) and is not `specialist_review`. That assignment is policy, not a GitHub CODEOWNERS identity, and findings stay advisory. Assigned `grok` and `agy` advice must be recorded as a COMMENT-only pull-request comment or COMMENT review.
 
 A Copilot and/or Codex final advisory specialist pass is process-required and result-advisory. It is COMMENT or suggestions only. It is not `implementation`, not duplicate routine implementation, not an approval that satisfies branch protection, and not a merge gate. When an allocation record is created for that pass, it uses `specialist_review`.
 
@@ -40,13 +40,13 @@ Use when another AI is asked to modify, implement, refactor, debug, or otherwise
 
 ### `independent_review`
 
-Use when an additional AI examines an existing implementation to find correctness, architecture, security, testing, or policy issues. `escalation_record` and `independent_review_reason` are mandatory. Review findings are advisory and do not become a required merge gate. A CODEOWNER-assigned Grok Build second look uses this work kind with `additional_resource` `grok_build`. `agy` used as Grok-unavailable fallback uses this work kind with `additional_resource` `antigravity_cli`.
+Use when an additional AI examines an existing implementation to find correctness, architecture, security, testing, or policy issues. `escalation_record` and `independent_review_reason` are mandatory. Review findings are advisory and do not become a required merge gate. A CODEOWNER-assigned Grok Build second look uses this work kind with `additional_resource` `grok_build`. `agy` used as Grok-unavailable fallback uses this work kind with `additional_resource` `antigravity_cli`. The CODEOWNER may also assign `agy` as independent reviewer when Grok is available. Assigned `grok` and `agy` findings must be recorded as a COMMENT-only pull-request comment or COMMENT review.
 
 ### `specialist_review`
 
 Use when an additional AI performs specialist inspection of an existing implementation rather than independent review or a second implementation. `escalation_record` and `specialist_review_reason` are mandatory. Findings are advisory and do not become a required merge gate. This kind is not `implementation` and not `parallel_analysis`.
 
-A CODEOWNER-assigned Antigravity second look uses this work kind with `additional_resource` `antigravity`. Copilot/Codex final advisory specialist passes are not recorded as `implementation`; when an allocation record is created for that pass, it uses this work kind with `additional_resource` `github_copilot` or `codex`.
+A CODEOWNER-assigned Antigravity second look uses this work kind with `additional_resource` `antigravity`. The CODEOWNER may also assign Grok Build or `agy` as specialist advisor with `additional_resource` `grok_build` or `antigravity_cli`. Copilot/Codex final advisory specialist passes are not recorded as `implementation`; when an allocation record is created for that pass, it uses this work kind with `additional_resource` `github_copilot` or `codex`.
 
 ### `parallel_analysis`
 

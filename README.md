@@ -750,9 +750,12 @@ AI agent roles and credential domains are documented in
 [`docs/AI-AGENT-ARCHITECTURE.md`](docs/AI-AGENT-ARCHITECTURE.md); shared
 policy lives in [`AGENTS.md`](AGENTS.md).
 
-Independent review is local and advisory. Run Grok Build (`grok`) on the
-pull-request branch. If Grok Build is unavailable, use Antigravity CLI
-(`agy`). Setup is in [`.github/grok/README.md`](.github/grok/README.md) and
+Independent review is local and advisory. The CODEOWNER may assign Grok
+Build (`grok`) and/or Antigravity CLI (`agy`) as independent reviewer
+and/or specialist advisor. Assigned advice must be recorded as a
+COMMENT-only pull-request comment or COMMENT review. If Grok Build is
+unavailable, use Antigravity CLI (`agy`) as the independent-review
+fallback. Setup is in [`.github/grok/README.md`](.github/grok/README.md) and
 [`.github/antigravity/README.md`](.github/antigravity/README.md). GitHub
 Actions does not call xAI or Gemini and does not use `XAI_API_KEY` or
 `GEMINI_API_KEY`. Local Antigravity CLI setup uses

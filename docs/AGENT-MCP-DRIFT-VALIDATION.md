@@ -22,7 +22,7 @@ All clients use the official hosted endpoint and the `default,projects` toolsets
 
 Cursor uses `CURSOR_GH_PAT` and may write only within the capability and governance boundary declared by the credential capability contract.
 
-Grok Build uses `GROK_GH_PAT` and must retain `X-MCP-Readonly: true`. Its GitHub capabilities remain read-only and its review remains advisory.
+Grok Build uses `GROK_GH_PAT` and must retain `X-MCP-Readonly: true`. Its GitHub MCP capabilities remain read-only and its review remains advisory. Assigned Grok advice must still be recorded as a COMMENT-only pull-request comment or COMMENT review out of band or by Cursor/CODEOWNER.
 
 Antigravity uses its own `ANTIGRAVITY_GH_PAT` in local untracked configuration. Its Projects capability is read-only by default; Project mutation requires explicit authorization and sufficient token permission.
 

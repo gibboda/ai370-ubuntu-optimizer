@@ -55,6 +55,10 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertTrue(reviewer["advisory"])
         self.assertFalse(reviewer["merge_gate"])
         self.assertFalse(reviewer["automatic"])
+        self.assertEqual(set(reviewer["providers"]), {"grok_build", "antigravity_cli"})
+        self.assertEqual(reviewer["also_serves"], ["specialist_advisor"])
+        self.assertEqual(reviewer["github_review_state"], "comment_only")
+        self.assertTrue(reviewer["advice_record_required"])
 
     def test_governance_invariants_match_agent_policy(self) -> None:
         invariants = self.contract["invariants"]
@@ -68,6 +72,7 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertIn("AI reviews are advisory", agents)
         self.assertIn("They are not required merge gates", agents)
         self.assertIn("MCP access cannot bypass protected branches", agents)
+        self.assertIn("COMMENT-only pull-request comment or COMMENT review", agents)
 
     def test_mcp_document_preserves_governance_boundary(self) -> None:
         text = " ".join(MCP_POLICY.read_text(encoding="utf-8").split())
@@ -99,13 +104,33 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertEqual(second_look["selection"], "any_or_both")
         self.assertEqual(
             set(second_look["allowed_roles"]),
-            {"independent_reviewer", "secondary_specialist"},
+            {"independent_reviewer", "secondary_specialist", "specialist_advisor"},
         )
+        self.assertEqual(
+            set(second_look["cli_advisory_reviewers"]),
+            {"grok_build", "antigravity_cli"},
+        )
+        self.assertEqual(second_look["github_review_state"], "comment_only")
+        advice_record = second_look["advice_record"]
+        self.assertTrue(advice_record["required_when_assigned"])
+        self.assertEqual(
+            set(advice_record["forms"]),
+            {"pull_request_comment", "comment_review"},
+        )
+        self.assertTrue(advice_record["attribution_required"])
+        self.assertEqual(
+            set(advice_record["forbidden_states"]),
+            {"approve", "request_changes"},
+        )
+        self.assertFalse(advice_record["satisfies_branch_protection"])
+        self.assertFalse(advice_record["mcp_write"])
+        self.assertEqual(set(advice_record["proxy_posters"]), {"cursor", "codeowner"})
         self.assertEqual(fallback["provider"], "antigravity_cli")
         self.assertEqual(fallback["when"], "grok_build_unavailable")
         self.assertEqual(fallback["replaces"], "grok_build")
         self.assertEqual(fallback["does_not_replace"], "antigravity")
         self.assertFalse(fallback["peer_of_grok_build"])
+        self.assertTrue(fallback["may_be_assigned_when_grok_available"])
         self.assertIn(fallback["provider"], advisory_providers)
         self.assertFalse(second_look["github_codeowners_identity"])
         self.assertFalse(second_look["merge_gate"])
@@ -121,6 +146,7 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
 
         pipeline_providers = (
             set(second_look["providers"])
+            | set(second_look["cli_advisory_reviewers"])
             | {fallback["provider"]}
             | set(final_pass["providers"])
         )

@@ -259,9 +259,13 @@ class AgentRoleContractTests(unittest.TestCase):
     def test_grok_is_advisory_and_not_a_merge_gate(self) -> None:
         reviewer = self.roles["independent_reviewer"]
         self.assertEqual(reviewer["provider"], "grok_build")
+        self.assertEqual(set(reviewer["providers"]), {"grok_build", "antigravity_cli"})
+        self.assertEqual(reviewer["also_serves"], ["specialist_advisor"])
         self.assertTrue(reviewer["advisory"])
         self.assertFalse(reviewer["merge_gate"])
         self.assertFalse(reviewer["automatic"])
+        self.assertEqual(reviewer["github_review_state"], "comment_only")
+        self.assertTrue(reviewer["advice_record_required"])
 
     def test_ai_cannot_be_merge_authority(self) -> None:
         authority = self.roles["merge_authority"]

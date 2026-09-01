@@ -24,9 +24,12 @@ GitHub Pull Request
 GitHub Actions     CODEOWNER           Copilot and/or
 Deterministic      @gibboda may        Codex
 Validation         assign Grok         Final advisory
-(required checks)  and/or              specialist pass
-                   Antigravity         COMMENT only
-                   for a second look
+(required checks)  and/or agy          specialist pass
+                   COMMENT record      COMMENT only
+                   (advisory)
+                   Antigravity may
+                   also get a second
+                   look
     |                   |                   |
     +-------------------+-------------------+
                         |
@@ -56,7 +59,7 @@ branch protection.
 | Primary development orchestrator | Cursor | Yes for default local development |
 | Required GitHub reviewer | CODEOWNER `@gibboda` | Yes on every pull request |
 | Secondary / specialist | Google Antigravity | No; escalate only when justified. CODEOWNER may assign a second look |
-| Independent AI reviewer | Grok / Grok Build (`grok`) | No; advisory. Backup: Antigravity CLI (`agy`). CODEOWNER may assign a second look |
+| Independent AI reviewer and specialist advisor | Grok / Grok Build (`grok`) and Antigravity CLI (`agy`) | No; advisory. CODEOWNER may assign either or both. If Grok is unavailable, `agy` is the independent-review fallback. Assigned advice must be a COMMENT-only PR record |
 | Deterministic validation | GitHub Actions + local scripts | Yes for merge eligibility facts it can verify |
 | GitHub-native fallback | GitHub Copilot | No for implementation; process-required COMMENT-only final specialist pass with Codex |
 | Narrow specialist | Codex or other maintainer-approved agent | No for implementation; may share the advisory final specialist pass |
@@ -73,8 +76,11 @@ branch protection.
   governance explicitly changes that.
 - Cursor is an external development orchestrator. It is not a GitHub-hosted
   Copilot custom agent.
-- CODEOWNER `@gibboda` may assign Grok Build and/or Antigravity for a
-  second look. Copilot and/or Codex must make a final advisory specialist
+- CODEOWNER `@gibboda` may assign Grok Build (`grok`) and/or Antigravity
+  CLI (`agy`) as independent reviewer and/or specialist advisor, and may
+  assign Antigravity for a specialist second look. Assigned `grok` and
+  `agy` advice must be recorded as a COMMENT-only pull-request comment or
+  COMMENT review. Copilot and/or Codex must make a final advisory specialist
   pass. Neither assignment is a GitHub CODEOWNERS identity, required
   status check, or merge authority.
 - AI unavailability must not block merge when required deterministic
@@ -98,8 +104,8 @@ branch protection.
 | `.github/instructions/` | Copilot / Codex instruction overlays |
 | `.github/agents/` | GitHub Copilot custom agents |
 | `.agents/agents/` | Antigravity workspace specialist agents |
-| `.github/grok/` | Local Grok Build independent-review docs |
-| `.github/antigravity/` | Antigravity CLI backup-review setup |
+| `.github/grok/` | Local Grok Build independent-review and specialist-advisor docs |
+| `.github/antigravity/` | Antigravity specialist and CLI advisory-review setup |
 | `.grok/config.toml` | Grok GitHub MCP (read-only; env-var auth) |
 | `.github/github-mcp.md` | Shared MCP least-privilege setup |
 | `.github/workflows/` | Deterministic CI only (no LLM calls) |
@@ -148,7 +154,9 @@ These steps cannot be completed from repository files alone:
 1. **Cursor GitHub MCP**: export `CURSOR_GH_PAT` locally (repository
    access as needed + `project`), or complete Cloud Agent MCP header setup.
 2. **Grok Build**: sign in with a SuperGrok account; optionally export
-   `GROK_GH_PAT` for read-only GitHub MCP.
+   `GROK_GH_PAT` for read-only GitHub MCP. Assigned Grok advice still
+   requires a COMMENT-only pull-request record (out of band or posted by
+   Cursor/CODEOWNER).
 3. **Antigravity**: use local Google/Gemini authentication for the CLI as
    required; optionally configure `~/.gemini/antigravity/mcp_config.json`
    with `ANTIGRAVITY_GH_PAT` (that format does not interpolate env vars).

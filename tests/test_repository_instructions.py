@@ -388,7 +388,11 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.pull_request_template,
         )
         self.assertIn(
-            "CODEOWNER assigned Grok and/or Antigravity for a second look",
+            "CODEOWNER assigned Grok and/or `agy` for advisory review",
+            self.pull_request_template,
+        )
+        self.assertIn(
+            "Assigned `grok`/`agy` advice recorded as a COMMENT-only PR comment",
             self.pull_request_template,
         )
         self.assertIn(
@@ -451,7 +455,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("| Other explicitly approved agent |", self.agent_instructions)
         self.assertNotIn("| Claude | Specialist |", self.agent_instructions)
         self.assertIn(
-            "Independent review (not implementation overlays)",
+            "Independent review and specialist advice (not implementation overlays)",
             self.contributing,
         )
         self.assertIn("What remains unresolved?", self.agent_instructions)

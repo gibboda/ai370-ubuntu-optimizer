@@ -15,8 +15,8 @@ A declared `read_write` or `read_write_when_authorized` capability is an upper b
 | Client | GitHub auth | Default posture | Projects |
 | --- | --- | --- | --- |
 | Cursor | `CURSOR_GH_PAT` or hosted integration | Read/write within granted scope | Read/write when `project` is authorized |
-| Grok Build | `GROK_GH_PAT` | Read-only | Read-only (`read:project`) |
-| Antigravity | `ANTIGRAVITY_GH_PAT` | Read by default; repository writes only when explicitly needed and authorized | Read-only by default; write only with explicit `project` permission |
+| Grok Build | `GROK_GH_PAT` | Read-only MCP; COMMENT-only advice record | Read-only (`read:project`) |
+| Antigravity | `ANTIGRAVITY_GH_PAT` | Read by default; repository writes only when explicitly needed and authorized. CLI (`agy`) advice is COMMENT-only | Read-only by default; write only with explicit `project` permission |
 | GitHub Copilot | GitHub OAuth/session | Authorization-dependent | Authorization-dependent |
 
 Each independent client uses its own GitHub authorization. Do not reuse one unrestricted PAT across clients.

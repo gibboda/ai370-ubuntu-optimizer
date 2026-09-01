@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Documentation
+
+- Require Grok Build (`grok`) and Antigravity CLI (`agy`) to act as
+  advisory independent reviewers and specialist advisors, and to leave a
+  COMMENT-only pull-request comment or COMMENT review recording that
+  advice. GitHub MCP for Grok stays read-only; Cursor or the CODEOWNER may
+  post the attributed record when the reviewer cannot. `agy` remains the
+  independent-review fallback if Grok is unavailable and is not an
+  automatic default peer for identical work.
+
 ## [0.29.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.28.0...v0.29.0) (2026-08-31)
 
 

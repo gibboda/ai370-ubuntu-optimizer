@@ -40,14 +40,26 @@
     "second_look": {
       "assignable_by": "codeowner",
       "providers": ["grok_build", "antigravity"],
-      "allowed_roles": ["independent_reviewer", "secondary_specialist"],
+      "cli_advisory_reviewers": ["grok_build", "antigravity_cli"],
+      "allowed_roles": ["independent_reviewer", "secondary_specialist", "specialist_advisor"],
       "selection": "any_or_both",
+      "github_review_state": "comment_only",
+      "advice_record": {
+        "required_when_assigned": true,
+        "forms": ["pull_request_comment", "comment_review"],
+        "attribution_required": true,
+        "forbidden_states": ["approve", "request_changes"],
+        "satisfies_branch_protection": false,
+        "mcp_write": false,
+        "proxy_posters": ["cursor", "codeowner"]
+      },
       "independent_reviewer_fallback": {
         "provider": "antigravity_cli",
         "when": "grok_build_unavailable",
         "replaces": "grok_build",
         "does_not_replace": "antigravity",
-        "peer_of_grok_build": false
+        "peer_of_grok_build": false,
+        "may_be_assigned_when_grok_available": true
       },
       "github_codeowners_identity": false,
       "merge_gate": false,

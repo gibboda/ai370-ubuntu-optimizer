@@ -29,7 +29,16 @@
     "primary_orchestrator": {"provider": "cursor", "count": 1, "default_task_owner": true},
     "deterministic_validation": {"provider": "repository_checks", "before_ai_escalation": true, "authoritative_for_machine_verifiable_facts": true},
     "secondary_specialist": {"provider": "antigravity", "automatic": false},
-    "independent_reviewer": {"provider": "grok_build", "advisory": true, "merge_gate": false, "automatic": false},
+    "independent_reviewer": {
+      "provider": "grok_build",
+      "providers": ["grok_build", "antigravity_cli"],
+      "also_serves": ["specialist_advisor"],
+      "advisory": true,
+      "merge_gate": false,
+      "automatic": false,
+      "github_review_state": "comment_only",
+      "advice_record_required": true
+    },
     "github_native_fallback": {"provider": "github_copilot", "automatic": false},
     "specialist_pool": {"providers": ["codex", "maintainer_approved"], "automatic": false},
     "merge_validation": {"provider": "github_actions_and_repository_checks", "deterministic": true},
