@@ -312,7 +312,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/250-install-digest-ai.sh`, `255-analyze-model-digest.sh` | PARTIAL | Optional diagnostics; not NPU execution proof |
 | `scripts/lib/npu_ep_verify.py`, `scripts/lib/npu-venv.sh` | PARTIAL | Provider/execution helpers; split visibility vs execution |
 | `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | PARTIAL | Tracked AMD Ryzen AI 1.7.x installer consumed by `scripts/205-install-xrt-ryzen-ai.sh`; requires exact `python3.12`; pins `ryzen-ai>=1.7.0.dev0,<1.8.0.dev0` and `device-essentials-strx`/`device-essentials-phx` ranges; installs into the caller `-p` venv (205 uses `.ai370-ai/ryzen-ai/venv`); wheels must be in the process CWD |
-| `configs/ai-runtime/requirements-offline.txt` | IMPLEMENTED | Pinned offline CPU Python stack (`onnxruntime==1.22.0`, transformers 4.52.4, and related wheels); consumed via `configs/offline/ai-runtime.env` and `scripts/lib/offline-paths.sh`; distinct from Ryzen AI `onnxruntime-vitisai` |
+| `configs/ai-runtime/requirements-offline.txt` | IMPLEMENTED | Pinned offline CPU Python stack (`onnxruntime==1.22.0`, `transformers==5.5.0`, `huggingface-hub==1.29.0`, and related wheels); consumed via `configs/offline/ai-runtime.env` and `scripts/lib/offline-paths.sh`; distinct from Ryzen AI `onnxruntime-vitisai` |
 | `.ai370-ai/tools/llama.cpp` | PARTIAL | Tracked gitlink (mode `160000`, commit `86b94708f22478f900b76ca02e316f4f3418faff`); no `.gitmodules`; canonical checkout path for `scripts/110-install-llama-cpp.sh` |
 | FastFlowLM | PLANNED | Named in the architecture document only |
 
