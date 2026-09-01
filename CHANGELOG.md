@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   independent-review fallback if Grok is unavailable and is not an
   automatic default peer for identical work.
 
+## [0.29.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.29.0...v0.29.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* **deps:** Align offline AI runtime pins with transformers 5.5.0 ([#276](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/276)) ([79b584d](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/79b584ded2568ffa27280d95580fb3eaa5305fc4))
+
 ## [0.29.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.28.0...v0.29.0) (2026-08-31)
 
 
