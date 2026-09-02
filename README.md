@@ -758,9 +758,10 @@ unavailable, use Antigravity CLI (`agy`) as the independent-review
 fallback. Setup is in [`.github/grok/README.md`](.github/grok/README.md) and
 [`.github/antigravity/README.md`](.github/antigravity/README.md). GitHub
 Actions does not call xAI or Gemini and does not use `XAI_API_KEY` or
-`GEMINI_API_KEY`. Local Antigravity CLI setup uses
+`GEMINI_API_KEY`. Local review uses account login (`grok login`, Antigravity
+Google login), not vendor API keys. Local Antigravity CLI setup merges
 [`.github/antigravity/settings.json`](.github/antigravity/settings.json)
-copied to `~/.gemini/antigravity-cli/settings.json`. Do not commit the
+into `~/.gemini/antigravity-cli/settings.json`. Do not commit the
 home-directory file.
 
 ## License

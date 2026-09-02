@@ -18,22 +18,39 @@ record.
 
 ## Local CLI setup (`agy`)
 
+Prefer **account login**. Do not use a shell `GEMINI_API_KEY` or a GitHub
+Actions `GEMINI_API_KEY` for ordinary review. Sign in with the Antigravity
+IDE or Google/Gemini login on this machine, then confirm:
+
+```bash
+agy models
+```
+
 Keep `modelProvider` in the **home-directory** file
 `~/.gemini/antigravity-cli/settings.json`. The CLI does not read a
-repository-relative `.gemini/` tree. Copy the canonical pin:
+repository-relative `.gemini/` tree. Merge the canonical pin (preserve any
+existing `trustedWorkspaces`):
 
 ```bash
 mkdir -p "${HOME}/.gemini/antigravity-cli"
-cp .github/antigravity/settings.json "${HOME}/.gemini/antigravity-cli/settings.json"
+python3 - <<'PY'
+import json
+from pathlib import Path
+p = Path.home() / ".gemini" / "antigravity-cli" / "settings.json"
+data = json.loads(p.read_text()) if p.exists() else {}
+data["modelProvider"] = "gemini"
+p.write_text(json.dumps(data, indent=2) + "\n")
+p.chmod(0o600)
+PY
 ```
 
 Do not commit `~/.gemini/antigravity-cli/settings.json` or a repo-root
 `.gemini/` copy of it. `.gitignore` already ignores `.gemini/`.
 
-Authenticate `agy` with a local Google/Gemini login or a **shell**
-`GEMINI_API_KEY` if your CLI build requires one. That local credential is
-not a GitHub Actions secret. GitHub Actions does not call Gemini and does
-not run `agy`. Do not use `GEMINI_API_KEY` for GitHub MCP.
+A shell `GEMINI_API_KEY` is only an emergency fallback if login fails on
+your CLI build. It is not a GitHub Actions secret. GitHub Actions does not
+call Gemini and does not run `agy`. Do not use `GEMINI_API_KEY` for GitHub
+MCP.
 
 Antigravity IDE GitHub MCP lives in
 `~/.gemini/antigravity/mcp_config.json` and uses `serverUrl`. That format
@@ -53,7 +70,7 @@ local output.
 
 | Path | Role |
 | --- | --- |
-| `settings.json` | Canonical Antigravity CLI `modelProvider` pin (copy to `$HOME`) |
+| `settings.json` | Canonical Antigravity CLI `modelProvider` pin (merge into `$HOME`) |
 | `../grok/policy.md` | Shared local independent-review policy and advice-record template |
 | `../../.agents/agents/` | Workspace specialist agents |
 
