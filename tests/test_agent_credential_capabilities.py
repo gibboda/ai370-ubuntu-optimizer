@@ -74,12 +74,28 @@ class AgentCredentialCapabilityTests(unittest.TestCase):
         self.assertTrue(all(value == "read_only" for value in grok["capabilities"].values()))
         self.assertTrue(self.roles["independent_reviewer"]["advisory"])
         self.assertFalse(self.roles["independent_reviewer"]["merge_gate"])
+        advice = grok["advice_record"]
+        self.assertTrue(advice["required_when_assigned"])
+        form_constraints = advice["form_constraints"]
+        self.assertEqual(form_constraints["comment_review"]["github_review_state"], "comment_only")
+        self.assertIsNone(form_constraints["pull_request_comment"]["github_review_state"])
+        self.assertFalse(advice["mcp_write"])
+        self.assertTrue(advice["out_of_band_comment_allowed"])
+        self.assertEqual(set(advice["proxy_posters"]), {"cursor", "codeowner"})
 
     def test_antigravity_projects_are_read_only_by_default(self) -> None:
         antigravity = self.clients["antigravity"]
         self.assertEqual(antigravity["default_posture"], "read_by_default")
         self.assertEqual(antigravity["capabilities"]["projects"], "read_only_by_default")
         self.assertIn("explicit project permission", antigravity["mutation_condition"])
+        cli_review = antigravity["cli_advisory_review"]
+        self.assertEqual(cli_review["applies_to_client"], "antigravity_cli")
+        advice = cli_review["advice_record"]
+        self.assertTrue(advice["required_when_assigned"])
+        form_constraints = advice["form_constraints"]
+        self.assertEqual(form_constraints["comment_review"]["github_review_state"], "comment_only")
+        self.assertIsNone(form_constraints["pull_request_comment"]["github_review_state"])
+        self.assertFalse(advice["mcp_write"])
 
     def test_cursor_projects_require_authorization(self) -> None:
         cursor = self.clients["cursor"]

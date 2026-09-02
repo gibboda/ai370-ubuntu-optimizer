@@ -208,6 +208,7 @@ class AgentWorkAllocationTests(unittest.TestCase):
         self.assertIn("Antigravity as `specialist_review`", text)
         self.assertIn("remains `independent_review` (independent-reviewer fallback)", text)
         self.assertIn("is not `specialist_review`", text)
+        self.assertIn("COMMENT-only pull-request comment or COMMENT review", text)
         self.assertIn("### `specialist_review`", text)
         self.assertIn("`specialist_review_reason`", text)
         self.assertIn("A CODEOWNER-assigned Antigravity second look uses this work kind", text)
@@ -234,6 +235,7 @@ class AgentWorkAllocationTests(unittest.TestCase):
             "A CODEOWNER-assigned Antigravity second look is `specialist_review`",
             "`agy` used as Grok-unavailable fallback remains `independent_review`",
             "When an allocation record is created for that pass, it uses",
+            "COMMENT-only pull-request comment or COMMENT review",
         ):
             self.assertIn(phrase, text)
 

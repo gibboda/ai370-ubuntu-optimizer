@@ -105,6 +105,11 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
             all(value == "read_only" for value in credential["capabilities"].values())
         )
         self.assertEqual(mcp["readonly_header"], "true")
+        self.assertFalse(credential["advice_record"]["mcp_write"])
+        self.assertTrue(credential["advice_record"]["required_when_assigned"])
+        advice_fc = credential["advice_record"]["form_constraints"]
+        self.assertEqual(advice_fc["comment_review"]["github_review_state"], "comment_only")
+        self.assertIsNone(advice_fc["pull_request_comment"]["github_review_state"])
         self.assertFalse(self.governance["advisory_ai_review"]["merge_gate"])
         self.assertFalse(self.governance["advisory_ai_review"]["required_status_check"])
         self.assertIn(provider, self.governance["advisory_ai_review"]["providers"])
@@ -176,7 +181,17 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertEqual(fallback["when"], "grok_build_unavailable")
         self.assertEqual(fallback["replaces"], "grok_build")
         self.assertFalse(fallback["peer_of_grok_build"])
+        self.assertTrue(fallback["may_be_assigned_when_grok_available"])
+        self.assertEqual(
+            second_look["advice_record"]["form_constraints"]["comment_review"]["github_review_state"],
+            "comment_only",
+        )
+        self.assertTrue(second_look["advice_record"]["required_when_assigned"])
+        self.assertFalse(second_look["advice_record"]["satisfies_branch_protection"])
         self.assertIn(fallback["provider"], advisory_providers)
+        self.assertTrue(
+            set(second_look["cli_advisory_reviewers"]).issubset(advisory_providers)
+        )
         self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
         self.assertFalse(second_look["merge_gate"])
         self.assertFalse(second_look["required_status_check"])

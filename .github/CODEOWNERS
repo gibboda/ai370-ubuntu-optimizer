@@ -2,10 +2,13 @@
 # GitHub CODEOWNERS cannot name AI products. Do not add Grok, Antigravity,
 # Copilot, or Codex as CODEOWNERS identities.
 #
-# The CODEOWNER may assign Grok Build and/or Antigravity (including agy)
-# as independent reviewer and/or secondary specialist for a second look
-# at Cursor's change. That assignment is policy, not a GitHub required
-# reviewer. Findings stay advisory and are not a merge gate.
+# The CODEOWNER may assign Grok Build (`grok`) and/or Antigravity CLI
+# (`agy`) as independent reviewer and/or specialist advisor, and may
+# assign Antigravity as secondary specialist, for a second look at
+# Cursor's change. That assignment is policy, not a GitHub required
+# reviewer. Findings stay advisory and are not a merge gate. Assigned
+# grok and agy advice must be recorded as a COMMENT-only pull-request
+# comment or COMMENT review.
 #
 # Copilot and/or Codex must make a final specialist pass before the
 # CODEOWNER treats the PR as ready. That pass is advisory: COMMENT or

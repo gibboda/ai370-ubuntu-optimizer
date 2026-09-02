@@ -38,7 +38,10 @@ Never commit secrets. Never put tokens in `mcp.json` or tracked docs.
 
 Do not require direct Cursor credentials for local independent review.
 Independent review is Grok Build (`grok`) or Antigravity CLI (`agy`) on a
-machine where those CLIs are logged in. Do not copy vendor/model credentials
+machine where those CLIs are logged in. Both are advisory independent
+reviewers and specialist advisors. Assigned advice must be recorded as a
+COMMENT-only pull-request comment or COMMENT review; Cursor may post that
+attributed record when the reviewer cannot. Do not copy vendor/model credentials
 or leftover GitHub Actions secrets into Cursor configuration. This repository's
 GitHub Actions do not call xAI or Gemini.
 

@@ -17,7 +17,7 @@ discipline. Architecture overview:
 - Codex specialist overlay:
   [`.github/instructions/codex.instructions.md`](.github/instructions/codex.instructions.md)
 - Antigravity workspace agents: [`.agents/agents/`](.agents/agents/)
-- Independent review (not implementation overlays):
+- Independent review and specialist advice (not implementation overlays):
   [`.github/grok/`](.github/grok/),
   [`.github/antigravity/`](.github/antigravity/)
 - Shared GitHub MCP and Projects setup: [`.github/github-mcp.md`](.github/github-mcp.md)

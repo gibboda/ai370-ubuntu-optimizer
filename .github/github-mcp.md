@@ -42,8 +42,8 @@ Do not depend on deprecated Project tool names when defining policy.
 | Client | Role | GitHub Projects authorization | MCP write posture |
 | --- | --- | --- | --- |
 | Cursor | Primary development orchestrator | `project` (read and write) | Read/write Issues, PRs, and Projects where authorized |
-| Grok Build | Independent reviewer (advisory) | `read:project` | `X-MCP-Readonly: true`; no Project, Issue, PR, or repository mutation by default |
-| Antigravity | Secondary / specialist | `read:project` by default; `project` only when Project mutation is required | No `X-MCP-Readonly` by default so repository writes can work when the token allows them |
+| Grok Build | Independent reviewer and specialist advisor (advisory) | `read:project` | `X-MCP-Readonly: true`; no Project, Issue, PR, or repository mutation by default. Assigned advice is recorded as a COMMENT-only PR comment or COMMENT review out of band or by Cursor/CODEOWNER |
+| Antigravity | Secondary / specialist; CLI (`agy`) is also independent reviewer and specialist advisor | `read:project` by default; `project` only when Project mutation is required | No `X-MCP-Readonly` by default so repository writes can work when the token allows them. Assigned `agy` advice is COMMENT-only and must not APPROVE, REQUEST_CHANGES, or merge |
 | GitHub Copilot | GitHub-native fallback / specialist | GitHub OAuth / session scopes | Prefer OAuth; do not replace working OAuth with a PAT |
 
 GitHub Projects is the source of truth for planned and workflow state
@@ -143,6 +143,11 @@ grok inspect
 grok mcp doctor github
 ```
 
+Assigned Grok advice still requires a durable COMMENT-only pull-request
+record. GitHub MCP stays read-only, so do not post that record through MCP
+write tools. Post out of band or have Cursor or the CODEOWNER post the
+attributed local output. See [`.github/grok/policy.md`](grok/policy.md).
+
 ## Antigravity
 
 Official GitHub MCP config for Antigravity is
@@ -173,8 +178,10 @@ Keep the token at `read:project` unless Project mutation is explicitly
 required. Prefer the hosted GitHub MCP endpoint over a third-party GitHub
 MCP implementation.
 
-Antigravity CLI (`agy`) independent review is separate from this IDE MCP
-file. See [`.github/antigravity/README.md`](antigravity/README.md).
+Antigravity CLI (`agy`) independent review and specialist advice are
+separate from this IDE MCP file. Assigned `agy` advice must still be
+recorded as a COMMENT-only pull-request comment or COMMENT review. See
+[`.github/antigravity/README.md`](antigravity/README.md).
 
 ## GitHub Copilot / VS Code
 

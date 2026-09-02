@@ -14,9 +14,9 @@
 
 ## Current compatibility
 
-The current contract is schema version 2.
+The current contract is schema version 3.
 
-Version 1 established the authority, policy-domain, role, and invariant model. Version 2 added `overlay_contract`; it did not change the role hierarchy, merge authority, or the meaning of the version-1 role and invariant fields.
+Version 1 established the authority, policy-domain, role, and invariant model. Version 2 added `overlay_contract`; it did not change the role hierarchy, merge authority, or the meaning of the version-1 role and invariant fields. Version 3 added several new fields to the `independent_reviewer` role: `providers` (list of eligible providers), `also_serves` (additional advisory roles the reviewer may fill), `form_constraints` (per-form `github_review_state` semantics, replacing a single `github_review_state` field), and `advice_record_required`. `advice_record_required` changes the required interpretation for consumers that track whether an assigned reviewer must produce a durable record, so a version increment is required. `form_constraints` clarifies that only the `comment_review` form carries a GitHub review state; the `pull_request_comment` form has no review state (`null`).
 
 For the version-1-to-version-2 transition:
 
@@ -24,6 +24,12 @@ For the version-1-to-version-2 transition:
 2. Version 2 may add overlay validation data without changing version-1 role semantics.
 3. A version-1 consumer that only consumes version-1 fields can migrate by explicitly accepting version 2 only after verifying that the fields it consumes retain the expected shape and semantics.
 4. A consumer that requires `overlay_contract` must require schema version 2 or newer and must still reject unknown future versions until support is added.
+
+For the version-2-to-version-3 transition:
+
+1. All version-2 top-level policy domains, roles, and invariants remain present and semantically equivalent in version 3.
+2. Version 3 adds these fields inside the `independent_reviewer` role: `providers`, `also_serves`, `form_constraints`, and `advice_record_required`. A version-2 consumer that does not inspect these fields is unaffected. A consumer that enforces advice-record obligations or per-form review-state semantics must require schema version 3 or newer.
+3. A version-2 consumer may explicitly accept version 3 after verifying that the fields it consumes retain their expected shape and semantics.
 
 ## Migration procedure
 
