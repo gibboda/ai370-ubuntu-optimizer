@@ -158,7 +158,8 @@ These steps cannot be completed from repository files alone:
    MCP only. Assigned Grok advice still requires a COMMENT-only
    pull-request record (out of band or posted by Cursor/CODEOWNER).
 3. **Antigravity**: use local Google/Antigravity login for the CLI; do
-   not use `GEMINI_API_KEY` for ordinary review. Optionally configure
+   not use `GEMINI_API_KEY`. Do not pin `modelProvider` (that requires a
+   Gemini API key). Optionally configure
    `~/.gemini/antigravity/mcp_config.json` with `ANTIGRAVITY_GH_PAT` (that
    format does not interpolate env vars).
 4. **GitHub Copilot**: prefer GitHub-native OAuth for MCP; do not replace
