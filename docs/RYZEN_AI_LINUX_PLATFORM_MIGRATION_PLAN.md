@@ -209,6 +209,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/lib/common.sh` | IMPLEMENTED | Shared reporting helpers; `ai370_*` names are compatibility surface |
 | `scripts/validate-pr-title.sh` | IMPLEMENTED | Conventional Commit title gate |
 | `scripts/validate-commit-subject.sh` | IMPLEMENTED | Commit-subject gate |
+| `scripts/external-agent` | IMPLEMENTED | S5-M6 vendor-neutral local wrapper for explicit `grok` / `agy` invocation |
 | `.github/workflows/*` | IMPLEMENTED | ShellCheck, PR title lint, release-please |
 | `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 tracks ROADMAP (S2-M1–S2-M6 In progress; S2-M7 Implemented) |
 | `TASK_PROPOSALS.md` | DEPRECATED | Stage/Milestone compatibility backlog; do not add new Tier-named tasks |

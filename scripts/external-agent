@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+# S5-M6: vendor-neutral local entry point for explicitly selected grok or agy.
 set -euo pipefail
 
 usage() {

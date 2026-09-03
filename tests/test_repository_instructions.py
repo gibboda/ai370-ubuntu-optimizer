@@ -596,6 +596,19 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertTrue((ROOT / ".github/antigravity/README.md").is_file())
         self.assertTrue((ROOT / ".github/antigravity/settings.json").is_file())
 
+        wrapper = ROOT / "scripts/external-agent"
+        self.assertTrue(wrapper.is_file(), wrapper)
+        wrapper_text = wrapper.read_text(encoding="utf-8")
+        self.assertIn("S5-M6", wrapper_text)
+        listed = subprocess.check_output(
+            ["git", "ls-files", "-s", "--", "scripts/external-agent"],
+            cwd=ROOT,
+            text=True,
+        )
+        self.assertRegex(listed, r"^100755\s")
+        roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
+        self.assertIn("`scripts/external-agent`", roadmap)
+
         settings_path = ROOT / ".github/antigravity/settings.json"
         raw = settings_path.read_text(encoding="utf-8")
         self.assertNotRegex(raw, r"AIza[0-9A-Za-z_-]+")
