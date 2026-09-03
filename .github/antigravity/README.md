@@ -62,10 +62,11 @@ Antigravity/Google login on this machine; do not export a vendor API key.
 GitHub Actions does not call Gemini and does not run `agy`. Do not use
 `GEMINI_API_KEY` for GitHub MCP.
 
-Antigravity IDE GitHub MCP uses the current user-level Antigravity MCP
-configuration location `~/.gemini/config/mcp_config.json`. Keep this
-separate from the Antigravity CLI settings file above. Never commit the MCP
-file with a token. Default Project authorization is `read:project`. See
+Antigravity IDE GitHub MCP lives in
+`~/.gemini/antigravity/mcp_config.json` and uses `serverUrl`. That format
+does not interpolate environment variables in headers. Do not commit it
+with a token. Keep it separate from the Antigravity CLI settings file
+above. Default Project authorization is `read:project`. See
 [`.github/github-mcp.md`](../github-mcp.md).
 
 ## Vendor-neutral local invocation
