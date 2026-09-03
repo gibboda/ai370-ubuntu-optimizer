@@ -85,6 +85,7 @@ Scope narrows the area of change:
 | `architecture` | Architecture docs / high-level design |
 | `agents` | Agent policy and orchestration (`AGENTS.md`, `.cursor/`, `.github/agents/`, `.agents/`, `.github/instructions/`) |
 | `governance` | GitHub PR governance, rulesets, required checks, and advisory AI review |
+| `mcp` | GitHub MCP client configuration and least-privilege contract (`.github/github-mcp.md`) |
 | `workflows` | `workflows/` |
 | `vscode` | VS Code workspace settings |
 | `settings` | Editor and plugin settings (`.cursor/settings.json`) |
@@ -108,6 +109,7 @@ fix(rocm): Correct iGPU device path detection
 chore(deps): Bump onnx in configs/ai-runtime
 chore(agents): Define Cursor hybrid orchestration boundary
 test(governance): Verify advisory AI review boundary
+docs(mcp): Restore Antigravity GitHub MCP setup contract
 feat(settings): Add snyk-secure-development plugin configuration
 chore: Bump stefanzweifel/git-auto-commit-action to v5.1
 docs: Clarify safe-mode defaults in README

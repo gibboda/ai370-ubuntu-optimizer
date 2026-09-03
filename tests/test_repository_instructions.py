@@ -1370,6 +1370,7 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         "architecture",
         "agents",
         "governance",
+        "mcp",
         "workflows",
         "vscode",
         "settings",
@@ -1462,6 +1463,34 @@ class ConventionalCommitScopeTests(unittest.TestCase):
                 "bash",
                 str(ROOT / "scripts/validate-commit-subject.sh"),
                 "test(governance): Verify advisory review boundary",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_pr_title_accepts_mcp_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "docs(mcp): Restore Antigravity GitHub MCP setup contract",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_commit_subject_accepts_mcp_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "docs(mcp): Restore Antigravity GitHub MCP setup contract",
             ],
             check=False,
             capture_output=True,
