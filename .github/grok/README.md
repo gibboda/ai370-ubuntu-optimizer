@@ -1,8 +1,10 @@
 # Independent Grok Build review
 
 Owner: **S5-M6**. Independent pull-request review is the local Grok CLI
-(`grok`) authenticated by a SuperGrok account. It is not a GitHub Actions
-workflow and it does not use `XAI_API_KEY`.
+(`grok`) authenticated by a SuperGrok account login (`grok login`, usually
+OAuth). It is not a GitHub Actions workflow and it does not use
+`XAI_API_KEY`. Prefer account login; do not put an xAI API key in the local
+shell or in GitHub Secrets for this repository.
 
 Grok / Grok Build is the independent AI reviewer in the Agent hierarchy in
 `AGENTS.md`. It also serves as a specialist advisor. It is not the primary

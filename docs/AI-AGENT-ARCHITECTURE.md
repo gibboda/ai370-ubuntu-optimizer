@@ -153,13 +153,15 @@ These steps cannot be completed from repository files alone:
 
 1. **Cursor GitHub MCP**: export `CURSOR_GH_PAT` locally (repository
    access as needed + `project`), or complete Cloud Agent MCP header setup.
-2. **Grok Build**: sign in with a SuperGrok account; optionally export
-   `GROK_GH_PAT` for read-only GitHub MCP. Assigned Grok advice still
-   requires a COMMENT-only pull-request record (out of band or posted by
-   Cursor/CODEOWNER).
-3. **Antigravity**: use local Google/Gemini authentication for the CLI as
-   required; optionally configure `~/.gemini/antigravity/mcp_config.json`
-   with `ANTIGRAVITY_GH_PAT` (that format does not interpolate env vars).
+2. **Grok Build**: sign in with a SuperGrok account (`grok login`); do not
+   use `XAI_API_KEY`. Optionally export `GROK_GH_PAT` for read-only GitHub
+   MCP only. Assigned Grok advice still requires a COMMENT-only
+   pull-request record (out of band or posted by Cursor/CODEOWNER).
+3. **Antigravity**: use local Google/Antigravity login for the CLI; do
+   not use `GEMINI_API_KEY`. Do not pin `modelProvider` (that requires a
+   Gemini API key). Optionally configure
+   `~/.gemini/antigravity/mcp_config.json` with `ANTIGRAVITY_GH_PAT` (that
+   format does not interpolate env vars).
 4. **GitHub Copilot**: prefer GitHub-native OAuth for MCP; do not replace
    working OAuth with a hardcoded PAT.
 

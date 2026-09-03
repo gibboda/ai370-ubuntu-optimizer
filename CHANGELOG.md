@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Prefer account login for local independent review: SuperGrok (`grok login`)
+  and Antigravity Google login. Do not use `XAI_API_KEY` or `GEMINI_API_KEY`
+  for `grok`/`agy`. Do not pin Antigravity `modelProvider` (that requires
+  `GEMINI_API_KEY`); from the repository root, merge
+  `.github/antigravity/settings.json` into
+  `~/.gemini/antigravity-cli/settings.json` without wiping
+  `trustedWorkspaces`, and drop any existing `modelProvider` so `agy` uses
+  the default login backend.
 - Require Grok Build (`grok`) and Antigravity CLI (`agy`) to act as
   advisory independent reviewers and specialist advisors, and to leave a
   COMMENT-only pull-request comment or COMMENT review recording that

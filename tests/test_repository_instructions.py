@@ -600,7 +600,19 @@ class RepositoryInstructionsTests(unittest.TestCase):
         raw = settings_path.read_text(encoding="utf-8")
         self.assertNotRegex(raw, r"AIza[0-9A-Za-z_-]+")
         self.assertNotIn("GEMINI_API_KEY", raw)
-        self.assertEqual(json.loads(raw), {"modelProvider": "gemini"})
+        settings = json.loads(raw)
+        self.assertEqual(settings, {})
+        self.assertNotIn("modelProvider", settings)
+
+        antigravity_readme = (ROOT / ".github/antigravity/README.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("emergency fallback", antigravity_readme)
+        self.assertNotIn('data["modelProvider"] = "gemini"', antigravity_readme)
+        self.assertIn("Path(\".github/antigravity/settings.json\")", antigravity_readme)
+        self.assertIn('data.pop("modelProvider", None)', antigravity_readme)
+        self.assertIn("repository root", antigravity_readme)
+        self.assertIn("account login", antigravity_readme)
 
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
         self.assertIn(".gemini/", gitignore)
