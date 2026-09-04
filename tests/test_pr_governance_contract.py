@@ -73,6 +73,7 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertIn("Create New Branch", policy)
         self.assertIn("GitHub Copilot only as a GitHub-native fallback", policy)
         self.assertIn("Codex only as the final narrowly scoped", policy)
+        self.assertIn("does not replace the process-required", policy)
         self.assertIn("Do not automatically execute this list as a chain", policy)
 
     def test_governance_invariants_match_agent_policy(self) -> None:
@@ -81,8 +82,11 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertTrue(invariants["deterministic_checks_authoritative_for_machine_verifiable_facts"])
         self.assertTrue(invariants["optional_ai_unavailability_must_not_block_merge"])
         self.assertTrue(invariants["mcp_access_does_not_bypass_governance"])
-        self.assertTrue(invariants["copilot_and_codex_fallback_only"])
+        self.assertNotIn("copilot_and_codex_fallback_only", invariants)
         self.assertTrue(invariants["no_automatic_vendor_chaining"])
+        agents = AGENTS_POLICY.read_text(encoding="utf-8")
+        self.assertIn("Copilot and/or Codex must perform a final specialist pass", agents)
+        self.assertIn("process-required, result-advisory", agents)
 
     def test_mcp_document_preserves_governance_boundary(self) -> None:
         text = " ".join(MCP_POLICY.read_text(encoding="utf-8").split())
@@ -100,16 +104,19 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertEqual(fallback["provider"], "antigravity_cli")
         self.assertFalse(second_look["merge_gate"])
         self.assertFalse(second_look["required_status_check"])
-        last_resort = pipeline["last_resort_specialists"]
-        self.assertFalse(last_resort["process_required"])
-        self.assertEqual(last_resort["providers"], ["github_copilot", "codex"])
-        self.assertEqual(last_resort["selection"], "human_controlled_one_at_a_time")
-        self.assertEqual(last_resort["when"], "prior_capable_agents_unable_to_safely_resolve_gap")
-        self.assertTrue(last_resort["github_copilot_precedes_codex"])
-        self.assertFalse(last_resort["automatic"])
-        self.assertFalse(last_resort["merge_gate"])
-        self.assertFalse(last_resort["required_status_check"])
-        self.assertTrue(set(last_resort["providers"]).issubset(advisory_providers))
+        self.assertNotIn("last_resort_specialists", pipeline)
+        final_pass = pipeline["final_advisory_specialist_pass"]
+        self.assertTrue(final_pass["process_required"])
+        self.assertEqual(final_pass["providers"], ["github_copilot", "codex"])
+        self.assertEqual(final_pass["selection"], "any_or_both")
+        self.assertEqual(final_pass["github_review_state"], "comment_only")
+        self.assertFalse(final_pass["satisfies_branch_protection"])
+        self.assertFalse(final_pass["merge_gate"])
+        self.assertFalse(final_pass["required_status_check"])
+        self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
+        agents = AGENTS_POLICY.read_text(encoding="utf-8")
+        self.assertIn("Copilot and/or Codex must perform a final specialist pass", agents)
+        self.assertIn("process-required, result-advisory", agents)
 
     def test_codeowners_contains_only_gibboda_owner_tokens(self) -> None:
         text = CODEOWNERS.read_text(encoding="utf-8")
