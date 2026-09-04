@@ -61,7 +61,9 @@ jobs:
 
       - name: Validate PR title follows Conventional Commits
         if: steps.title-lint-gate.outputs.enforce == 'true'
-        run: bash scripts/validate-pr-title.sh "${{ github.event.pull_request.title }}"
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: bash scripts/validate-pr-title.sh "$PR_TITLE"
 
   lint-pr-commits:
     runs-on: ubuntu-latest

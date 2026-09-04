@@ -1607,6 +1607,12 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         self.assertIn("authoritative for allowed types", agents)
         self.assertIn("CONTRIBUTING.md", codex)
         self.assertIn("bash scripts/validate-pr-title.sh", workflow)
+        self.assertIn('"$PR_TITLE"', workflow)
+        self.assertIn("PR_TITLE: ${{ github.event.pull_request.title }}", workflow)
+        self.assertNotRegex(
+            workflow,
+            r"run:.*\$\{\{\s*github\.event\.pull_request\.title",
+        )
         self.assertIn("scripts/validate-commit-subject.sh", workflow)
         self.assertIn("`s5-m6`", contributing)
         self.assertIn("milestone", contributing)
