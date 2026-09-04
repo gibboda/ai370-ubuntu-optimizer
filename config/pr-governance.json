@@ -9,34 +9,30 @@
     "minimum_approving_reviews": 1,
     "require_code_owner_reviews": true,
     "require_review_thread_resolution": true,
-    "required_status_checks": [
-      "ShellCheck"
-    ]
+    "required_status_checks": ["ShellCheck"]
   },
   "advisory_ai_review": {
     "merge_gate": false,
     "required_status_check": false,
-    "providers": [
-      "grok_build",
-      "antigravity",
-      "antigravity_cli",
-      "github_copilot",
-      "codex",
-      "maintainer_approved"
-    ],
-    "forbidden_required_check_terms": [
-      "grok",
-      "antigravity",
-      "gemini",
-      "copilot",
-      "codex",
-      "ai review",
-      "llm"
-    ]
+    "providers": ["cursor_bugbot", "grok_build", "antigravity", "antigravity_cli", "github_copilot", "codex", "maintainer_approved"],
+    "forbidden_required_check_terms": ["bugbot", "grok", "antigravity", "gemini", "copilot", "codex", "ai review", "llm"]
   },
   "review_pipeline": {
     "required_github_reviewer": "gibboda",
     "required_github_reviewer_is_codeowner": true,
+    "cursor_bugbot": {
+      "role": "cursor_native_pr_review",
+      "advisory": true,
+      "merge_gate": false,
+      "required_status_check": false,
+      "default_effort_preferred": true,
+      "autofix": {
+        "preferred_first_remediation_for_bugbot_findings": true,
+        "preferred_target": "new_branch",
+        "automatic_downstream_vendor_escalation": false,
+        "deterministic_revalidation_required": true
+      }
+    },
     "second_look": {
       "assignable_by": "codeowner",
       "providers": ["grok_build", "antigravity"],
@@ -46,10 +42,7 @@
       "advice_record": {
         "required_when_assigned": true,
         "forms": ["pull_request_comment", "comment_review"],
-        "form_constraints": {
-          "comment_review": {"github_review_state": "comment_only"},
-          "pull_request_comment": {"github_review_state": null}
-        },
+        "form_constraints": {"comment_review": {"github_review_state": "comment_only"}, "pull_request_comment": {"github_review_state": null}},
         "attribution_required": true,
         "forbidden_states": ["approve", "request_changes"],
         "satisfies_branch_protection": false,
@@ -68,11 +61,13 @@
       "merge_gate": false,
       "required_status_check": false
     },
-    "final_advisory_specialist_pass": {
-      "process_required": true,
+    "last_resort_specialists": {
+      "process_required": false,
       "providers": ["github_copilot", "codex"],
-      "selection": "any_or_both",
-      "github_review_state": "comment_only",
+      "selection": "human_controlled_one_at_a_time",
+      "when": "prior_capable_agents_unable_to_safely_resolve_gap",
+      "github_copilot_precedes_codex": true,
+      "automatic": false,
       "satisfies_branch_protection": false,
       "merge_gate": false,
       "required_status_check": false
@@ -82,6 +77,8 @@
     "human_final_authority": true,
     "deterministic_checks_authoritative_for_machine_verifiable_facts": true,
     "optional_ai_unavailability_must_not_block_merge": true,
-    "mcp_access_does_not_bypass_governance": true
+    "mcp_access_does_not_bypass_governance": true,
+    "copilot_and_codex_fallback_only": true,
+    "no_automatic_vendor_chaining": true
   }
 }
