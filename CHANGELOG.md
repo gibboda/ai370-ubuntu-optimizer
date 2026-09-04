@@ -6,10 +6,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.30.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.29.1...v0.30.0) (2026-09-04)
+
+
+### Features
+
+* **agents:** harden external-agent local execution ([#281](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/281)) ([a22d9fd](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/a22d9fd7df1277d89ae82be41a1f51a581a430b7))
 
 ### Changed
 
+- **deps:** bump `pip` from 26.1.2 to 26.2 in `/configs/ai-runtime` ([#279](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/279)) ([3273851](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/3273851f724faa9de1b7864a8ea85d4c4b9a8051))
 - Prefer account login for local independent review: SuperGrok (`grok login`)
   and Antigravity Google login. Do not use `XAI_API_KEY` or `GEMINI_API_KEY`
   for `grok`/`agy`. Do not pin Antigravity `modelProvider` (that requires
@@ -17,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.github/antigravity/settings.json` into
   `~/.gemini/antigravity-cli/settings.json` without wiping
   `trustedWorkspaces`, and drop any existing `modelProvider` so `agy` uses
-  the default login backend.
+  the default login backend. ([#280](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/280)) ([c90fcde](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/c90fcdee9c0077781250399f89c53da566e069d9))
 - Require Grok Build (`grok`) and Antigravity CLI (`agy`) to act as
   advisory independent reviewers and specialist advisors, and to leave a
   COMMENT-only pull-request comment or COMMENT review recording that
@@ -28,7 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   contracts updated: roles schema bumped to v3, advice-record objects use
   per-form `form_constraints` instead of a single `github_review_state`, and
   `allowed_roles` in `pr-governance.json` now uses canonical role keys.
-  PR template advice-record checkbox updated with N/A path.
+  PR template advice-record checkbox updated with N/A path. ([#277](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/277)) ([7d4c3c1](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/7d4c3c1fbec4fa358cc94c3e3334693d10c92610))
+
+## [Unreleased]
 
 ## [0.29.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.29.0...v0.29.1) (2026-09-01)
 
