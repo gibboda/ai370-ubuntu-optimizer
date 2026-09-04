@@ -25,6 +25,13 @@ if [[ $# -lt 1 ]]; then
   exit 64
 fi
 
+case "$1" in
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+esac
+
 agent=$1
 shift
 if [[ ${1:-} == "--" ]]; then
@@ -51,9 +58,6 @@ case "$agent" in
       exit 127
     }
     exec agy "$@"
-    ;;
-  -h|--help|help)
-    usage
     ;;
   *)
     echo "error: unsupported external agent '$agent'; expected grok or agy" >&2

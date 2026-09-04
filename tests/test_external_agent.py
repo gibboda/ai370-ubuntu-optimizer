@@ -56,6 +56,28 @@ class ExternalAgentTests(unittest.TestCase):
             env=env,
         )
 
+    def test_zero_arguments_prints_usage(self) -> None:
+        completed = self._run()
+        self.assertEqual(completed.returncode, 64)
+        self.assertIn("Usage:", completed.stderr)
+        self.assertEqual(completed.stdout, "")
+
+    def test_help_flags_print_usage(self) -> None:
+        for flag in ("-h", "--help", "help"):
+            with self.subTest(flag=flag):
+                completed = self._run(flag)
+                self.assertEqual(completed.returncode, 0)
+                self.assertIn("Usage:", completed.stdout)
+                self.assertEqual(completed.stderr, "")
+
+    def test_help_works_outside_a_git_repository(self) -> None:
+        outside = Path(self._tmpdir.name) / "not-a-repo"
+        outside.mkdir()
+        completed = self._run("--help", cwd=outside)
+        self.assertEqual(completed.returncode, 0)
+        self.assertIn("Usage:", completed.stdout)
+        self.assertNotIn("run from inside a Git repository", completed.stderr)
+
     def test_rejects_unsupported_agent(self) -> None:
         for name in ("cursor", "copilot", "grok;agy", "antigravity", "Antigravity"):
             with self.subTest(name=name):
