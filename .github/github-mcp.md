@@ -6,7 +6,8 @@ capability. It is not an instruction to invoke Cursor, Grok Build,
 Antigravity, and Copilot on the same ordinary task.
 
 [`AGENTS.md`](../AGENTS.md) remains authoritative for agent roles,
-escalation, and cost policy. Architecture overview:
+escalation, cost policy, and human-controlled agent selection.
+Architecture overview:
 [`docs/AI-AGENT-ARCHITECTURE.md`](../docs/AI-AGENT-ARCHITECTURE.md).
 This file is the setup and least-privilege contract for GitHub MCP clients.
 
@@ -178,9 +179,18 @@ Keep the token at `read:project` unless Project mutation is explicitly
 required. Prefer the hosted GitHub MCP endpoint over a third-party GitHub
 MCP implementation.
 
-Antigravity CLI (`agy`) independent review and specialist advice are
-separate from this IDE MCP file. Assigned `agy` advice must still be
-recorded as a COMMENT-only pull-request comment or COMMENT review. See
+Keep this MCP file separate from Antigravity CLI settings at
+`~/.gemini/antigravity-cli/settings.json`. Antigravity CLI (`agy`)
+independent review and specialist advice are separate from this IDE MCP
+file. `agy` model execution uses account login and is separate from
+GitHub authorization. Validate the model path with:
+
+```bash
+agy models
+```
+
+Assigned `agy` advice must still be recorded as a COMMENT-only
+pull-request comment or COMMENT review. See
 [`.github/antigravity/README.md`](antigravity/README.md).
 
 ## GitHub Copilot / VS Code
@@ -210,6 +220,27 @@ In Copilot Chat, use Agent mode, open the MCP tool picker, and complete
 GitHub sign-in from the CodeLens **Auth** action on that server. Do not
 replace functioning OAuth with a hardcoded PAT.
 
+## Vendor-neutral local execution
+
+The repository provides one explicit local entry point:
+
+```bash
+scripts/external-agent <grok|agy> [--] [agent arguments...]
+```
+
+Examples:
+
+```bash
+scripts/external-agent grok -- inspect
+scripts/external-agent agy -- models
+scripts/external-agent agy -- -p "Review the current branch"
+```
+
+The wrapper changes to the repository root and invokes exactly the agent
+selected by the human/operator. It does not choose an agent, automatically
+escalate, chain vendors, alter credentials, post reviews, approve, or
+merge.
+
 ## Validation
 
 Perform only harmless reads first. Do not modify a Project merely to
@@ -223,4 +254,5 @@ prove connectivity.
 | Copilot | Allowed | Depends on the GitHub authorization the user granted |
 
 Do not weaken token permissions, rulesets, or branch protection to make
-a test pass.
+a test pass. Do not weaken the human-controlled escalation model to make
+a connectivity test pass.

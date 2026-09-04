@@ -209,6 +209,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/lib/common.sh` | IMPLEMENTED | Shared reporting helpers; `ai370_*` names are compatibility surface |
 | `scripts/validate-pr-title.sh` | IMPLEMENTED | Conventional Commit title gate |
 | `scripts/validate-commit-subject.sh` | IMPLEMENTED | Commit-subject gate |
+| `scripts/external-agent` | IMPLEMENTED | S5-M6 vendor-neutral local wrapper for explicit `grok` / `agy` invocation |
 | `.github/workflows/*` | IMPLEMENTED | ShellCheck, PR title lint, release-please |
 | `AGENTS.md`, `docs/ROADMAP.md`, `README.md` | PARTIAL | Authority exists; README Stage 2 tracks ROADMAP (S2-M1–S2-M6 In progress; S2-M7 Implemented) |
 | `TASK_PROPOSALS.md` | DEPRECATED | Stage/Milestone compatibility backlog; do not add new Tier-named tasks |
@@ -599,7 +600,7 @@ opt-in. Required fixture classes for hardware-classification changes:
 
 Current automated coverage to retain until replaced by owner-specific tests:
 
-- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities tests.test_agent_mcp_contract tests.test_pr_governance_contract tests.test_agent_cross_contract_consistency tests.test_agent_contract_compatibility tests.test_agent_distribution_contract`
+- `python3 -m unittest tests.test_system_profile tests.test_s1_m1_probe tests.test_s1_m2_normalize tests.test_s1_m3_classify tests.test_s1_m4_capabilities tests.test_s1_m5_publish tests.test_capability_ladder tests.test_s2_visibility_schemas tests.test_s2_m3_gpu_visibility tests.test_s2_m4_npu_visibility tests.test_s2_m7_platform_validation tests.test_s2_m7_gate tests.test_s2_m1_firmware tests.test_s2_m2_kernel_driver tests.test_s2_optimize_profile tests.test_s2_m5_optimization_plan tests.test_s2_m6_optimization_apply tests.test_repository_instructions tests.test_external_agent tests.test_github_label_policy tests.test_agent_role_contract tests.test_agent_work_allocation tests.test_agent_credential_capabilities tests.test_agent_mcp_contract tests.test_pr_governance_contract tests.test_agent_cross_contract_consistency tests.test_agent_contract_compatibility tests.test_agent_distribution_contract`
 - `python3 -m unittest tests.test_agent_architecture_conformance`
 - `python3 -m unittest tests.test_agent_architecture_coverage`
 - `bash tests/smoke_tier1.sh`

@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# SPDX-License-Identifier: GPL-3.0-only
+# S5-M6: vendor-neutral local entry point for explicitly selected grok or agy.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/external-agent <grok|agy> [--] [agent arguments...]
+
+Runs exactly one explicitly selected external agent from the repository root.
+This wrapper does not choose an agent, chain agents, or perform autonomous
+escalation.
+
+Examples:
+  scripts/external-agent grok
+  scripts/external-agent grok -- inspect
+  scripts/external-agent agy -- models
+  scripts/external-agent agy -- -p "Review the current branch"
+EOF
+}
+
+if [[ $# -lt 1 ]]; then
+  usage >&2
+  exit 64
+fi
+
+case "$1" in
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+esac
+
+agent=$1
+shift
+if [[ ${1:-} == "--" ]]; then
+  shift
+fi
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+  echo "error: run from inside a Git repository" >&2
+  exit 2
+}
+cd "$repo_root"
+
+case "$agent" in
+  grok)
+    command -v grok >/dev/null 2>&1 || {
+      echo "error: grok is not installed or not on PATH" >&2
+      exit 127
+    }
+    exec grok "$@"
+    ;;
+  agy)
+    command -v agy >/dev/null 2>&1 || {
+      echo "error: agy is not installed or not on PATH" >&2
+      exit 127
+    }
+    exec agy "$@"
+    ;;
+  *)
+    echo "error: unsupported external agent '$agent'; expected grok or agy" >&2
+    exit 64
+    ;;
+esac

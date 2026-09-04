@@ -55,70 +55,27 @@ jobs:
 
             core.setOutput('enforce', 'true');
 
+      - name: Check out repository
+        if: steps.title-lint-gate.outputs.enforce == 'true'
+        uses: actions/checkout@v4
+
       - name: Validate PR title follows Conventional Commits
         if: steps.title-lint-gate.outputs.enforce == 'true'
-        uses: amannn/action-semantic-pull-request@v5.5.3
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # Allowed commit types (must match CONTRIBUTING.md)
-          types: |
-            feat
-            fix
-            chore
-            refactor
-            docs
-            test
-            ci
-            perf
-          # Optional scopes matching project script areas
-          scopes: |
-            audit
-            baseline
-            amd
-            ai-stack
-            rocm
-            npu
-            acceleration
-            comfyui
-            config
-            architecture
-            agents
-            governance
-            workflows
-            vscode
-            settings
-            release
-            deps
-            stage
-            stage1
-            stage2
-            stage3
-            stage4
-            stage5
-            tier
-            tier1
-            tier2
-          requireScope: false
-          subjectPattern: ^[A-Za-z].+$
-          subjectPatternError: |
-            The subject must start with a letter.
-            Example: "feat(comfyui): Add SDXL workflow template"
-          wip: true
-          validateSingleCommit: false
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: bash scripts/validate-pr-title.sh "$PR_TITLE"
 
   lint-pr-commits:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
       - name: Validate PR commit subjects follow Conventional Commits
         uses: actions/github-script@v7
         with:
           script: |
-            const allowedTypes = ['feat', 'fix', 'chore', 'refactor', 'docs', 'test', 'ci', 'perf'];
-            const allowedScopes = ['audit', 'baseline', 'amd', 'ai-stack', 'rocm', 'npu', 'acceleration', 'comfyui', 'config', 'architecture', 'agents', 'governance', 'workflows', 'vscode', 'settings', 'release', 'deps', 'stage', 'stage1', 'stage2', 'stage3', 'stage4', 'stage5', 'tier', 'tier1', 'tier2'];
-            const commitSubjectPattern = new RegExp(
-              `^(?:${allowedTypes.join('|')})(?:\\((?:${allowedScopes.join('|')})\\))?!?: [A-Za-z].+$`
-            );
+            const { execFileSync } = require('node:child_process');
             const workflowPath = '.github/workflows/pr-title-lint.yml';
 
             try {
@@ -190,7 +147,16 @@ jobs:
                   return false;
                 }
 
-                return !commitSubjectPattern.test(subject);
+                try {
+                  execFileSync('bash', ['scripts/validate-commit-subject.sh', subject], {
+                    encoding: 'utf8',
+                    stdio: ['ignore', 'pipe', 'pipe'],
+                  });
+                  return false;
+                } catch (error) {
+                  core.info((error.stderr || error.stdout || String(error)).trim());
+                  return true;
+                }
               });
 
             if (invalidSubjects.length > 0) {
@@ -198,9 +164,7 @@ jobs:
                 [
                   'The following commit subjects do not follow the required format `type(scope): Subject`:',
                   ...invalidSubjects.map(({ sha, subject }) => `- ${sha} ${subject}`),
-                  'Allowed types: feat, fix, chore, refactor, docs, test, ci, perf.',
-                  'Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, architecture, agents, governance, workflows, vscode, settings, release, deps, stage, stage1, stage2, stage3, stage4, stage5, tier, tier1, tier2.',
-                  'The subject must start with a letter.',
+                  'Run `bash scripts/validate-commit-subject.sh "type(scope): Subject"` locally for the full policy, including canonical milestone scopes like `s5-m6`.',
                 ].join('\n')
               );
             }

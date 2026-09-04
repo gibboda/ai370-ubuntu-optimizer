@@ -596,6 +596,19 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertTrue((ROOT / ".github/antigravity/README.md").is_file())
         self.assertTrue((ROOT / ".github/antigravity/settings.json").is_file())
 
+        wrapper = ROOT / "scripts/external-agent"
+        self.assertTrue(wrapper.is_file(), wrapper)
+        wrapper_text = wrapper.read_text(encoding="utf-8")
+        self.assertIn("S5-M6", wrapper_text)
+        listed = subprocess.check_output(
+            ["git", "ls-files", "-s", "--", "scripts/external-agent"],
+            cwd=ROOT,
+            text=True,
+        )
+        self.assertRegex(listed, r"^100755\s")
+        roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
+        self.assertIn("`scripts/external-agent`", roadmap)
+
         settings_path = ROOT / ".github/antigravity/settings.json"
         raw = settings_path.read_text(encoding="utf-8")
         self.assertNotRegex(raw, r"AIza[0-9A-Za-z_-]+")
@@ -1357,6 +1370,7 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         "architecture",
         "agents",
         "governance",
+        "mcp",
         "workflows",
         "vscode",
         "settings",
@@ -1372,6 +1386,7 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         "tier1",
         "tier2",
     )
+    MILESTONE_SCOPE_PATTERN = "s[1-5]-m[1-9][0-9]*"
 
     def test_validate_pr_title_accepts_dependabot_deps_scope(self) -> None:
         result = subprocess.run(
@@ -1457,6 +1472,34 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Conventional Commit compliant", result.stdout)
 
+    def test_validate_pr_title_accepts_mcp_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "docs(mcp): Restore Antigravity GitHub MCP setup contract",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_commit_subject_accepts_mcp_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "docs(mcp): Restore Antigravity GitHub MCP setup contract",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
     def test_validate_pr_title_accepts_settings_scope(self) -> None:
         result = subprocess.run(
             [
@@ -1477,6 +1520,34 @@ class ConventionalCommitScopeTests(unittest.TestCase):
                 "bash",
                 str(ROOT / "scripts/validate-commit-subject.sh"),
                 "feat(settings): Add snyk-secure-development plugin configuration",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_pr_title_accepts_canonical_milestone_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "fix(s5-m6): Remove undocumented external-agent alias",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_commit_subject_accepts_canonical_milestone_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "fix(s5-m6): Remove undocumented external-agent alias",
             ],
             check=False,
             capture_output=True,
@@ -1523,15 +1594,33 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         self.assertIsNotNone(commit_scopes)
         self.assertEqual(tuple(pr_scopes.group(1).split("|")), self.ALLOWED_SCOPES)
         self.assertEqual(tuple(commit_scopes.group(1).split("|")), self.ALLOWED_SCOPES)
+        self.assertIn(
+            f"milestone_scope='{self.MILESTONE_SCOPE_PATTERN}'",
+            pr_title,
+        )
+        self.assertIn(
+            f"milestone_scope='{self.MILESTONE_SCOPE_PATTERN}'",
+            commit_subject,
+        )
 
         self.assertIn("[`CONTRIBUTING.md`](CONTRIBUTING.md)", agents)
         self.assertIn("authoritative for allowed types", agents)
         self.assertIn("CONTRIBUTING.md", codex)
+        self.assertIn("bash scripts/validate-pr-title.sh", workflow)
+        self.assertIn('"$PR_TITLE"', workflow)
+        self.assertIn("PR_TITLE: ${{ github.event.pull_request.title }}", workflow)
+        self.assertNotRegex(
+            workflow,
+            r"run:.*\$\{\{\s*github\.event\.pull_request\.title",
+        )
+        self.assertIn("scripts/validate-commit-subject.sh", workflow)
+        self.assertIn("`s5-m6`", contributing)
+        self.assertIn("milestone", contributing)
+        self.assertIn("canonical milestone scopes like s5-m6", template)
 
         for scope in self.ALLOWED_SCOPES:
             with self.subTest(scope=scope):
                 self.assertIn(f"`{scope}`", contributing)
-                self.assertRegex(workflow, rf"(?m)^\s+{re.escape(scope)}$")
                 self.assertIn(scope, template)
 
 

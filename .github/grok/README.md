@@ -13,19 +13,15 @@ path. Absence of Grok credentials must not block ordinary development,
 testing, or merging unless repository governance explicitly requires that
 review.
 
-- Run `grok` on the pull-request branch after deterministic checks.
+- Run Grok on the pull-request branch after deterministic checks.
+- Prefer the vendor-neutral repository entry point `scripts/external-agent grok`; arguments after `--` are passed directly to `grok`.
 - Follow [`policy.md`](policy.md) and the Agent hierarchy in `AGENTS.md`.
-- Record assigned advice as a COMMENT-only pull-request comment or COMMENT
-  review. Do not APPROVE, REQUEST_CHANGES, or merge. If Grok cannot post
-  the record, Cursor or the CODEOWNER must post the attributed local
-  output.
-- If Grok Build is unavailable, use Antigravity CLI (`agy`). See
-  [`.github/antigravity/README.md`](../antigravity/README.md).
+- Record assigned advice as a COMMENT-only pull-request comment or COMMENT review. Do not APPROVE, REQUEST_CHANGES, or merge. If Grok cannot post the record, Cursor or the CODEOWNER must post the attributed local output.
+- If Grok Build is unavailable and the human/CODEOWNER chooses the backup reviewer, invoke Antigravity CLI explicitly with `scripts/external-agent agy`. Do not chain automatically.
 
 GitHub Actions does not call xAI. Do not configure `XAI_API_KEY` for this
-repository. Deterministic CI (ShellCheck, portable tests, PR title lint,
-labels) never calls an LLM. Do not use `XAI_API_KEY` for GitHub MCP
-authorization; Grok uses `GROK_GH_PAT`. See
+repository. Deterministic CI never calls an LLM. Do not use `XAI_API_KEY`
+for GitHub MCP authorization; Grok uses `GROK_GH_PAT`. See
 [`.github/github-mcp.md`](../github-mcp.md).
 
 Grok must not merge pull requests, approve as a maintainer, or change

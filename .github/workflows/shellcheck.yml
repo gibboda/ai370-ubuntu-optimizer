@@ -24,6 +24,15 @@ jobs:
         run: |
           mapfile -t shell_files < <(git ls-files '*.sh')
 
+          while IFS= read -r tracked; do
+            [[ -f "$tracked" ]] || continue
+            [[ "$tracked" == *.sh ]] && continue
+            first_line=$(head -n 1 "$tracked" || true)
+            if [[ "$first_line" =~ ^#!.*bash ]]; then
+              shell_files+=("$tracked")
+            fi
+          done < <(git ls-files)
+
           if (( ${#shell_files[@]} == 0 )); then
             echo "No tracked shell scripts were found."
             exit 0

@@ -19,7 +19,7 @@
 ## Scope (optional)
 
 <!-- If the change targets a specific area, add it in parentheses in the title, e.g. `feat(comfyui): ...` -->
-<!-- Valid scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, architecture, agents, governance, workflows, vscode, settings, release, deps, stage, stage1, stage2, stage3, stage4, stage5, tier, tier1, tier2 -->
+<!-- Valid scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, architecture, agents, governance, mcp, workflows, vscode, settings, release, deps, stage, stage1, stage2, stage3, stage4, stage5, tier, tier1, tier2, or canonical milestone scopes like s5-m6 -->
 
 ## Version bump label
 
