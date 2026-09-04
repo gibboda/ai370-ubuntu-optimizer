@@ -57,21 +57,20 @@ class ExternalAgentTests(unittest.TestCase):
         )
 
     def test_rejects_unsupported_agent(self) -> None:
-        for name in ("cursor", "copilot", "grok;agy", "Antigravity"):
+        for name in ("cursor", "copilot", "grok;agy", "antigravity", "Antigravity"):
             with self.subTest(name=name):
                 completed = self._run(name)
                 self.assertEqual(completed.returncode, 64)
                 self.assertIn("unsupported external agent", completed.stderr)
-                self.assertIn("expected grok, agy, or antigravity", completed.stderr)
+                self.assertIn("expected grok or agy", completed.stderr)
 
     def test_missing_cli_fails_closed(self) -> None:
-        for agent in ("grok", "agy", "antigravity"):
+        for agent in ("grok", "agy"):
             with self.subTest(agent=agent):
                 completed = self._run(agent, include_stubs=False)
-                expected = "agy" if agent == "antigravity" else agent
                 self.assertEqual(completed.returncode, 127)
                 self.assertIn(
-                    f"{expected} is not installed or not on PATH",
+                    f"{agent} is not installed or not on PATH",
                     completed.stderr,
                 )
 
@@ -95,12 +94,6 @@ class ExternalAgentTests(unittest.TestCase):
         completed = self._run("grok", "--", "inspect", "--foo", "bar baz")
         self.assertEqual(completed.returncode, 0)
         self.assertIn("ARGS:inspect --foo bar baz", completed.stdout)
-
-    def test_antigravity_alias_execs_agy(self) -> None:
-        completed = self._run("antigravity", "--", "test")
-        self.assertEqual(completed.returncode, 0)
-        self.assertIn("AGENT=agy", completed.stdout)
-        self.assertIn("ARGS:test", completed.stdout)
 
     def test_normalizes_cwd_to_repo_root(self) -> None:
         completed = self._run("grok", "--", "cwd-test", cwd=ROOT / "tests")

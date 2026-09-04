@@ -6,17 +6,16 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/external-agent <grok|agy|antigravity> [--] [agent arguments...]
+Usage: scripts/external-agent <grok|agy> [--] [agent arguments...]
 
 Runs exactly one explicitly selected external agent from the repository root.
-`antigravity` is an alias for `agy`. This wrapper does not choose an agent,
-chain agents, or perform autonomous escalation.
+This wrapper does not choose an agent, chain agents, or perform autonomous
+escalation.
 
 Examples:
   scripts/external-agent grok
   scripts/external-agent grok -- inspect
   scripts/external-agent agy -- models
-  scripts/external-agent antigravity -- models
   scripts/external-agent agy -- -p "Review the current branch"
 EOF
 }
@@ -46,7 +45,7 @@ case "$agent" in
     }
     exec grok "$@"
     ;;
-  agy|antigravity)
+  agy)
     command -v agy >/dev/null 2>&1 || {
       echo "error: agy is not installed or not on PATH" >&2
       exit 127
@@ -57,7 +56,7 @@ case "$agent" in
     usage
     ;;
   *)
-    echo "error: unsupported external agent '$agent'; expected grok, agy, or antigravity" >&2
+    echo "error: unsupported external agent '$agent'; expected grok or agy" >&2
     exit 64
     ;;
 esac
