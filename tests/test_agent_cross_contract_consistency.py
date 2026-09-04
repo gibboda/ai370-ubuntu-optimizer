@@ -153,7 +153,9 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
             self.escalation["properties"]["selected_resource"]["enum"]
         )
         advisory_resources = set(self.governance["advisory_ai_review"]["providers"])
-        self.assertEqual(advisory_resources, escalation_resources)
+        self.assertTrue(escalation_resources.issubset(advisory_resources))
+        self.assertEqual(advisory_resources - escalation_resources, {"cursor_bugbot"})
+        self.assertNotIn("cursor_bugbot", escalation_resources)
 
     def test_no_ai_role_can_be_merge_authority(self):
         merge_authority = self.roles["roles"]["merge_authority"]
@@ -168,7 +170,7 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         advisory = self.governance["advisory_ai_review"]
         advisory_providers = set(advisory["providers"])
         second_look = pipeline["second_look"]
-        final_pass = pipeline["final_advisory_specialist_pass"]
+        last_resort = pipeline["last_resort_specialists"]
         required_checks = self.governance["ruleset"]["required_status_checks"]
 
         self.assertEqual(pipeline["required_github_reviewer"], "gibboda")
@@ -192,15 +194,15 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertTrue(
             set(second_look["cli_advisory_reviewers"]).issubset(advisory_providers)
         )
-        self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
+        self.assertTrue(set(last_resort["providers"]).issubset(advisory_providers))
         self.assertFalse(second_look["merge_gate"])
         self.assertFalse(second_look["required_status_check"])
-        self.assertFalse(final_pass["satisfies_branch_protection"])
-        self.assertFalse(final_pass["merge_gate"])
-        self.assertFalse(final_pass["required_status_check"])
+        self.assertFalse(last_resort["satisfies_branch_protection"])
+        self.assertFalse(last_resort["merge_gate"])
+        self.assertFalse(last_resort["required_status_check"])
         self.assertFalse(advisory["merge_gate"])
         self.assertFalse(advisory["required_status_check"])
-        for provider in set(second_look["providers"]) | {fallback["provider"]} | set(final_pass["providers"]):
+        for provider in set(second_look["providers"]) | {fallback["provider"]} | set(last_resort["providers"]):
             self.assertNotIn(provider, required_checks)
 
     def test_deterministic_validation_precedence_is_consistent(self):
