@@ -14,7 +14,7 @@
   "advisory_ai_review": {
     "merge_gate": false,
     "required_status_check": false,
-    "providers": ["grok_build", "antigravity", "antigravity_cli", "github_copilot", "codex", "maintainer_approved"],
+    "providers": ["cursor_bugbot", "grok_build", "antigravity", "antigravity_cli", "github_copilot", "codex", "maintainer_approved"],
     "forbidden_required_check_terms": ["bugbot", "grok", "antigravity", "gemini", "copilot", "codex", "ai review", "llm"]
   },
   "review_pipeline": {
