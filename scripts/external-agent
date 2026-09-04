@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
+# shellcheck shell=bash
 # SPDX-License-Identifier: GPL-3.0-only
 # S5-M6: vendor-neutral local entry point for explicitly selected grok or agy.
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/external-agent <grok|agy> [--] [agent arguments...]
+Usage: scripts/external-agent <grok|agy|antigravity> [--] [agent arguments...]
 
 Runs exactly one explicitly selected external agent from the repository root.
-This wrapper does not choose an agent, chain agents, or perform autonomous escalation.
+`antigravity` is an alias for `agy`. This wrapper does not choose an agent,
+chain agents, or perform autonomous escalation.
 
 Examples:
   scripts/external-agent grok
   scripts/external-agent grok -- inspect
   scripts/external-agent agy -- models
+  scripts/external-agent antigravity -- models
   scripts/external-agent agy -- -p "Review the current branch"
 EOF
 }
@@ -54,7 +57,7 @@ case "$agent" in
     usage
     ;;
   *)
-    echo "error: unsupported external agent '$agent'; expected grok or agy" >&2
+    echo "error: unsupported external agent '$agent'; expected grok, agy, or antigravity" >&2
     exit 64
     ;;
 esac
