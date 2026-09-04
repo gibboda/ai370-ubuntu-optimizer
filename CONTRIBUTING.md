@@ -93,6 +93,7 @@ change maps cleanly to a single milestone owner.
 | `vscode` | VS Code workspace settings |
 | `settings` | Editor and plugin settings (`.cursor/settings.json`) |
 | `release` | Release tooling and CI |
+| `changelog` | `CHANGELOG.md` release note updates |
 | `deps` | Dependency updates (Dependabot and manual bumps) |
 | `stage` | Cross-stage architecture and policy |
 | `stage1` | Stage 1 probe and system-profile publication |

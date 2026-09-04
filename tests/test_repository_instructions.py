@@ -1375,6 +1375,7 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         "vscode",
         "settings",
         "release",
+        "changelog",
         "deps",
         "stage",
         "stage1",
@@ -1514,12 +1515,40 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Conventional Commit compliant", result.stdout)
 
+    def test_validate_pr_title_accepts_changelog_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "chore(changelog): Move released entries out of Unreleased",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
     def test_validate_commit_subject_accepts_settings_scope(self) -> None:
         result = subprocess.run(
             [
                 "bash",
                 str(ROOT / "scripts/validate-commit-subject.sh"),
                 "feat(settings): Add snyk-secure-development plugin configuration",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_commit_subject_accepts_changelog_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "chore(changelog): Move released entries out of Unreleased",
             ],
             check=False,
             capture_output=True,
