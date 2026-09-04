@@ -42,6 +42,9 @@ when Autofix is enabled and applicable.
 
 ## Escalation after Bugbot/Autofix
 
+This finding-remediation order does not replace the process-required
+Copilot and/or Codex final specialist pass required by `AGENTS.md`.
+
 For a Bugbot finding, use this cost-aware order:
 
 1. Bugbot Autofix, when enabled and applicable.

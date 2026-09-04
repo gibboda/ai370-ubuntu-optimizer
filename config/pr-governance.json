@@ -61,13 +61,11 @@
       "merge_gate": false,
       "required_status_check": false
     },
-    "last_resort_specialists": {
-      "process_required": false,
+    "final_advisory_specialist_pass": {
+      "process_required": true,
       "providers": ["github_copilot", "codex"],
-      "selection": "human_controlled_one_at_a_time",
-      "when": "prior_capable_agents_unable_to_safely_resolve_gap",
-      "github_copilot_precedes_codex": true,
-      "automatic": false,
+      "selection": "any_or_both",
+      "github_review_state": "comment_only",
       "satisfies_branch_protection": false,
       "merge_gate": false,
       "required_status_check": false
@@ -78,7 +76,6 @@
     "deterministic_checks_authoritative_for_machine_verifiable_facts": true,
     "optional_ai_unavailability_must_not_block_merge": true,
     "mcp_access_does_not_bypass_governance": true,
-    "copilot_and_codex_fallback_only": true,
     "no_automatic_vendor_chaining": true
   }
 }
