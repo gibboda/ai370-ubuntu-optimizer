@@ -69,17 +69,6 @@
       "satisfies_branch_protection": false,
       "merge_gate": false,
       "required_status_check": false
-    },
-    "final_advisory_specialist_pass": {
-      "process_required": false,
-      "providers": ["github_copilot", "codex"],
-      "selection": "human_controlled_one_at_a_time",
-      "when": "prior_capable_agents_unable_to_safely_resolve_gap",
-      "github_copilot_precedes_codex": true,
-      "automatic": false,
-      "satisfies_branch_protection": false,
-      "merge_gate": false,
-      "required_status_check": false
     }
   },
   "invariants": {
