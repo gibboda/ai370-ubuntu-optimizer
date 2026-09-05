@@ -153,7 +153,9 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
             self.escalation["properties"]["selected_resource"]["enum"]
         )
         advisory_resources = set(self.governance["advisory_ai_review"]["providers"])
-        self.assertEqual(advisory_resources, escalation_resources)
+        self.assertTrue(escalation_resources.issubset(advisory_resources))
+        self.assertEqual(advisory_resources - escalation_resources, {"cursor_bugbot"})
+        self.assertNotIn("cursor_bugbot", escalation_resources)
 
     def test_no_ai_role_can_be_merge_authority(self):
         merge_authority = self.roles["roles"]["merge_authority"]

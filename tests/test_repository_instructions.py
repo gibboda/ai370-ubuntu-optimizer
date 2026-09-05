@@ -1371,6 +1371,7 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         "agents",
         "governance",
         "mcp",
+        "contract",
         "workflows",
         "vscode",
         "settings",
@@ -1493,6 +1494,34 @@ class ConventionalCommitScopeTests(unittest.TestCase):
                 "bash",
                 str(ROOT / "scripts/validate-commit-subject.sh"),
                 "docs(mcp): Restore Antigravity GitHub MCP setup contract",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_pr_title_accepts_contract_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "fix(contract): Align PR governance specialist pass keys",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_commit_subject_accepts_contract_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "fix(contract): Align PR governance specialist pass keys",
             ],
             check=False,
             capture_output=True,

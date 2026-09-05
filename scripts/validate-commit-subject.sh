@@ -12,7 +12,7 @@ main() {
   fi
 
   allowed_types='feat|fix|chore|refactor|docs|test|ci|perf'
-  allowed_scopes='audit|baseline|amd|ai-stack|rocm|npu|acceleration|comfyui|config|architecture|agents|governance|mcp|workflows|vscode|settings|release|changelog|deps|stage|stage1|stage2|stage3|stage4|stage5|tier|tier1|tier2'
+  allowed_scopes='audit|baseline|amd|ai-stack|rocm|npu|acceleration|comfyui|config|architecture|agents|governance|mcp|contract|workflows|vscode|settings|release|changelog|deps|stage|stage1|stage2|stage3|stage4|stage5|tier|tier1|tier2'
   milestone_scope='s[1-5]-m[1-9][0-9]*'
   pattern="^(${allowed_types})(\\((${allowed_scopes}|${milestone_scope})\\))?!?: [A-Za-z].+$"
 
@@ -20,7 +20,7 @@ main() {
     echo "[ERROR] Commit subject does not follow Conventional Commits: $subject" >&2
     echo "[ERROR] Expected: type(optional-scope): Subject" >&2
     echo "[ERROR] Allowed types: feat, fix, chore, refactor, docs, test, ci, perf" >&2
-    echo "[ERROR] Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, architecture, agents, governance, mcp, workflows, vscode, settings, release, changelog, deps, stage, stage1, stage2, stage3, stage4, stage5, tier (deprecated), tier1 (deprecated), tier2 (deprecated), or canonical milestone scopes like s5-m6" >&2
+    echo "[ERROR] Allowed scopes: audit, baseline, amd, ai-stack, rocm, npu, acceleration, comfyui, config, architecture, agents, governance, mcp, contract, workflows, vscode, settings, release, changelog, deps, stage, stage1, stage2, stage3, stage4, stage5, tier (deprecated), tier1 (deprecated), tier2 (deprecated), or canonical milestone scopes like s5-m6" >&2
     echo "[ERROR] Subject must start with a letter" >&2
     return 1
   fi

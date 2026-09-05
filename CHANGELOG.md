@@ -38,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Allow Conventional Commit scope `contract` for machine-readable agent and
+  PR contracts under `config/`.
+
 ## [0.29.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.29.0...v0.29.1) (2026-09-01)
 
 

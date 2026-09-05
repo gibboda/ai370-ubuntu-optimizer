@@ -163,6 +163,19 @@ class LabelPolicyTests(unittest.TestCase):
         )
         self.assertEqual(result["apply"], ["bump:patch", "dependencies"])
 
+    def test_pr_contract_scope_applies_dev_environment(self) -> None:
+        result = self.compute(
+            {
+                "action": "opened",
+                "kind": "pull_request",
+                "title": "fix(contract): Align PR governance specialist pass keys",
+                "files": ["config/pr-governance.json"],
+                "current_labels": [],
+            }
+        )
+        self.assertIn("area:dev-environment", result["apply"])
+        self.assertIn("bump:patch", result["apply"])
+
     def test_pr_agents_scope_applies_dev_environment(self) -> None:
         result = self.compute(
             {
