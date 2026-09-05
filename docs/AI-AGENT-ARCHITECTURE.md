@@ -18,20 +18,17 @@ requests CODEOWNER @gibboda
     v
 GitHub Pull Request
     |
-    +-------------------+-------------------+
-    |                   |                   |
-    v                   v                   v
-GitHub Actions     CODEOWNER           Copilot and/or
-Deterministic      @gibboda may        Codex
-Validation         assign Grok         Final advisory
-(required checks)  and/or agy          specialist pass
-                   COMMENT record      high-risk PRs
-                   (advisory)          COMMENT only
-                   Antigravity may
-                   also get a second
-                   look
-    |                   |                   |
-    +-------------------+-------------------+
+    +-------------------+-------------------+-------------------+
+    |                   |                   |                   |
+    v                   v                   v                   v
+GitHub Actions     Grok Build          Antigravity         Copilot and/or
+Deterministic      Independent         Secondary /         Codex
+Validation         challenge/review    specialist          Final advisory
+(required checks)  + specialist        second look         specialist pass
+                   advice              when justified      high-risk PRs
+                   COMMENT only                            COMMENT only
+    |                   |                   |                   |
+    +-------------------+-------------------+-------------------+
                         |
                         v
             Branch Protection /
@@ -59,8 +56,8 @@ a way that satisfies branch protection.
 | --- | --- | --- |
 | Primary development orchestrator | Cursor | Yes for default local development |
 | Required GitHub reviewer | CODEOWNER `@gibboda` | Yes on every pull request |
-| Secondary / specialist | Google Antigravity | No; escalate only when justified. CODEOWNER may assign a second look |
-| Independent AI reviewer and specialist advisor | Grok / Grok Build (`grok`) and Antigravity CLI (`agy`) | No; advisory. CODEOWNER may assign either or both. If Grok is unavailable, `agy` is the independent-review fallback. Assigned advice must be a COMMENT-only PR record |
+| Secondary / specialist | Google Antigravity | No; escalate only when justified. CODEOWNER may assign a specialist second look |
+| Independent challenge/reviewer and specialist advisor | Grok / Grok Build (`grok`) | No; advisory and exclusive for independent AI challenge/review. Assigned advice must be a COMMENT-only PR record |
 | Deterministic validation | GitHub Actions + local scripts | Yes for merge eligibility facts it can verify |
 | GitHub-native fallback | GitHub Copilot | No for implementation; high-risk COMMENT-only final specialist pass with Codex |
 | Narrow specialist | Codex or other maintainer-approved agent | No for implementation; may share the advisory final specialist pass |
@@ -77,14 +74,21 @@ a way that satisfies branch protection.
   governance explicitly changes that.
 - Cursor is an external development orchestrator. It is not a GitHub-hosted
   Copilot custom agent.
-- CODEOWNER `@gibboda` may assign Grok Build (`grok`) and/or Antigravity
-  CLI (`agy`) as independent reviewer and/or specialist advisor, and may
-  assign Antigravity for a specialist second look. Assigned `grok` and
-  `agy` advice must be recorded as a COMMENT-only pull-request comment or
-  COMMENT review. Copilot and/or Codex must make a final advisory specialist
-  pass on high-risk pull requests. Standard and low-risk pull requests skip
-  that pass by default. Neither assignment is a GitHub CODEOWNERS identity,
-  required status check, or merge authority.
+- Grok Build (`grok`) is the exclusive independent AI challenge/review provider
+  and may also serve as specialist advisor. Its role is to challenge assumptions,
+  review an existing implementation independently, identify regressions and edge
+  cases, and provide bounded specialist advice. It does not orchestrate
+  implementation and does not gain merge, policy, release, architecture, or
+  repository-governance authority.
+- Antigravity remains the secondary/specialist implementation-analysis resource.
+  A CODEOWNER may assign it for a specialist second look, but Antigravity CLI
+  (`agy`) is not an independent-review fallback and does not share Grok's
+  independent-review role.
+- Assigned Grok advice must be recorded as a COMMENT-only pull-request comment
+  or COMMENT review. Copilot and/or Codex must make a final advisory specialist
+  pass on high-risk pull requests. Standard and low-risk pull requests skip that
+  pass by default. Neither assignment is a GitHub CODEOWNERS identity, required
+  status check, or merge authority.
 - AI unavailability must not block merge when required deterministic
   checks pass and the CODEOWNER has reviewed.
 
@@ -106,8 +110,8 @@ a way that satisfies branch protection.
 | `.github/instructions/` | Copilot / Codex instruction overlays |
 | `.github/agents/` | GitHub Copilot custom agents |
 | `.agents/agents/` | Antigravity workspace specialist agents |
-| `.github/grok/` | Local Grok Build independent-review and specialist-advisor docs |
-| `.github/antigravity/` | Antigravity specialist and CLI advisory-review setup |
+| `.github/grok/` | Local Grok Build exclusive independent-review and specialist-advisor docs |
+| `.github/antigravity/` | Antigravity secondary/specialist setup |
 | `.grok/config.toml` | Grok GitHub MCP (read-only; env-var auth) |
 | `.github/github-mcp.md` | Shared MCP least-privilege setup |
 | `.github/workflows/` | Deterministic CI only (no LLM calls) |
@@ -163,7 +167,8 @@ These steps cannot be completed from repository files alone:
    not use `GEMINI_API_KEY`. Do not pin `modelProvider` (that requires a
    Gemini API key). Optionally configure
    `~/.gemini/antigravity/mcp_config.json` with `ANTIGRAVITY_GH_PAT` (that
-   format does not interpolate env vars).
+   format does not interpolate env vars). Antigravity remains a secondary /
+   specialist resource, not an independent-review fallback.
 4. **GitHub Copilot**: prefer GitHub-native OAuth for MCP; do not replace
    working OAuth with a hardcoded PAT.
 
