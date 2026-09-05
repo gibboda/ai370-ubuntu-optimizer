@@ -102,9 +102,32 @@ class AgentRoleContractTests(unittest.TestCase):
         v2 = json.loads(V2_FIXTURE.read_text(encoding="utf-8"))
         self.assertEqual(v2["schema_version"], 2)
         self.assertEqual(self.contract["schema_version"], 3)
-        for key in ("authority", "policy_domains", "roles", "invariants", "overlay_contract"):
+        for key in ("authority", "policy_domains", "roles", "invariants"):
             with self.subTest(key=key):
                 self._assert_v1_semantics_preserved(self.contract[key], v2[key], key)
+        self._assert_overlay_contract_preserves_v2_structure(
+            self.contract["overlay_contract"],
+            v2["overlay_contract"],
+        )
+
+    def _assert_overlay_contract_preserves_v2_structure(self, actual, expected) -> None:
+        """Preserve v2 overlay paths, roles, and discovery; allow required_any to evolve."""
+        self._assert_v1_semantics_preserved(
+            actual["common"],
+            expected["common"],
+            "overlay_contract.common",
+        )
+        self._assert_v1_semantics_preserved(
+            actual["discovery"],
+            expected["discovery"],
+            "overlay_contract.discovery",
+        )
+        actual_by_path = {entry["path"]: entry for entry in actual["overlays"]}
+        expected_by_path = {entry["path"]: entry for entry in expected["overlays"]}
+        self.assertEqual(set(actual_by_path), set(expected_by_path))
+        for path, entry in expected_by_path.items():
+            with self.subTest(overlay=path):
+                self.assertEqual(actual_by_path[path]["role"], entry["role"])
 
     def test_compatible_additive_fields_do_not_require_migration(self) -> None:
         v1_roles = {"primary_orchestrator": {"provider": "cursor", "count": 1}}
@@ -268,7 +291,8 @@ class AgentRoleContractTests(unittest.TestCase):
     def test_grok_is_advisory_and_not_a_merge_gate(self) -> None:
         reviewer = self.roles["independent_reviewer"]
         self.assertEqual(reviewer["provider"], "grok_build")
-        self.assertEqual(set(reviewer["providers"]), {"grok_build", "antigravity_cli"})
+        self.assertEqual(set(reviewer["providers"]), {"grok_build"})
+        self.assertTrue(reviewer["exclusive"])
         self.assertEqual(reviewer["also_serves"], ["specialist_advisor"])
         self.assertTrue(reviewer["advisory"])
         self.assertFalse(reviewer["merge_gate"])
@@ -288,6 +312,7 @@ class AgentRoleContractTests(unittest.TestCase):
         self.assertTrue(self.invariants["least_agent_principle"])
         self.assertTrue(self.invariants["duplicate_routine_ai_work_prohibited"])
         self.assertTrue(self.invariants["ai_reviews_advisory"])
+        self.assertTrue(self.invariants["grok_exclusive_independent_review"])
 
     def test_overlay_contract_roles_exist_in_manifest(self) -> None:
         for overlay in self.overlay_contract["overlays"]:

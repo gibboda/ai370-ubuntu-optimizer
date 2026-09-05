@@ -204,10 +204,9 @@ class AgentWorkAllocationTests(unittest.TestCase):
         self.assertIn("Routine duplicate implementation is prohibited", text)
         self.assertIn("Independent review is not duplicate implementation", text)
         self.assertIn("CODEOWNER-assigned second look", text)
-        self.assertIn("records Grok Build as `independent_review`", text)
-        self.assertIn("Antigravity as `specialist_review`", text)
-        self.assertIn("remains `independent_review` (independent-reviewer fallback)", text)
-        self.assertIn("is not `specialist_review`", text)
+        self.assertIn("records `grok_build` as `independent_review`", text)
+        self.assertIn("as `specialist_review`, not `independent_review`", text)
+        self.assertIn("does not transfer the independent-review role", text)
         self.assertIn("COMMENT-only pull-request comment or COMMENT review", text)
         self.assertIn("### `specialist_review`", text)
         self.assertIn("`specialist_review_reason`", text)
@@ -235,11 +234,19 @@ class AgentWorkAllocationTests(unittest.TestCase):
             "MCP availability is capability, not an",
             "A CODEOWNER-assigned Grok Build second look is `independent_review`",
             "A CODEOWNER-assigned Antigravity second look is `specialist_review`",
-            "`agy` used as Grok-unavailable fallback remains `independent_review`",
+            "does not transfer the independent-review role to `agy`",
             "When an allocation record is created for that pass, it uses",
             "COMMENT-only pull-request comment or COMMENT review",
         ):
             self.assertIn(phrase, text)
+        self.assertNotIn(
+            "`agy` used as Grok-unavailable fallback remains `independent_review`",
+            text,
+        )
+        self.assertNotIn(
+            "Backup independent review when Grok Build is unavailable",
+            text,
+        )
 
 
 if __name__ == "__main__":

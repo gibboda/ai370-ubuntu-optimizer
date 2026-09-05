@@ -24,8 +24,8 @@ behavior that applies to that agent or environment:
 
 Independent review is not an implementation overlay:
 
-- Preferred independent reviewer: [`.github/grok/`](.github/grok/)
-- Backup independent review when Grok Build is unavailable:
+- Exclusive independent reviewer: [`.github/grok/`](.github/grok/)
+- Secondary / specialist (not an independent-review fallback):
   [`.github/antigravity/`](.github/antigravity/) (`agy` CLI)
 
 Nested `AGENTS.md` files remain in force for their directories.
@@ -101,10 +101,12 @@ and primary development orchestrator.
 4. **Google Antigravity** is the secondary / specialist agent when
    specialization, decomposition, or a second implementation perspective is
    justified.
-5. **Grok / Grok Build** is the independent AI reviewer. It is not part of
-   the mandatory implementation path. Absence or failure of Grok credentials
-   must not block ordinary development, testing, or merging unless repository
-   governance explicitly requires that review.
+5. **Grok / Grok Build** is the exclusive independent AI reviewer. It is
+   not part of the mandatory implementation path. Absence or failure of
+   Grok credentials must not block ordinary development, testing, or
+   merging unless repository governance explicitly requires that review.
+   Grok unavailability does not transfer independent-review authority to
+   another AI.
 6. **GitHub Copilot** is the GitHub-native fallback / specialist. **Codex**
    and other maintainer-approved agents are narrowly scoped specialists.
    They must not be invoked automatically for routine Cursor work.
@@ -149,14 +151,16 @@ The pull-request review pipeline is:
    requests `@gibboda` as reviewer. Cursor may leave suggestions. Cursor
    must not APPROVE in a way that satisfies branch protection and must
    not merge.
-2. CODEOWNER `@gibboda` may assign Grok Build (`grok`) and/or Antigravity
-   CLI (`agy`) as independent reviewer and/or specialist advisor, and may
-   assign Antigravity as secondary specialist, for a second look at
-   Cursor's change. That assignment is policy, not a GitHub CODEOWNERS
-   user or required reviewer. Findings stay advisory and are not a merge
-   gate. Assigned `grok` and `agy` advice must be recorded as a GitHub
-   pull-request comment or COMMENT-only review. If Grok Build is
-   unavailable, `agy` remains the independent-reviewer fallback.
+2. CODEOWNER `@gibboda` may assign Grok Build (`grok`) as the exclusive
+   independent reviewer and/or specialist advisor, and may assign
+   Antigravity or Antigravity CLI (`agy`) as secondary specialist, for a
+   second look at Cursor's change. That assignment is policy, not a GitHub
+   CODEOWNERS user or required reviewer. Findings stay advisory and are not
+   a merge gate. Assigned `grok` and `agy` advice must be recorded as a
+   GitHub pull-request comment or COMMENT-only review. If Grok Build is
+   unavailable, record it as unavailable and continue under repository
+   governance. Do not transfer the independent-review role to `agy` or
+   another AI.
 3. Copilot and/or Codex must perform a final specialist pass
    on high-risk pull requests (process-required, result-advisory).
    COMMENT or suggestions only. They must not APPROVE in a way
@@ -226,22 +230,22 @@ resources, not parallel reviewers for every change.
   is specifically useful. The CODEOWNER may assign Antigravity for a second
   look at Cursor's change; that assignment is policy, not a GitHub
   CODEOWNERS identity.
-- Grok Build (`grok`) is an advisory independent reviewer and specialist
-  advisor for pull-request review, architectural criticism, regression
-  detection, overlooked edge cases, questionable assumptions, substantial-
-  change review, and specialist advice. Do not make Grok part of the
-  mandatory implementation path. The CODEOWNER may assign Grok Build for a
-  second look; findings remain advisory and must be recorded as a
+- Grok Build (`grok`) is the exclusive independent AI challenge/reviewer
+  and specialist advisor for pull-request review, architectural criticism,
+  regression detection, overlooked edge cases, questionable assumptions,
+  substantial-change review, and specialist advice. Do not make Grok part
+  of the mandatory implementation path. The CODEOWNER may assign Grok
+  Build for a second look; findings remain advisory and must be recorded
+  as a COMMENT-only pull-request comment or COMMENT review. Grok
+  unavailability does not transfer the independent-review role to another
+  AI.
+- Antigravity CLI (`agy`) is an invocation surface for Antigravity's
+  secondary / specialist role. The CODEOWNER may assign `agy` for
+  specialist review or specialist advice. It is not an independent
+  reviewer and is not a Grok-unavailable fallback. That specialist role
+  does not make `agy` an automatic default peer to Grok Build for
+  identical work. Assigned `agy` advice must be recorded as a
   COMMENT-only pull-request comment or COMMENT review.
-- Antigravity CLI (`agy`) is also an advisory independent reviewer and
-  specialist advisor. The CODEOWNER may assign `agy` for independent review
-  or specialist advice, including when Grok is available. When Grok Build
-  is unavailable for independent review, use Antigravity CLI (`agy`) as
-  backup review. That backup-review role does not make `agy` an automatic
-  default peer to Grok Build for identical work, and it does not replace
-  Antigravity's secondary/specialist implementation role. Assigned `agy`
-  advice must be recorded as a COMMENT-only pull-request comment or COMMENT
-  review.
 - GitHub Copilot is the GitHub-native fallback / specialist when work starts
   on GitHub, a GitHub-native coding agent is specifically useful, Cursor is
   unavailable, or explicit independent implementation is desired. Copilot
@@ -320,11 +324,12 @@ order when escalation is justified:
    an explicit independent GitHub-side implementation is desired. Use Codex or
    another explicitly approved agent only for a narrowly scoped,
    capability-driven gap those products uniquely cover.
-5. Use Grok Build for independent review of substantial changes. If Grok Build
-   is unavailable, use Antigravity CLI (`agy`) for backup independent review.
-   The CODEOWNER may also assign `grok` and/or `agy` as specialist advisors.
-   Assigned `grok` and `agy` advice must land on the pull request as a
-   COMMENT-only comment or COMMENT review.
+5. Use Grok Build for independent review of substantial changes. If Grok
+   Build is unavailable, record it as unavailable and continue under
+   repository governance; do not substitute Antigravity CLI (`agy`) as an
+   independent reviewer. The CODEOWNER may also assign `grok` and/or `agy`
+   as specialist advisors. Assigned `grok` and `agy` advice must land on
+   the pull request as a COMMENT-only comment or COMMENT review.
 
 Capability routing does not change the preferred order above:
 
@@ -333,8 +338,8 @@ Capability routing does not change the preferred order above:
 | Cursor | Primary development orchestrator | Default task ownership | Skipping Cursor only because another agent is available |
 | Deterministic tests and CI | Evidence | Before any second AI agent | Asking an LLM to re-run ShellCheck or unittest |
 | Antigravity | Secondary / specialist | Architecture, hard debugging, security analysis, specialized research, complex test analysis, second implementation perspective | Routine Cursor work; duplicating completed Cursor work without independent value |
-| Grok Build | Independent reviewer and specialist advisor | PR review, architectural criticism, regressions, edge cases, substantial-change review, specialist advice | Mandatory implementation path; as a merge gate; treating a GitHub API key as Grok Build |
-| Antigravity CLI (`agy`) | Independent reviewer and specialist advisor | CODEOWNER-assigned independent review or specialist advice; Grok Build unavailable, including weekly limit | Default peer to Grok Build for identical unrecorded work; using Gemini CLI as the product name; GitHub `GEMINI_API_KEY` |
+| Grok Build | Exclusive independent reviewer and specialist advisor | PR review, architectural criticism, regressions, edge cases, substantial-change review, specialist advice | Mandatory implementation path; as a merge gate; treating a GitHub API key as Grok Build |
+| Antigravity CLI (`agy`) | Secondary / specialist advisor | CODEOWNER-assigned specialist review or specialist advice | Independent-review fallback; default peer to Grok Build for identical unrecorded work; using Gemini CLI as the product name; GitHub `GEMINI_API_KEY` |
 | GitHub Copilot | GitHub-native fallback / specialist | Work initiated on GitHub; GitHub coding agent / PR review / Projects MCP; Cursor unavailable; explicit independent implementation | Parallel routine Cursor analysis |
 | Codex | Specialist implementation | Codex interface or PR path is the gap | Default second opinion |
 | Other explicitly approved agent | Specialist | Maintainer names it, and it uniquely covers a gap | Automatic vendor chaining; default peer to Cursor or Grok Build |
@@ -361,10 +366,10 @@ artifacts, or deterministic checks have already answered.
   together.
 - A CODEOWNER-assigned Grok Build second look is `independent_review`.
   A CODEOWNER-assigned Antigravity second look is `specialist_review`.
-  `agy` used as Grok-unavailable fallback remains `independent_review`.
-  The CODEOWNER may also assign Grok Build as `specialist_review` and
-  `agy` as `independent_review` or `specialist_review` when Grok is
-  available. Assigned `grok` and `agy` findings must be recorded as a
+  Antigravity CLI (`agy`) second looks are `specialist_review`. Grok
+  unavailability does not transfer the independent-review role to `agy`.
+  The CODEOWNER may also assign Grok Build as `specialist_review`.
+  Assigned `grok` and `agy` findings must be recorded as a
   COMMENT-only pull-request comment or COMMENT review. Cursor or the
   CODEOWNER may post that attributed record when the reviewer cannot.
   A Copilot/Codex final specialist pass is process-required for
@@ -441,9 +446,9 @@ spend paid-agent capacity on review when the required checks already answer
 the question.
 
 Independent pull-request review is local Grok Build (`grok`), authenticated
-by a SuperGrok account. If Grok Build is unavailable, use Antigravity CLI
-(`agy`). GitHub Actions does not call xAI or Gemini and does not use
-`XAI_API_KEY` or `GEMINI_API_KEY`. See `.github/grok/README.md` and
+by a SuperGrok account. Grok unavailability does not transfer that role to
+Antigravity CLI (`agy`). GitHub Actions does not call xAI or Gemini and does
+not use `XAI_API_KEY` or `GEMINI_API_KEY`. See `.github/grok/README.md` and
 `.github/antigravity/README.md`.
 
 The Testing and Change discipline sections below remain the authoritative

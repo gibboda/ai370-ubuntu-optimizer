@@ -104,10 +104,10 @@ Or from repo root after making executable:
   CI discovers mutation suites by the `test_agent_architecture_mutations*.py`
   pattern, so adding mutation cases or additional mutation-suite files does
   not require duplicating their module names in `AGENTS.md` or migration docs.
-- Independent review is local Grok Build and Antigravity CLI (`agy`)
-  advisory review. Assigned advice must be recorded as a COMMENT-only
-  pull-request comment or COMMENT review. `agy` remains the independent-
-  review fallback if Grok is unavailable.
+- Independent review is local Grok Build advisory review. Assigned advice
+  must be recorded as a COMMENT-only pull-request comment or COMMENT
+  review. Antigravity CLI (`agy`) remains specialist-only and is not an
+  independent-review fallback if Grok is unavailable.
   GitHub Actions does not call xAI or Gemini; there are no
   `test_grok_pr_review.py` or `test_gemini_pr_review.py` suites.
 

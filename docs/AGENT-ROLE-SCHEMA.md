@@ -29,6 +29,13 @@ For the version-2-to-version-3 transition:
 
 1. All version-2 top-level policy domains, roles, and invariants remain present and semantically equivalent in version 3.
 2. Version 3 adds these fields inside the `independent_reviewer` role: `providers`, `also_serves`, `form_constraints`, and `advice_record_required`. A version-2 consumer that does not inspect these fields is unaffected. A consumer that enforces advice-record obligations or per-form review-state semantics must require schema version 3 or newer.
+3. Within schema 3, `independent_reviewer.providers` is now exclusively
+   `["grok_build"]` and `invariants.grok_exclusive_independent_review` is
+   required. Overlay `required_any` markers may evolve to say that
+   Antigravity is not an independent reviewer. Consumers that previously
+   treated `antigravity_cli` as a Grok-unavailable independent-review
+   provider must stop doing so. These are documented policy tightenings
+   inside schema 3, not a new schema version.
 3. A version-2 consumer may explicitly accept version 3 after verifying that the fields it consumes retain their expected shape and semantics.
 
 ## Migration procedure

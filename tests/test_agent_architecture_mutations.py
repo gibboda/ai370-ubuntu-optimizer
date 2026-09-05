@@ -56,6 +56,10 @@ def validate(roles, compatibility):
         failures.add("duplicate_routine_ai_work")
     if not invariants.get("ai_reviews_advisory"):
         failures.add("ai_reviews_advisory")
+    if not invariants.get("grok_exclusive_independent_review"):
+        failures.add("grok_exclusive_independent_review")
+    if set(reviewer.get("providers") or []) != {"grok_build"} or not reviewer.get("exclusive"):
+        failures.add("grok_exclusive_independent_review")
     overlay_contract = roles.get("overlay_contract", {})
     declared = {entry.get("path") for entry in overlay_contract.get("overlays", [])}
     discovered = set()
@@ -120,7 +124,7 @@ class AgentArchitectureMutationTests(unittest.TestCase):
 
     def test_mutations_cover_critical_architecture_boundaries(self):
         covered = {mutation["expected_rule"] for mutation in self.fixture["mutations"]}
-        self.assertEqual(covered, {"canonical_authority", "primary_orchestrator", "deterministic_before_escalation", "advisory_review", "human_merge_authority", "no_vendor_chaining", "least_agent_principle", "duplicate_routine_ai_work", "ai_reviews_advisory", "overlay_completeness", "contract_coverage", "schema_version_match"})
+        self.assertEqual(covered, {"canonical_authority", "primary_orchestrator", "deterministic_before_escalation", "advisory_review", "human_merge_authority", "no_vendor_chaining", "least_agent_principle", "duplicate_routine_ai_work", "ai_reviews_advisory", "grok_exclusive_independent_review", "overlay_completeness", "contract_coverage", "schema_version_match"})
 
 
 if __name__ == "__main__":

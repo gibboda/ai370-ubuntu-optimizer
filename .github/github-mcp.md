@@ -44,7 +44,7 @@ Do not depend on deprecated Project tool names when defining policy.
 | --- | --- | --- | --- |
 | Cursor | Primary development orchestrator | `project` (read and write) | Read/write Issues, PRs, and Projects where authorized |
 | Grok Build | Independent reviewer and specialist advisor (advisory) | `read:project` | `X-MCP-Readonly: true`; no Project, Issue, PR, or repository mutation by default. Assigned advice is recorded as a COMMENT-only PR comment or COMMENT review out of band or by Cursor/CODEOWNER |
-| Antigravity | Secondary / specialist; CLI (`agy`) is also independent reviewer and specialist advisor | `read:project` by default; `project` only when Project mutation is required | No `X-MCP-Readonly` by default so repository writes can work when the token allows them. Assigned `agy` advice is COMMENT-only and must not APPROVE, REQUEST_CHANGES, or merge |
+| Antigravity | Secondary / specialist; CLI (`agy`) is a specialist advisor, not an independent-review fallback | `read:project` by default; `project` only when Project mutation is required | No `X-MCP-Readonly` by default so repository writes can work when the token allows them. Assigned `agy` advice is COMMENT-only and must not APPROVE, REQUEST_CHANGES, or merge |
 | GitHub Copilot | GitHub-native fallback / specialist | GitHub OAuth / session scopes | Prefer OAuth; do not replace working OAuth with a PAT |
 
 GitHub Projects is the source of truth for planned and workflow state
