@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.30.0...v0.31.0) (2026-09-05)
+
+
+### Features
+
+* **agents:** add Bugbot Autofix cost ladder ([#283](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/283)) ([097f4c3](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/097f4c362a8fa6f24e17195ea439368d4484e90a))
+
 ## [0.30.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.29.1...v0.30.0) (2026-09-04)
 
 
