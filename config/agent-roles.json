@@ -31,7 +31,7 @@
     "secondary_specialist": {"provider": "antigravity", "automatic": false},
     "independent_reviewer": {
       "provider": "grok_build",
-      "providers": ["grok_build", "antigravity_cli"],
+      "providers": ["grok_build"],
       "also_serves": ["specialist_advisor"],
       "advisory": true,
       "merge_gate": false,
@@ -76,15 +76,16 @@
       {"path": ".agents/agents/architecture-reviewer/agent.md", "role": "secondary_specialist", "required_any": ["secondary/specialist"]},
       {"path": ".agents/agents/security-reviewer/agent.md", "role": "secondary_specialist", "required_any": ["primary development orchestrator", "Do not re-implement routine Cursor work"]},
       {"path": ".agents/agents/test-reviewer/agent.md", "role": "secondary_specialist", "required_any": ["primary development orchestrator", "Avoid unnecessary implementation duplication"]},
-      {"path": ".github/grok/README.md", "role": "independent_reviewer", "required_any": ["independent AI reviewer"]},
+      {"path": ".github/grok/README.md", "role": "independent_reviewer", "required_any": ["independent AI reviewer", "exclusive independent challenge/review"]},
       {"path": ".github/grok/policy.md", "role": "independent_reviewer", "required_any": ["Grok is advisory", "not a required merge gate"]},
-      {"path": ".github/antigravity/README.md", "role": "secondary_specialist", "required_any": ["Secondary / specialist", "Backup independent review"]}
+      {"path": ".github/antigravity/README.md", "role": "secondary_specialist", "required_any": ["Secondary / specialist", "not an independent reviewer"]}
     ]
   },
   "invariants": {
     "no_automatic_vendor_chaining": true,
     "least_agent_principle": true,
     "duplicate_routine_ai_work_prohibited": true,
-    "ai_reviews_advisory": true
+    "ai_reviews_advisory": true,
+    "grok_exclusive_independent_review": true
   }
 }
