@@ -90,10 +90,10 @@ permissions, or change the advisory policy.
 
 ## Specialist advice record
 
-Assigned `agy` specialist advice should be recorded as a GitHub pull-request
+Assigned `agy` specialist advice must be recorded as a GitHub pull-request
 comment or COMMENT-only review when it is part of PR review. Do not APPROVE,
 REQUEST_CHANGES, or merge. If `agy` cannot post the record, Cursor or the
-CODEOWNER can post the attributed local output.
+CODEOWNER must post the attributed local output.
 
 ## Files
 

@@ -218,11 +218,13 @@ Release Please PRs (`autorelease:*` or `chore(release):`) are left untouched.
    labels) never call an LLM.
 
    Independent review (advisory; not a merge gate):
-   - **Preferred (SuperGrok)**: Use Grok Build (`grok`, included with
+   - **Exclusive (SuperGrok)**: Use Grok Build (`grok`, included with
      SuperGrok) for interactive, agentic PR review on the pull-request
      branch. See [`.github/grok/README.md`](.github/grok/README.md).
-   - **Backup**: If Grok Build is unavailable, use Antigravity CLI (`agy`).
-     See [`.github/antigravity/README.md`](.github/antigravity/README.md).
+   - If Grok Build is unavailable, record it as unavailable and continue
+     under repository governance. Do not transfer independent review to
+     Antigravity CLI (`agy`). `agy` remains specialist-only; see
+     [`.github/antigravity/README.md`](.github/antigravity/README.md).
    Cursor remains the primary development orchestrator; Antigravity is the
    secondary/specialist for escalated implementation analysis. See
    [`docs/AI-AGENT-ARCHITECTURE.md`](docs/AI-AGENT-ARCHITECTURE.md).
