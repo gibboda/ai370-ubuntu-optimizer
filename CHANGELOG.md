@@ -6,17 +6,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.32.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.31.0...v0.32.0) (2026-09-05)
+## [1.0.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.31.0...v1.0.0) (2026-09-05)
 
+
+### ⚠ BREAKING CHANGES
+
+* **release:** Route the 1.0.0 bump through Release Please ([#288](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/288))
 
 ### Features
 
 * **governance:** Make specialist pass risk-tiered ([#285](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/285)) ([6425922](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/6425922a3fa28b1b01f6669c49461c3cd328ec09))
 
+
+### Miscellaneous Chores
+
+* **release:** Route the 1.0.0 bump through Release Please ([#288](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/288)) ([0d189d7](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/0d189d71d59a00e2f1fa4046c6354ec46a0dc815))
+
 ## [Unreleased]
 
 ### Changed
 
+- Route the architecture-contract v2 major bump through Release Please
+  (a `!` Conventional Commit plus a terminal `Release-As: 1.0.0` git
+  trailer) instead of rewriting `VERSION`,
+  `.release-please-manifest.json`, or a generated changelog heading on
+  the pending 0.32.0 Release Please PR. A blank line before
+  `Co-authored-by` is not a trailer.
 - Gate the Copilot/Codex final advisory specialist pass by pull-request
   risk tier. The pass remains process-required for high-risk changes
   (security, credentials, agent hierarchy, merge authority, contracts,

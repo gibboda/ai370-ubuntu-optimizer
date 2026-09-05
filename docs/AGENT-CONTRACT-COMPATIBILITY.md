@@ -58,7 +58,13 @@ repository's compatibility rule classifies changed existing field semantics
 as breaking even when merge authority and required checks stay unchanged.
 The recorded `previous_repository_version` is therefore `0.31.0`, and the
 first repository release that may ship architecture contract version `2` is
-`1.0.0`.
+`1.0.0`. Release Please must produce that `1.0.0` release. Do not
+hand-edit `VERSION`, `.release-please-manifest.json`, or the generated
+changelog heading on a pending `0.32.0` Release Please PR to satisfy the
+floor. Land a `!` Conventional Commit with a terminal `Release-As: 1.0.0`
+git trailer on `main` so Release Please can open the major Release PR.
+Keep `Release-As` in the final trailer block; a blank line before
+`Co-authored-by` drops it from `git interpret-trailers --parse`.
 
 ## Repository version fields
 
@@ -79,7 +85,9 @@ requires `current_change_class=breaking` and a major repository release
 versus `previous_repository_version`.
 
 These checks are fixture/metadata-driven. They do not parse git history,
-GitHub labels, or `release-please` output.
+GitHub labels, or `release-please` output. They do verify that the
+documented `Release-As: 1.0.0` example is a git-parseable trailer and
+that a blank line before `Co-authored-by` drops it.
 
 ## Validation
 
@@ -102,6 +110,7 @@ The suite verifies that:
 - if `VERSION` has already been bumped, it is not older than `introduced`
 - incrementing an existing architecture contract version requires a breaking
   change classification and a major repository release
+- the documented `Release-As: 1.0.0` example is a git-parseable trailer
 
 The suite does not claim that GitHub labels, Conventional Commit type, or
 `release-please` have already applied that repository bump.

@@ -3,6 +3,7 @@
 
 import json
 import re
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -45,6 +46,24 @@ def next_release(value, release_class):
 
 def repository_version():
     return VERSION_PATH.read_text(encoding="utf-8").split()[0]
+
+
+def parse_git_trailers(message):
+    result = subprocess.run(
+        ["git", "interpret-trailers", "--parse"],
+        input=message,
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=ROOT,
+    )
+    trailers = {}
+    for line in result.stdout.splitlines():
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        trailers.setdefault(key.strip(), []).append(value.strip())
+    return trailers
 
 
 class AgentContractCompatibilityTests(unittest.TestCase):
@@ -221,6 +240,53 @@ class AgentContractCompatibilityTests(unittest.TestCase):
 
         if change_class == "breaking":
             self.assertGreater(current_arch, previous_arch)
+
+    def test_major_floor_is_routed_through_release_please(self):
+        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        compatibility_doc = (ROOT / "docs/AGENT-CONTRACT-COMPATIBILITY.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("Do not hand-edit `VERSION`", contributing)
+        self.assertIn(".release-please-manifest.json", contributing)
+        self.assertIn("Release-As: x.y.z", contributing)
+        self.assertIn("Release-As: 1.0.0", contributing)
+        self.assertIn("terminal `Release-As: x.y.z` git trailer", contributing)
+        self.assertIn(
+            "Do not substitute a hand-edited version bump for that generated Release PR.",
+            contributing,
+        )
+        self.assertIn("Release Please must produce that `1.0.0` release", compatibility_doc)
+        self.assertIn("Release-As: 1.0.0", compatibility_doc)
+        self.assertIn("terminal `Release-As: 1.0.0`", compatibility_doc)
+        self.assertEqual(self.compatibility["introduced_repository_version"], "1.0.0")
+
+    def test_documented_release_as_example_is_a_git_trailer(self):
+        documented = (
+            "chore(release)!: Route the 1.0.0 bump through Release Please\n"
+            "\n"
+            "Release-As: 1.0.0\n"
+        )
+        split_from_coauthor = (
+            "chore(release)!: Route the 1.0.0 bump through Release Please\n"
+            "\n"
+            "Release-As: 1.0.0\n"
+            "\n"
+            "Co-authored-by: gibboda <gibboda@users.noreply.github.com>\n"
+        )
+        joined_with_coauthor = (
+            "chore(release)!: Route the 1.0.0 bump through Release Please\n"
+            "\n"
+            "Release-As: 1.0.0\n"
+            "Co-authored-by: gibboda <gibboda@users.noreply.github.com>\n"
+        )
+
+        self.assertEqual(parse_git_trailers(documented).get("Release-As"), ["1.0.0"])
+        self.assertNotIn("Release-As", parse_git_trailers(split_from_coauthor))
+        self.assertEqual(
+            parse_git_trailers(joined_with_coauthor).get("Release-As"),
+            ["1.0.0"],
+        )
 
 
 if __name__ == "__main__":
