@@ -122,6 +122,15 @@ class AgentRoleContractTests(unittest.TestCase):
             v3["overlay_contract"],
         )
 
+    def test_native_specialist_roles_precede_merge_validation(self) -> None:
+        order = self.contract["pre_merge_logical_order"]
+        self.assertEqual(len(order), len(set(order)), "logical order must not repeat roles")
+        self.assertTrue(set(order).issubset(self.roles), "logical order must reference declared roles")
+        validation_index = order.index("merge_validation")
+        self.assertLess(order.index("github_native_fallback"), validation_index)
+        self.assertLess(order.index("codex_coding_agent"), validation_index)
+        self.assertLess(validation_index, order.index("merge_authority"))
+
     def _assert_overlay_contract_preserves_v2_structure(self, actual, expected) -> None:
         """Preserve v2 overlay paths, roles, and discovery; allow required_any to evolve."""
         self._assert_v1_semantics_preserved(

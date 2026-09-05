@@ -142,6 +142,18 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertIn("on high-risk pull requests (process-required, result-advisory)", agents)
         self.assertIn("Standard and low-risk pull requests skip this pass by default", agents)
 
+    def test_logical_pipeline_places_specialist_pass_before_final_checks(self) -> None:
+        pipeline = self.contract["review_pipeline"]
+        order = pipeline["logical_order"]
+        self.assertEqual(len(order), len(set(order)), "logical pipeline must not repeat phases")
+        self.assertLess(
+            order.index("final_advisory_specialist_pass"),
+            order.index("final_required_checks"),
+        )
+        self.assertLess(order.index("final_required_checks"), order.index("codeowner_merge"))
+        self.assertTrue(pipeline["final_advisory_specialist_pass"]["before_final_required_checks"])
+        self.assertTrue(pipeline["final_required_checks"]["after_accepted_ai_modifications"])
+
     def test_mcp_document_preserves_governance_boundary(self) -> None:
         text = " ".join(MCP_POLICY.read_text(encoding="utf-8").split())
         self.assertIn("GitHub rulesets and branch protection remain the final merge authority", text)

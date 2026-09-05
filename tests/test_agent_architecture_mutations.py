@@ -66,6 +66,19 @@ def validate(roles, compatibility):
         failures.add("bugbot_is_cursor_native_autofixer")
     if not invariants.get("native_specialist_pass_precedes_final_merge_validation"):
         failures.add("native_specialist_pass_precedes_final_merge_validation")
+    pre_merge_order = roles.get("pre_merge_logical_order", [])
+    native_specialists = ("github_native_fallback", "codex_coding_agent")
+    try:
+        merge_validation_index = pre_merge_order.index("merge_validation")
+    except ValueError:
+        failures.add("native_specialist_pass_precedes_final_merge_validation")
+    else:
+        if any(
+            specialist not in pre_merge_order
+            or pre_merge_order.index(specialist) >= merge_validation_index
+            for specialist in native_specialists
+        ):
+            failures.add("native_specialist_pass_precedes_final_merge_validation")
     overlay_contract = roles.get("overlay_contract", {})
     declared = {entry.get("path") for entry in overlay_contract.get("overlays", [])}
     discovered = set()
@@ -127,6 +140,40 @@ class AgentArchitectureMutationTests(unittest.TestCase):
             with self.subTest(mutation=mutation["id"]):
                 self.assertTrue(failures, "mutated architecture unexpectedly passed")
                 self.assertIn(mutation["expected_rule"], failures)
+
+    def test_native_specialist_order_mutations_cover_each_provider(self):
+        native_specialists = ("github_native_fallback", "codex_coding_agent")
+        order_mutations = [
+            mutation
+            for mutation in self.fixture["mutations"]
+            if mutation.get("path") == "pre_merge_logical_order"
+        ]
+        self.assertEqual(
+            {mutation["id"] for mutation in order_mutations},
+            {
+                "github-native-fallback-moved-after-validation",
+                "codex-coding-agent-moved-after-validation",
+            },
+        )
+
+        misplaced = set()
+        for mutation in order_mutations:
+            order = mutation["value"]
+            validation_index = order.index("merge_validation")
+            moved = [
+                specialist
+                for specialist in native_specialists
+                if specialist not in order or order.index(specialist) >= validation_index
+            ]
+            with self.subTest(mutation=mutation["id"]):
+                self.assertEqual(
+                    len(moved),
+                    1,
+                    "each specialist-order mutation must move exactly one native specialist",
+                )
+            misplaced.update(moved)
+
+        self.assertEqual(set(native_specialists), misplaced)
 
     def test_mutations_cover_critical_architecture_boundaries(self):
         covered = {mutation["expected_rule"] for mutation in self.fixture["mutations"]}
