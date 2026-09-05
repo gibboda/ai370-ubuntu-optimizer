@@ -15,8 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (security, credentials, agent hierarchy, merge authority, contracts,
   stage boundaries, and apply-path mutation) and is skipped by default
   for standard and low-risk PRs. The CODEOWNER may still request it.
-  Encoded in `AGENTS.md`, `config/pr-governance.json`, CODEOWNERS
-  comments, and the pull-request template.
+  `process_required` is not an always-on signal: schema 2 scopes it
+  with `process_required_for`. Overlapping criteria use
+  highest-matching-tier precedence. The pull-request template records
+  explicit `Risk tier:` and `Specialist pass:` values instead of
+  checkboxes. Encoded in `AGENTS.md`, `config/pr-governance.json`,
+  CODEOWNERS comments, and the pull-request template.
 
 ## [0.31.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.30.0...v0.31.0) (2026-09-05)
 

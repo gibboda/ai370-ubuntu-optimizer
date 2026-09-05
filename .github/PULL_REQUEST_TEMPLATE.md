@@ -39,6 +39,15 @@
 - [ ] CODEOWNER @gibboda requested as reviewer
 - [ ] CODEOWNER assigned Grok and/or `agy` for advisory review (or recorded why neither was needed)
 - [ ] Assigned `grok`/`agy` advice recorded as a COMMENT-only PR comment or COMMENT review (or N/A if neither was assigned)
-- [ ] Pull-request risk tier recorded (`high`, `standard`, or `low`)
-- [ ] Copilot and/or Codex completed a final advisory specialist pass (required for `high`; N/A for `standard`/`low` unless requested; or recorded unavailability)
 - [ ] No AI approval is being used as merge authority
+
+## Pull-request risk record
+
+Risk tier: <!-- high | standard | low -->
+
+Specialist pass: <!-- completed | skipped | unavailable | requested -->
+
+<!-- `Specialist pass` is required for `high`. For `standard`/`low` record
+     `skipped` unless the CODEOWNER requested the pass (`requested` or
+     `completed`). Use `unavailable` when Copilot/Codex cannot run. A
+     blank value is not a valid skip record. -->

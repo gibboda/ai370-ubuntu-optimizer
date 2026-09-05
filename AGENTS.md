@@ -161,8 +161,10 @@ The pull-request review pipeline is:
    on high-risk pull requests (process-required, result-advisory).
    COMMENT or suggestions only. They must not APPROVE in a way
    that satisfies branch protection. Standard and low-risk pull requests skip this pass by default; the CODEOWNER may request
-   it. Record the risk tier and any skip or unavailability on the
-   pull-request template.
+   it. Record an explicit `Risk tier:` value (`high`, `standard`,
+   or `low`) and an explicit `Specialist pass:` value
+   (`completed`, `skipped`, `unavailable`, or `requested`) on the
+   pull-request template. A silent skip is not a valid record.
 4. Deterministic checks remain authoritative for machine-verifiable
    facts. The current required check stays ShellCheck unless repository
    governance already lists others.
@@ -182,6 +184,13 @@ Pull-request risk tiers for that specialist pass:
 - **low** (optional): documentation-only; changelog; test-only
   changes that do not weaken coverage; chore or dependency bumps.
   Skip by default.
+
+When criteria from more than one tier match, the highest matching
+tier wins. A security-related dependency bump is **high**, not
+**low**. The object-global `process_required` flag in
+`config/pr-governance.json` is not an always-on signal; the pass
+is process-required only when the recorded risk tier is in
+`process_required_for` / `required_risk_tiers`.
 
 AI must never merge, never satisfy branch protection, and never become a
 required status check. No AI agent is merge authority. The expected

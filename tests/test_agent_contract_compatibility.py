@@ -77,6 +77,12 @@ class AgentContractCompatibilityTests(unittest.TestCase):
             with self.subTest(contract=name):
                 self.assertTrue(path.is_file())
                 self.assertEqual(schema_version(load(path)), declaration["schema_version"])
+        self.assertEqual(contracts["pr_governance"]["schema_version"], 2)
+        compatibility_doc = (ROOT / "docs/AGENT-CONTRACT-COMPATIBILITY.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("schema 1 to schema 2", compatibility_doc)
+        self.assertIn("cannot be read as always-on", compatibility_doc)
 
     def test_release_change_classes_are_monotonic(self):
         classes = self.compatibility["change_classes"]

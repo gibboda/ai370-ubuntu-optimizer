@@ -107,5 +107,30 @@ The suite verifies that:
 The suite does not claim that GitHub labels, Conventional Commit type, or
 `release-please` have already applied that repository bump.
 
+## `pr-governance.json` schema 1 to schema 2
+
+`config/pr-governance.json` schema 2 changes the interpretation of
+`review_pipeline.final_advisory_specialist_pass.process_required`.
+
+Schema 1 treated that boolean as an unconditional process requirement
+for every pull request. Schema 2 sets `process_required` to `false` so
+it cannot be read as always-on, and adds `process_required_for` plus
+`required_risk_tiers`. The pass is process-required only when the
+recorded risk tier is in those lists (currently `high`).
+
+Schema 2 also adds `risk_tier_precedence=highest_matching_wins` and
+`risk_tier_rank`. When a change matches both a high-risk criterion
+(for example `security`) and a low-risk criterion (for example
+`chore_or_dependency_bump`), the highest matching tier wins.
+
+This is a single-contract schema increment, not an
+`architecture_contract_version` increment. Merge authority, required
+checks, and the advisory-review invariants are unchanged. Update
+`contracts.pr_governance.schema_version` to `2` in
+`config/agent-contract-compatibility.json`. A schema-1 consumer must
+not consume schema 2 until it understands the scoped
+`process_required` meaning. Preserve the schema-1 fixture under
+`tests/fixtures/pr-governance/`.
+
 This contract does not grant agent permissions, alter GitHub governance, or
 make AI review a merge gate.

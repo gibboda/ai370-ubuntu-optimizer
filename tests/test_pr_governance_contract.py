@@ -8,12 +8,45 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "config/pr-governance.json"
+V1_FIXTURE = ROOT / "tests/fixtures/pr-governance/v1.json"
 AGENT_ROLES = ROOT / "config/agent-roles.json"
 AGENTS_POLICY = ROOT / "AGENTS.md"
 MCP_POLICY = ROOT / ".github/github-mcp.md"
 BUGBOT_POLICY = ROOT / ".cursor/BUGBOT.md"
 CODEOWNERS = ROOT / ".github/CODEOWNERS"
+PR_TEMPLATE = ROOT / ".github/PULL_REQUEST_TEMPLATE.md"
+COMPATIBILITY_DOC = ROOT / "docs/AGENT-CONTRACT-COMPATIBILITY.md"
+MAX_SUPPORTED_PR_GOVERNANCE_SCHEMA = 2
 _OWNER_TOKEN = re.compile(r"@[A-Za-z0-9][A-Za-z0-9_-]*(?:/[A-Za-z0-9][A-Za-z0-9_-]*)?")
+
+
+def specialist_pass_is_process_required(final_pass: dict, risk_tier: str) -> bool:
+    """Interpret whether the advisory specialist pass is process-required."""
+    schema_version = final_pass.get("schema_version")
+    if schema_version is not None and schema_version > MAX_SUPPORTED_PR_GOVERNANCE_SCHEMA:
+        raise ValueError(f"Unsupported pr-governance schema_version {schema_version}")
+    if final_pass.get("risk_tiered"):
+        required_for = final_pass.get("process_required_for") or final_pass.get(
+            "required_risk_tiers", []
+        )
+        return risk_tier in required_for
+    return bool(final_pass.get("process_required"))
+
+
+def resolve_risk_tier(matched_criteria: list[str], final_pass: dict) -> str:
+    """Return the highest matching risk tier, or the default when none match."""
+    if final_pass.get("risk_tier_precedence") != "highest_matching_wins":
+        raise ValueError("Unsupported risk_tier_precedence")
+    rank = list(final_pass["risk_tier_rank"])
+    criteria = final_pass["risk_tier_criteria"]
+    matched_tiers = [
+        tier
+        for tier, names in criteria.items()
+        if any(criterion in names for criterion in matched_criteria)
+    ]
+    if not matched_tiers:
+        return final_pass["default_risk_tier"]
+    return min(matched_tiers, key=rank.index)
 
 
 class PullRequestGovernanceContractTests(unittest.TestCase):
@@ -23,9 +56,14 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         cls.roles = json.loads(AGENT_ROLES.read_text(encoding="utf-8"))
 
     def test_contract_defers_to_agents_md(self) -> None:
-        self.assertEqual(self.contract["schema_version"], 1)
+        self.assertEqual(self.contract["schema_version"], MAX_SUPPORTED_PR_GOVERNANCE_SCHEMA)
         self.assertEqual(self.contract["authority"], "AGENTS.md")
         self.assertEqual(self.contract["target_branch"], "main")
+        self.assertLessEqual(
+            self.contract["schema_version"],
+            MAX_SUPPORTED_PR_GOVERNANCE_SCHEMA,
+            "Unknown future schema versions must fail closed until consumer support is added.",
+        )
 
     def test_expected_main_governance_is_explicit(self) -> None:
         ruleset = self.contract["ruleset"]
@@ -108,11 +146,19 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertFalse(second_look["required_status_check"])
         self.assertNotIn("last_resort_specialists", pipeline)
         final_pass = pipeline["final_advisory_specialist_pass"]
-        self.assertTrue(final_pass["process_required"])
+        self.assertFalse(final_pass["process_required"])
+        self.assertEqual(final_pass["process_required_for"], ["high"])
+        self.assertEqual(
+            final_pass["process_required_semantics"],
+            "required_only_when_recorded_risk_tier_is_in_process_required_for",
+        )
         self.assertTrue(final_pass["risk_tiered"])
         self.assertEqual(final_pass["required_risk_tiers"], ["high"])
+        self.assertEqual(final_pass["process_required_for"], final_pass["required_risk_tiers"])
         self.assertEqual(final_pass["optional_risk_tiers"], ["standard", "low"])
         self.assertEqual(final_pass["default_risk_tier"], "standard")
+        self.assertEqual(final_pass["risk_tier_precedence"], "highest_matching_wins")
+        self.assertEqual(final_pass["risk_tier_rank"], ["high", "standard", "low"])
         self.assertEqual(
             final_pass["risk_tier_criteria"]["high"],
             [
@@ -126,6 +172,12 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
             ],
         )
         self.assertTrue(final_pass["skip_record_required_when_not_run"])
+        self.assertEqual(final_pass["template_risk_tier_field"], "Risk tier:")
+        self.assertEqual(final_pass["template_specialist_pass_field"], "Specialist pass:")
+        self.assertEqual(
+            final_pass["specialist_pass_record_values"],
+            ["completed", "skipped", "unavailable", "requested"],
+        )
         self.assertTrue(final_pass["codeowner_may_request_on_optional_tiers"])
         self.assertEqual(final_pass["providers"], ["github_copilot", "codex"])
         self.assertEqual(final_pass["selection"], "any_or_both")
@@ -140,6 +192,78 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertIn("**high** (process-required)", agents)
         self.assertIn("**standard** (optional)", agents)
         self.assertIn("**low** (optional)", agents)
+        self.assertIn("highest matching", agents)
+        self.assertIn("not an always-on signal", agents)
+        self.assertIn("`Risk tier:`", agents)
+        self.assertIn("`Specialist pass:`", agents)
+        self.assertIn("A silent skip is not a valid record", agents)
+
+    def test_process_required_is_not_readable_as_always_on(self) -> None:
+        final_pass = self.contract["review_pipeline"]["final_advisory_specialist_pass"]
+        self.assertFalse(
+            final_pass["process_required"],
+            "Object-global process_required must not advertise an unconditional pass.",
+        )
+        self.assertTrue(specialist_pass_is_process_required(final_pass, "high"))
+        self.assertFalse(specialist_pass_is_process_required(final_pass, "standard"))
+        self.assertFalse(specialist_pass_is_process_required(final_pass, "low"))
+
+    def test_overlapping_risk_criteria_use_highest_matching_tier(self) -> None:
+        final_pass = self.contract["review_pipeline"]["final_advisory_specialist_pass"]
+        self.assertEqual(
+            resolve_risk_tier(["security", "chore_or_dependency_bump"], final_pass),
+            "high",
+        )
+        self.assertEqual(resolve_risk_tier(["runtime_behavior"], final_pass), "standard")
+        self.assertEqual(resolve_risk_tier(["docs_only"], final_pass), "low")
+        self.assertEqual(resolve_risk_tier([], final_pass), "standard")
+        self.assertTrue(
+            specialist_pass_is_process_required(
+                final_pass,
+                resolve_risk_tier(["security", "chore_or_dependency_bump"], final_pass),
+            )
+        )
+
+    def test_unknown_future_schema_fails_closed(self) -> None:
+        with self.assertRaises(ValueError):
+            specialist_pass_is_process_required(
+                {"schema_version": MAX_SUPPORTED_PR_GOVERNANCE_SCHEMA + 1},
+                "high",
+            )
+
+    def test_schema_1_fixture_keeps_unconditional_process_required(self) -> None:
+        v1 = json.loads(V1_FIXTURE.read_text(encoding="utf-8"))
+        self.assertEqual(v1["schema_version"], 1)
+        v1_pass = v1["review_pipeline"]["final_advisory_specialist_pass"]
+        self.assertTrue(v1_pass["process_required"])
+        self.assertNotIn("risk_tiered", v1_pass)
+        self.assertTrue(specialist_pass_is_process_required(v1_pass, "high"))
+        self.assertTrue(specialist_pass_is_process_required(v1_pass, "standard"))
+        self.assertTrue(specialist_pass_is_process_required(v1_pass, "low"))
+        self.assertNotEqual(v1["schema_version"], self.contract["schema_version"])
+        migration = COMPATIBILITY_DOC.read_text(encoding="utf-8")
+        self.assertIn("schema 1 to schema 2", migration)
+        self.assertIn("cannot be read as always-on", migration)
+        self.assertIn("highest_matching_wins", migration)
+
+    def test_skip_record_is_a_template_value_field(self) -> None:
+        final_pass = self.contract["review_pipeline"]["final_advisory_specialist_pass"]
+        template = PR_TEMPLATE.read_text(encoding="utf-8")
+        self.assertTrue(final_pass["skip_record_required_when_not_run"])
+        self.assertIn(final_pass["template_risk_tier_field"], template)
+        self.assertIn(final_pass["template_specialist_pass_field"], template)
+        self.assertIn("high | standard | low", template)
+        self.assertIn("completed | skipped | unavailable | requested", template)
+        self.assertNotRegex(
+            template,
+            r"- \[[ x]\] Pull-request risk tier recorded",
+        )
+        self.assertNotRegex(
+            template,
+            r"- \[[ x]\] Copilot and/or Codex completed a final advisory specialist pass",
+        )
+        self.assertNotIn("N/A for `standard`/`low`", template)
+        self.assertIn("blank value is not a valid skip record", template)
 
     def test_codeowners_contains_only_gibboda_owner_tokens(self) -> None:
         text = CODEOWNERS.read_text(encoding="utf-8")
