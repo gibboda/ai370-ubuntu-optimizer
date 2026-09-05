@@ -50,12 +50,14 @@
         "proxy_posters": ["cursor", "codeowner"]
       },
       "independent_reviewer_fallback": {
-        "provider": "antigravity_cli",
-        "when": "grok_build_unavailable",
-        "replaces": "grok_build",
+        "enabled": false,
+        "provider": null,
+        "when": "never",
+        "replaces": null,
         "does_not_replace": "antigravity",
         "peer_of_grok_build": false,
-        "may_be_assigned_when_grok_available": true
+        "may_be_assigned_when_grok_available": false,
+        "transfers_independent_review_role": false
       },
       "github_codeowners_identity": false,
       "merge_gate": false,

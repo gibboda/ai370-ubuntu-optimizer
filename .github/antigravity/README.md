@@ -1,20 +1,20 @@
-# Antigravity specialist and backup review
+# Antigravity secondary / specialist
 
-Owner: **S5-M6**. Antigravity has two related roles in this repository:
+Owner: **S5-M6**. Antigravity is the repository's **secondary / specialist**
+resource. Antigravity IDE / workspace agents under [`.agents/agents/`](../../.agents/agents/)
+provide architecture analysis, difficult debugging, security analysis,
+specialized research, complex test investigation, and a specialist second
+implementation perspective when escalation is justified.
 
-1. **Secondary / specialist** (Antigravity IDE / workspace agents under
-   [`.agents/agents/`](../../.agents/agents/)): architecture analysis,
-   difficult debugging, security analysis, specialized research, and complex
-   test investigation when Cursor escalates.
-2. **Advisory independent review and specialist advice** (Antigravity CLI
-   `agy`): the CODEOWNER may assign `agy` as independent reviewer and/or
-   specialist advisor, including when Grok Build is available. Use `agy`
-   as backup independent review when Grok Build (`grok`) is unavailable.
+Antigravity CLI (`agy`) is an invocation surface for that same secondary /
+specialist role. It is **not an independent reviewer**, does not share Grok
+Build's exclusive independent challenge/review role, and is not a Grok
+fallback. A CODEOWNER may still assign Antigravity for a bounded specialist
+second look or specialist advice; findings remain advisory.
 
-Neither role uses GitHub Actions or `GEMINI_API_KEY`. Follow the
-Agent hierarchy in `AGENTS.md` and [`.github/grok/policy.md`](../grok/policy.md)
-for review severity, categories, and the required COMMENT-only advice
-record.
+Neither Antigravity surface uses GitHub Actions or `GEMINI_API_KEY`. Follow the
+Agent hierarchy in `AGENTS.md`. Grok's independent-review policy remains under
+[`.github/grok/`](../grok/).
 
 ## Local CLI setup (`agy`)
 
@@ -74,7 +74,6 @@ above. Default Project authorization is `read:project`. See
 For explicit human-controlled local execution, use the repository wrapper:
 
 ```bash
-scripts/external-agent grok
 scripts/external-agent agy
 ```
 
@@ -82,27 +81,25 @@ Arguments after the agent name are passed through unchanged, for example:
 
 ```bash
 scripts/external-agent agy -- models
-scripts/external-agent agy -- -p "Review the current branch"
+scripts/external-agent agy -- -p "Perform a specialist analysis of the current branch"
 ```
 
 The wrapper only normalizes invocation from the repository root. It does
 not select an agent, escalate automatically, chain vendors, grant GitHub
-permissions, or change the COMMENT-only review policy.
+permissions, or change the advisory policy.
 
-## Advice record
+## Specialist advice record
 
-Assigned `agy` advice must be recorded as a GitHub pull-request comment or
-COMMENT-only review. Do not APPROVE, REQUEST_CHANGES, or merge. Follow the
-shared template in [`.github/grok/policy.md`](../grok/policy.md). If `agy`
-cannot post the record, Cursor or the CODEOWNER must post the attributed
-local output.
+Assigned `agy` specialist advice must be recorded as a GitHub pull-request
+comment or COMMENT-only review when it is part of PR review. Do not APPROVE,
+REQUEST_CHANGES, or merge. If `agy` cannot post the record, Cursor or the
+CODEOWNER must post the attributed local output.
 
 ## Files
 
 | Path | Role |
 | --- | --- |
 | `settings.json` | Canonical Antigravity CLI settings (no `modelProvider`; merge into `$HOME` from the repository root) |
-| `../grok/policy.md` | Shared local independent-review policy and advice-record template |
 | `../../.agents/agents/` | Workspace specialist agents |
 | `../../scripts/external-agent` | Explicit vendor-neutral local execution wrapper |
 

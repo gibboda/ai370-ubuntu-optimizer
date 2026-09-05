@@ -92,7 +92,8 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertTrue(reviewer["advisory"])
         self.assertFalse(reviewer["merge_gate"])
         self.assertFalse(reviewer["automatic"])
-        self.assertEqual(set(reviewer["providers"]), {"grok_build", "antigravity_cli"})
+        self.assertEqual(set(reviewer["providers"]), {"grok_build"})
+        self.assertTrue(reviewer["exclusive"])
         self.assertTrue(reviewer["advice_record_required"])
 
     def test_bugbot_is_advisory_and_autofix_is_cost_first(self) -> None:
@@ -115,6 +116,9 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertIn("does not replace the risk-tiered", policy)
         self.assertIn("for high-risk pull requests", policy)
         self.assertIn("Do not automatically execute this list as a chain", policy)
+        self.assertIn("Grok Build for independent diagnosis/review", policy)
+        self.assertIn("not independent review", policy)
+        self.assertNotIn("Grok Build or Antigravity CLI", policy)
 
     def test_governance_invariants_match_agent_policy(self) -> None:
         invariants = self.contract["invariants"]
@@ -142,7 +146,9 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         second_look = pipeline["second_look"]
         fallback = second_look["independent_reviewer_fallback"]
         self.assertEqual(set(second_look["providers"]), {"grok_build", "antigravity"})
-        self.assertEqual(fallback["provider"], "antigravity_cli")
+        self.assertFalse(fallback["enabled"])
+        self.assertIsNone(fallback["provider"])
+        self.assertFalse(fallback["transfers_independent_review_role"])
         self.assertFalse(second_look["merge_gate"])
         self.assertFalse(second_look["required_status_check"])
         self.assertNotIn("last_resort_specialists", pipeline)

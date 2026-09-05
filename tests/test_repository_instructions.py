@@ -283,7 +283,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn(
-            "Grok / Grok Build** is the independent AI reviewer",
+            "Grok / Grok Build** is the exclusive independent AI reviewer",
             self.agent_instructions,
         )
         self.assertIn(
@@ -514,6 +514,16 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "Independent review and specialist advice (not implementation overlays)",
             self.contributing,
         )
+        self.assertIn("**Exclusive (SuperGrok)**", self.contributing)
+        self.assertIn(
+            "Do not transfer independent review to",
+            self.contributing,
+        )
+        self.assertIn("`agy` remains specialist-only", self.contributing)
+        self.assertNotIn(
+            "If Grok Build is unavailable, use Antigravity CLI",
+            self.contributing,
+        )
         self.assertIn("What remains unresolved?", self.agent_instructions)
         self.assertIn(
             "Do not chain the next vendor automatically",
@@ -654,6 +664,15 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn('data.pop("modelProvider", None)', antigravity_readme)
         self.assertIn("repository root", antigravity_readme)
         self.assertIn("account login", antigravity_readme)
+        self.assertIn(
+            "Assigned `agy` specialist advice must be recorded",
+            antigravity_readme,
+        )
+        self.assertIn("must post the attributed local output", antigravity_readme)
+        self.assertNotIn(
+            "Assigned `agy` specialist advice should be recorded",
+            antigravity_readme,
+        )
 
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
         self.assertIn(".gemini/", gitignore)

@@ -179,18 +179,20 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertTrue(set(second_look["providers"]).issubset(advisory_providers))
         self.assertNotIn("antigravity_cli", second_look["providers"])
         fallback = second_look["independent_reviewer_fallback"]
-        self.assertEqual(fallback["provider"], "antigravity_cli")
-        self.assertEqual(fallback["when"], "grok_build_unavailable")
-        self.assertEqual(fallback["replaces"], "grok_build")
+        self.assertFalse(fallback["enabled"])
+        self.assertIsNone(fallback["provider"])
+        self.assertEqual(fallback["when"], "never")
+        self.assertIsNone(fallback["replaces"])
         self.assertFalse(fallback["peer_of_grok_build"])
-        self.assertTrue(fallback["may_be_assigned_when_grok_available"])
+        self.assertFalse(fallback["may_be_assigned_when_grok_available"])
+        self.assertFalse(fallback["transfers_independent_review_role"])
         self.assertEqual(
             second_look["advice_record"]["form_constraints"]["comment_review"]["github_review_state"],
             "comment_only",
         )
         self.assertTrue(second_look["advice_record"]["required_when_assigned"])
         self.assertFalse(second_look["advice_record"]["satisfies_branch_protection"])
-        self.assertIn(fallback["provider"], advisory_providers)
+        self.assertIsNone(fallback["provider"])
         self.assertTrue(
             set(second_look["cli_advisory_reviewers"]).issubset(advisory_providers)
         )
@@ -208,7 +210,7 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertFalse(final_pass["required_status_check"])
         self.assertFalse(advisory["merge_gate"])
         self.assertFalse(advisory["required_status_check"])
-        for provider in set(second_look["providers"]) | {fallback["provider"]} | set(final_pass["providers"]):
+        for provider in set(second_look["providers"]) | set(final_pass["providers"]):
             self.assertNotIn(provider, required_checks)
 
     def test_deterministic_validation_precedence_is_consistent(self):

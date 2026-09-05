@@ -16,7 +16,8 @@ ESCALATION_SCHEMA = ROOT / "config/agent-escalation-record.schema.json"
 ESCALATION_POLICY = ROOT / "docs/AGENT-ESCALATION-RECORD.md"
 ESCALATION_FIXTURES = ROOT / "tests/fixtures/agent-escalation-record"
 AGENTS_POLICY = ROOT / "AGENTS.md"
-MAX_SUPPORTED_SCHEMA_VERSION = 3
+MAX_SUPPORTED_SCHEMA_VERSION = 4
+V3_FIXTURE = ROOT / "tests/fixtures/agent-role-contract/v3.json"
 _CREDENTIAL = re.compile(
     r"gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|"
     r"AIza[0-9A-Za-z_-]+|xai-[A-Za-z0-9]+"
@@ -61,8 +62,10 @@ class AgentRoleContractTests(unittest.TestCase):
         text = SCHEMA_POLICY.read_text(encoding="utf-8")
         self.assertIn("`AGENTS.md`", text)
         self.assertIn("fail closed", text)
-        self.assertIn("schema version 3", text)
+        self.assertIn("schema version 4", text)
         self.assertIn("Version 1", text)
+        self.assertIn("version-3-to-version-4", text)
+        self.assertIn("increments `architecture_contract_version` from `2` to `3`", text)
         self.assertIn("Migration procedure", text)
 
     def _assert_v1_semantics_preserved(self, actual, expected, path: str) -> None:
@@ -91,7 +94,7 @@ class AgentRoleContractTests(unittest.TestCase):
     def test_v1_fixture_preserves_v1_semantics_in_v2(self) -> None:
         v1 = json.loads(V1_FIXTURE.read_text(encoding="utf-8"))
         self.assertEqual(v1["schema_version"], 1)
-        self.assertEqual(self.contract["schema_version"], 3)
+        self.assertEqual(self.contract["schema_version"], 4)
         for key in ("authority", "policy_domains", "roles", "invariants"):
             with self.subTest(key=key):
                 self._assert_v1_semantics_preserved(self.contract[key], v1[key], key)
@@ -100,11 +103,43 @@ class AgentRoleContractTests(unittest.TestCase):
 
     def test_v2_fixture_preserves_v2_semantics_in_v3(self) -> None:
         v2 = json.loads(V2_FIXTURE.read_text(encoding="utf-8"))
+        v3 = json.loads(V3_FIXTURE.read_text(encoding="utf-8"))
         self.assertEqual(v2["schema_version"], 2)
-        self.assertEqual(self.contract["schema_version"], 3)
+        self.assertEqual(v3["schema_version"], 3)
         for key in ("authority", "policy_domains", "roles", "invariants", "overlay_contract"):
             with self.subTest(key=key):
-                self._assert_v1_semantics_preserved(self.contract[key], v2[key], key)
+                self._assert_v1_semantics_preserved(v3[key], v2[key], key)
+
+    def test_v4_documents_exclusive_independent_review_migration(self) -> None:
+        v3 = json.loads(V3_FIXTURE.read_text(encoding="utf-8"))
+        self.assertEqual(self.contract["schema_version"], 4)
+        self.assertEqual(set(v3["roles"]["independent_reviewer"]["providers"]), {"grok_build", "antigravity_cli"})
+        self.assertEqual(set(self.roles["independent_reviewer"]["providers"]), {"grok_build"})
+        self.assertTrue(self.roles["independent_reviewer"]["exclusive"])
+        self.assertTrue(self.invariants["grok_exclusive_independent_review"])
+        self._assert_overlay_contract_preserves_v2_structure(
+            self.contract["overlay_contract"],
+            v3["overlay_contract"],
+        )
+
+    def _assert_overlay_contract_preserves_v2_structure(self, actual, expected) -> None:
+        """Preserve v2 overlay paths, roles, and discovery; allow required_any to evolve."""
+        self._assert_v1_semantics_preserved(
+            actual["common"],
+            expected["common"],
+            "overlay_contract.common",
+        )
+        self._assert_v1_semantics_preserved(
+            actual["discovery"],
+            expected["discovery"],
+            "overlay_contract.discovery",
+        )
+        actual_by_path = {entry["path"]: entry for entry in actual["overlays"]}
+        expected_by_path = {entry["path"]: entry for entry in expected["overlays"]}
+        self.assertEqual(set(actual_by_path), set(expected_by_path))
+        for path, entry in expected_by_path.items():
+            with self.subTest(overlay=path):
+                self.assertEqual(actual_by_path[path]["role"], entry["role"])
 
     def test_compatible_additive_fields_do_not_require_migration(self) -> None:
         v1_roles = {"primary_orchestrator": {"provider": "cursor", "count": 1}}
@@ -268,7 +303,8 @@ class AgentRoleContractTests(unittest.TestCase):
     def test_grok_is_advisory_and_not_a_merge_gate(self) -> None:
         reviewer = self.roles["independent_reviewer"]
         self.assertEqual(reviewer["provider"], "grok_build")
-        self.assertEqual(set(reviewer["providers"]), {"grok_build", "antigravity_cli"})
+        self.assertEqual(set(reviewer["providers"]), {"grok_build"})
+        self.assertTrue(reviewer["exclusive"])
         self.assertEqual(reviewer["also_serves"], ["specialist_advisor"])
         self.assertTrue(reviewer["advisory"])
         self.assertFalse(reviewer["merge_gate"])
@@ -288,6 +324,7 @@ class AgentRoleContractTests(unittest.TestCase):
         self.assertTrue(self.invariants["least_agent_principle"])
         self.assertTrue(self.invariants["duplicate_routine_ai_work_prohibited"])
         self.assertTrue(self.invariants["ai_reviews_advisory"])
+        self.assertTrue(self.invariants["grok_exclusive_independent_review"])
 
     def test_overlay_contract_roles_exist_in_manifest(self) -> None:
         for overlay in self.overlay_contract["overlays"]:

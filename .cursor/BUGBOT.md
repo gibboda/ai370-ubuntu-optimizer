@@ -53,8 +53,9 @@ For a Bugbot finding, use this cost-aware order:
    deterministic evidence already available.
 3. Antigravity as the secondary/specialist implementation agent only when the
    unresolved gap matches its capabilities.
-4. Grok Build or Antigravity CLI (`agy`) for independent diagnosis/review when
-   a second opinion is useful; advisory only.
+4. Grok Build for independent diagnosis/review when a second opinion is
+   useful; advisory only. Antigravity CLI (`agy`) may provide specialist
+   advice, not independent review.
 5. GitHub Copilot only as a GitHub-native fallback when the prior capable
    paths cannot safely resolve the implementation gap or Cursor is
    unavailable.

@@ -1,0 +1,22 @@
+{
+  "schema_version": 2,
+  "work_kind": "independent_review",
+  "primary_resource": "cursor",
+  "additional_resource": "grok_build",
+  "reuse_evidence": ["cursor_findings", "pr_discussion", "ci", "tests"],
+  "independent_review_reason": "CODEOWNER assigned Grok Build to challenge the existing change.",
+  "escalation_record": {
+    "schema_version": 1,
+    "unresolved_gap": "The CODEOWNER wants independent challenge of the existing change before merge.",
+    "deterministic_tooling_assessment": "Portable tests and ShellCheck pass; they do not replace independent review.",
+    "cursor_limit": "Cursor already implemented and tested the change; independent review must not re-implement it.",
+    "missing_capability": "Independent challenge/review of the existing pull request.",
+    "selected_resource": "grok_build",
+    "scope": "Inspect only the existing Cursor change; do not re-implement routine work or approve the merge.",
+    "completion_criterion": "Record advisory independent-review findings or conclude that the available evidence is insufficient.",
+    "stop_condition": "Stop when the gap is closed, deterministic evidence answers it, Grok is unavailable, or tests contradict the reviewer.",
+    "context": {
+      "notes": "Reuse the existing Cursor analysis, PR discussion, and CI logs."
+    }
+  }
+}

@@ -170,8 +170,8 @@ class AgentContractCompatibilityTests(unittest.TestCase):
         self.assertIsInstance(current, int)
         self.assertGreaterEqual(previous, 0)
         self.assertGreaterEqual(current, previous)
-        self.assertEqual(previous, 1)
-        self.assertEqual(current, 2)
+        self.assertEqual(previous, 2)
+        self.assertEqual(current, 3)
 
     def test_introduced_version_is_not_a_past_finalized_release(self):
         current = repository_version()
@@ -181,7 +181,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
         previous_sv = semver(previous)
         introduced_sv = semver(introduced)
 
-        self.assertEqual(previous, "0.31.0")
+        self.assertEqual(previous, "1.0.0")
         self.assertGreaterEqual(introduced_sv, previous_sv)
         if current_sv == previous_sv:
             self.assertGreater(
@@ -193,7 +193,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
             )
         else:
             self.assertGreaterEqual(current_sv, introduced_sv)
-        self.assertEqual(introduced, "1.0.0")
+        self.assertEqual(introduced, "2.0.0")
 
     def test_introduced_version_matches_declared_change_class(self):
         current = repository_version()
@@ -257,9 +257,12 @@ class AgentContractCompatibilityTests(unittest.TestCase):
             contributing,
         )
         self.assertIn("Release Please must produce that `1.0.0` release", compatibility_doc)
+        self.assertIn("Release Please must produce that `2.0.0` release", compatibility_doc)
         self.assertIn("Release-As: 1.0.0", compatibility_doc)
+        self.assertIn("Release-As: 2.0.0", compatibility_doc)
         self.assertIn("terminal `Release-As: 1.0.0`", compatibility_doc)
-        self.assertEqual(self.compatibility["introduced_repository_version"], "1.0.0")
+        self.assertIn("terminal `Release-As: 2.0.0`", compatibility_doc)
+        self.assertEqual(self.compatibility["introduced_repository_version"], "2.0.0")
 
     def test_documented_release_as_example_is_a_git_trailer(self):
         documented = (
@@ -280,6 +283,11 @@ class AgentContractCompatibilityTests(unittest.TestCase):
             "Release-As: 1.0.0\n"
             "Co-authored-by: gibboda <gibboda@users.noreply.github.com>\n"
         )
+        documented_2_0_0 = (
+            "feat(contract)!: Increment architecture contract to version 3\n"
+            "\n"
+            "Release-As: 2.0.0\n"
+        )
 
         self.assertEqual(parse_git_trailers(documented).get("Release-As"), ["1.0.0"])
         self.assertNotIn("Release-As", parse_git_trailers(split_from_coauthor))
@@ -287,6 +295,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
             parse_git_trailers(joined_with_coauthor).get("Release-As"),
             ["1.0.0"],
         )
+        self.assertEqual(parse_git_trailers(documented_2_0_0).get("Release-As"), ["2.0.0"])
 
 
 if __name__ == "__main__":

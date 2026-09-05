@@ -103,7 +103,12 @@ class AgentWorkAllocationTests(unittest.TestCase):
             for name in self._requirements_for(work_kind):
                 if name not in record:
                     errors.append(f"missing required property {name!r}")
+        expected_version = self.allocation["properties"]["schema_version"]["const"]
+        if record.get("schema_version") != expected_version:
+            errors.append(f"schema_version must be {expected_version}")
         additional = record.get("additional_resource")
+        if work_kind == "independent_review" and additional not in (None, "grok_build"):
+            errors.append("independent_review requires additional_resource 'grok_build'")
         if "escalation_record" in record:
             nested = record["escalation_record"]
             errors.extend(self._escalation_record_errors(nested))
@@ -121,8 +126,13 @@ class AgentWorkAllocationTests(unittest.TestCase):
         requirements = self._requirements_for("independent_review")
         self.assertIn("escalation_record", requirements)
         self.assertIn("independent_review_reason", requirements)
+        self.assertEqual(self.allocation["properties"]["schema_version"]["const"], 2)
         self.assertTrue(self.roles["invariants"]["ai_reviews_advisory"])
         self.assertFalse(self.roles["roles"]["independent_reviewer"]["merge_gate"])
+        self.assertEqual(
+            set(self.roles["roles"]["independent_reviewer"]["providers"]),
+            {"grok_build"},
+        )
 
     def test_specialist_review_is_distinct_and_justified(self) -> None:
         kinds = set(self.allocation["properties"]["work_kind"]["enum"])
@@ -158,18 +168,37 @@ class AgentWorkAllocationTests(unittest.TestCase):
             self.assertEqual(resource, selected)
 
     def test_valid_allocation_fixture_passes(self) -> None:
-        record = json.loads((FIXTURES / "v1-implementation.json").read_text(encoding="utf-8"))
+        record = json.loads((FIXTURES / "v2-implementation.json").read_text(encoding="utf-8"))
         self.assertEqual(self._allocation_errors(record), [])
 
     def test_valid_specialist_review_fixture_passes(self) -> None:
-        record = json.loads((FIXTURES / "v1-specialist-review.json").read_text(encoding="utf-8"))
+        record = json.loads((FIXTURES / "v2-specialist-review.json").read_text(encoding="utf-8"))
         self.assertEqual(record["work_kind"], "specialist_review")
         self.assertEqual(record["additional_resource"], "antigravity")
         self.assertIn("specialist_review_reason", record)
         self.assertEqual(self._allocation_errors(record), [])
 
+    def test_v1_allocation_schema_is_rejected(self) -> None:
+        record = json.loads((FIXTURES / "v1-implementation.json").read_text(encoding="utf-8"))
+        self.assertIn("schema_version must be 2", self._allocation_errors(record))
+
+    def test_valid_independent_review_fixture_passes(self) -> None:
+        record = json.loads((FIXTURES / "v2-independent-review.json").read_text(encoding="utf-8"))
+        self.assertEqual(record["work_kind"], "independent_review")
+        self.assertEqual(record["additional_resource"], "grok_build")
+        self.assertEqual(self._allocation_errors(record), [])
+
+    def test_independent_review_rejects_antigravity_cli(self) -> None:
+        record = json.loads((FIXTURES / "v2-independent-review.json").read_text(encoding="utf-8"))
+        record["additional_resource"] = "antigravity_cli"
+        record["escalation_record"]["selected_resource"] = "antigravity_cli"
+        self.assertIn(
+            "independent_review requires additional_resource 'grok_build'",
+            self._allocation_errors(record),
+        )
+
     def test_specialist_review_without_reason_is_rejected(self) -> None:
-        record = json.loads((FIXTURES / "v1-specialist-review.json").read_text(encoding="utf-8"))
+        record = json.loads((FIXTURES / "v2-specialist-review.json").read_text(encoding="utf-8"))
         del record["specialist_review_reason"]
         self.assertIn(
             "missing required property 'specialist_review_reason'",
@@ -177,7 +206,7 @@ class AgentWorkAllocationTests(unittest.TestCase):
         )
 
     def test_empty_escalation_record_is_rejected(self) -> None:
-        record = json.loads((FIXTURES / "v1-implementation.json").read_text(encoding="utf-8"))
+        record = json.loads((FIXTURES / "v2-implementation.json").read_text(encoding="utf-8"))
         record["escalation_record"] = {}
         errors = self._allocation_errors(record)
         self.assertIn("missing required property 'unresolved_gap'", errors)
@@ -191,7 +220,7 @@ class AgentWorkAllocationTests(unittest.TestCase):
         )
 
     def test_mismatched_allocated_resource_is_rejected(self) -> None:
-        record = json.loads((FIXTURES / "v1-implementation.json").read_text(encoding="utf-8"))
+        record = json.loads((FIXTURES / "v2-implementation.json").read_text(encoding="utf-8"))
         record["additional_resource"] = "codex"
         self.assertIn(
             "additional_resource must match escalation_record.selected_resource",
@@ -203,12 +232,12 @@ class AgentWorkAllocationTests(unittest.TestCase):
         self.assertIn("`AGENTS.md` is authoritative", text)
         self.assertIn("Routine duplicate implementation is prohibited", text)
         self.assertIn("Independent review is not duplicate implementation", text)
-        self.assertIn("CODEOWNER-assigned second look", text)
-        self.assertIn("records Grok Build as `independent_review`", text)
-        self.assertIn("Antigravity as `specialist_review`", text)
-        self.assertIn("remains `independent_review` (independent-reviewer fallback)", text)
-        self.assertIn("is not `specialist_review`", text)
-        self.assertIn("COMMENT-only pull-request comment or COMMENT review", text)
+        self.assertIn("CODEOWNER-assigned Grok second look", text)
+        self.assertIn("CODEOWNER-assigned Antigravity second look", text)
+        self.assertIn("records `grok_build` as `independent_review`", text)
+        self.assertIn("as `specialist_review`, not `independent_review`", text)
+        self.assertIn("does not transfer the independent-review role", text)
+        self.assertIn("must be recorded as a COMMENT-only pull-request comment or COMMENT review", text)
         self.assertIn("### `specialist_review`", text)
         self.assertIn("`specialist_review_reason`", text)
         self.assertIn("A CODEOWNER-assigned Antigravity second look uses this work kind", text)
@@ -235,11 +264,19 @@ class AgentWorkAllocationTests(unittest.TestCase):
             "MCP availability is capability, not an",
             "A CODEOWNER-assigned Grok Build second look is `independent_review`",
             "A CODEOWNER-assigned Antigravity second look is `specialist_review`",
-            "`agy` used as Grok-unavailable fallback remains `independent_review`",
+            "does not transfer the independent-review role to `agy`",
             "When an allocation record is created for that pass, it uses",
             "COMMENT-only pull-request comment or COMMENT review",
         ):
             self.assertIn(phrase, text)
+        self.assertNotIn(
+            "`agy` used as Grok-unavailable fallback remains `independent_review`",
+            text,
+        )
+        self.assertNotIn(
+            "Backup independent review when Grok Build is unavailable",
+            text,
+        )
 
 
 if __name__ == "__main__":
