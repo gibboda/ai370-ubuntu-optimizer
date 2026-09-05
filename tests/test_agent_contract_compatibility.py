@@ -222,6 +222,24 @@ class AgentContractCompatibilityTests(unittest.TestCase):
         if change_class == "breaking":
             self.assertGreater(current_arch, previous_arch)
 
+    def test_major_floor_is_routed_through_release_please(self):
+        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        compatibility_doc = (ROOT / "docs/AGENT-CONTRACT-COMPATIBILITY.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("Do not hand-edit `VERSION`", contributing)
+        self.assertIn(".release-please-manifest.json", contributing)
+        self.assertIn("Release-As: x.y.z", contributing)
+        self.assertIn("Release-As: 1.0.0", contributing)
+        self.assertIn(
+            "Do not substitute a hand-edited version bump for that generated Release PR.",
+            contributing,
+        )
+        self.assertIn("Release Please must produce that `1.0.0` release", compatibility_doc)
+        self.assertIn("Release-As: 1.0.0", compatibility_doc)
+        self.assertEqual(self.compatibility["introduced_repository_version"], "1.0.0")
+
 
 if __name__ == "__main__":
     unittest.main()

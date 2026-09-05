@@ -139,6 +139,24 @@ Releases are fully automated based on Conventional Commits:
 Commits with types like `chore`, `docs`, `ci`, `refactor`, or `test` do not
 trigger a new release by default but are documented in the release notes.
 
+Do not hand-edit `VERSION`, `.release-please-manifest.json`, or a generated
+changelog heading on a pending Release Please PR. Only merging that
+generated Release PR creates the matching Git tag and GitHub Release.
+Rewriting those files on the Release Please branch can mark a version as
+released without creating the tag, and it can rewrite an already prepared
+changelog entry.
+
+If a landed commit must become a different SemVer (for example a `feat`
+later classified as breaking), add a follow-up commit with `!` and a
+`Release-As: x.y.z` footer. Release Please then opens or updates the
+Release PR to that version. Example:
+
+```text
+chore(release)!: Route the 1.0.0 bump through Release Please
+
+Release-As: 1.0.0
+```
+
 ## Shell script standards
 
 All scripts in this repository follow these conventions:
@@ -209,5 +227,6 @@ Release Please PRs (`autorelease:*` or `chore(release):`) are left untouched.
 6. Once merged into `main`, the `release-please` workflow automatically updates
    (or creates) a Release PR. This Release PR handles bumping the version in
    `VERSION` and `.release-please-manifest.json`, and updating `CHANGELOG.md`.
+   Do not substitute a hand-edited version bump for that generated Release PR.
 7. When the Release PR is merged, the release is finalized, and the new Git
    tag and GitHub Release are created automatically.

@@ -58,7 +58,11 @@ repository's compatibility rule classifies changed existing field semantics
 as breaking even when merge authority and required checks stay unchanged.
 The recorded `previous_repository_version` is therefore `0.31.0`, and the
 first repository release that may ship architecture contract version `2` is
-`1.0.0`.
+`1.0.0`. Release Please must produce that `1.0.0` release. Do not
+hand-edit `VERSION`, `.release-please-manifest.json`, or the generated
+changelog heading on a pending `0.32.0` Release Please PR to satisfy the
+floor. Land a `!` Conventional Commit with a `Release-As: 1.0.0` footer
+on `main` so Release Please can open the major Release PR.
 
 ## Repository version fields
 

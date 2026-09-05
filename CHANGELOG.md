@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Route the architecture-contract v2 major bump through Release Please
+  (`Release-As: 1.0.0` and a `!` Conventional Commit) instead of
+  rewriting `VERSION`, `.release-please-manifest.json`, or a generated
+  changelog heading on the pending 0.32.0 Release Please PR.
 - Gate the Copilot/Codex final advisory specialist pass by pull-request
   risk tier. The pass remains process-required for high-risk changes
   (security, credentials, agent hierarchy, merge authority, contracts,
