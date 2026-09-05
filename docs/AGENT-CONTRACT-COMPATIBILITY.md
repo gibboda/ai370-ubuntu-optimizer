@@ -84,10 +84,10 @@ Incrementing an existing `architecture_contract_version` (`previous` ≥ 1)
 requires `current_change_class=breaking` and a major repository release
 versus `previous_repository_version`.
 
-Most checks are fixture/metadata-driven and do not parse GitHub labels
-or `release-please` output. When `VERSION` is still older than
-`introduced_repository_version`, the suite also requires a reachable
-commit whose git trailer metadata is `Release-As: 1.0.0`.
+These checks are fixture/metadata-driven. They do not parse git history,
+GitHub labels, or `release-please` output. They do verify that the
+documented `Release-As: 1.0.0` example is a git-parseable trailer and
+that a blank line before `Co-authored-by` drops it.
 
 ## Validation
 
@@ -110,13 +110,10 @@ The suite verifies that:
 - if `VERSION` has already been bumped, it is not older than `introduced`
 - incrementing an existing architecture contract version requires a breaking
   change classification and a major repository release
-- while `VERSION` still equals the last finalized release, a reachable
-  commit carries a git-parseable `Release-As: 1.0.0` trailer
+- the documented `Release-As: 1.0.0` example is a git-parseable trailer
 
 The suite does not claim that GitHub labels, Conventional Commit type, or
-`release-please` have already applied that repository bump. It does
-require a parseable `Release-As: 1.0.0` git trailer on a reachable
-commit while `VERSION` still equals the last finalized release.
+`release-please` have already applied that repository bump.
 
 ## `pr-governance.json` schema 1 to schema 2
 

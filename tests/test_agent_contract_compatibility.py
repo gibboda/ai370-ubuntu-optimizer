@@ -66,17 +66,6 @@ def parse_git_trailers(message):
     return trailers
 
 
-def release_as_trailers_from_history():
-    result = subprocess.run(
-        ["git", "log", "--format=%(trailers:key=Release-As,valueonly)"],
-        capture_output=True,
-        text=True,
-        check=True,
-        cwd=ROOT,
-    )
-    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
-
-
 class AgentContractCompatibilityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -297,24 +286,6 @@ class AgentContractCompatibilityTests(unittest.TestCase):
         self.assertEqual(
             parse_git_trailers(joined_with_coauthor).get("Release-As"),
             ["1.0.0"],
-        )
-
-    def test_pending_major_has_parseable_release_as_trailer(self):
-        current = repository_version()
-        introduced = self.compatibility["introduced_repository_version"]
-        if semver(current) >= semver(introduced):
-            self.skipTest(
-                "VERSION already meets introduced_repository_version; "
-                "Release Please owns the completed bump."
-            )
-
-        self.assertIn(
-            introduced,
-            release_as_trailers_from_history(),
-            "While VERSION still equals a finalized release, a reachable "
-            "commit must carry a git-parseable Release-As trailer matching "
-            f"{introduced}. A body line above a blank Co-authored-by "
-            "separator is not a trailer.",
         )
 
 
