@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v2.1.0...v2.1.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **contract:** validate native specialist ordering in mutation validator ([#294](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/294)) ([fd074de](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/fd074ded1e4da98b13673b978f9e123bd14b604f))
+
 ## [2.1.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v2.0.0...v2.1.0) (2026-09-05)
 
 
