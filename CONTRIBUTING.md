@@ -148,8 +148,15 @@ changelog entry.
 
 If a landed commit must become a different SemVer (for example a `feat`
 later classified as breaking), add a follow-up commit with `!` and a
-`Release-As: x.y.z` footer. Release Please then opens or updates the
-Release PR to that version. Example:
+terminal `Release-As: x.y.z` git trailer. Keep that trailer in the same
+block as `Co-authored-by` or any other trailer. A blank line before
+another trailer makes git treat `Release-As` as body text, so
+`git interpret-trailers --parse` and
+`git show -s --format='%(trailers:key=Release-As,valueonly)'` stay empty
+and Release Please misses the override. This repository squash-merges;
+the same trailer must appear on the squash-merge commit that lands on
+`main`. Release Please then opens or updates the Release PR to that
+version. Example:
 
 ```text
 chore(release)!: Route the 1.0.0 bump through Release Please

@@ -61,8 +61,10 @@ first repository release that may ship architecture contract version `2` is
 `1.0.0`. Release Please must produce that `1.0.0` release. Do not
 hand-edit `VERSION`, `.release-please-manifest.json`, or the generated
 changelog heading on a pending `0.32.0` Release Please PR to satisfy the
-floor. Land a `!` Conventional Commit with a `Release-As: 1.0.0` footer
-on `main` so Release Please can open the major Release PR.
+floor. Land a `!` Conventional Commit with a terminal `Release-As: 1.0.0`
+git trailer on `main` so Release Please can open the major Release PR.
+Keep `Release-As` in the final trailer block; a blank line before
+`Co-authored-by` drops it from `git interpret-trailers --parse`.
 
 ## Repository version fields
 
@@ -82,8 +84,10 @@ Incrementing an existing `architecture_contract_version` (`previous` ≥ 1)
 requires `current_change_class=breaking` and a major repository release
 versus `previous_repository_version`.
 
-These checks are fixture/metadata-driven. They do not parse git history,
-GitHub labels, or `release-please` output.
+Most checks are fixture/metadata-driven and do not parse GitHub labels
+or `release-please` output. When `VERSION` is still older than
+`introduced_repository_version`, the suite also requires a reachable
+commit whose git trailer metadata is `Release-As: 1.0.0`.
 
 ## Validation
 
@@ -106,9 +110,13 @@ The suite verifies that:
 - if `VERSION` has already been bumped, it is not older than `introduced`
 - incrementing an existing architecture contract version requires a breaking
   change classification and a major repository release
+- while `VERSION` still equals the last finalized release, a reachable
+  commit carries a git-parseable `Release-As: 1.0.0` trailer
 
 The suite does not claim that GitHub labels, Conventional Commit type, or
-`release-please` have already applied that repository bump.
+`release-please` have already applied that repository bump. It does
+require a parseable `Release-As: 1.0.0` git trailer on a reachable
+commit while `VERSION` still equals the last finalized release.
 
 ## `pr-governance.json` schema 1 to schema 2
 
