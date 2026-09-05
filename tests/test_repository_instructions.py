@@ -558,7 +558,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn(
             "coding agent, Copilot code review, Projects MCP",
-            self.copilot_instructions,
+            " ".join(self.copilot_instructions.split()),
         )
         for overlay in (
             self.copilot_instructions,
