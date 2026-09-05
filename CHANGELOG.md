@@ -19,21 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### ⚠ BREAKING CHANGES
-
-- Architecture contract version increments from 2 to 3. Exclusive Grok
-  independent review removes `antigravity_cli` from the eligible
-  independent-review provider set. The first repository release that may
-  ship this contract is 2.0.0.
-
-### Changed
-
-- Make Grok Build the exclusive independent AI challenge/reviewer. Antigravity
-  CLI (`agy`) remains secondary/specialist only and is no longer an
-  independent-review fallback when Grok is unavailable. Role-contract schema
-  is now version 4; work-allocation schema version 2 accepts
-  `independent_review` only with `additional_resource` `grok_build`.
-
 ## [1.0.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.31.0...v1.0.0) (2026-09-05)
 
 
