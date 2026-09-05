@@ -6,22 +6,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v1.0.0...v2.0.0) (2026-09-05)
+
 
 ### ⚠ BREAKING CHANGES
 
-- Architecture contract version increments from 2 to 3. Exclusive Grok
-  independent review removes `antigravity_cli` from the eligible
-  independent-review provider set. The first repository release that may
-  ship this contract is 2.0.0.
+* **agents:** Make Grok exclusive independent reviewer ([#289](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/289))
 
-### Changed
+### Features
 
-- Make Grok Build the exclusive independent AI challenge/reviewer. Antigravity
-  CLI (`agy`) remains secondary/specialist only and is no longer an
-  independent-review fallback when Grok is unavailable. Role-contract schema
-  is now version 4; work-allocation schema version 2 accepts
-  `independent_review` only with `additional_resource` `grok_build`.
+* **agents:** Make Grok exclusive independent reviewer ([#289](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/289)) ([3a5781e](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/3a5781e206ae8c1c326bad4ab5c4f6457b04d0e3))
+
+## [Unreleased]
 
 ## [1.0.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.31.0...v1.0.0) (2026-09-05)
 
