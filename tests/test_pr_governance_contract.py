@@ -113,13 +113,16 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         policy = BUGBOT_POLICY.read_text(encoding="utf-8")
         self.assertIn("Default", policy)
         self.assertIn("Create New Branch", policy)
-        self.assertIn("GitHub Copilot only as a GitHub-native fallback", policy)
-        self.assertIn("Codex only as the final narrowly scoped", policy)
-        self.assertIn("does not replace the risk-tiered", policy)
+        self.assertIn("GitHub Copilot (**GitHub-Native Coding Agent**)", policy)
+        self.assertIn("Codex (**Codex Coding Agent**)", policy)
+        self.assertIn("process-required only for high-risk pull requests", policy)
         self.assertIn("for high-risk pull requests", policy)
-        self.assertIn("Do not automatically execute this list as a chain", policy)
-        self.assertIn("Grok Build for independent diagnosis/review", policy)
-        self.assertIn("not independent review", policy)
+        self.assertIn(
+            "Do not automatically execute Grok, Antigravity, Copilot, or Codex as a chain",
+            policy,
+        )
+        self.assertIn("exclusive independent challenge/review", policy)
+        self.assertIn("secondary/specialist second look", policy)
         self.assertNotIn("Grok Build or Antigravity CLI", policy)
 
     def test_governance_invariants_match_agent_policy(self) -> None:

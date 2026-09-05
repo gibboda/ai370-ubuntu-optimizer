@@ -557,7 +557,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.contributing,
         )
         self.assertIn(
-            "coding agent, pull-request review, Projects MCP",
+            "coding agent, Copilot code review, Projects MCP",
             self.copilot_instructions,
         )
         for overlay in (
@@ -871,7 +871,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
 
     def test_codex_pr_title_requirements_live_in_codex_instructions(self) -> None:
         self.assertIn(
-            "Codex is a specialist/escalation agent", self.codex_instructions
+            "Codex is the **Codex Coding Agent**", self.codex_instructions
         )
         self.assertIn(
             "[`../../CONTRIBUTING.md`](../../CONTRIBUTING.md)",
