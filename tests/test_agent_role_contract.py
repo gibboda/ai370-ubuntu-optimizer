@@ -325,6 +325,9 @@ class AgentRoleContractTests(unittest.TestCase):
         self.assertTrue(self.invariants["duplicate_routine_ai_work_prohibited"])
         self.assertTrue(self.invariants["ai_reviews_advisory"])
         self.assertTrue(self.invariants["grok_exclusive_independent_review"])
+        self.assertTrue(self.invariants["cursor_remains_primary"])
+        self.assertTrue(self.invariants["bugbot_is_cursor_native_autofixer"])
+        self.assertTrue(self.invariants["native_specialist_pass_precedes_final_merge_validation"])
 
     def test_overlay_contract_roles_exist_in_manifest(self) -> None:
         for overlay in self.overlay_contract["overlays"]:

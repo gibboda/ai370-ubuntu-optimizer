@@ -99,6 +99,8 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
     def test_bugbot_is_advisory_and_autofix_is_cost_first(self) -> None:
         bugbot = self.contract["review_pipeline"]["cursor_bugbot"]
         self.assertEqual(bugbot["role"], "cursor_native_pr_review")
+        self.assertEqual(bugbot["role_identity"], "cursor_native_autofixer")
+        self.assertTrue(self.roles["invariants"]["bugbot_is_cursor_native_autofixer"])
         self.assertTrue(bugbot["advisory"])
         self.assertFalse(bugbot["merge_gate"])
         self.assertFalse(bugbot["required_status_check"])
@@ -111,13 +113,16 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         policy = BUGBOT_POLICY.read_text(encoding="utf-8")
         self.assertIn("Default", policy)
         self.assertIn("Create New Branch", policy)
-        self.assertIn("GitHub Copilot only as a GitHub-native fallback", policy)
-        self.assertIn("Codex only as the final narrowly scoped", policy)
-        self.assertIn("does not replace the risk-tiered", policy)
+        self.assertIn("GitHub Copilot (**GitHub-Native Coding Agent**)", policy)
+        self.assertIn("Codex (**Codex Coding Agent**)", policy)
+        self.assertIn("process-required only for high-risk pull requests", policy)
         self.assertIn("for high-risk pull requests", policy)
-        self.assertIn("Do not automatically execute this list as a chain", policy)
-        self.assertIn("Grok Build for independent diagnosis/review", policy)
-        self.assertIn("not independent review", policy)
+        self.assertIn(
+            "Do not automatically execute Grok, Antigravity, Copilot, or Codex as a chain",
+            policy,
+        )
+        self.assertIn("exclusive independent challenge/review", policy)
+        self.assertIn("secondary/specialist second look", policy)
         self.assertNotIn("Grok Build or Antigravity CLI", policy)
 
     def test_governance_invariants_match_agent_policy(self) -> None:
@@ -128,6 +133,10 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertTrue(invariants["mcp_access_does_not_bypass_governance"])
         self.assertNotIn("copilot_and_codex_fallback_only", invariants)
         self.assertTrue(invariants["no_automatic_vendor_chaining"])
+        self.assertTrue(invariants["native_specialist_pass_precedes_final_required_checks"])
+        self.assertTrue(
+            self.roles["invariants"]["native_specialist_pass_precedes_final_merge_validation"]
+        )
         agents = AGENTS_POLICY.read_text(encoding="utf-8")
         self.assertIn("Copilot and/or Codex must perform a final specialist pass", agents)
         self.assertIn("on high-risk pull requests (process-required, result-advisory)", agents)

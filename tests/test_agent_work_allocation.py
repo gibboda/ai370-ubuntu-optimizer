@@ -29,6 +29,7 @@ class AgentWorkAllocationTests(unittest.TestCase):
     def test_cursor_is_only_primary_resource(self) -> None:
         self.assertEqual(self.allocation["properties"]["primary_resource"]["const"], "cursor")
         self.assertEqual(self.roles["roles"]["primary_orchestrator"]["provider"], "cursor")
+        self.assertTrue(self.roles["invariants"]["cursor_remains_primary"])
 
     def test_additional_resources_match_escalation_resources(self) -> None:
         allocation = set(self.allocation["properties"]["additional_resource"]["enum"])

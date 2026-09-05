@@ -4,15 +4,24 @@ applyTo: "**"
 
 # Codex implementation instructions
 
-Codex is a specialist/escalation agent. Cursor remains the primary
-development orchestrator.
+Codex is the **Codex Coding Agent** in this repository. Cursor remains the
+primary development orchestrator. Codex is explicitly routed for bounded
+coding/review work; it is not the default task owner.
 [`../../AGENTS.md`](../../AGENTS.md) is authoritative for shared agent
 roles, escalation, cost policy, architecture, testing, naming, and change
 discipline. Do not restate or override that policy here.
 
-Invoke Codex only when `AGENTS.md` allows specialist use. See the Agent hierarchy
-in `AGENTS.md` rather than restating it here. Do not treat Codex as the
-default implementation agent or as a parallel reviewer for routine work.
+Invoke Codex only when `AGENTS.md` allows specialist use or the final native
+specialist pass. See the Agent hierarchy in `AGENTS.md` rather than restating
+it here. Do not treat Codex as a parallel default implementer or as the
+exclusive independent reviewer.
+
+For the pre-merge pipeline, Codex may participate after Grok Build and
+Antigravity review/advice, after or alongside the GitHub Copilot native
+specialist pass, and before the final GitHub required-check state and CODEOWNER
+merge decision. On high-risk pull requests the Copilot/Codex final specialist
+pass is process-required but result-advisory. COMMENT or suggestions only; do
+not APPROVE in a way that satisfies branch protection.
 
 ## PR creation
 

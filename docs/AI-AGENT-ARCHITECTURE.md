@@ -1,8 +1,6 @@
 # AI Agent Architecture
 
-This document explains the repository's vendor-neutral multi-agent
-development architecture. [`AGENTS.md`](../AGENTS.md) remains the
-authoritative policy. Tool-specific overlays must not silently override it.
+This document explains the repository's vendor-neutral multi-agent development architecture. [`AGENTS.md`](../AGENTS.md) remains the authoritative policy. Tool-specific overlays must not silently override it.
 
 ## Flow
 
@@ -12,85 +10,72 @@ Developer
     v
 Cursor
 Primary Development Orchestrator
-implements, tests, opens/updates PR,
-requests CODEOWNER @gibboda
+implements, tests, opens/updates PR
     |
     v
-GitHub Pull Request
+Cursor Bugbot
+Cursor-Native Autofixer
+(first remediation for Bugbot findings when applicable)
     |
-    +-------------------+-------------------+-------------------+
-    |                   |                   |                   |
-    v                   v                   v                   v
-GitHub Actions     Grok Build          Antigravity         Copilot and/or
-Deterministic      Independent         Secondary /         Codex
-Validation         challenge/review    specialist          Final advisory
-(required checks)  + specialist        second look         specialist pass
-                   advice              when justified      high-risk PRs
-                   COMMENT only                            COMMENT only
-    |                   |                   |                   |
-    +-------------------+-------------------+-------------------+
-                        |
-                        v
-            Branch Protection /
-            CODEOWNER @gibboda
-            Human Merge Decision
+    v
+Grok Build
+Exclusive Independent Challenge/Review + Specialist Advice
+(COMMENT only when assigned)
+    |
+    v
+Antigravity / agy
+Secondary / Specialist Second Look
+(when justified)
+    |
+    v
+GitHub Copilot
+GitHub-Native Coding / Review Agent
+    |
+    v
+Codex
+Codex Coding / Review Agent
+    |
+    v
+GitHub Actions + Repository Checks
+Final Deterministic Merge-Validation State
+    |
+    v
+CODEOWNER @gibboda
+Final Human Review / Merge
 ```
 
-GitHub remains the control plane. Cursor remains the primary development
-orchestrator. CODEOWNER `@gibboda` is the required human reviewer and the
-only GitHub CODEOWNERS identity. GitHub CODEOWNERS cannot name AI
-products; Grok, Antigravity, Copilot, and Codex assignment is policy.
+This is the **logical readiness order**, not mandatory runtime serialization. Deterministic checks should still run before AI escalation when they can answer a question, and GitHub Actions may run earlier or continuously while a pull request evolves. The check state used for final merge eligibility must reflect every accepted AI-generated modification.
 
-GitHub Copilot is the GitHub-native fallback / specialist. It is available
-when work starts on GitHub, Cursor is unavailable, or an explicit
-independent GitHub-side implementation is desired. It is not inserted into
-every development operation. Copilot and/or Codex also make a
-process-required, result-advisory final specialist pass on high-risk
-pull requests (COMMENT or suggestions only). Standard and low-risk
-pull requests skip that pass by default. That pass must not APPROVE in
-a way that satisfies branch protection.
+GitHub remains the control plane. Cursor remains the primary development orchestrator and default task owner. Cursor Bugbot is the Cursor-native autofixer for applicable Bugbot findings; it does not become a second orchestrator. Grok Build remains the exclusive independent AI challenge/review provider. Antigravity remains secondary/specialist and does not inherit Grok's independent-review authority.
+
+GitHub Copilot's architectural identity is **GitHub-Native Coding Agent**. "Fallback" describes a routing condition, not the role itself. GitHub Copilot custom agents under `.github/agents/` are **GitHub-Native Specialist Agents** beneath that role. Codex's architectural identity is **Codex Coding Agent**. Both remain explicitly routed rather than default peers to Cursor.
+
+Copilot and/or Codex make the final native advisory specialist pass on high-risk pull requests after assigned Grok/Antigravity review and before the final required-check state and CODEOWNER merge decision. Standard and low-risk pull requests skip that pass by default unless the CODEOWNER requests it. COMMENT or suggestions only; the pass must not satisfy branch protection.
 
 ## Roles
 
 | Role | Owner | Mandatory for ordinary work? |
 | --- | --- | --- |
-| Primary development orchestrator | Cursor | Yes for default local development |
-| Required GitHub reviewer | CODEOWNER `@gibboda` | Yes on every pull request |
-| Secondary / specialist | Google Antigravity | No; escalate only when justified. CODEOWNER may assign a specialist second look |
-| Independent challenge/reviewer and specialist advisor | Grok / Grok Build (`grok`) | No; advisory and exclusive for independent AI challenge/review. Assigned advice must be a COMMENT-only PR record |
-| Deterministic validation | GitHub Actions + local scripts | Yes for merge eligibility facts it can verify |
-| GitHub-native fallback | GitHub Copilot | No for implementation; high-risk COMMENT-only final specialist pass with Codex |
-| Narrow specialist | Codex or other maintainer-approved agent | No for implementation; may share the advisory final specialist pass |
+| Primary Development Orchestrator | Cursor | Yes for default development |
+| Cursor-Native Autofixer | Cursor Bugbot | No; preferred first remediation for applicable Bugbot findings |
+| Exclusive Independent Challenge/Review Agent + Specialist Advisor | Grok / Grok Build (`grok`) | No; advisory and exclusive for independent AI challenge/review |
+| Secondary / Specialist Agent | Google Antigravity / `agy` | No; use when justified |
+| GitHub-Native Coding Agent | GitHub Copilot | No for routine implementation; may participate in high-risk final specialist pass |
+| GitHub-Native Specialist Agents | Copilot custom agents under `.github/agents/` | No; bounded GitHub-native specialties |
+| Codex Coding Agent | Codex | No for routine implementation; may participate in high-risk final specialist pass |
+| Deterministic Merge Validation | GitHub Actions + repository checks | Yes for merge-eligibility facts they can verify |
+| Final Human Merge Authority | CODEOWNER `@gibboda` + GitHub PR governance | Yes |
 
 ## Principles
 
-- Use the least expensive capable agent for the task.
-- Do not invoke multiple AI systems for substantially identical work unless
-  independent review provides a concrete benefit.
-- Deterministic tooling and GitHub Actions take precedence over AI opinions
-  for build, test, lint, formatting, type-checking, and other
-  machine-verifiable results.
-- AI review is advisory and is not a required merge gate unless repository
-  governance explicitly changes that.
-- Cursor is an external development orchestrator. It is not a GitHub-hosted
-  Copilot custom agent.
-- Grok Build (`grok`) is the exclusive independent AI challenge/review provider
-  and may also serve as specialist advisor. Its role is to challenge assumptions,
-  review an existing implementation independently, identify regressions and edge
-  cases, and provide bounded specialist advice. It does not orchestrate
-  implementation and does not gain merge, policy, release, architecture, or
-  repository-governance authority.
-- Antigravity remains the secondary/specialist implementation-analysis resource.
-  A CODEOWNER may assign it for a specialist second look, but Antigravity CLI
-  (`agy`) is not an independent-review fallback and does not share Grok's
-  independent-review role.
-- Assigned Grok advice must be recorded as a COMMENT-only pull-request comment
-  or COMMENT review. Copilot and/or Codex must make a final advisory specialist
-  pass on high-risk pull requests. Standard and low-risk pull requests skip that
-  pass by default. Neither assignment is a GitHub CODEOWNERS identity, required
-  status check, or merge authority.
-- AI unavailability must not block merge when required deterministic
-  checks pass and the CODEOWNER has reviewed.
+- Use the least expensive capable agent for the task; do not turn the logical readiness order into automatic vendor chaining.
+- Cursor remains primary. Bugbot autofix, Copilot, Codex, Grok, and Antigravity do not displace Cursor's default task ownership.
+- Deterministic tooling runs before escalation when it can answer the unresolved question and remains authoritative for machine-verifiable facts.
+- Grok Build is the exclusive independent-review provider. Copilot/Codex final specialist review does not acquire that authority.
+- Antigravity remains secondary/specialist and is not a Grok-unavailable independent-review fallback.
+- Copilot and Codex are native coding/review agents whose invocation is constrained by repository routing and cost policy.
+- AI review is advisory, never a required status check, and never merge authority.
+- AI unavailability must not block merge when required deterministic checks pass and the CODEOWNER has reviewed.
 
 ## Precedence
 
@@ -106,32 +91,28 @@ a way that satisfies branch protection.
 | --- | --- |
 | `AGENTS.md` | Canonical shared policy |
 | `.cursor/rules/` | Cursor environment overlay |
+| `.cursor/BUGBOT.md` | Cursor-native review/autofix policy |
 | `.cursor/mcp.json` | Cursor GitHub MCP (env-var auth; no secrets) |
 | `.github/instructions/` | Copilot / Codex instruction overlays |
-| `.github/agents/` | GitHub Copilot custom agents |
+| `.github/agents/` | GitHub-Native Specialist Agents (Copilot custom agents) |
 | `.agents/agents/` | Antigravity workspace specialist agents |
-| `.github/grok/` | Local Grok Build exclusive independent-review and specialist-advisor docs |
+| `.github/grok/` | Grok Build exclusive independent-review and specialist-advisor docs |
 | `.github/antigravity/` | Antigravity secondary/specialist setup |
 | `.grok/config.toml` | Grok GitHub MCP (read-only; env-var auth) |
 | `.github/github-mcp.md` | Shared MCP least-privilege setup |
 | `.github/workflows/` | Deterministic CI only (no LLM calls) |
-| `config/agent-roles.json` | Canonical machine-readable role, overlay-discovery, and architecture invariants derived from `AGENTS.md` |
+| `config/agent-roles.json` | Machine-readable roles, logical ordering, overlays, and architecture invariants |
 | `config/agent-escalation-record.schema.json` | Structured escalation evidence schema |
 | `config/agent-work-allocation.schema.json` | Duplicate-agent work-allocation evidence schema |
-| `config/agent-credential-capabilities.json` | Per-client credential and authorization capability boundaries |
+| `config/agent-credential-capabilities.json` | Per-client credential and authorization boundaries |
 | `config/agent-mcp-contract.json` | GitHub MCP configuration and drift contract |
-| `config/pr-governance.json` | Expected PR merge-governance, CODEOWNER review pipeline, and advisory-review boundary |
-| `.github/CODEOWNERS` | Human path owners; `@gibboda` only. AI assignment is policy, not a CODEOWNERS identity |
-| `config/agent-contract-compatibility.json` | Repository-local architecture-contract compatibility and release-class metadata (validation only; does not override `AGENTS.md` or travel in the portable package) |
-| `config/agent-distribution.json` | Portable-versus-local package boundary for controlled cross-repository architecture sync; not policy authority |
-| `config/agent-distribution-lock.json` | Immutable source pin and exact managed-file list for the distribution package |
+| `config/pr-governance.json` | PR pipeline, risk tiers, advisory-review boundaries, and final-check ordering |
+| `.github/CODEOWNERS` | Human path owners; `@gibboda` only |
+| `config/agent-contract-compatibility.json` | Repository-local architecture-contract compatibility metadata |
+| `config/agent-distribution.json` | Portable-versus-local package boundary |
+| `config/agent-distribution-lock.json` | Immutable source pin and exact managed-file list |
 
-The machine-readable files are validation contracts derived from `AGENTS.md`.
-They form one contract graph and must remain mutually consistent, but none of
-them becomes an independent policy authority. Portable tests validate each
-contract, their cross-contract invariants, and end-to-end architecture
-conformance. Cross-repository packaging is documented in
-[`AI-AGENT-DISTRIBUTION.md`](AI-AGENT-DISTRIBUTION.md).
+The machine-readable files are validation contracts derived from `AGENTS.md`. They form one contract graph and must remain mutually consistent, but none becomes an independent policy authority.
 
 ## Secrets model
 
@@ -139,37 +120,15 @@ conformance. Cross-repository packaging is documented in
 | --- | --- | --- |
 | GitHub Actions secrets | Workflows only | Not available to local Cursor/Antigravity/Grok |
 | GitHub Agents / Copilot environment secrets | GitHub-hosted Copilot environments | Separate from Actions and local shells |
-| Local environment credentials | Cursor, Antigravity, Grok Build, CLIs, MCP | `CURSOR_GH_PAT`, `GROK_GH_PAT`, `ANTIGRAVITY_GH_PAT`, local vendor login/token as required |
+| Local environment credentials | Cursor, Antigravity, Grok Build, CLIs, MCP | Per-client credentials and local vendor login/token as required |
 
-Never commit PATs, model tokens, OAuth tokens, or passwords. Never put real
-values in `AGENTS.md`, tracked MCP config (`.cursor/mcp.json`,
-`.grok/config.toml`), agent Markdown, or docs examples. Repository-defined
-secret names must not start with `GITHUB_` or end with `_API_KEY`. Untracked
-home-directory MCP files may hold a PAT only when the client cannot
-interpolate environment variables; see
-[`.github/github-mcp.md`](../.github/github-mcp.md).
-
-This repository's GitHub Actions do not call xAI or Gemini and do not use
-vendor model credentials. Independent Grok review uses SuperGrok CLI
-authentication, not an Actions-hosted model-token path.
+Never commit PATs, model tokens, OAuth tokens, or passwords. Repository-defined secret names must not start with `GITHUB_` or end with `_API_KEY`. This repository's GitHub Actions do not call xAI or Gemini and do not use vendor model credentials.
 
 ## Manual authentication prerequisites
 
-These steps cannot be completed from repository files alone:
-
-1. **Cursor GitHub MCP**: export `CURSOR_GH_PAT` locally (repository
-   access as needed + `project`), or complete Cloud Agent MCP header setup.
-2. **Grok Build**: sign in with a SuperGrok account (`grok login`); do not
-   use `XAI_API_KEY`. Optionally export `GROK_GH_PAT` for read-only GitHub
-   MCP only. Assigned Grok advice still requires a COMMENT-only
-   pull-request record (out of band or posted by Cursor/CODEOWNER).
-3. **Antigravity**: use local Google/Antigravity login for the CLI; do
-   not use `GEMINI_API_KEY`. Do not pin `modelProvider` (that requires a
-   Gemini API key). Optionally configure
-   `~/.gemini/antigravity/mcp_config.json` with `ANTIGRAVITY_GH_PAT` (that
-   format does not interpolate env vars). Antigravity remains a secondary /
-   specialist resource, not an independent-review fallback.
-4. **GitHub Copilot**: prefer GitHub-native OAuth for MCP; do not replace
-   working OAuth with a hardcoded PAT.
+1. **Cursor GitHub MCP**: export `CURSOR_GH_PAT` locally as needed, or complete Cloud Agent MCP header setup.
+2. **Grok Build**: sign in with a SuperGrok account (`grok login`); do not use `XAI_API_KEY`. `GROK_GH_PAT` is optional for read-only GitHub MCP.
+3. **Antigravity**: use local Google/Antigravity login; do not use `GEMINI_API_KEY` and do not pin `modelProvider`. `ANTIGRAVITY_GH_PAT` is optional for GitHub MCP.
+4. **GitHub Copilot**: prefer GitHub-native OAuth for MCP; do not replace working OAuth with a hardcoded PAT.
 
 Setup details: [`.github/github-mcp.md`](../.github/github-mcp.md).

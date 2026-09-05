@@ -60,6 +60,12 @@ def validate(roles, compatibility):
         failures.add("grok_exclusive_independent_review")
     if set(reviewer.get("providers") or []) != {"grok_build"} or not reviewer.get("exclusive"):
         failures.add("grok_exclusive_independent_review")
+    if not invariants.get("cursor_remains_primary"):
+        failures.add("cursor_remains_primary")
+    if not invariants.get("bugbot_is_cursor_native_autofixer"):
+        failures.add("bugbot_is_cursor_native_autofixer")
+    if not invariants.get("native_specialist_pass_precedes_final_merge_validation"):
+        failures.add("native_specialist_pass_precedes_final_merge_validation")
     overlay_contract = roles.get("overlay_contract", {})
     declared = {entry.get("path") for entry in overlay_contract.get("overlays", [])}
     discovered = set()
@@ -124,7 +130,7 @@ class AgentArchitectureMutationTests(unittest.TestCase):
 
     def test_mutations_cover_critical_architecture_boundaries(self):
         covered = {mutation["expected_rule"] for mutation in self.fixture["mutations"]}
-        self.assertEqual(covered, {"canonical_authority", "primary_orchestrator", "deterministic_before_escalation", "advisory_review", "human_merge_authority", "no_vendor_chaining", "least_agent_principle", "duplicate_routine_ai_work", "ai_reviews_advisory", "grok_exclusive_independent_review", "overlay_completeness", "contract_coverage", "schema_version_match"})
+        self.assertEqual(covered, {"canonical_authority", "primary_orchestrator", "deterministic_before_escalation", "advisory_review", "human_merge_authority", "no_vendor_chaining", "least_agent_principle", "duplicate_routine_ai_work", "ai_reviews_advisory", "grok_exclusive_independent_review", "cursor_remains_primary", "bugbot_is_cursor_native_autofixer", "native_specialist_pass_precedes_final_merge_validation", "overlay_completeness", "contract_coverage", "schema_version_match"})
 
 
 if __name__ == "__main__":
