@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "work_kind", "primary_resource", "additional_resource", "reuse_evidence"],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {"const": 2},
     "work_kind": {
       "type": "string",
       "enum": ["implementation", "independent_review", "specialist_review", "parallel_analysis"]
@@ -51,7 +51,10 @@
     },
     {
       "if": {"properties": {"work_kind": {"const": "independent_review"}}, "required": ["work_kind"]},
-      "then": {"required": ["escalation_record", "independent_review_reason"]}
+      "then": {
+        "required": ["escalation_record", "independent_review_reason"],
+        "properties": {"additional_resource": {"const": "grok_build"}}
+      }
     },
     {
       "if": {"properties": {"work_kind": {"const": "specialist_review"}}, "required": ["work_kind"]},

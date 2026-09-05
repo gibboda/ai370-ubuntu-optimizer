@@ -10,7 +10,7 @@
   "contracts": {
     "roles": {
       "path": "config/agent-roles.json",
-      "schema_version": 3
+      "schema_version": 4
     },
     "escalation": {
       "path": "config/agent-escalation-record.schema.json",
@@ -18,7 +18,7 @@
     },
     "work_allocation": {
       "path": "config/agent-work-allocation.schema.json",
-      "schema_version": 1
+      "schema_version": 2
     },
     "credential_capabilities": {
       "path": "config/agent-credential-capabilities.json",

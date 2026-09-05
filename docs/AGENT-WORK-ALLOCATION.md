@@ -12,7 +12,7 @@ Routine duplicate implementation is prohibited. A second implementation resource
 
 Independent review is not duplicate implementation. It remains intentionally separate because its purpose is to challenge an existing change rather than independently reproduce the implementation. It still requires the escalation record required by repository policy plus a concrete `independent_review_reason`, and it remains advisory.
 
-Grok Build exclusively owns independent AI challenge/review and may also provide specialist advice. A CODEOWNER-assigned Grok second look records `grok_build` as `independent_review`. Antigravity remains the secondary/specialist resource; a CODEOWNER-assigned Antigravity second look records `antigravity` or `antigravity_cli` as `specialist_review`, not `independent_review`. Grok unavailability does not transfer the independent-review role to Antigravity or trigger automatic vendor chaining. Assigned advice remains advisory and should be recorded as a COMMENT-only pull-request comment or COMMENT review.
+Grok Build exclusively owns independent AI challenge/review and may also provide specialist advice. A CODEOWNER-assigned Grok second look records `grok_build` as `independent_review`. Antigravity remains the secondary/specialist resource; a CODEOWNER-assigned Antigravity second look records `antigravity` or `antigravity_cli` as `specialist_review`, not `independent_review`. Grok unavailability does not transfer the independent-review role to Antigravity or trigger automatic vendor chaining. Assigned advice remains advisory and must be recorded as a COMMENT-only pull-request comment or COMMENT review.
 
 A Copilot and/or Codex final advisory specialist pass is process-required for high-risk pull requests and result-advisory. Standard and low-risk pull requests skip that pass by default; the CODEOWNER may request it. It is COMMENT or suggestions only. It is not `implementation`, not duplicate routine implementation, not an approval that satisfies branch protection, and not a merge gate. When an allocation record is created for that pass, it uses `specialist_review`.
 
@@ -40,7 +40,7 @@ Use when another AI is asked to modify, implement, refactor, debug, or otherwise
 
 ### `independent_review`
 
-Use only for Grok Build when it independently examines an existing implementation to challenge assumptions and find correctness, architecture, security, testing, regression, edge-case, or policy issues. `escalation_record` and `independent_review_reason` are mandatory. Review findings are advisory and do not become a required merge gate. A CODEOWNER-assigned Grok Build second look uses this work kind with `additional_resource` `grok_build`. Antigravity and Antigravity CLI (`agy`) do not use this work kind.
+Use only for Grok Build when it independently examines an existing implementation to challenge assumptions and find correctness, architecture, security, testing, regression, edge-case, or policy issues. `escalation_record` and `independent_review_reason` are mandatory. Schema version 2 requires `additional_resource` `grok_build` for this work kind. Review findings are advisory and do not become a required merge gate. A CODEOWNER-assigned Grok Build second look uses this work kind with `additional_resource` `grok_build`. Antigravity and Antigravity CLI (`agy`) do not use this work kind.
 
 ### `specialist_review`
 
