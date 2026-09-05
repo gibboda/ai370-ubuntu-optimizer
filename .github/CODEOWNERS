@@ -10,9 +10,11 @@
 # grok and agy advice must be recorded as a COMMENT-only pull-request
 # comment or COMMENT review.
 #
-# Copilot and/or Codex must make a final specialist pass before the
-# CODEOWNER treats the PR as ready. That pass is advisory: COMMENT or
-# suggestions only, not an approval that satisfies branch protection.
+# Copilot and/or Codex must make a final specialist pass on
+# high-risk pull requests before the CODEOWNER treats the PR as
+# ready. Standard and low-risk pull requests skip that pass by
+# default. That pass is advisory: COMMENT or suggestions only,
+# not an approval that satisfies branch protection.
 # AI is never merge authority.
 
 # Default owner for all repository files.

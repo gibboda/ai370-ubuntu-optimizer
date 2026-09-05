@@ -406,6 +406,11 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn("process-required, result-advisory", self.agent_instructions)
+        self.assertIn("on high-risk pull requests", self.agent_instructions)
+        self.assertIn(
+            "Standard and low-risk pull requests skip this pass by default",
+            self.agent_instructions,
+        )
         self.assertIn(
             "AI unavailability must not block merge",
             self.agent_instructions,
@@ -423,10 +428,33 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "Assigned `grok`/`agy` advice recorded as a COMMENT-only PR comment",
             self.pull_request_template,
         )
+        self.assertIn("Risk tier:", self.pull_request_template)
+        self.assertIn("Specialist pass:", self.pull_request_template)
+        self.assertIn("high | standard | low", self.pull_request_template)
         self.assertIn(
+            "completed | skipped | unavailable | requested",
+            self.pull_request_template,
+        )
+        self.assertIn(
+            "blank value is not a valid skip record",
+            self.pull_request_template,
+        )
+        self.assertNotIn("Pull-request risk tier recorded", self.pull_request_template)
+        self.assertNotIn(
             "Copilot and/or Codex completed a final advisory specialist pass",
             self.pull_request_template,
         )
+        self.assertNotIn(
+            "required for `high`; N/A for `standard`/`low` unless requested",
+            self.pull_request_template,
+        )
+        governance = json.loads((ROOT / "config/pr-governance.json").read_text(encoding="utf-8"))
+        final_pass = governance["review_pipeline"]["final_advisory_specialist_pass"]
+        self.assertTrue(final_pass["skip_record_required_when_not_run"])
+        self.assertIn(final_pass["template_risk_tier_field"], self.pull_request_template)
+        self.assertIn(final_pass["template_specialist_pass_field"], self.pull_request_template)
+        for value in final_pass["specialist_pass_record_values"]:
+            self.assertIn(value, self.pull_request_template)
         self.assertIn(
             "No AI approval is being used as merge authority",
             self.pull_request_template,

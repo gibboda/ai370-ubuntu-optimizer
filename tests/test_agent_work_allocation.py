@@ -213,6 +213,8 @@ class AgentWorkAllocationTests(unittest.TestCase):
         self.assertIn("`specialist_review_reason`", text)
         self.assertIn("A CODEOWNER-assigned Antigravity second look uses this work kind", text)
         self.assertIn("final advisory specialist pass", text)
+        self.assertIn("process-required for high-risk pull requests", text)
+        self.assertIn("Standard and low-risk pull requests skip that pass by default", text)
         self.assertIn("not duplicate routine implementation", text)
         self.assertIn("not recorded as `implementation`", text)
         self.assertIn("Parallel multi-agent analysis is exceptional", text)

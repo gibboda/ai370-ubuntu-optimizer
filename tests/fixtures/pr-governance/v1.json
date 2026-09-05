@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 1,
   "authority": "AGENTS.md",
   "target_branch": "main",
   "ruleset": {
@@ -62,48 +62,13 @@
       "required_status_check": false
     },
     "final_advisory_specialist_pass": {
-      "process_required": false,
-      "process_required_for": ["high"],
-      "process_required_semantics": "required_only_when_recorded_risk_tier_is_in_process_required_for",
-      "risk_tiered": true,
-      "required_risk_tiers": ["high"],
-      "optional_risk_tiers": ["standard", "low"],
-      "default_risk_tier": "standard",
-      "risk_tier_precedence": "highest_matching_wins",
-      "risk_tier_rank": ["high", "standard", "low"],
-      "risk_tier_criteria": {
-        "high": [
-          "security",
-          "credentials_or_secrets",
-          "agent_hierarchy_or_merge_authority",
-          "branch_protection_or_required_checks",
-          "schema_or_contract",
-          "stage_boundary_or_profile_contract",
-          "apply_path_or_system_mutation"
-        ],
-        "standard": [
-          "runtime_behavior",
-          "ci_workflows_without_required_check_change",
-          "non_security_feature_work"
-        ],
-        "low": [
-          "docs_only",
-          "changelog_only",
-          "test_only_without_weakening",
-          "chore_or_dependency_bump"
-        ]
-      },
+      "process_required": true,
       "providers": ["github_copilot", "codex"],
       "selection": "any_or_both",
       "github_review_state": "comment_only",
       "satisfies_branch_protection": false,
       "merge_gate": false,
-      "required_status_check": false,
-      "skip_record_required_when_not_run": true,
-      "template_risk_tier_field": "Risk tier:",
-      "template_specialist_pass_field": "Specialist pass:",
-      "specialist_pass_record_values": ["completed", "skipped", "unavailable", "requested"],
-      "codeowner_may_request_on_optional_tiers": true
+      "required_status_check": false
     }
   },
   "invariants": {
