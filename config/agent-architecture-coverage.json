@@ -8,6 +8,9 @@
     "least_agent_principle": {"positive": ["tests/test_agent_role_contract.py", "tests/test_agent_work_allocation.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
     "duplicate_routine_ai_work_prohibited": {"positive": ["tests/test_agent_architecture_conformance.py", "tests/test_agent_work_allocation.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
     "ai_reviews_advisory": {"positive": ["tests/test_agent_architecture_conformance.py", "tests/test_pr_governance_contract.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
-    "grok_exclusive_independent_review": {"positive": ["tests/test_agent_role_contract.py", "tests/test_agent_work_allocation.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]}
+    "grok_exclusive_independent_review": {"positive": ["tests/test_agent_role_contract.py", "tests/test_agent_work_allocation.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
+    "cursor_remains_primary": {"positive": ["tests/test_agent_role_contract.py", "tests/test_agent_work_allocation.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
+    "bugbot_is_cursor_native_autofixer": {"positive": ["tests/test_agent_role_contract.py", "tests/test_pr_governance_contract.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
+    "native_specialist_pass_precedes_final_merge_validation": {"positive": ["tests/test_agent_role_contract.py", "tests/test_pr_governance_contract.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]}
   }
 }
