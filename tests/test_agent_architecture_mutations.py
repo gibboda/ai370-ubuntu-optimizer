@@ -66,6 +66,19 @@ def validate(roles, compatibility):
         failures.add("bugbot_is_cursor_native_autofixer")
     if not invariants.get("native_specialist_pass_precedes_final_merge_validation"):
         failures.add("native_specialist_pass_precedes_final_merge_validation")
+    pre_merge_order = roles.get("pre_merge_logical_order", [])
+    native_specialists = ("github_native_fallback", "codex_coding_agent")
+    try:
+        merge_validation_index = pre_merge_order.index("merge_validation")
+    except ValueError:
+        failures.add("native_specialist_pass_precedes_final_merge_validation")
+    else:
+        if any(
+            specialist not in pre_merge_order
+            or pre_merge_order.index(specialist) >= merge_validation_index
+            for specialist in native_specialists
+        ):
+            failures.add("native_specialist_pass_precedes_final_merge_validation")
     overlay_contract = roles.get("overlay_contract", {})
     declared = {entry.get("path") for entry in overlay_contract.get("overlays", [])}
     discovered = set()

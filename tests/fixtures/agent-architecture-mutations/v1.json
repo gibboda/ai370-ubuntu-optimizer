@@ -15,6 +15,7 @@
     {"id":"cursor-remains-primary-disabled","target":"roles","path":"invariants.cursor_remains_primary","value":false,"expected_rule":"cursor_remains_primary"},
     {"id":"bugbot-autofixer-invariant-disabled","target":"roles","path":"invariants.bugbot_is_cursor_native_autofixer","value":false,"expected_rule":"bugbot_is_cursor_native_autofixer"},
     {"id":"native-specialist-pass-order-disabled","target":"roles","path":"invariants.native_specialist_pass_precedes_final_merge_validation","value":false,"expected_rule":"native_specialist_pass_precedes_final_merge_validation"},
+    {"id":"native-specialist-pass-moved-after-validation","target":"roles","path":"pre_merge_logical_order","value":["primary_orchestrator","cursor_native_autofixer","independent_reviewer","secondary_specialist","merge_validation","github_native_fallback","codex_coding_agent","merge_authority"],"expected_rule":"native_specialist_pass_precedes_final_merge_validation"},
     {"id":"overlay-removed","target":"roles","operation":"remove_overlay","value":".cursor/rules/cursor.mdc","expected_rule":"overlay_completeness"},
     {"id":"compatibility-authority-replaced","target":"compatibility","path":"authority","value":"config/agent-roles.json","expected_rule":"canonical_authority"},
     {"id":"compatibility-contract-removed","target":"compatibility","operation":"remove_contract","value":"mcp","expected_rule":"contract_coverage"},
