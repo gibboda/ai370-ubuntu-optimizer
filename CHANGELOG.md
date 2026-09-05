@@ -24,26 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Route the architecture-contract v2 major bump through Release Please
-  (a `!` Conventional Commit plus a terminal `Release-As: 1.0.0` git
-  trailer) instead of rewriting `VERSION`,
-  `.release-please-manifest.json`, or a generated changelog heading on
-  the pending 0.32.0 Release Please PR. A blank line before
-  `Co-authored-by` is not a trailer.
-- Gate the Copilot/Codex final advisory specialist pass by pull-request
-  risk tier. The pass remains process-required for high-risk changes
-  (security, credentials, agent hierarchy, merge authority, contracts,
-  stage boundaries, and apply-path mutation) and is skipped by default
-  for standard and low-risk PRs. The CODEOWNER may still request it.
-  `process_required` is not an always-on signal: schema 2 scopes it
-  with `process_required_for`. Overlapping criteria use
-  highest-matching-tier precedence. The pull-request template records
-  explicit `Risk tier:` and `Specialist pass:` values instead of
-  checkboxes. Encoded in `AGENTS.md`, `config/pr-governance.json`,
-  CODEOWNERS comments, and the pull-request template.
-
 ## [0.31.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.30.0...v0.31.0) (2026-09-05)
 
 
