@@ -21,9 +21,10 @@ without updating the architecture compatibility declaration.
 
 `previous_architecture_contract_version` is the last shipped architecture
 contract version, or `0` when no architecture contract has shipped yet.
-This repository's first architecture contract is version `1`. Introducing
-version `1` from `0` is the initial publication of this metadata, not an
-increment of an already-shipped architecture contract.
+This repository previously shipped architecture contract version `1`.
+Because `config/pr-governance.json` schema `2` changes an existing field's
+semantics, this change increments `architecture_contract_version` to `2`
+under the breaking-change rule below.
 
 ## Change classification
 
@@ -50,14 +51,14 @@ remain consistent with `AGENTS.md`.
 When a change does not clearly fit the backward-compatible list, treat it as
 breaking until deterministic evidence proves compatibility.
 
-The first publication of this file is `backward_compatible`: it adds
-architecture-level metadata and tests without changing existing contract
-semantics. Conventional Commit types such as `test` do not bump the
-repository version by themselves; `release-please` owns `VERSION`. The
-recorded `introduced_repository_version` is therefore the next minor release
-that may first ship this file (`0.28.0`), not a finalized release that
-already shipped without it (`0.27.0`). A human may retag the pull request
-`bump:minor` when the automated `test` label is `bump:patch`.
+The currently recorded change is `breaking`. `config/pr-governance.json`
+schema `2` changes the meaning of
+`review_pipeline.final_advisory_specialist_pass.process_required`, and this
+repository's compatibility rule classifies changed existing field semantics
+as breaking even when merge authority and required checks stay unchanged.
+The recorded `previous_repository_version` is therefore `0.31.0`, and the
+first repository release that may ship architecture contract version `2` is
+`1.0.0`.
 
 ## Repository version fields
 
@@ -99,10 +100,8 @@ The suite verifies that:
 - if `VERSION` still equals the last finalized release, `introduced` is
   strictly newer and matches the declared change class
 - if `VERSION` has already been bumped, it is not older than `introduced`
-- introducing architecture contract version `1` from `0` follows the
-  declared change class (this publication: backward-compatible / minor)
-- incrementing an existing architecture contract version requires a major
-  repository release
+- incrementing an existing architecture contract version requires a breaking
+  change classification and a major repository release
 
 The suite does not claim that GitHub labels, Conventional Commit type, or
 `release-please` have already applied that repository bump.
@@ -123,14 +122,16 @@ Schema 2 also adds `risk_tier_precedence=highest_matching_wins` and
 (for example `security`) and a low-risk criterion (for example
 `chore_or_dependency_bump`), the highest matching tier wins.
 
-This is a single-contract schema increment, not an
-`architecture_contract_version` increment. Merge authority, required
-checks, and the advisory-review invariants are unchanged. Update
+Because this repository classifies changed existing field semantics as
+breaking, this schema increment also increments
+`architecture_contract_version` from `1` to `2` and moves the first
+eligible repository release from the `0.31.0` baseline to `1.0.0`. Merge
+authority, required checks, and the advisory-review invariants are
+unchanged, but a schema-1 consumer must not consume schema 2 until it
+understands the scoped `process_required` meaning. Update
 `contracts.pr_governance.schema_version` to `2` in
-`config/agent-contract-compatibility.json`. A schema-1 consumer must
-not consume schema 2 until it understands the scoped
-`process_required` meaning. Preserve the schema-1 fixture under
-`tests/fixtures/pr-governance/`.
+`config/agent-contract-compatibility.json` and preserve the schema-1
+fixture under `tests/fixtures/pr-governance/`.
 
 This contract does not grant agent permissions, alter GitHub governance, or
 make AI review a merge gate.

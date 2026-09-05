@@ -20,11 +20,12 @@ MAX_SUPPORTED_PR_GOVERNANCE_SCHEMA = 2
 _OWNER_TOKEN = re.compile(r"@[A-Za-z0-9][A-Za-z0-9_-]*(?:/[A-Za-z0-9][A-Za-z0-9_-]*)?")
 
 
-def specialist_pass_is_process_required(final_pass: dict, risk_tier: str) -> bool:
+def specialist_pass_is_process_required(contract: dict, risk_tier: str) -> bool:
     """Interpret whether the advisory specialist pass is process-required."""
-    schema_version = final_pass.get("schema_version")
+    schema_version = contract.get("schema_version")
     if schema_version is not None and schema_version > MAX_SUPPORTED_PR_GOVERNANCE_SCHEMA:
         raise ValueError(f"Unsupported pr-governance schema_version {schema_version}")
+    final_pass = contract["review_pipeline"]["final_advisory_specialist_pass"]
     if final_pass.get("risk_tiered"):
         required_for = final_pass.get("process_required_for") or final_pass.get(
             "required_risk_tiers", []
@@ -204,9 +205,9 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
             final_pass["process_required"],
             "Object-global process_required must not advertise an unconditional pass.",
         )
-        self.assertTrue(specialist_pass_is_process_required(final_pass, "high"))
-        self.assertFalse(specialist_pass_is_process_required(final_pass, "standard"))
-        self.assertFalse(specialist_pass_is_process_required(final_pass, "low"))
+        self.assertTrue(specialist_pass_is_process_required(self.contract, "high"))
+        self.assertFalse(specialist_pass_is_process_required(self.contract, "standard"))
+        self.assertFalse(specialist_pass_is_process_required(self.contract, "low"))
 
     def test_overlapping_risk_criteria_use_highest_matching_tier(self) -> None:
         final_pass = self.contract["review_pipeline"]["final_advisory_specialist_pass"]
@@ -219,7 +220,7 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertEqual(resolve_risk_tier([], final_pass), "standard")
         self.assertTrue(
             specialist_pass_is_process_required(
-                final_pass,
+                self.contract,
                 resolve_risk_tier(["security", "chore_or_dependency_bump"], final_pass),
             )
         )
@@ -227,7 +228,7 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
     def test_unknown_future_schema_fails_closed(self) -> None:
         with self.assertRaises(ValueError):
             specialist_pass_is_process_required(
-                {"schema_version": MAX_SUPPORTED_PR_GOVERNANCE_SCHEMA + 1},
+                dict(self.contract, schema_version=MAX_SUPPORTED_PR_GOVERNANCE_SCHEMA + 1),
                 "high",
             )
 
@@ -237,9 +238,9 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         v1_pass = v1["review_pipeline"]["final_advisory_specialist_pass"]
         self.assertTrue(v1_pass["process_required"])
         self.assertNotIn("risk_tiered", v1_pass)
-        self.assertTrue(specialist_pass_is_process_required(v1_pass, "high"))
-        self.assertTrue(specialist_pass_is_process_required(v1_pass, "standard"))
-        self.assertTrue(specialist_pass_is_process_required(v1_pass, "low"))
+        self.assertTrue(specialist_pass_is_process_required(v1, "high"))
+        self.assertTrue(specialist_pass_is_process_required(v1, "standard"))
+        self.assertTrue(specialist_pass_is_process_required(v1, "low"))
         self.assertNotEqual(v1["schema_version"], self.contract["schema_version"])
         migration = COMPATIBILITY_DOC.read_text(encoding="utf-8")
         self.assertIn("schema 1 to schema 2", migration)

@@ -142,7 +142,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
     def test_current_change_class_is_declared(self):
         change_class = self.compatibility["current_change_class"]
         self.assertIn(change_class, self.compatibility["change_classes"])
-        self.assertEqual(change_class, "backward_compatible")
+        self.assertEqual(change_class, "breaking")
 
     def test_architecture_version_baseline_is_first_introduction(self):
         previous = self.compatibility["previous_architecture_contract_version"]
@@ -151,8 +151,8 @@ class AgentContractCompatibilityTests(unittest.TestCase):
         self.assertIsInstance(current, int)
         self.assertGreaterEqual(previous, 0)
         self.assertGreaterEqual(current, previous)
-        self.assertEqual(previous, 0)
-        self.assertEqual(current, 1)
+        self.assertEqual(previous, 1)
+        self.assertEqual(current, 2)
 
     def test_introduced_version_is_not_a_past_finalized_release(self):
         current = repository_version()
@@ -162,7 +162,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
         previous_sv = semver(previous)
         introduced_sv = semver(introduced)
 
-        self.assertEqual(previous, "0.27.0")
+        self.assertEqual(previous, "0.31.0")
         self.assertGreaterEqual(introduced_sv, previous_sv)
         if current_sv == previous_sv:
             self.assertGreater(
@@ -174,6 +174,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
             )
         else:
             self.assertGreaterEqual(current_sv, introduced_sv)
+        self.assertEqual(introduced, "1.0.0")
 
     def test_introduced_version_matches_declared_change_class(self):
         current = repository_version()
