@@ -6,8 +6,8 @@ OAuth). It is not a GitHub Actions workflow and it does not use
 `XAI_API_KEY`. Prefer account login; do not put an xAI API key in the local
 shell or in GitHub Secrets for this repository.
 
-Grok / Grok Build is the **exclusive independent AI challenge/reviewer** in
-the Agent hierarchy in `AGENTS.md`. It also serves as a specialist advisor.
+Grok / Grok Build is the repository's **independent AI reviewer** in the
+Agent hierarchy in `AGENTS.md`. It also serves as a specialist advisor.
 Its independent role is intentionally separated from Cursor's primary
 orchestration and Antigravity's secondary/specialist implementation-analysis
 role. Grok should challenge assumptions, independently inspect an existing
@@ -24,7 +24,7 @@ independent-review role to another AI automatically.
 - Prefer the vendor-neutral repository entry point `scripts/external-agent grok`; arguments after `--` are passed directly to `grok`.
 - Follow [`policy.md`](policy.md) and the Agent hierarchy in `AGENTS.md`.
 - Record assigned advice as a COMMENT-only pull-request comment or COMMENT review. Do not APPROVE, REQUEST_CHANGES, or merge. If Grok cannot post the record, Cursor or the CODEOWNER must post the attributed local output.
-- If Grok Build is unavailable, record it as unavailable and continue under repository governance. Do not substitute Antigravity CLI (`agy`) as an independent reviewer and do not chain vendors automatically.
+- If Grok Build is unavailable, use the documented `agy` fallback path for independent-review assignment under repository governance, record the fallback, and do not chain vendors automatically.
 
 GitHub Actions does not call xAI. Do not configure `XAI_API_KEY` for this
 repository. Deterministic CI never calls an LLM. Do not use `XAI_API_KEY`

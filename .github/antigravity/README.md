@@ -7,10 +7,10 @@ specialized research, complex test investigation, and a specialist second
 implementation perspective when escalation is justified.
 
 Antigravity CLI (`agy`) is an invocation surface for that same secondary /
-specialist role. It is **not an independent reviewer**, does not share Grok
-Build's exclusive independent challenge/review role, and is not a Grok
-fallback. A CODEOWNER may still assign Antigravity for a bounded specialist
-second look or specialist advice; findings remain advisory.
+specialist role. It is the repository's **Backup independent review** path
+when Grok Build is unavailable, and otherwise remains a specialist second-look
+or specialist-advice resource. A CODEOWNER may assign Antigravity for bounded
+specialist work; findings remain advisory.
 
 Neither Antigravity surface uses GitHub Actions or `GEMINI_API_KEY`. Follow the
 Agent hierarchy in `AGENTS.md`. Grok's independent-review policy remains under
