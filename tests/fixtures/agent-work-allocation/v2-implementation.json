@@ -1,0 +1,21 @@
+{
+  "schema_version": 2,
+  "work_kind": "implementation",
+  "primary_resource": "cursor",
+  "additional_resource": "antigravity",
+  "reuse_evidence": ["cursor_findings", "logs", "ci", "tests"],
+  "escalation_record": {
+    "schema_version": 1,
+    "unresolved_gap": "A concurrency failure remains unexplained after the primary implementation and local tests.",
+    "deterministic_tooling_assessment": "Portable tests and CI reproduce the failure but do not identify the race source.",
+    "cursor_limit": "Cursor completed the practical debugging pass but cannot reliably identify the race from the available traces.",
+    "missing_capability": "Independent specialist concurrency analysis.",
+    "selected_resource": "antigravity",
+    "scope": "Review only the failing concurrency path and existing traces; do not re-implement unrelated code.",
+    "completion_criterion": "Identify a testable root-cause hypothesis or conclude that the available evidence is insufficient.",
+    "stop_condition": "Stop when the gap is closed, deterministic evidence answers it, the specialist is unavailable, or tests contradict the specialist.",
+    "context": {
+      "notes": "Reuse the existing Cursor analysis and CI logs."
+    }
+  }
+}

@@ -116,6 +116,9 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertIn("does not replace the risk-tiered", policy)
         self.assertIn("for high-risk pull requests", policy)
         self.assertIn("Do not automatically execute this list as a chain", policy)
+        self.assertIn("Grok Build for independent diagnosis/review", policy)
+        self.assertIn("not independent review", policy)
+        self.assertNotIn("Grok Build or Antigravity CLI", policy)
 
     def test_governance_invariants_match_agent_policy(self) -> None:
         invariants = self.contract["invariants"]

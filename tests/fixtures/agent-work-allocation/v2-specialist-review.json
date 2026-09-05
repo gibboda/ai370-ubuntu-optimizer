@@ -1,0 +1,22 @@
+{
+  "schema_version": 2,
+  "work_kind": "specialist_review",
+  "primary_resource": "cursor",
+  "additional_resource": "antigravity",
+  "reuse_evidence": ["cursor_findings", "pr_discussion", "ci", "tests"],
+  "specialist_review_reason": "CODEOWNER assigned Antigravity for a specialist second look at Cursor's change.",
+  "escalation_record": {
+    "schema_version": 1,
+    "unresolved_gap": "The CODEOWNER wants specialist inspection of the existing change before merge.",
+    "deterministic_tooling_assessment": "Portable tests and ShellCheck pass; they do not replace specialist architecture or security inspection.",
+    "cursor_limit": "Cursor already implemented and tested the change; a second look must not re-implement it.",
+    "missing_capability": "Secondary specialist inspection of the existing pull request.",
+    "selected_resource": "antigravity",
+    "scope": "Inspect only the existing Cursor change; do not re-implement routine work or approve the merge.",
+    "completion_criterion": "Record advisory specialist findings or conclude that the available evidence is insufficient.",
+    "stop_condition": "Stop when the gap is closed, deterministic evidence answers it, the specialist is unavailable, or tests contradict the specialist.",
+    "context": {
+      "notes": "Reuse the existing Cursor analysis, PR discussion, and CI logs."
+    }
+  }
+}
