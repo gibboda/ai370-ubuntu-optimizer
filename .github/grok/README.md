@@ -6,8 +6,9 @@ OAuth). It is not a GitHub Actions workflow and it does not use
 `XAI_API_KEY`. Prefer account login; do not put an xAI API key in the local
 shell or in GitHub Secrets for this repository.
 
-Grok / Grok Build is the **exclusive independent AI challenge/reviewer** in
-the Agent hierarchy in `AGENTS.md`. It also serves as a specialist advisor.
+Grok / Grok Build is the **exclusive independent AI reviewer** and the
+exclusive independent challenge/review provider in the Agent hierarchy in
+`AGENTS.md`. It also serves as a specialist advisor.
 Its independent role is intentionally separated from Cursor's primary
 orchestration and Antigravity's secondary/specialist implementation-analysis
 role. Grok should challenge assumptions, independently inspect an existing

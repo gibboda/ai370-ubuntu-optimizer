@@ -283,7 +283,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn(
-            "Grok / Grok Build** is the independent AI reviewer",
+            "Grok / Grok Build** is the exclusive independent AI reviewer",
             self.agent_instructions,
         )
         self.assertIn(
