@@ -3,74 +3,35 @@
   "authority": "AGENTS.md",
   "purpose": "Machine-readable contract derived from AGENTS.md; this file does not replace or override AGENTS.md.",
   "policy_domains": {
-    "portable_multi_agent_governance": [
-      "precedence",
-      "agent_hierarchy",
-      "cost_and_least_agent_principle",
-      "multi_agent_roles",
-      "escalation",
-      "duplicate_ai_prevention",
-      "credential_domains",
-      "deterministic_validation_precedence",
-      "human_merge_authority"
-    ],
-    "repository_specific_policy": [
-      "contributor_commit_policy",
-      "documentation_authority",
-      "roadmap_and_stage_boundaries",
-      "hardware_portability",
-      "testing",
-      "naming",
-      "change_discipline"
-    ]
+    "portable_multi_agent_governance": ["precedence", "agent_hierarchy", "cost_and_least_agent_principle", "multi_agent_roles", "escalation", "duplicate_ai_prevention", "credential_domains", "deterministic_validation_precedence", "human_merge_authority"],
+    "repository_specific_policy": ["contributor_commit_policy", "documentation_authority", "roadmap_and_stage_boundaries", "hardware_portability", "testing", "naming", "change_discipline"]
   },
   "roles": {
     "control_plane": {"provider": "github", "implementation_agent": false},
-    "primary_orchestrator": {"provider": "cursor", "count": 1, "default_task_owner": true},
+    "primary_orchestrator": {"provider": "cursor", "count": 1, "default_task_owner": true, "role_label": "Primary Development Orchestrator"},
+    "cursor_native_autofixer": {"provider": "cursor_bugbot", "automatic": false, "role_label": "Cursor-Native Autofixer", "merge_gate": false},
     "deterministic_validation": {"provider": "repository_checks", "before_ai_escalation": true, "authoritative_for_machine_verifiable_facts": true},
-    "secondary_specialist": {"provider": "antigravity", "automatic": false},
+    "secondary_specialist": {"provider": "antigravity", "automatic": false, "role_label": "Secondary / Specialist Agent"},
     "independent_reviewer": {
-      "provider": "grok_build",
-      "providers": ["grok_build"],
-      "also_serves": ["specialist_advisor"],
-      "advisory": true,
-      "merge_gate": false,
-      "automatic": false,
-      "exclusive": true,
-      "form_constraints": {
-        "comment_review": {"github_review_state": "comment_only"},
-        "pull_request_comment": {"github_review_state": null}
-      },
-      "advice_record_required": true
+      "provider": "grok_build", "providers": ["grok_build"], "also_serves": ["specialist_advisor"], "role_label": "Exclusive Independent Challenge/Review Agent + Specialist Advisor", "advisory": true, "merge_gate": false, "automatic": false, "exclusive": true,
+      "form_constraints": {"comment_review": {"github_review_state": "comment_only"}, "pull_request_comment": {"github_review_state": null}}, "advice_record_required": true
     },
-    "github_native_fallback": {"provider": "github_copilot", "automatic": false},
+    "github_native_fallback": {"provider": "github_copilot", "automatic": false, "role_label": "GitHub-Native Coding Agent", "fallback_is_routing_condition": true},
     "specialist_pool": {"providers": ["codex", "maintainer_approved"], "automatic": false},
+    "codex_coding_agent": {"provider": "codex", "automatic": false, "role_label": "Codex Coding Agent"},
     "merge_validation": {"provider": "github_actions_and_repository_checks", "deterministic": true},
     "merge_authority": {"provider": "github_pr_governance", "ai_allowed": false, "human_final": true}
   },
+  "pre_merge_logical_order": ["primary_orchestrator", "cursor_native_autofixer", "independent_reviewer", "secondary_specialist", "github_native_fallback", "codex_coding_agent", "merge_validation", "merge_authority"],
+  "pre_merge_order_semantics": "Logical readiness order, not mandatory runtime serialization. Deterministic checks may run earlier or continuously, but the final merge-eligibility check state must reflect all accepted AI-generated modifications.",
   "overlay_contract": {
-    "common": {
-      "must_reference_authority": true,
-      "must_not_define_agent_hierarchy_heading": true,
-      "must_not_contain_credentials": true,
-      "must_not_claim_merge_authority": true
-    },
-    "discovery": {
-      "roots": [
-        {"path": ".cursor/rules", "patterns": ["*.mdc"]},
-        {"path": ".github/instructions", "patterns": ["*.instructions.md"]},
-        {"path": ".github/agents", "patterns": ["*.agent.md"]},
-        {"path": ".agents/agents", "patterns": ["*/agent.md"]},
-        {"path": ".github/grok", "patterns": ["*.md"]},
-        {"path": ".github/antigravity", "patterns": ["*.md"]}
-      ],
-      "exclusions": []
-    },
+    "common": {"must_reference_authority": true, "must_not_define_agent_hierarchy_heading": true, "must_not_contain_credentials": true, "must_not_claim_merge_authority": true},
+    "discovery": {"roots": [{"path": ".cursor/rules", "patterns": ["*.mdc"]}, {"path": ".github/instructions", "patterns": ["*.instructions.md"]}, {"path": ".github/agents", "patterns": ["*.agent.md"]}, {"path": ".agents/agents", "patterns": ["*/agent.md"]}, {"path": ".github/grok", "patterns": ["*.md"]}, {"path": ".github/antigravity", "patterns": ["*.md"]}], "exclusions": []},
     "overlays": [
       {"path": ".cursor/rules/cursor.mdc", "role": "primary_orchestrator", "required_any": ["primary development orchestrator"]},
-      {"path": ".github/instructions/copilot.instructions.md", "role": "github_native_fallback", "required_any": ["GitHub-native fallback / specialist"]},
-      {"path": ".github/instructions/codex.instructions.md", "role": "specialist_pool", "required_any": ["specialist/escalation agent"]},
-      {"path": ".github/agents/reviewer.agent.md", "role": "github_native_fallback", "required_any": ["GitHub-native specialist"]},
+      {"path": ".github/instructions/copilot.instructions.md", "role": "github_native_fallback", "required_any": ["GitHub-Native Coding Agent"]},
+      {"path": ".github/instructions/codex.instructions.md", "role": "specialist_pool", "required_any": ["Codex Coding Agent"]},
+      {"path": ".github/agents/reviewer.agent.md", "role": "github_native_fallback", "required_any": ["GitHub-Native Specialist Agent", "GitHub-native specialist"]},
       {"path": ".github/agents/security-reviewer.agent.md", "role": "github_native_fallback", "required_any": ["GitHub Copilot custom agent"]},
       {"path": ".github/agents/test-reviewer.agent.md", "role": "github_native_fallback", "required_any": ["GitHub Copilot custom agent"]},
       {"path": ".agents/agents/architecture-reviewer/agent.md", "role": "secondary_specialist", "required_any": ["secondary/specialist"]},
@@ -81,11 +42,5 @@
       {"path": ".github/antigravity/README.md", "role": "secondary_specialist", "required_any": ["Secondary / specialist", "not an independent reviewer"]}
     ]
   },
-  "invariants": {
-    "no_automatic_vendor_chaining": true,
-    "least_agent_principle": true,
-    "duplicate_routine_ai_work_prohibited": true,
-    "ai_reviews_advisory": true,
-    "grok_exclusive_independent_review": true
-  }
+  "invariants": {"no_automatic_vendor_chaining": true, "least_agent_principle": true, "duplicate_routine_ai_work_prohibited": true, "ai_reviews_advisory": true, "grok_exclusive_independent_review": true, "cursor_remains_primary": true, "bugbot_is_cursor_native_autofixer": true, "native_specialist_pass_precedes_final_merge_validation": true}
 }
