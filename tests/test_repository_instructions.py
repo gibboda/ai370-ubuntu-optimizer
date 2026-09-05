@@ -406,6 +406,11 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.agent_instructions,
         )
         self.assertIn("process-required, result-advisory", self.agent_instructions)
+        self.assertIn("on high-risk pull requests", self.agent_instructions)
+        self.assertIn(
+            "Standard and low-risk pull requests skip this pass by default",
+            self.agent_instructions,
+        )
         self.assertIn(
             "AI unavailability must not block merge",
             self.agent_instructions,
@@ -424,7 +429,15 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.pull_request_template,
         )
         self.assertIn(
+            "Pull-request risk tier recorded",
+            self.pull_request_template,
+        )
+        self.assertIn(
             "Copilot and/or Codex completed a final advisory specialist pass",
+            self.pull_request_template,
+        )
+        self.assertIn(
+            "required for `high`; N/A for `standard`/`low` unless requested",
             self.pull_request_template,
         )
         self.assertIn(

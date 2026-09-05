@@ -73,7 +73,8 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertIn("Create New Branch", policy)
         self.assertIn("GitHub Copilot only as a GitHub-native fallback", policy)
         self.assertIn("Codex only as the final narrowly scoped", policy)
-        self.assertIn("does not replace the process-required", policy)
+        self.assertIn("does not replace the risk-tiered", policy)
+        self.assertIn("for high-risk pull requests", policy)
         self.assertIn("Do not automatically execute this list as a chain", policy)
 
     def test_governance_invariants_match_agent_policy(self) -> None:
@@ -86,7 +87,8 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertTrue(invariants["no_automatic_vendor_chaining"])
         agents = AGENTS_POLICY.read_text(encoding="utf-8")
         self.assertIn("Copilot and/or Codex must perform a final specialist pass", agents)
-        self.assertIn("process-required, result-advisory", agents)
+        self.assertIn("on high-risk pull requests (process-required, result-advisory)", agents)
+        self.assertIn("Standard and low-risk pull requests skip this pass by default", agents)
 
     def test_mcp_document_preserves_governance_boundary(self) -> None:
         text = " ".join(MCP_POLICY.read_text(encoding="utf-8").split())
@@ -107,6 +109,24 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertNotIn("last_resort_specialists", pipeline)
         final_pass = pipeline["final_advisory_specialist_pass"]
         self.assertTrue(final_pass["process_required"])
+        self.assertTrue(final_pass["risk_tiered"])
+        self.assertEqual(final_pass["required_risk_tiers"], ["high"])
+        self.assertEqual(final_pass["optional_risk_tiers"], ["standard", "low"])
+        self.assertEqual(final_pass["default_risk_tier"], "standard")
+        self.assertEqual(
+            final_pass["risk_tier_criteria"]["high"],
+            [
+                "security",
+                "credentials_or_secrets",
+                "agent_hierarchy_or_merge_authority",
+                "branch_protection_or_required_checks",
+                "schema_or_contract",
+                "stage_boundary_or_profile_contract",
+                "apply_path_or_system_mutation",
+            ],
+        )
+        self.assertTrue(final_pass["skip_record_required_when_not_run"])
+        self.assertTrue(final_pass["codeowner_may_request_on_optional_tiers"])
         self.assertEqual(final_pass["providers"], ["github_copilot", "codex"])
         self.assertEqual(final_pass["selection"], "any_or_both")
         self.assertEqual(final_pass["github_review_state"], "comment_only")
@@ -116,7 +136,10 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
         agents = AGENTS_POLICY.read_text(encoding="utf-8")
         self.assertIn("Copilot and/or Codex must perform a final specialist pass", agents)
-        self.assertIn("process-required, result-advisory", agents)
+        self.assertIn("on high-risk pull requests (process-required, result-advisory)", agents)
+        self.assertIn("**high** (process-required)", agents)
+        self.assertIn("**standard** (optional)", agents)
+        self.assertIn("**low** (optional)", agents)
 
     def test_codeowners_contains_only_gibboda_owner_tokens(self) -> None:
         text = CODEOWNERS.read_text(encoding="utf-8")
@@ -129,6 +152,8 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertEqual(set(owners), {"@gibboda"})
         self.assertIn("Human CODEOWNER is @gibboda", text)
         self.assertIn("AI is never merge authority", text)
+        self.assertIn("high-risk pull requests", text)
+        self.assertIn("Standard and low-risk pull requests skip that pass by", text)
 
 
 if __name__ == "__main__":

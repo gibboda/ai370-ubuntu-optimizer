@@ -42,8 +42,9 @@ when Autofix is enabled and applicable.
 
 ## Escalation after Bugbot/Autofix
 
-This finding-remediation order does not replace the process-required
-Copilot and/or Codex final specialist pass required by `AGENTS.md`.
+This finding-remediation order does not replace the risk-tiered
+Copilot and/or Codex final specialist pass required by `AGENTS.md`
+for high-risk pull requests.
 
 For a Bugbot finding, use this cost-aware order:
 

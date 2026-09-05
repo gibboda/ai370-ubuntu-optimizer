@@ -195,6 +195,8 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
             set(second_look["cli_advisory_reviewers"]).issubset(advisory_providers)
         )
         self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
+        self.assertTrue(final_pass["risk_tiered"])
+        self.assertEqual(final_pass["required_risk_tiers"], ["high"])
         self.assertFalse(second_look["merge_gate"])
         self.assertFalse(second_look["required_status_check"])
         self.assertFalse(final_pass["satisfies_branch_protection"])

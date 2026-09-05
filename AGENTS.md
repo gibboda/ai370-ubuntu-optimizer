@@ -158,14 +158,30 @@ The pull-request review pipeline is:
    pull-request comment or COMMENT-only review. If Grok Build is
    unavailable, `agy` remains the independent-reviewer fallback.
 3. Copilot and/or Codex must perform a final specialist pass
-   (process-required, result-advisory). COMMENT or suggestions only.
-   They must not APPROVE in a way that satisfies branch protection.
+   on high-risk pull requests (process-required, result-advisory).
+   COMMENT or suggestions only. They must not APPROVE in a way
+   that satisfies branch protection. Standard and low-risk pull requests skip this pass by default; the CODEOWNER may request
+   it. Record the risk tier and any skip or unavailability on the
+   pull-request template.
 4. Deterministic checks remain authoritative for machine-verifiable
    facts. The current required check stays ShellCheck unless repository
    governance already lists others.
 5. `@gibboda` reviews and merges. AI unavailability must not block merge
    when required deterministic checks pass and the CODEOWNER has
    reviewed.
+
+Pull-request risk tiers for that specialist pass:
+
+- **high** (process-required): security; credentials or secrets;
+  agent hierarchy or merge authority; branch protection or required
+  checks; machine-readable schema or contract; Stage boundary or
+  profile contract; apply-path or system mutation.
+- **standard** (optional): runtime behavior of existing scripts;
+  CI workflows that do not change required checks; non-security
+  feature work. Skip by default; the CODEOWNER may request the pass.
+- **low** (optional): documentation-only; changelog; test-only
+  changes that do not weaken coverage; chore or dependency bumps.
+  Skip by default.
 
 AI must never merge, never satisfy branch protection, and never become a
 required status check. No AI agent is merge authority. The expected
@@ -222,9 +238,9 @@ resources, not parallel reviewers for every change.
   unavailable, or explicit independent implementation is desired. Copilot
   must not automatically duplicate Cursor's normal development work. Copilot
   and/or Codex must make a process-required, result-advisory final specialist
-  pass (COMMENT or suggestions only) before the CODEOWNER treats a PR as
-  ready. That pass is not duplicate routine implementation and must not
-  APPROVE in a way that satisfies branch protection.
+  pass on high-risk pull requests (COMMENT or suggestions only) before the
+  CODEOWNER treats that PR as ready. Standard and low-risk pull requests skip this pass by default. That pass is not duplicate routine implementation and
+  must not APPROVE in a way that satisfies branch protection.
 - Codex and other agents may be used only when the maintainer explicitly
   approves them and they uniquely cover a gap. Specialist use must be narrowly
   scoped and capability-driven. Codex may participate in the final advisory
@@ -342,9 +358,10 @@ artifacts, or deterministic checks have already answered.
   available. Assigned `grok` and `agy` findings must be recorded as a
   COMMENT-only pull-request comment or COMMENT review. Cursor or the
   CODEOWNER may post that attributed record when the reviewer cannot.
-  A Copilot/Codex final specialist pass is process-required and
-  result-advisory; it is not `implementation` and not a merge gate.
-  When an allocation record is created for that pass, it uses
+  A Copilot/Codex final specialist pass is process-required for
+  high-risk pull requests and result-advisory; it is not
+  `implementation` and not a merge gate. Standard and low-risk pull
+  requests skip that pass by default. When an allocation record is created for that pass, it uses
   `specialist_review`.
 
 ### Secrets model

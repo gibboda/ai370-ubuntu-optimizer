@@ -25,8 +25,8 @@ GitHub Actions     CODEOWNER           Copilot and/or
 Deterministic      @gibboda may        Codex
 Validation         assign Grok         Final advisory
 (required checks)  and/or agy          specialist pass
-                   COMMENT record      COMMENT only
-                   (advisory)
+                   COMMENT record      high-risk PRs
+                   (advisory)          COMMENT only
                    Antigravity may
                    also get a second
                    look
@@ -48,9 +48,10 @@ GitHub Copilot is the GitHub-native fallback / specialist. It is available
 when work starts on GitHub, Cursor is unavailable, or an explicit
 independent GitHub-side implementation is desired. It is not inserted into
 every development operation. Copilot and/or Codex also make a
-process-required, result-advisory final specialist pass (COMMENT or
-suggestions only). That pass must not APPROVE in a way that satisfies
-branch protection.
+process-required, result-advisory final specialist pass on high-risk
+pull requests (COMMENT or suggestions only). Standard and low-risk
+pull requests skip that pass by default. That pass must not APPROVE in
+a way that satisfies branch protection.
 
 ## Roles
 
@@ -61,7 +62,7 @@ branch protection.
 | Secondary / specialist | Google Antigravity | No; escalate only when justified. CODEOWNER may assign a second look |
 | Independent AI reviewer and specialist advisor | Grok / Grok Build (`grok`) and Antigravity CLI (`agy`) | No; advisory. CODEOWNER may assign either or both. If Grok is unavailable, `agy` is the independent-review fallback. Assigned advice must be a COMMENT-only PR record |
 | Deterministic validation | GitHub Actions + local scripts | Yes for merge eligibility facts it can verify |
-| GitHub-native fallback | GitHub Copilot | No for implementation; process-required COMMENT-only final specialist pass with Codex |
+| GitHub-native fallback | GitHub Copilot | No for implementation; high-risk COMMENT-only final specialist pass with Codex |
 | Narrow specialist | Codex or other maintainer-approved agent | No for implementation; may share the advisory final specialist pass |
 
 ## Principles
@@ -81,8 +82,9 @@ branch protection.
   assign Antigravity for a specialist second look. Assigned `grok` and
   `agy` advice must be recorded as a COMMENT-only pull-request comment or
   COMMENT review. Copilot and/or Codex must make a final advisory specialist
-  pass. Neither assignment is a GitHub CODEOWNERS identity, required
-  status check, or merge authority.
+  pass on high-risk pull requests. Standard and low-risk pull requests skip
+  that pass by default. Neither assignment is a GitHub CODEOWNERS identity,
+  required status check, or merge authority.
 - AI unavailability must not block merge when required deterministic
   checks pass and the CODEOWNER has reviewed.
 

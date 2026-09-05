@@ -63,12 +63,40 @@
     },
     "final_advisory_specialist_pass": {
       "process_required": true,
+      "risk_tiered": true,
+      "required_risk_tiers": ["high"],
+      "optional_risk_tiers": ["standard", "low"],
+      "default_risk_tier": "standard",
+      "risk_tier_criteria": {
+        "high": [
+          "security",
+          "credentials_or_secrets",
+          "agent_hierarchy_or_merge_authority",
+          "branch_protection_or_required_checks",
+          "schema_or_contract",
+          "stage_boundary_or_profile_contract",
+          "apply_path_or_system_mutation"
+        ],
+        "standard": [
+          "runtime_behavior",
+          "ci_workflows_without_required_check_change",
+          "non_security_feature_work"
+        ],
+        "low": [
+          "docs_only",
+          "changelog_only",
+          "test_only_without_weakening",
+          "chore_or_dependency_bump"
+        ]
+      },
       "providers": ["github_copilot", "codex"],
       "selection": "any_or_both",
       "github_review_state": "comment_only",
       "satisfies_branch_protection": false,
       "merge_gate": false,
-      "required_status_check": false
+      "required_status_check": false,
+      "skip_record_required_when_not_run": true,
+      "codeowner_may_request_on_optional_tiers": true
     }
   },
   "invariants": {
