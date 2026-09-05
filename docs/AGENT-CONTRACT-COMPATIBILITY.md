@@ -21,10 +21,11 @@ without updating the architecture compatibility declaration.
 
 `previous_architecture_contract_version` is the last shipped architecture
 contract version, or `0` when no architecture contract has shipped yet.
-This repository previously shipped architecture contract version `1`.
-Because `config/pr-governance.json` schema `2` changes an existing field's
-semantics, this change increments `architecture_contract_version` to `2`
-under the breaking-change rule below.
+This repository shipped architecture contract version `2` in `1.0.0`
+because `config/pr-governance.json` schema `2` changed an existing field's
+semantics. Removing `antigravity_cli` from the eligible independent-review
+provider set now increments `architecture_contract_version` to `3` under
+the breaking-change rule below.
 
 ## Change classification
 
@@ -51,20 +52,25 @@ remain consistent with `AGENTS.md`.
 When a change does not clearly fit the backward-compatible list, treat it as
 breaking until deterministic evidence proves compatibility.
 
-The currently recorded change is `breaking`. `config/pr-governance.json`
-schema `2` changes the meaning of
-`review_pipeline.final_advisory_specialist_pass.process_required`, and this
-repository's compatibility rule classifies changed existing field semantics
-as breaking even when merge authority and required checks stay unchanged.
-The recorded `previous_repository_version` is therefore `0.31.0`, and the
-first repository release that may ship architecture contract version `2` is
-`1.0.0`. Release Please must produce that `1.0.0` release. Do not
+The currently recorded change is `breaking`. Exclusive Grok independent
+review removes `antigravity_cli` from `independent_reviewer.providers` and
+rejects `independent_review` allocations that name any other resource.
+This repository's compatibility rule classifies removal of a previously
+supported contract resource and changed existing field semantics as
+breaking even when merge authority and required checks stay unchanged.
+The recorded `previous_repository_version` is therefore `1.0.0`, and the
+first repository release that may ship architecture contract version `3` is
+`2.0.0`. Release Please must produce that `2.0.0` release. Do not
 hand-edit `VERSION`, `.release-please-manifest.json`, or the generated
-changelog heading on a pending `0.32.0` Release Please PR to satisfy the
-floor. Land a `!` Conventional Commit with a terminal `Release-As: 1.0.0`
+changelog heading on a pending Release Please PR to satisfy the floor.
+Land a `!` Conventional Commit with a terminal `Release-As: 2.0.0`
 git trailer on `main` so Release Please can open the major Release PR.
 Keep `Release-As` in the final trailer block; a blank line before
 `Co-authored-by` drops it from `git interpret-trailers --parse`.
+
+Architecture contract version `2` first shipped in `1.0.0` because
+`config/pr-governance.json` schema `2` changed the meaning of
+`review_pipeline.final_advisory_specialist_pass.process_required`. That major used a terminal `Release-As: 1.0.0` git trailer. Release Please must produce that `1.0.0` release only as the already-shipped floor for architecture contract version `2`, not as the current exclusive-review floor.
 
 ## Repository version fields
 
@@ -86,8 +92,9 @@ versus `previous_repository_version`.
 
 These checks are fixture/metadata-driven. They do not parse git history,
 GitHub labels, or `release-please` output. They do verify that the
-documented `Release-As: 1.0.0` example is a git-parseable trailer and
-that a blank line before `Co-authored-by` drops it.
+documented `Release-As: 1.0.0` and `Release-As: 2.0.0` examples are
+git-parseable trailers and that a blank line before `Co-authored-by`
+drops them.
 
 ## Validation
 
@@ -110,7 +117,8 @@ The suite verifies that:
 - if `VERSION` has already been bumped, it is not older than `introduced`
 - incrementing an existing architecture contract version requires a breaking
   change classification and a major repository release
-- the documented `Release-As: 1.0.0` example is a git-parseable trailer
+- the documented `Release-As: 1.0.0` and `Release-As: 2.0.0` examples
+  are git-parseable trailers
 
 The suite does not claim that GitHub labels, Conventional Commit type, or
 `release-please` have already applied that repository bump.

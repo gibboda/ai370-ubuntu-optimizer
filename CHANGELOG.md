@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ⚠ BREAKING CHANGES
+
+- Architecture contract version increments from 2 to 3. Exclusive Grok
+  independent review removes `antigravity_cli` from the eligible
+  independent-review provider set. The first repository release that may
+  ship this contract is 2.0.0.
+
 ### Changed
 
 - Make Grok Build the exclusive independent AI challenge/reviewer. Antigravity

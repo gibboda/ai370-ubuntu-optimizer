@@ -65,7 +65,7 @@ class AgentRoleContractTests(unittest.TestCase):
         self.assertIn("schema version 4", text)
         self.assertIn("Version 1", text)
         self.assertIn("version-3-to-version-4", text)
-        self.assertIn("does not increment `architecture_contract_version`", text)
+        self.assertIn("increments `architecture_contract_version` from `2` to `3`", text)
         self.assertIn("Migration procedure", text)
 
     def _assert_v1_semantics_preserved(self, actual, expected, path: str) -> None:
