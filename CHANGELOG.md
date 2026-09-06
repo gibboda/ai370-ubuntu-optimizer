@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Documentation
+
+- **governance:** Add first-party technical-source and test-platform
+  registries, and point shared agent policy at those files.
+- **agents:** Align the Cursor overlay with exclusive Grok independent
+  review, and keep independent review distinct from specialist advice.
+- **agents:** Clarify that Cursor is the primary orchestrator, not the
+  exclusive consumer of the shared evidence registries.
+- **amd:** Rank Linux XRT/XDNA and Ryzen AI Software by OS and stack
+  scope; keep the Developer Program as an ecosystem reference.
+
+### Tests
+
+- **agents:** Lock the known overlay fallback phrasing and the
+  source-registry portability invariants.
+
 ## [2.2.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v2.1.1...v2.2.0) (2026-09-06)
 
 
@@ -37,22 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features
 
 * **agents:** Make Grok exclusive independent reviewer ([#289](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/289)) ([3a5781e](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/3a5781e206ae8c1c326bad4ab5c4f6457b04d0e3))
-
-## [Unreleased]
-
-### Documentation
-
-- **governance:** Add first-party technical-source and test-platform
-  registries, and point shared agent policy at those files.
-- **agents:** Align the Cursor overlay with exclusive Grok independent
-  review, and keep independent review distinct from specialist advice.
-- **agents:** Clarify that Cursor is the primary orchestrator, not the
-  exclusive consumer of the shared evidence registries.
-
-### Tests
-
-- **agents:** Lock Cursor overlay independent-review language so `agy`
-  cannot regress into an independent-review fallback.
 
 ## [1.0.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.31.0...v1.0.0) (2026-09-05)
 
