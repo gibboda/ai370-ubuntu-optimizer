@@ -5,6 +5,9 @@
   "requirements": {"minimum_evidence_types": ["positive", "mutation"], "all_declared_role_invariants_must_be_covered": true},
   "coverage": {
     "no_automatic_vendor_chaining": {"positive": ["tests/test_agent_architecture_conformance.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
+    "bounded_role_failover": {"positive": ["tests/test_agent_role_contract.py", "tests/test_pr_governance_contract.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
+    "provider_quota_exhaustion_is_not_workflow_completion": {"positive": ["tests/test_agent_role_contract.py", "tests/test_pr_governance_contract.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
+    "required_work_continues_on_provider_capacity_failure": {"positive": ["tests/test_agent_role_contract.py", "tests/test_pr_governance_contract.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
     "least_agent_principle": {"positive": ["tests/test_agent_role_contract.py", "tests/test_agent_work_allocation.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
     "duplicate_routine_ai_work_prohibited": {"positive": ["tests/test_agent_architecture_conformance.py", "tests/test_agent_work_allocation.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},
     "ai_reviews_advisory": {"positive": ["tests/test_agent_architecture_conformance.py", "tests/test_pr_governance_contract.py"], "mutation": ["tests/test_agent_architecture_mutations.py"]},

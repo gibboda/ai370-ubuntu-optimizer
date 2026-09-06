@@ -22,6 +22,22 @@
     "merge_validation": {"provider": "github_actions_and_repository_checks", "deterministic": true},
     "merge_authority": {"provider": "github_pr_governance", "ai_allowed": false, "human_final": true}
   },
+  "provider_failover": {
+    "enabled": true,
+    "bounded": true,
+    "trigger_reasons": ["quota_exhausted", "service_unavailable", "provider_error"],
+    "non_trigger_reasons": ["authentication_failure", "configuration_failure", "task_completed", "review_completed", "not_required"],
+    "stop_after_first_success": true,
+    "preserve_role_boundaries": true,
+    "sequential_only": true,
+    "return_implementation_to_primary": true
+  },
+  "role_failover": {
+    "implementation": {"continuity_provider": "cursor"},
+    "final_advisory_specialist_pass": {"providers": ["github_copilot", "codex", "antigravity"], "selection": "first_available", "minimum_successes": 1, "max_attempts": 3},
+    "independent_review": {"providers": ["grok_build"], "fallback": null}
+  },
+  "provider_availability_states": ["available", "completed", "quota_exhausted", "service_unavailable", "authentication_failure", "configuration_failure", "provider_error", "unsupported", "not_required"],
   "pre_merge_logical_order": ["primary_orchestrator", "cursor_native_autofixer", "independent_reviewer", "secondary_specialist", "github_native_fallback", "codex_coding_agent", "merge_validation", "merge_authority"],
   "pre_merge_order_semantics": "Logical readiness order, not mandatory runtime serialization. Deterministic checks may run earlier or continuously, but the final merge-eligibility check state must reflect all accepted AI-generated modifications.",
   "overlay_contract": {
@@ -42,5 +58,5 @@
       {"path": ".github/antigravity/README.md", "role": "secondary_specialist", "required_any": ["Secondary / specialist", "not an independent reviewer"]}
     ]
   },
-  "invariants": {"no_automatic_vendor_chaining": true, "least_agent_principle": true, "duplicate_routine_ai_work_prohibited": true, "ai_reviews_advisory": true, "grok_exclusive_independent_review": true, "cursor_remains_primary": true, "bugbot_is_cursor_native_autofixer": true, "native_specialist_pass_precedes_final_merge_validation": true}
+  "invariants": {"no_automatic_vendor_chaining": true, "bounded_role_failover": true, "provider_quota_exhaustion_is_not_workflow_completion": true, "required_work_continues_on_provider_capacity_failure": true, "least_agent_principle": true, "duplicate_routine_ai_work_prohibited": true, "ai_reviews_advisory": true, "grok_exclusive_independent_review": true, "cursor_remains_primary": true, "bugbot_is_cursor_native_autofixer": true, "native_specialist_pass_precedes_final_merge_validation": true}
 }
