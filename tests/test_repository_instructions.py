@@ -218,6 +218,10 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn(
             "configs/schemas/system-profile.schema.json", self.agent_instructions
         )
+        self.assertIn("`docs/AUTHORITATIVE-SOURCES.md`", self.agent_instructions)
+        self.assertIn("`docs/TEST-PLATFORMS.md`", self.agent_instructions)
+        self.assertTrue((ROOT / "docs/AUTHORITATIVE-SOURCES.md").is_file())
+        self.assertTrue((ROOT / "docs/TEST-PLATFORMS.md").is_file())
         self.assertIn("Before changing code", self.agent_instructions)
         self.assertIn("reading order in `AGENTS.md`", self.copilot_instructions)
 
@@ -253,6 +257,14 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("not public command names", self.agent_instructions)
         self.assertIn(
             "Never label planned functionality as implemented", self.agent_instructions
+        )
+        self.assertIn(
+            "first-party technical-source",
+            self.agent_instructions,
+        )
+        self.assertIn(
+            "records validation hardware",
+            self.agent_instructions,
         )
         self.assertIn(
             "README high-level status must match `docs/ROADMAP.md` milestone rows",
@@ -766,6 +778,34 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("alwaysApply: true", self.cursor_rules)
         self.assertIn("startup update script", self.cursor_rules)
         self.assertIn("markdownlint-cli2", self.cursor_rules)
+
+    def test_cursor_overlay_keeps_exclusive_grok_independent_review(self) -> None:
+        self.assertIn(
+            "Grok Build (`grok`) is the exclusive independent AI reviewer",
+            self.cursor_rules,
+        )
+        self.assertRegex(
+            self.cursor_rules,
+            r"are not an\s+independent-review fallback",
+        )
+        self.assertRegex(
+            self.cursor_rules,
+            r"does\s+not transfer independent-review authority",
+        )
+        self.assertIn("docs/AUTHORITATIVE-SOURCES.md", self.cursor_rules)
+        self.assertIn("docs/TEST-PLATFORMS.md", self.cursor_rules)
+        self.assertNotIn(
+            "Independent review is Grok Build (`grok`) or Antigravity CLI",
+            self.cursor_rules,
+        )
+        self.assertNotIn(
+            "Both are advisory independent reviewers",
+            self.cursor_rules,
+        )
+        self.assertNotIn(
+            "Independent review is Grok Build (`grok`) or Antigravity CLI (`agy`)",
+            self.agent_instructions,
+        )
 
     def test_cursor_hybrid_orchestration_stays_cursor_specific(self) -> None:
         self.assertIn("Hybrid orchestration boundary", self.cursor_rules)
