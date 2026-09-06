@@ -165,7 +165,15 @@ The pull-request review pipeline is:
    on high-risk pull requests (process-required, result-advisory).
    COMMENT or suggestions only. They must not APPROVE in a way
    that satisfies branch protection. Standard and low-risk pull requests skip this pass by default; the CODEOWNER may request
-   it. Record an explicit `Risk tier:` value (`high`, `standard`,
+   it. If a selected specialist cannot run because its quota is exhausted,
+   the service is unavailable, or the provider returns a non-task capacity
+   error, record the reason and use bounded same-purpose failover in this
+   order: GitHub Copilot → Codex → Antigravity. Stop after the first
+   successful specialist pass. This is capacity failover, not routine vendor
+   chaining. Authentication or configuration failures must be surfaced and
+   must not be silently hidden by failover. If every compatible specialist is
+   unavailable, record the pass as unavailable and continue under repository
+   governance. Record an explicit `Risk tier:` value (`high`, `standard`,
    or `low`) and an explicit `Specialist pass:` value
    (`completed`, `skipped`, `unavailable`, or `requested`) on the
    pull-request template. A silent skip is not a valid record.
@@ -229,7 +237,9 @@ resources, not parallel reviewers for every change.
   duplicate work Cursor has already completed unless independent verification
   is specifically useful. The CODEOWNER may assign Antigravity for a second
   look at Cursor's change; that assignment is policy, not a GitHub
-  CODEOWNERS identity.
+  CODEOWNERS identity. Antigravity may also serve as the final bounded
+  specialist failover after Copilot and Codex capacity failures; that does not
+  transfer Grok's exclusive independent-review authority.
 - Grok Build (`grok`) is the exclusive independent AI challenge/reviewer
   and specialist advisor for pull-request review, architectural criticism,
   regression detection, overlooked edge cases, questionable assumptions,
@@ -252,12 +262,14 @@ resources, not parallel reviewers for every change.
   must not automatically duplicate Cursor's normal development work. Copilot
   and/or Codex must make a process-required, result-advisory final specialist
   pass on high-risk pull requests (COMMENT or suggestions only) before the
-  CODEOWNER treats that PR as ready. Standard and low-risk pull requests skip this pass by default. That pass is not duplicate routine implementation and
+  CODEOWNER treats that PR as ready. Standard and low-risk pull requests skip this pass by default. Capacity failure may trigger the bounded specialist
+  failover defined above. That pass is not duplicate routine implementation and
   must not APPROVE in a way that satisfies branch protection.
 - Codex and other agents may be used only when the maintainer explicitly
   approves them and they uniquely cover a gap. Specialist use must be narrowly
   scoped and capability-driven. Codex may participate in the final advisory
-  specialist pass; it is not merge authority.
+  specialist pass and is the first bounded failover target after Copilot
+  capacity failure; it is not merge authority.
 - GitHub remains the source of truth and control plane for repositories,
   Issues and Projects, branches and pull requests, GitHub Actions, rulesets
   and branch protection, CodeQL, Dependabot, secret scanning, code scanning,
@@ -283,7 +295,9 @@ Keep routine work with Cursor whenever practical. Cursor handles:
 Do not auto-escalate those tasks to Antigravity, Grok Build, GitHub Copilot,
 Codex, or other specialist agents. A CODEOWNER-assigned second look and the
 Copilot/Codex final specialist pass are review assignments, not automatic
-vendor chaining or duplicate routine implementation.
+vendor chaining or duplicate routine implementation. Capacity failover is
+allowed only within an explicitly compatible role and stops at the first
+successful provider.
 
 ### Escalation and secondary use
 
@@ -306,9 +320,11 @@ Before invoking another AI agent, record:
 7. What constitutes completion?
 8. When does escalation stop?
 
-Stop when the defined gap is closed, deterministic evidence answers it, the
-selected agent is unavailable, or tests contradict the agent.
-Do not chain the next vendor automatically.
+Stop when the defined gap is closed, deterministic evidence answers it, tests
+contradict the agent, or bounded role failover is exhausted. Do not chain the
+next vendor automatically for routine work. A provider-capacity failure may
+trigger only the explicitly defined bounded failover for the same required
+role, and that failover stops after the first successful provider.
 
 Attempt deterministic validation before another AI agent is invoked. Preferred
 order when escalation is justified:
@@ -335,13 +351,13 @@ Capability routing does not change the preferred order above:
 
 | Resource | Role | Select when | Do not use when |
 | --- | --- | --- | --- |
-| Cursor | Primary development orchestrator | Default task ownership | Skipping Cursor only because another agent is available |
+| Cursor | Primary development orchestrator | Default task ownership and implementation continuity | Skipping Cursor only because another agent is available |
 | Deterministic tests and CI | Evidence | Before any second AI agent | Asking an LLM to re-run ShellCheck or unittest |
-| Antigravity | Secondary / specialist | Architecture, hard debugging, security analysis, specialized research, complex test analysis, second implementation perspective | Routine Cursor work; duplicating completed Cursor work without independent value |
+| Antigravity | Secondary / specialist | Architecture, hard debugging, security analysis, specialized research, complex test analysis, second implementation perspective; bounded final-specialist failover after Copilot and Codex capacity failures | Routine Cursor work; duplicating completed Cursor work without independent value; Grok independent-review replacement |
 | Grok Build | Exclusive independent reviewer and specialist advisor | PR review, architectural criticism, regressions, edge cases, substantial-change review, specialist advice | Mandatory implementation path; as a merge gate; treating a GitHub API key as Grok Build |
-| Antigravity CLI (`agy`) | Secondary / specialist advisor | CODEOWNER-assigned specialist review or specialist advice | Independent-review fallback; Default peer to Grok Build for identical unrecorded work; using Gemini CLI as the product name; GitHub `GEMINI_API_KEY` |
-| GitHub Copilot | GitHub-native fallback / specialist | Work initiated on GitHub; GitHub coding agent / PR review / Projects MCP; Cursor unavailable; explicit independent implementation | Parallel routine Cursor analysis |
-| Codex | Specialist implementation | Codex interface or PR path is the gap | Default second opinion |
+| Antigravity CLI (`agy`) | Secondary / specialist advisor | CODEOWNER-assigned specialist review or specialist advice | Independent-review fallback; default peer to Grok Build for identical unrecorded work; using Gemini CLI as the product name; GitHub `GEMINI_API_KEY` |
+| GitHub Copilot | GitHub-native fallback / specialist | Work initiated on GitHub; GitHub coding agent / PR review / Projects MCP; Cursor unavailable; explicit independent implementation; first provider for the final native specialist pass | Parallel routine Cursor analysis |
+| Codex | Specialist implementation / review | Codex interface or PR path is the gap; bounded final-specialist failover after Copilot capacity failure | Default second opinion for routine work |
 | Other explicitly approved agent | Specialist | Maintainer names it, and it uniquely covers a gap | Automatic vendor chaining; default peer to Cursor or Grok Build |
 
 ### Prevent duplicate AI usage
@@ -360,6 +376,9 @@ artifacts, or deterministic checks have already answered.
   developer request to compare named agents or a provider-specific capability
   that one agent cannot cover. Without that reason, invoke one agent at a
   time.
+- Bounded provider failover is sequential, never parallel. It is permitted
+  only after an eligible capacity failure and stops after the first successful
+  provider. It is not permission to run every compatible specialist.
 - Connecting multiple agents to GitHub MCP does not mean every agent should
   independently perform every task. MCP availability is capability, not an
   instruction to consume Cursor, Grok Build, Antigravity, and Copilot
@@ -376,7 +395,9 @@ artifacts, or deterministic checks have already answered.
   high-risk pull requests and result-advisory; it is not
   `implementation` and not a merge gate. Standard and low-risk pull
   requests skip that pass by default. When an allocation record is created for that pass, it uses
-  `specialist_review`.
+  `specialist_review`. If Copilot or Codex cannot run because of an eligible
+  capacity failure, a bounded Antigravity specialist failover still uses
+  `specialist_review` and does not acquire independent-review authority.
 
 ### Secrets model
 
@@ -440,8 +461,11 @@ AI reviews are advisory. They are not required merge gates. GitHub Actions
 and repository checks remain the deterministic merge validation surface.
 GitHub pull-request governance is the final merge authority. Exhaustion of an
 optional AI agent's quota must not block development when required
-deterministic validation passes. AI unavailability must not block merge when
-required deterministic checks pass and the CODEOWNER has reviewed. Do not
+deterministic validation passes. For a process-required specialist pass,
+provider quota exhaustion or service-capacity failure is not workflow
+completion: record the reason and attempt the bounded compatible failover
+before declaring the pass unavailable. AI unavailability must not block merge
+when required deterministic checks pass and the CODEOWNER has reviewed. Do not
 spend paid-agent capacity on review when the required checks already answer
 the question.
 
