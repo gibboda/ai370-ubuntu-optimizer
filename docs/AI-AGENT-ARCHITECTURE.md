@@ -52,6 +52,27 @@ GitHub Copilot's architectural identity is **GitHub-Native Coding Agent**. "Fall
 
 Copilot and/or Codex make the final native advisory specialist pass on high-risk pull requests after assigned Grok/Antigravity review and before the final required-check state and CODEOWNER merge decision. Standard and low-risk pull requests skip that pass by default unless the CODEOWNER requests it. COMMENT or suggestions only; the pass must not satisfy branch protection.
 
+### Bounded provider-capacity failover
+
+Provider quota exhaustion is a capacity failure, not successful workflow completion. When a process-required final specialist pass cannot run because of `quota_exhausted`, `service_unavailable`, or `provider_error`, the repository uses sequential same-purpose failover:
+
+```text
+GitHub Copilot
+    |
+    | capacity failure
+    v
+Codex
+    |
+    | capacity failure
+    v
+Antigravity
+    |
+    v
+stop after first successful specialist pass
+```
+
+This failover is bounded to three attempts and is not automatic vendor chaining for routine work. Authentication and configuration failures are surfaced rather than silently masked. Implementation/remediation returns to Cursor. Grok is excluded from this failover because its exclusive independent-review role is a different role; Grok unavailability never transfers independent-review authority to another provider. If every compatible specialist is unavailable, record the specialist pass as unavailable and continue under deterministic checks and CODEOWNER governance.
+
 ## Roles
 
 | Role | Owner | Mandatory for ordinary work? |
@@ -59,20 +80,22 @@ Copilot and/or Codex make the final native advisory specialist pass on high-risk
 | Primary Development Orchestrator | Cursor | Yes for default development |
 | Cursor-Native Autofixer | Cursor Bugbot | No; preferred first remediation for applicable Bugbot findings |
 | Exclusive Independent Challenge/Review Agent + Specialist Advisor | Grok / Grok Build (`grok`) | No; advisory and exclusive for independent AI challenge/review |
-| Secondary / Specialist Agent | Google Antigravity / `agy` | No; use when justified |
-| GitHub-Native Coding Agent | GitHub Copilot | No for routine implementation; may participate in high-risk final specialist pass |
+| Secondary / Specialist Agent | Google Antigravity / `agy` | No; use when justified; compatible final-specialist capacity failover |
+| GitHub-Native Coding Agent | GitHub Copilot | No for routine implementation; first provider for high-risk final specialist pass |
 | GitHub-Native Specialist Agents | Copilot custom agents under `.github/agents/` | No; bounded GitHub-native specialties |
-| Codex Coding Agent | Codex | No for routine implementation; may participate in high-risk final specialist pass |
+| Codex Coding Agent | Codex | No for routine implementation; compatible final-specialist capacity failover |
 | Deterministic Merge Validation | GitHub Actions + repository checks | Yes for merge-eligibility facts they can verify |
 | Final Human Merge Authority | CODEOWNER `@gibboda` + GitHub PR governance | Yes |
 
 ## Principles
 
 - Use the least expensive capable agent for the task; do not turn the logical readiness order into automatic vendor chaining.
-- Cursor remains primary. Bugbot autofix, Copilot, Codex, Grok, and Antigravity do not displace Cursor's default task ownership.
+- Cursor remains primary and is the implementation-continuity provider. Bugbot autofix, Copilot, Codex, Grok, and Antigravity do not displace Cursor's default task ownership.
 - Deterministic tooling runs before escalation when it can answer the unresolved question and remains authoritative for machine-verifiable facts.
-- Grok Build is the exclusive independent-review provider. Copilot/Codex final specialist review does not acquire that authority.
-- Antigravity remains secondary/specialist and is not a Grok-unavailable independent-review fallback.
+- Bounded same-purpose failover is allowed only for eligible provider-capacity failures and stops after the first successful compatible provider.
+- Quota exhaustion is not workflow completion for process-required work.
+- Grok Build is the exclusive independent-review provider and is excluded from the final-specialist failover pool.
+- Antigravity remains secondary/specialist and never inherits Grok's independent-review authority.
 - Copilot and Codex are native coding/review agents whose invocation is constrained by repository routing and cost policy.
 - AI review is advisory, never a required status check, and never merge authority.
 - AI unavailability must not block merge when required deterministic checks pass and the CODEOWNER has reviewed.
@@ -101,12 +124,12 @@ Copilot and/or Codex make the final native advisory specialist pass on high-risk
 | `.grok/config.toml` | Grok GitHub MCP (read-only; env-var auth) |
 | `.github/github-mcp.md` | Shared MCP least-privilege setup |
 | `.github/workflows/` | Deterministic CI only (no LLM calls) |
-| `config/agent-roles.json` | Machine-readable roles, logical ordering, overlays, and architecture invariants |
+| `config/agent-roles.json` | Machine-readable roles, bounded failover, logical ordering, overlays, and architecture invariants |
 | `config/agent-escalation-record.schema.json` | Structured escalation evidence schema |
 | `config/agent-work-allocation.schema.json` | Duplicate-agent work-allocation evidence schema |
 | `config/agent-credential-capabilities.json` | Per-client credential and authorization boundaries |
 | `config/agent-mcp-contract.json` | GitHub MCP configuration and drift contract |
-| `config/pr-governance.json` | PR pipeline, risk tiers, advisory-review boundaries, and final-check ordering |
+| `config/pr-governance.json` | PR pipeline, risk tiers, bounded specialist failover, advisory-review boundaries, and final-check ordering |
 | `.github/CODEOWNERS` | Human path owners; `@gibboda` only |
 | `config/agent-contract-compatibility.json` | Repository-local architecture-contract compatibility metadata |
 | `config/agent-distribution.json` | Portable-versus-local package boundary |
