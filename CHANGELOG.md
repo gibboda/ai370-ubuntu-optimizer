@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v2.1.1...v2.2.0) (2026-09-06)
+
+
+### Features
+
+* **agents:** Add bounded provider-capacity failover ([#296](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/296)) ([7bb69cd](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/7bb69cdf3652050c8b63361b7429248acb9bcb22))
+
 ## [2.1.1](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v2.1.0...v2.1.1) (2026-09-05)
 
 
