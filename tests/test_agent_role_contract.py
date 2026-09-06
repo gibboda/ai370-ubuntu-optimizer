@@ -330,6 +330,9 @@ class AgentRoleContractTests(unittest.TestCase):
 
     def test_global_routing_invariants(self) -> None:
         self.assertTrue(self.invariants["no_automatic_vendor_chaining"])
+        self.assertTrue(self.invariants["bounded_role_failover"])
+        self.assertTrue(self.invariants["provider_quota_exhaustion_is_not_workflow_completion"])
+        self.assertTrue(self.invariants["required_work_continues_on_provider_capacity_failure"])
         self.assertTrue(self.invariants["least_agent_principle"])
         self.assertTrue(self.invariants["duplicate_routine_ai_work_prohibited"])
         self.assertTrue(self.invariants["ai_reviews_advisory"])

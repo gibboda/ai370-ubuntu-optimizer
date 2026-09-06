@@ -133,6 +133,12 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertTrue(invariants["mcp_access_does_not_bypass_governance"])
         self.assertNotIn("copilot_and_codex_fallback_only", invariants)
         self.assertTrue(invariants["no_automatic_vendor_chaining"])
+        self.assertTrue(invariants["bounded_role_failover"])
+        self.assertTrue(invariants["provider_quota_exhaustion_is_not_workflow_completion"])
+        self.assertTrue(invariants["required_work_continues_on_provider_capacity_failure"])
+        self.assertTrue(self.roles["invariants"]["bounded_role_failover"])
+        self.assertTrue(self.roles["invariants"]["provider_quota_exhaustion_is_not_workflow_completion"])
+        self.assertTrue(self.roles["invariants"]["required_work_continues_on_provider_capacity_failure"])
         self.assertTrue(invariants["native_specialist_pass_precedes_final_required_checks"])
         self.assertTrue(
             self.roles["invariants"]["native_specialist_pass_precedes_final_merge_validation"]
