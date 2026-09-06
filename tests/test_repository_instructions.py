@@ -229,6 +229,43 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("Before changing code", self.agent_instructions)
         self.assertIn("reading order in `AGENTS.md`", self.copilot_instructions)
 
+    def test_shared_evidence_registries_lock_portability_invariants(self) -> None:
+        sources = (ROOT / "docs/AUTHORITATIVE-SOURCES.md").read_text(
+            encoding="utf-8"
+        )
+        platforms = (ROOT / "docs/TEST-PLATFORMS.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "do not define the hardware-independent project architecture",
+            sources,
+        )
+        self.assertRegex(
+            sources,
+            r"must not\s+silently redefine the hardware-independent project architecture",
+        )
+        self.assertIn("is not NPU, XDNA, or reference-platform authority", sources)
+        self.assertIn("Linux XRT / XDNA", sources)
+        self.assertIn("https://github.com/amd/xdna-driver", sources)
+        self.assertIn("Windows-primary", sources)
+        self.assertIn("## AMD ecosystem references", sources)
+        self.assertNotIn("### 5. AMD AI Developer Program", sources)
+        self.assertIn(
+            "not definitions of the project architecture",
+            platforms,
+        )
+        for exclusion in (
+            "Minisforum hardware",
+            "Ryzen AI 9 HX 370",
+            "Strix Point",
+            "Radeon 890M",
+            "`gfx1150`",
+            "XDNA2",
+            "BIOS 2.01",
+            "ROCm",
+            "an AMD-specific runtime",
+        ):
+            with self.subTest(exclusion=exclusion):
+                self.assertIn(exclusion, platforms)
+
     def test_shared_policy_preserves_stage_1_boundary(self) -> None:
         self.assertIn("Stage 1 is read-only", self.agent_instructions)
         self.assertNotIn("Stage 1 is read-only", self.copilot_instructions)
@@ -826,6 +863,31 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertNotIn(
             "Independent review is Grok Build (`grok`) or Antigravity CLI (`agy`)",
             self.agent_instructions,
+        )
+        overlay = self.cursor_rules
+        residual = re.sub(
+            r"(?s)[^.]*are not an\s+independent-review fallback[^.]*\.?",
+            "",
+            overlay,
+            flags=re.IGNORECASE,
+        )
+        residual = re.sub(
+            r"(?s)[^.]*does\s+not transfer independent-review authority[^.]*\.?",
+            "",
+            residual,
+            flags=re.IGNORECASE,
+        )
+        self.assertNotRegex(
+            residual,
+            r"(?is)(agy|antigravity)[^.]*independent(?:-review| (?:ai )?reviewer)",
+        )
+        self.assertNotRegex(
+            residual,
+            r"(?is)independent(?:-review| (?:ai )?reviewer)[^.]*?(agy|antigravity)",
+        )
+        self.assertNotRegex(
+            overlay,
+            r"(?is)if grok.{0,80}unavailable.{0,80}(agy|antigravity).{0,80}independent review",
         )
 
     def test_cursor_hybrid_orchestration_stays_cursor_specific(self) -> None:
