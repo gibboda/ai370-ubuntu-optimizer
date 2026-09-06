@@ -40,6 +40,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- **governance:** Add first-party technical-source and test-platform
+  registries, and point shared agent policy at those files.
+- **agents:** Align the Cursor overlay with exclusive Grok independent
+  review.
+- **agents:** Clarify that Cursor is the primary orchestrator, not the
+  exclusive consumer of the shared evidence registries.
+
+### Tests
+
+- **agents:** Lock Cursor overlay independent-review language so `agy`
+  cannot regress into an independent-review fallback.
+
 ## [1.0.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v0.31.0...v1.0.0) (2026-09-05)
 
 

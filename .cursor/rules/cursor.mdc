@@ -11,6 +11,11 @@ Do not duplicate or override that file here.
 
 Nested `AGENTS.md` files remain in force for their directories.
 Architecture overview: [`docs/AI-AGENT-ARCHITECTURE.md`](../../docs/AI-AGENT-ARCHITECTURE.md).
+Shared project evidence, also named in `AGENTS.md` Documentation authority:
+[`docs/AUTHORITATIVE-SOURCES.md`](../../docs/AUTHORITATIVE-SOURCES.md) and
+[`docs/TEST-PLATFORMS.md`](../../docs/TEST-PLATFORMS.md).
+These are not Cursor-only reading notes. Cursor is the primary
+orchestrator, not the exclusive consumer.
 
 ## Hybrid orchestration boundary
 
@@ -37,18 +42,19 @@ completed unless independent verification provides a concrete benefit.
 Never commit secrets. Never put tokens in `mcp.json` or tracked docs.
 
 Do not require direct Cursor credentials for local independent review.
-Independent review is Grok Build (`grok`) or Antigravity CLI (`agy`) on a
-machine where those CLIs are logged in. Both are advisory independent
-reviewers and specialist advisors. Assigned advice must be recorded as a
-COMMENT-only pull-request comment or COMMENT review; Cursor may post that
-attributed record when the reviewer cannot. Do not copy vendor/model credentials
-or leftover GitHub Actions secrets into Cursor configuration. This repository's
-GitHub Actions do not call xAI or Gemini.
+Grok Build (`grok`) is the exclusive independent AI reviewer. Antigravity and
+Antigravity CLI (`agy`) are secondary / specialist resources and are not an
+independent-review fallback. Both roles are advisory. Assigned advice must be
+recorded as a COMMENT-only pull-request comment or COMMENT review; Cursor may
+post that attributed record when the reviewer cannot. Grok unavailability does
+not transfer independent-review authority to Antigravity or another AI. Do not
+copy vendor/model credentials or leftover GitHub Actions secrets into Cursor
+configuration. This repository's GitHub Actions do not call xAI or Gemini.
 
 Follow the shared escalation, cost, and default-implementation policy in
 `AGENTS.md`. Do not restate those rules here. See the Agent hierarchy in
-`AGENTS.md` rather than restating it here. Independent GitHub review
-findings may be consumed as feedback in Cursor.
+`AGENTS.md` rather than restating it here. Independent GitHub review findings
+may be consumed as feedback in Cursor.
 
 GitHub Actions and other deterministic checks remain authoritative for facts
 they can verify. AI findings are advisory unless repository governance is

@@ -46,7 +46,7 @@ Final Human Review / Merge
 
 This is the **logical readiness order**, not mandatory runtime serialization. Deterministic checks should still run before AI escalation when they can answer a question, and GitHub Actions may run earlier or continuously while a pull request evolves. The check state used for final merge eligibility must reflect every accepted AI-generated modification.
 
-GitHub remains the control plane. Cursor remains the primary development orchestrator and default task owner. Cursor Bugbot is the Cursor-native autofixer for applicable Bugbot findings; it does not become a second orchestrator. Grok Build remains the exclusive independent AI challenge/review provider. Antigravity remains secondary/specialist and does not inherit Grok's independent-review authority.
+GitHub remains the control plane. Cursor remains the primary development orchestrator and default task owner. Primary does not mean exclusive: other agents may work here when `AGENTS.md` routes them. Cursor Bugbot is the Cursor-native autofixer for applicable Bugbot findings; it does not become a second orchestrator. Grok Build remains the exclusive independent AI challenge/review provider. Antigravity remains secondary/specialist and does not inherit Grok's independent-review authority.
 
 GitHub Copilot's architectural identity is **GitHub-Native Coding Agent**. "Fallback" describes a routing condition, not the role itself. GitHub Copilot custom agents under `.github/agents/` are **GitHub-Native Specialist Agents** beneath that role. Codex's architectural identity is **Codex Coding Agent**. Both remain explicitly routed rather than default peers to Cursor.
 
@@ -113,6 +113,8 @@ This failover is bounded to three attempts and is not automatic vendor chaining 
 | Path | Purpose |
 | --- | --- |
 | `AGENTS.md` | Canonical shared policy |
+| `docs/AUTHORITATIVE-SOURCES.md` | Shared first-party technical-source registry |
+| `docs/TEST-PLATFORMS.md` | Shared validation-hardware registry; not architecture |
 | `.cursor/rules/` | Cursor environment overlay |
 | `.cursor/BUGBOT.md` | Cursor-native review/autofix policy |
 | `.cursor/mcp.json` | Cursor GitHub MCP (env-var auth; no secrets) |
