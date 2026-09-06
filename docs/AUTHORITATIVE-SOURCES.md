@@ -39,12 +39,12 @@ Use these labels when the distinction matters:
 Community reports may aid troubleshooting or discovery but must not be
 represented as official support.
 
-# AMD authoritative source set
+## AMD authoritative source set
 
 AMD sources govern AMD-specific implementation and the current AMD reference
 platform. They do not define the hardware-independent project architecture.
 
-## 1. AMD ROCm Documentation — technical authority
+### 1. AMD ROCm Documentation — technical authority
 
 <https://rocm.docs.amd.com/en/latest/>
 
@@ -64,15 +64,20 @@ When ROCm behavior, compatibility, or support materially affects a decision,
 verify the current ROCm documentation. Support for one AMD GPU does not imply
 support for Radeon 890M / `gfx1150` or another AMD device.
 
-## 2. AMD ROCm AI Developer Hub — AI platform guidance
+### 2. AMD ROCm AI Developer Hub — AI platform guidance
 
-<https://www.amd.com/en/developer/resources/rocm-hub/ai-cloud-development.html>
+<https://rocm.docs.amd.com/projects/ai-developer-hub/en/latest/>
 
-Use for official AMD AI development resources, frameworks, training and
-inference guidance, deployment approaches, tutorials, notebooks, and related
-platform information.
+First-party ROCm AI tutorials and notebooks for training, fine-tuning,
+inference, and GPU development. Use this documentation hub rather than
+marketing or cloud-landing pages when a current AMD AI workflow, framework,
+or notebook materially affects a decision.
 
-## 3. AMD AI Playbooks — implementation guidance
+For Ryzen AI NPU and iGPU inference software, also consult
+<https://ryzenai.docs.amd.com/en/latest/>. That source does not redefine
+project architecture.
+
+### 3. AMD AI Playbooks — implementation guidance
 
 <https://developer.amd.com/playbooks/>
 
@@ -84,7 +89,7 @@ Playbooks are implementation guidance, not project architecture. Verify their
 hardware, OS, driver, runtime, memory, and accelerator prerequisites before
 applying them.
 
-## 4. AMD Zen Software Studio — CPU/toolchain authority
+### 4. AMD Zen Software Studio — CPU/toolchain authority
 
 <https://www.amd.com/en/developer/zen-software-studio.html>
 
@@ -94,7 +99,7 @@ performance analysis, and CPU optimization.
 CPU-specific optimization must remain separable from hardware-independent core
 behavior.
 
-## 5. AMD AI Developer Program — ecosystem reference
+### 5. AMD AI Developer Program — ecosystem reference
 
 <https://developer.amd.com/ai-developer-program/>
 
@@ -104,7 +109,7 @@ resources, programs, support opportunities, and ecosystem information.
 Program or promotional material does not override technical specifications,
 compatibility matrices, or API documentation.
 
-# Future vendors and platforms
+## Future vendors and platforms
 
 When support expands, add the applicable first-party technical authorities for
 NVIDIA, Intel, Apple, ARM, operating systems, accelerator vendors, AI runtimes,
