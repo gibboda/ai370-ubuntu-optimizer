@@ -321,10 +321,10 @@ Before invoking another AI agent, record:
 8. When does escalation stop?
 
 Stop when the defined gap is closed, deterministic evidence answers it, tests
-contradict the agent, or bounded role failover is exhausted. Do not chain the
-next vendor automatically for routine work. A provider-capacity failure may
-trigger only the explicitly defined bounded failover for the same required
-role, and that failover stops after the first successful provider.
+contradict the agent, or bounded role failover is exhausted.
+Do not chain the next vendor automatically for routine work. A provider-capacity
+failure may trigger only the explicitly defined bounded failover for the same
+required role, and that failover stops after the first successful provider.
 
 Attempt deterministic validation before another AI agent is invoked. Preferred
 order when escalation is justified:
