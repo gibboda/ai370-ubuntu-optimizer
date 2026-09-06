@@ -495,6 +495,9 @@ detail for what this repository requires those checks to cover.
   they document and do not redefine project architecture.
 - `docs/TEST-PLATFORMS.md` records validation hardware. Test platforms are
   reference environments, not architectural requirements.
+- Cursor is the primary development orchestrator, not the exclusive
+  consumer of those two registries. Every agent uses the same shared
+  evidence files.
 - `README.md` is the user-facing installation and command guide.
 - Documentation must distinguish current behavior from target behavior during
   migration.

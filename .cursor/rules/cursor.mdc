@@ -11,10 +11,11 @@ Do not duplicate or override that file here.
 
 Nested `AGENTS.md` files remain in force for their directories.
 Architecture overview: [`docs/AI-AGENT-ARCHITECTURE.md`](../../docs/AI-AGENT-ARCHITECTURE.md).
-Authoritative external technical sources:
-[`docs/AUTHORITATIVE-SOURCES.md`](../../docs/AUTHORITATIVE-SOURCES.md).
-Recorded validation hardware:
+Shared project evidence, also named in `AGENTS.md` Documentation authority:
+[`docs/AUTHORITATIVE-SOURCES.md`](../../docs/AUTHORITATIVE-SOURCES.md) and
 [`docs/TEST-PLATFORMS.md`](../../docs/TEST-PLATFORMS.md).
+These are not Cursor-only reading notes. Cursor is the primary
+orchestrator, not the exclusive consumer.
 
 ## Hybrid orchestration boundary
 
