@@ -220,6 +220,10 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn("`docs/AUTHORITATIVE-SOURCES.md`", self.agent_instructions)
         self.assertIn("`docs/TEST-PLATFORMS.md`", self.agent_instructions)
+        self.assertRegex(
+            self.agent_instructions,
+            r"not the exclusive\s+consumer of those two registries",
+        )
         self.assertTrue((ROOT / "docs/AUTHORITATIVE-SOURCES.md").is_file())
         self.assertTrue((ROOT / "docs/TEST-PLATFORMS.md").is_file())
         self.assertIn("Before changing code", self.agent_instructions)
@@ -612,6 +616,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("Primary Development Orchestrator", architecture)
+        self.assertIn("Primary does not mean exclusive", architecture)
+        self.assertIn("docs/AUTHORITATIVE-SOURCES.md", architecture)
+        self.assertIn("docs/TEST-PLATFORMS.md", architecture)
         self.assertIn("GitHub Actions", architecture)
         self.assertIn("Independent", architecture)
         self.assertIn("`AGENTS.md`", architecture)
@@ -794,6 +801,11 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
         self.assertIn("docs/AUTHORITATIVE-SOURCES.md", self.cursor_rules)
         self.assertIn("docs/TEST-PLATFORMS.md", self.cursor_rules)
+        self.assertIn("not Cursor-only reading notes", self.cursor_rules)
+        self.assertRegex(
+            self.cursor_rules,
+            r"not the exclusive\s+consumer",
+        )
         self.assertNotIn(
             "Independent review is Grok Build (`grok`) or Antigravity CLI",
             self.cursor_rules,
