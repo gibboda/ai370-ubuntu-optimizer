@@ -44,12 +44,13 @@ Never commit secrets. Never put tokens in `mcp.json` or tracked docs.
 Do not require direct Cursor credentials for local independent review.
 Grok Build (`grok`) is the exclusive independent AI reviewer. Antigravity and
 Antigravity CLI (`agy`) are secondary / specialist resources and are not an
-independent-review fallback. Both roles are advisory. Assigned advice must be
-recorded as a COMMENT-only pull-request comment or COMMENT review; Cursor may
-post that attributed record when the reviewer cannot. Grok unavailability does
-not transfer independent-review authority to Antigravity or another AI. Do not
-copy vendor/model credentials or leftover GitHub Actions secrets into Cursor
-configuration. This repository's GitHub Actions do not call xAI or Gemini.
+independent-review fallback. Independent review and specialist advice are
+different roles; both are advisory, not merge authority. Assigned advice must
+be recorded as a COMMENT-only pull-request comment or COMMENT review; Cursor
+may post that attributed record when the reviewer cannot. Grok unavailability
+does not transfer independent-review authority to Antigravity or another AI.
+Do not copy vendor/model credentials or leftover GitHub Actions secrets into
+Cursor configuration. This repository's GitHub Actions do not call xAI or Gemini.
 
 Follow the shared escalation, cost, and default-implementation policy in
 `AGENTS.md`. Do not restate those rules here. See the Agent hierarchy in

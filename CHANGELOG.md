@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **governance:** Add first-party technical-source and test-platform
   registries, and point shared agent policy at those files.
 - **agents:** Align the Cursor overlay with exclusive Grok independent
-  review.
+  review, and keep independent review distinct from specialist advice.
 - **agents:** Clarify that Cursor is the primary orchestrator, not the
   exclusive consumer of the shared evidence registries.
 
