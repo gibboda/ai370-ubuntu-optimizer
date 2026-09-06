@@ -50,6 +50,12 @@ def validate(roles, compatibility):
     invariants = roles.get("invariants", {})
     if not invariants.get("no_automatic_vendor_chaining"):
         failures.add("no_vendor_chaining")
+    if not invariants.get("bounded_role_failover"):
+        failures.add("bounded_role_failover")
+    if not invariants.get("provider_quota_exhaustion_is_not_workflow_completion"):
+        failures.add("provider_quota_exhaustion_is_not_workflow_completion")
+    if not invariants.get("required_work_continues_on_provider_capacity_failure"):
+        failures.add("required_work_continues_on_provider_capacity_failure")
     if not invariants.get("least_agent_principle"):
         failures.add("least_agent_principle")
     if not invariants.get("duplicate_routine_ai_work_prohibited"):
@@ -177,7 +183,7 @@ class AgentArchitectureMutationTests(unittest.TestCase):
 
     def test_mutations_cover_critical_architecture_boundaries(self):
         covered = {mutation["expected_rule"] for mutation in self.fixture["mutations"]}
-        self.assertEqual(covered, {"canonical_authority", "primary_orchestrator", "deterministic_before_escalation", "advisory_review", "human_merge_authority", "no_vendor_chaining", "least_agent_principle", "duplicate_routine_ai_work", "ai_reviews_advisory", "grok_exclusive_independent_review", "cursor_remains_primary", "bugbot_is_cursor_native_autofixer", "native_specialist_pass_precedes_final_merge_validation", "overlay_completeness", "contract_coverage", "schema_version_match"})
+        self.assertEqual(covered, {"canonical_authority", "primary_orchestrator", "deterministic_before_escalation", "advisory_review", "human_merge_authority", "no_vendor_chaining", "bounded_role_failover", "provider_quota_exhaustion_is_not_workflow_completion", "required_work_continues_on_provider_capacity_failure", "least_agent_principle", "duplicate_routine_ai_work", "ai_reviews_advisory", "grok_exclusive_independent_review", "cursor_remains_primary", "bugbot_is_cursor_native_autofixer", "native_specialist_pass_precedes_final_merge_validation", "overlay_completeness", "contract_coverage", "schema_version_match"})
 
 
 if __name__ == "__main__":
