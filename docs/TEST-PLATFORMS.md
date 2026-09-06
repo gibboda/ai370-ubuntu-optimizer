@@ -24,7 +24,12 @@ Baseline configuration:
 - NPU: AMD XDNA2, up to 50 TOPS
 - Memory class: LPDDR5X-7500
 - Storage class: PCIe 4.0 NVMe
-- Firmware baseline: BIOS 2.01, verified April 2026
+- Firmware baseline: BIOS 2.01
+- Operating system class: Ubuntu 26.04 LTS
+- Kernel class: Linux 7.x or later
+
+Do not pin a specific kernel release. Detect features, versions, and
+capabilities so newer supported kernels remain acceptable.
 
 Repository profile data, fixtures, and subsequently verified observations are
 more authoritative than this descriptive baseline when they differ.
