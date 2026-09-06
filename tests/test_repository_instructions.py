@@ -806,6 +806,14 @@ class RepositoryInstructionsTests(unittest.TestCase):
             self.cursor_rules,
             r"not the exclusive\s+consumer",
         )
+        self.assertIn(
+            "Independent review and specialist advice are",
+            self.cursor_rules,
+        )
+        self.assertRegex(
+            self.cursor_rules,
+            r"different roles;\s+both are advisory, not merge authority",
+        )
         self.assertNotIn(
             "Independent review is Grok Build (`grok`) or Antigravity CLI",
             self.cursor_rules,
@@ -814,6 +822,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "Both are advisory independent reviewers",
             self.cursor_rules,
         )
+        self.assertNotIn("Both roles are advisory.", self.cursor_rules)
         self.assertNotIn(
             "Independent review is Grok Build (`grok`) or Antigravity CLI (`agy`)",
             self.agent_instructions,
