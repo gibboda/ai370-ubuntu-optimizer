@@ -6,7 +6,7 @@ This document defines the architecture and naming system that all future
 renames and implementations must follow. It intentionally describes the target
 before code, commands, reports, schemas, or tests are renamed.
 
-**Last reviewed:** 2026-08-23
+**Last reviewed:** 2026-09-07
 
 The project will retain five stages, but their boundaries are replaced by the
 canonical boundaries below. Existing behavior outside its target boundary is
@@ -325,7 +325,9 @@ consumers span milestones.
 Stage 1 and Stage 2 gates meet their exit evidence. `R2` is the next major
 release after all canonical Stage 3 and Stage 4 consumer migrations are
 complete. No date or version is invented here; release planning must bind these
-targets to versions before removal. Compatibility items receive bug fixes only.
+targets to versions before removal. Current repository version `2.2.0` and the
+earlier `1.0.0` Release Please / agent-architecture bump are not R1.
+Compatibility items receive bug fixes only.
 
 | Compatibility-only Tier interface | Kind | Target owner and planned canonical replacement | Removal target |
 | --- | --- | --- | --- |

@@ -6,7 +6,7 @@ Tasks 2 through 5 and Task 24. It is analysis and planning only. It does not
 authorize a repository rewrite, a GitHub rename, or new public `stageN`
 commands.
 
-**Last reviewed:** 2026-08-23
+**Last reviewed:** 2026-09-07
 
 ## Document roles
 
@@ -42,7 +42,11 @@ documentation matches implementation, and the repository functions as the
 broader platform.
 
 Current CLI entry point: `./ai370-optimize.sh`.
-Current version at last review: `0.25.0`. NPU publisher landing remains `0.21.0`.
+Current version at last review: `2.2.0`. Historical landings remain NPU
+publisher `0.21.0`, GPU publisher `#176` / `0.20.0`, and sequence 3
+`#203` / `0.25.0`. Releases after `0.25.0` through `2.2.0` are agent,
+governance, and contract work, not platform-boundary PRs. Do not treat
+`1.0.0` or `2.2.0` as R1.
 
 ## Terminology
 
@@ -510,8 +514,14 @@ regression tests before replacing working code.
 Tracked GitHub issues: #168 remaining work is none after `#180` / `0.21.0`;
 #169 PR 3 (read-only Stage 1 + Stage 2 platform validation) is done through
 Workstream F. Remaining S2-M1/S2-M2 remediations and S2-M5/S2-M6
-backup/rollback stay on ROADMAP, not as a new mutation-boundary issue.
-Do not file issues 4–11 until the prior boundary has tests.
+backup/rollback stay on ROADMAP and are filed as Stage 2 follow-up issues
+#209–#213. Sequence 4–11 GitHub issues were filed on 2026-08-24 as an
+OPEN `needs-triage` backlog even though this plan previously said not to
+file them until the prior boundary had tests. Those issues exist; do not
+pretend they were not filed. Implementation PRs for sequences 4–11 have
+not started. Post-`0.25.0` releases through `2.2.0` are agent,
+governance, and contract work, not platform-boundary PRs. Do not treat
+`1.0.0` or `2.2.0` as R1.
 
 | Sequence | Status | Tracked issue |
 | --- | --- | --- |
@@ -519,7 +529,16 @@ Do not file issues 4–11 until the prior boundary has tests.
 | 2 Capability assessment | **done** (library `#170`, schemas `#173`, GPU publisher `#176` / `0.20.0`, NPU publisher `#180` / `0.21.0`) | None remaining; [#168](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/168) is complete |
 | 3 Stop Stage 1 mutation | **done**; `stage1` is read-only; `stage2-platform-validate` invokes existing GPU/NPU commands and the S2-M7 publisher; `require_tier123_pass` prefers `s2-m7-platform-validation.json`; remaining S2-M1/S2-M2 remediations and S2-M5/S2-M6 backup/rollback are ROADMAP follow-ups | [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) |
 | 3-docs Documentation sync | **done** (this change) | Not a sequence 4–11 issue |
-| 4–11 later boundaries | **planned** | Not filed |
+| 4–11 later boundaries | **planned** (no implementation PRs) | Filed 2026-08-24 as OPEN `needs-triage` issues #209–#239 |
+
+Filed backlog (OPEN, `needs-triage`; no implementation PRs):
+
+- Stage 2 follow-ups: [#209](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/209) S2-M1 remediation docs, [#210](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/210) S2-M2 kernel/driver matrix, [#211](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/211) S2-M3 fixtures, [#212](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/212) S2-M4 visibility vs execution tests, [#213](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/213) S2-M6 backup/rollback
+- Stage 3: [#214](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/214)–[#220](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/220)
+- Stage 4: [#221](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/221)–[#227](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/227)
+- Stage 5: [#228](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/228)–[#233](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/233)
+- R1/R2/rename: [#234](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/234), [#235](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/235), [#236](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/236)
+- Hardware/Ubuntu/GA: [#237](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/237), [#238](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/238), [#239](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/239)
 
 Recommended order, using ROADMAP owners rather than new public stage numbers:
 
@@ -642,6 +661,8 @@ Per-PR contract for sequence 4–10 and remaining Stage 2 follow-ups:
 This contract is **not** migration sequence 4–11. Do not file GitHub issues
 4–11 for documentation sync. Instruction tests in
 `tests/test_repository_instructions.py` enforce the contract.
+Sequence 4–11 implementation issues are already filed as #209–#239; they
+are not documentation-sync issues.
 
 The high-level README Stage 1 and Stage 2 summaries match ROADMAP: S1-M1
 through S1-M5 are Implemented as `stage1-probe` / `stage1-profile`, and
@@ -670,8 +691,9 @@ Current command facts that later PRs must keep accurate:
   the kernel/driver matrix).
 
 Remaining work is future same-commit updates as sequence 4–10 and those
-Stage 2 follow-ups land. Do not pre-write README or ROADMAP as if
-architecture layers 0–11 were public commands.
+Stage 2 follow-ups land (filed as #209–#239; no implementation PRs yet).
+Do not pre-write README or ROADMAP as if architecture layers 0–11 were
+public commands.
 
 The architecture document is target design. Features listed there as local
 coding AI, FastFlowLM, unified master validation, heterogeneous live
