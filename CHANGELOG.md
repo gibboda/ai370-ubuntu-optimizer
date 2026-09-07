@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
+- **architecture:** Sync current-version stamps to `2.2.0` in ROADMAP,
+  the migration plan, and README. Sequences 4–11 remain planned; their
+  GitHub issues were filed as `#209`–`#239`. Historical landings such as
+  `0.25.0` stay history and are not R1.
 - **governance:** Add first-party technical-source and test-platform
   registries, and point shared agent policy at those files.
 - **agents:** Align the Cursor overlay with exclusive Grok independent

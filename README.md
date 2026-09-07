@@ -117,6 +117,8 @@ Linux platform architecture is
 `docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md`. The current-to-target
 migration inventory is `docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md`.
 
+Current repository version: `2.2.0`.
+
 Current high-level status (see `docs/ROADMAP.md` for details):
 
 - Stage 1 profile pipeline: **Implemented** (S1-M1 through S1-M5). `stage1`,

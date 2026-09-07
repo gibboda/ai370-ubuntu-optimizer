@@ -1173,6 +1173,19 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("Not a sequence 4–11 issue", self.plan)
         self.assertIn("Do not file GitHub issues\n4–11 for documentation sync", self.plan)
         self.assertIn("| 3-docs Documentation sync | **done** (this change)", self.plan)
+        self.assertIn("Current version at last review: `2.2.0`.", self.plan)
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("Current repository version: `2.2.0`.", readme)
+        self.assertNotIn(
+            "| 4–11 later boundaries | **planned** | Not filed |",
+            self.plan,
+        )
+        self.assertIn(
+            "| 4–11 later boundaries | **planned** (no implementation PRs) |",
+            self.plan,
+        )
+        self.assertIn("#209", self.plan)
+        self.assertIn("#239", self.plan)
         self.assertNotIn(
             "S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress",
             self.plan,
@@ -1183,6 +1196,10 @@ class MigrationPlanTests(unittest.TestCase):
         )
         self.assertIn(
             "User-facing `README.md` status must match this",
+            self.roadmap,
+        )
+        self.assertIn(
+            "Current repository version `2.2.0` and the\nearlier `1.0.0` Release Please / agent-architecture bump are not R1.",
             self.roadmap,
         )
 
