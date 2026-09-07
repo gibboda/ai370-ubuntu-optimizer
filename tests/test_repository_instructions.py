@@ -1544,6 +1544,7 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         "contract",
         "workflows",
         "vscode",
+        "workspace",
         "settings",
         "release",
         "changelog",
@@ -1734,6 +1735,34 @@ class ConventionalCommitScopeTests(unittest.TestCase):
                 "bash",
                 str(ROOT / "scripts/validate-commit-subject.sh"),
                 "feat(settings): Add snyk-secure-development plugin configuration",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_pr_title_accepts_workspace_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "chore(workspace): Update CodeQL query pack location in workspace settings",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_commit_subject_accepts_workspace_scope(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "fix(workspace): Remove machine-specific CodeQL pack location path",
             ],
             check=False,
             capture_output=True,
