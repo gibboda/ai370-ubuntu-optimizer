@@ -9,7 +9,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-
+VERSION_PATH = ROOT / "VERSION"
+_LAST_REVIEWED = re.compile(r"\*\*Last reviewed:\*\* (\d{4}-\d{2}-\d{2})")
 _MILESTONE_ID = re.compile(r"^S[1-5]-M\d+$")
 _MILESTONE_STATUS = frozenset({"Implemented", "In progress", "Planned"})
 _README_S2_IN_PROGRESS_GROUP = re.compile(
@@ -50,6 +51,10 @@ def numeric_version(version: str) -> tuple[int, ...]:
             break
         parts.append(int(digits))
     return tuple(parts)
+
+
+def repository_version() -> str:
+    return VERSION_PATH.read_text(encoding="utf-8").split()[0]
 
 
 def parse_portable_unittest_modules(text: str) -> list[str]:
@@ -1167,25 +1172,32 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertNotIn("NPU publisher CLI remains issue #168", self.plan)
 
     def test_migration_plan_defines_documentation_sync_contract(self) -> None:
+        version = repository_version()
+        plan_last_reviewed = _LAST_REVIEWED.search(self.plan)
+        self.assertIsNotNone(
+            plan_last_reviewed, "migration plan missing Last reviewed date"
+        )
+        last_reviewed = plan_last_reviewed.group(1)
+        roadmap_last_reviewed = _LAST_REVIEWED.search(self.roadmap)
+        self.assertIsNotNone(roadmap_last_reviewed, "ROADMAP missing Last reviewed date")
+        self.assertEqual(roadmap_last_reviewed.group(1), last_reviewed)
         self.assertIn("## Documentation sync", self.plan)
         self.assertIn("README follows ROADMAP", self.plan)
         self.assertIn("Same commit as the code", self.plan)
         self.assertIn("Not a sequence 4–11 issue", self.plan)
         self.assertIn("Do not file GitHub issues\n4–11 for documentation sync", self.plan)
         self.assertIn("| 3-docs Documentation sync | **done** (this change)", self.plan)
-        self.assertIn("Current version at last review: `2.2.0`.", self.plan)
+        self.assertIn(f"Current version at last review: `{version}`.", self.plan)
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("Current repository version: `2.2.0`.", readme)
+        self.assertIn(f"Current repository version: `{version}`.", readme)
         self.assertNotIn(
             "| 4–11 later boundaries | **planned** | Not filed |",
             self.plan,
         )
         self.assertIn(
-            "| 4–11 later boundaries | **planned** (no implementation PRs) |",
+            "| 4–11 later boundaries | **planned** (no implementation PRs) | Filed 2026-08-24 as OPEN `needs-triage` issues #209–#239 |",
             self.plan,
         )
-        self.assertIn("#209", self.plan)
-        self.assertIn("#239", self.plan)
         self.assertNotIn(
             "S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6/S2-M7 In progress",
             self.plan,
@@ -1199,7 +1211,7 @@ class MigrationPlanTests(unittest.TestCase):
             self.roadmap,
         )
         self.assertIn(
-            "Current repository version `2.2.0` and the\nearlier `1.0.0` Release Please / agent-architecture bump are not R1.",
+            f"Current repository version `{version}` and the\nearlier `1.0.0` Release Please / agent-architecture bump are not R1.",
             self.roadmap,
         )
 
