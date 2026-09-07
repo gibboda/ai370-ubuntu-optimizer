@@ -4,5 +4,7 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"codeQL.createQuery.qlPackLocation": "/home/gibboda/Projects/ai370-ubuntu-optimizer"
+	}
 }
