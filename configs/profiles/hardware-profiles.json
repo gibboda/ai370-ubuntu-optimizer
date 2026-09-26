@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "description": "Declarative hardware profiles for one Ryzen AI Linux platform. Match rules feed Stage 1 classification. Capability, provider, and optimization fields are data. Marketing names are not GPU architecture.",
+  "platform_architecture": {
+    "id": "ryzen-ai-linux",
+    "description": "Shared platform architecture. AI370/Strix Point and Ryzen AI Halo/Strix Halo are hardware profiles, not separate architectures."
+  },
+  "cpu_family_profiles": [
+    {"id": "ryzen-ai", "contains_any": ["Ryzen AI"]}
+  ],
+  "cpu_family_signatures": [
+    {"id": "ryzen-ai-300", "cpu_families": [26], "cpu_models": [36]}
+  ],
+  "gpu_architecture_mappings": {
+    "gfx1150": {
+      "family": "rdna3.5",
+      "description": "AMD RDNA 3.5 integrated GPU"
+    },
+    "gfx1151": {
+      "family": "rdna3.5",
+      "description": "AMD RDNA 3.5 integrated GPU alternative identifier"
+    }
+  },
+  "npu_family_mappings": [
+    {
+      "family": "xdna2",
+      "contains_any": ["xdna2", "ai engine v2"],
+      "vendor_ids": ["1022", "0x1022"],
+      "device_ids": ["17f0"]
+    },
+    {
+      "family": "xdna",
+      "contains_any": ["xdna", "ai engine"],
+      "vendor_ids": ["1022", "0x1022"],
+      "device_ids": ["1502"]
+    }
+  ],
+  "profiles": [
+    {
+      "id": "ai370",
+      "platform_architecture": "ryzen-ai-linux",
+      "hardware_family": "strix-point",
+      "aliases": ["elite-mini-ai370"],
+      "validation": "project-verified",
+      "adapter": "declarative-hardware-profile",
+      "confidence": "exact",
+      "priority": 100,
+      "description": "Minisforum EliteMini AI370 reference platform",
+      "requires": [
+        {"path": "system.product", "equals_any": ["EliteMini AI370", "AI370"]},
+        {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
+        {"path": "cpu.model", "contains_any": ["Ryzen AI 9 HX 370"]}
+      ],
+      "requires_if_known": [
+        {"path": "system.vendor", "equals_any": ["MINISFORUM", "Micro Computer (HK) Tech Limited"]}
+      ],
+      "optional": [
+        {"path": "gpu.arch", "equals_any": ["gfx1150"]},
+        {"path": "npu.family", "equals_any": ["xdna2"]}
+      ],
+      "capabilities": {
+        "gpu_arch": "gfx1150",
+        "gpu_family": "rdna3.5",
+        "npu_family": "xdna2"
+      },
+      "optimization_profile": "safe",
+      "providers": {
+        "gpu": ["amdgpu", "vulkan", "rocm", "hip"],
+        "npu": ["amdxdna", "xrt", "vitisai"],
+        "llm": ["llama.cpp", "ollama"]
+      }
+    },
+    {
+      "id": "strix-halo-ryzen-ai",
+      "platform_architecture": "ryzen-ai-linux",
+      "hardware_family": "strix-halo",
+      "aliases": ["strix-halo", "ryzen-ai-halo"],
+      "validation": "officially-documented",
+      "adapter": "declarative-hardware-profile",
+      "confidence": "family",
+      "priority": 60,
+      "description": "AMD Ryzen AI MAX / Strix Halo hardware profile",
+      "requires": [
+        {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
+        {"path": "cpu.model", "contains_any": ["Ryzen AI Max", "Ryzen AI Halo", "Strix Halo"]}
+      ],
+      "optional": [
+        {"path": "gpu.arch", "equals_any": ["gfx1151"]},
+        {"path": "npu.family", "equals_any": ["xdna2"]}
+      ],
+      "capabilities": {
+        "gpu_arch": "gfx1151",
+        "gpu_family": "rdna3.5",
+        "npu_family": "xdna2"
+      },
+      "optimization_profile": "strix-halo-shared-memory",
+      "providers": {
+        "gpu": ["amdgpu", "vulkan", "rocm", "hip"],
+        "npu": ["amdxdna", "xrt", "vitisai"],
+        "llm": ["llama.cpp", "ollama"]
+      }
+    },
+    {
+      "id": "strix-point-ryzen-ai",
+      "platform_architecture": "ryzen-ai-linux",
+      "hardware_family": "strix-point",
+      "aliases": ["strix-point"],
+      "validation": "capability-detection-rule",
+      "adapter": "declarative-hardware-profile",
+      "confidence": "family",
+      "priority": 50,
+      "description": "AMD Ryzen AI 300 family platform",
+      "requires": [
+        {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
+        {"path": "cpu.family_profile", "equals_any": ["ryzen-ai-300"]}
+      ],
+      "optional": [
+        {"path": "gpu.family", "equals_any": ["rdna3.5"]},
+        {"path": "npu.family", "equals_any": ["xdna2"]}
+      ],
+      "capabilities": {
+        "gpu_arch": "gfx1150",
+        "gpu_family": "rdna3.5",
+        "npu_family": "xdna2"
+      },
+      "optimization_profile": "safe",
+      "providers": {
+        "gpu": ["amdgpu", "vulkan", "rocm", "hip"],
+        "npu": ["amdxdna", "xrt", "vitisai"],
+        "llm": ["llama.cpp", "ollama"]
+      }
+    },
+    {
+      "id": "generic-ryzen-ai",
+      "platform_architecture": "ryzen-ai-linux",
+      "hardware_family": "ryzen-ai",
+      "aliases": [],
+      "validation": "capability-detection-rule",
+      "adapter": "declarative-hardware-profile",
+      "confidence": "family",
+      "priority": 10,
+      "description": "Generic AMD Ryzen AI platform",
+      "requires": [
+        {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
+        {"path": "cpu.family_profile", "equals_any": ["ryzen-ai"]}
+      ],
+      "optional": [
+        {"path": "gpu.family", "equals_any": ["rdna3.5", "unknown"]},
+        {"path": "npu.family", "equals_any": ["xdna", "xdna2", "unknown"]}
+      ],
+      "capabilities": {
+        "gpu_arch": "",
+        "gpu_family": "",
+        "npu_family": "xdna"
+      },
+      "optimization_profile": "safe",
+      "providers": {
+        "gpu": ["amdgpu", "vulkan", "rocm", "hip"],
+        "npu": ["amdxdna", "xrt", "vitisai"],
+        "llm": ["llama.cpp", "ollama"]
+      }
+    }
+  ]
+}

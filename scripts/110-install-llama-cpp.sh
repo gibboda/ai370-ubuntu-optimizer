@@ -9,7 +9,7 @@
 #
 # Rebuild controls:
 #   LLAMA_CPP_FORCE_REBUILD=true — rebuild even if a binary already exists
-#   LLAMA_CPP_AMDGPU_TARGETS — override HIP targets (default gfx1150 for AI370 / Strix Point)
+#   LLAMA_CPP_AMDGPU_TARGETS — override HIP targets (default: selected hardware profile)
 #   LLAMA_CPP_REPO — git URL override
 
 set -euo pipefail
@@ -20,6 +20,8 @@ PERSISTENCE="${3:-runtime}"
 OFFLINE="${4:-false}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib/hardware-profile.sh
+source "$PROJECT_ROOT/scripts/lib/hardware-profile.sh"
 LATEST_DIR="$PROJECT_ROOT/reports/latest"
 AI_ROOT="$PROJECT_ROOT/.ai370-ai"
 TOOL_ROOT="$AI_ROOT/tools"
@@ -29,7 +31,9 @@ SUMMARY_MD="$LATEST_DIR/tier2-llama-cpp.md"
 LLAMA_CPP_REPO="${LLAMA_CPP_REPO:-https://github.com/ggml-org/llama.cpp.git}"
 LLAMA_CPP_BACKEND="${LLAMA_CPP_BACKEND:-auto}"
 LLAMA_CPP_FORCE_REBUILD="${LLAMA_CPP_FORCE_REBUILD:-false}"
-LLAMA_CPP_AMDGPU_TARGETS="${LLAMA_CPP_AMDGPU_TARGETS:-gfx1150}"
+if [[ -z "${LLAMA_CPP_AMDGPU_TARGETS+x}" ]]; then
+  LLAMA_CPP_AMDGPU_TARGETS="$(hardware_profile_gpu_target "$PROFILE")"
+fi
 
 find_llama_binary() {
   local candidate

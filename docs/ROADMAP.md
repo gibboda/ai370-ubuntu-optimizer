@@ -6,7 +6,7 @@ This document defines the architecture and naming system that all future
 renames and implementations must follow. It intentionally describes the target
 before code, commands, reports, schemas, or tests are renamed.
 
-**Last reviewed:** 2026-09-07
+**Last reviewed:** 2026-09-26
 
 The project will retain five stages, but their boundaries are replaced by the
 canonical boundaries below. Existing behavior outside its target boundary is
@@ -252,19 +252,19 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 | --- | --- | --- |
 | S1-M1 | `scripts/s1-m1-probe-system.sh`, `scripts/lib/hardware-detect.sh` collector, compatibility wrappers `scripts/10-detect-hardware.sh` and `scripts/75-detect-npu.sh` | Retain only read-only probing; split policy and validation out |
 | S1-M2 | `scripts/s1-m2-normalize-profile.py`, `configs/schemas/s1-m2-normalized-facts.schema.json`, `configs/profiles/gpu-pci-architectures.json` | Normalize S1-M1 facts; GPU architecture from PCI map only |
-| S1-M3 | `scripts/s1-m3-classify-platform.py`, `configs/schemas/s1-m3-platform-classification.schema.json`, `configs/profiles/ai370.env`, `configs/profiles/generic-ryzen-ai.env` | Table-driven family classification; unknown hosts remain valid |
+| S1-M3 | `scripts/s1-m3-classify-platform.py`, `scripts/lib/hardware_profile.py`, `configs/schemas/s1-m3-platform-classification.schema.json`, `configs/profiles/hardware-profiles.json`, `configs/profiles/ai370.env`, `configs/profiles/strix-point-ryzen-ai.env`, `configs/profiles/strix-halo-ryzen-ai.env`, `configs/profiles/generic-ryzen-ai.env` | Table-driven hardware profiles of one `ryzen-ai-linux` platform; AI370/Strix Point and Ryzen AI Halo/Strix Halo stay separate profiles; unknown hosts remain valid |
 | S1-M4 | `scripts/s1-m4-derive-capabilities.py`, `configs/schemas/s1-m4-capability-candidates.schema.json` | Candidates are not validation claims |
 | S1-M5 | `scripts/s1-m5-publish-profile.py`, `configs/schemas/s1-m5-system-profile.schema.json`, `configs/schemas/system-profile.schema.json`, `stage1-profile` | Atomic v3 publication plus inventory summary; compatibility `system-profile.json` copy |
-| S1-M2–S1-M5 library | `scripts/lib/system_profile.py` | Shared implementation library used by the canonical CLIs |
+| S1-M2–S1-M5 library | `scripts/lib/system_profile.py` | Shared implementation library used by the canonical CLIs; classification tables load from `hardware-profiles.json` |
 | S2-M1 | `scripts/20-check-bios.sh`, `scripts/s2-m1-publish-firmware-validation.py`, `scripts/lib/firmware_policy.py`, `configs/schemas/s2-m1-firmware-validation.schema.json`, `scripts/25-check-firmware.sh` | Canonical S2-M1 JSON and facts-vs-policy split landed; keep In progress until remediation docs exist |
 | S2-M2 | `scripts/30-validate-kernel.sh`, `scripts/s2-m2-publish-kernel-driver-validation.py`, `scripts/lib/kernel_validation.py`, `configs/schemas/s2-m2-kernel-driver-validation.schema.json` | Canonical S2-M2 JSON landed; keep In progress until the supported/unsupported kernel/driver matrix exists |
 | S2-M3 | `scripts/s2-m3-validate-gpu-stack.sh`, `scripts/s2-m3-publish-gpu-visibility.py`, compatibility wrapper `scripts/70-validate-gpu-stack.sh`, `scripts/lib/capability_ladder.py`, `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` | GPU publisher landed in `#176`; keep S2-M3 In progress until missing driver/Vulkan/ROCm fixtures exist |
 | S2-M4 | `scripts/s2-m4-validate-npu-stack.sh`, `scripts/s2-m4-publish-npu-visibility.py`, visibility portions of `scripts/210-check-ryzen-ai-software.sh` and `scripts/220-check-vitis-ai-ep.sh`, inventory-only `scripts/205-install-xrt-ryzen-ai.sh`, `scripts/lib/capability_ladder.py`, `configs/schemas/s2-m4-npu-runtime-validation.schema.json` | Visibility-only publisher landed in `#180` / `0.21.0`; keep S2-M4 In progress because mixed `stage2-npu` / `--bench` still runs 230 and ROADMAP exit evidence still wants provider-vs-inference tests; move runtime install and performance measurement to Stage 3 |
-| S2-M5–S2-M6 | `scripts/40-platform-tuning.sh`, `scripts/lib/optimization_plan.py`, `scripts/s2-m5-publish-optimization-plan.py`, `scripts/s2-m6-publish-optimization-application.py`, `configs/schemas/s2-m5-optimization-plan.schema.json`, `configs/schemas/s2-m6-optimization-application.schema.json`, wrappers `40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | Plan/apply split landed; keep In progress until backup/rollback tests exist |
+| S2-M5–S2-M6 | `scripts/40-platform-tuning.sh`, `scripts/lib/optimization_plan.py`, `scripts/s2-m5-publish-optimization-plan.py`, `scripts/s2-m6-publish-optimization-application.py`, `configs/schemas/s2-m5-optimization-plan.schema.json`, `configs/schemas/s2-m6-optimization-application.schema.json`, `configs/tuning/safe.env`, `configs/tuning/aggressive.env`, `configs/tuning/strix-halo-shared-memory.env`, wrappers `40-optimize-cpu.sh`, `50-optimize-memory.sh`, `60-optimize-storage.sh` | Plan/apply split landed; Strix Halo shared-memory guidance is plan data only; keep In progress until backup/rollback tests exist |
 | S2-M6 | `scripts/65-amd-acceleration-install.sh` | Treat installation as an explicitly approved platform change; retain no Stage 1 caller |
 | S2-M7 | `scripts/s2-m7-publish-platform-validation.py`, `configs/schemas/s2-m7-platform-validation.schema.json`, compatibility shim `scripts/90-validate.sh` | Publisher and `require_tier123_pass` prefer the canonical report; `tier1-validation.json` remains until R1 |
 | S3-M1 | `scripts/150-validate-offline-model-storage.sh`, `scripts/155-stage-model-layout.sh`, `configs/models/*`, `scripts/lib/offline-paths.sh` | Canonicalize model storage under Stage 3 |
-| S3-M2 | `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh` | Rename after canonical validation exists |
+| S3-M2 | `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/lib/hardware-profile.sh` | llama.cpp HIP target defaults from the selected hardware profile; rename after canonical validation exists |
 | S3-M3 | `scripts/100-install-pytorch-rocm.sh` | Rename after canonical validation exists |
 | S3-M4 | Runtime/install portions of scripts `200`, `205`, `210`, `220`, and `230`; `scripts/lib/npu-venv.sh`, `scripts/lib/npu_ep_verify.py` | Separate from S2 visibility; execution proof belongs here |
 | S3-M5 | `scripts/160-install-lemonade.sh`, `165-validate-lemonade.sh`, `170-install-turnkeyml.sh`, `scripts/lib/lemonade-env.sh` | Canonicalize under S3-M5 |

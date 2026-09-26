@@ -34,6 +34,29 @@ capabilities so newer supported kernels remain acceptable.
 Repository profile data, fixtures, and subsequently verified observations are
 more authoritative than this descriptive baseline when they differ.
 
+## Officially documented hardware profile
+
+### AMD Ryzen AI MAX / MAX+ (Strix Halo, Ryzen AI Halo)
+
+Role: declarative hardware profile of the same Ryzen AI Linux platform as the
+EliteMini AI370. This is not a second platform architecture and it is not the
+physical integration system.
+
+Documented identity, from AMD ROCm Strix Halo guidance:
+
+- Product family: AMD Ryzen AI MAX and MAX+
+- Codename: Strix Halo (Ryzen AI Halo in this repository's profile aliases)
+- Integrated GPU target: `gfx1151`, RDNA 3.5
+- NPU family: XDNA2, using the shared Strix/Krackan/Strix Halo PCI identity
+  already mapped as `1022:17f0`
+- Memory class: unified LPDDR5X, up to 128 GB
+- Optimization data: shared-memory GTT/TTM guidance in
+  `configs/tuning/strix-halo-shared-memory.env`
+- Support class: officially documented. Physical validation is opt-in.
+
+Do not copy AI370 BIOS 2.01, `gfx1150`, or EliteMini DMI identity onto this
+profile. No Strix Halo CPUID is recorded until a sanitized probe supplies it.
+
 ## Portability rules
 
 Generic collectors, schemas, orchestration, policy, and platform-independent
