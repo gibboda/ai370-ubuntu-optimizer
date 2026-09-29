@@ -264,7 +264,7 @@ migration. Numeric ranges include only tracked scripts that currently exist.
 | S2-M6 | `scripts/65-amd-acceleration-install.sh` | Treat installation as an explicitly approved platform change; retain no Stage 1 caller |
 | S2-M7 | `scripts/s2-m7-publish-platform-validation.py`, `configs/schemas/s2-m7-platform-validation.schema.json`, compatibility shim `scripts/90-validate.sh` | Publisher and `require_tier123_pass` prefer the canonical report; `tier1-validation.json` remains until R1 |
 | S3-M1 | `scripts/150-validate-offline-model-storage.sh`, `scripts/155-stage-model-layout.sh`, `configs/models/*`, `scripts/lib/offline-paths.sh` | Canonicalize model storage under Stage 3 |
-| S3-M2 | `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/lib/hardware-profile.sh` | llama.cpp HIP target defaults from the selected hardware profile; rename after canonical validation exists |
+| S3-M2 | `scripts/110-install-llama-cpp.sh`, `scripts/120-install-ollama.sh`, `scripts/lib/hardware-profile.sh` | llama.cpp HIP target defaults from the classified platform in the consumed Stage 1 profile; rename after canonical validation exists |
 | S3-M3 | `scripts/100-install-pytorch-rocm.sh` | Rename after canonical validation exists |
 | S3-M4 | Runtime/install portions of scripts `200`, `205`, `210`, `220`, and `230`; `scripts/lib/npu-venv.sh`, `scripts/lib/npu_ep_verify.py` | Separate from S2 visibility; execution proof belongs here |
 | S3-M5 | `scripts/160-install-lemonade.sh`, `165-validate-lemonade.sh`, `170-install-turnkeyml.sh`, `scripts/lib/lemonade-env.sh` | Canonicalize under S3-M5 |

@@ -144,6 +144,38 @@ class Stage1ClassifyTests(unittest.TestCase):
                 )
                 self.assertEqual(completed.stdout, expected)
 
+    def test_shell_adapter_reads_classified_platform_gpu_target(self) -> None:
+        script = ROOT / "scripts/lib/hardware-profile.sh"
+        env = {**os.environ, "PROJECT_ROOT": str(ROOT)}
+        cases = (
+            ("strix-halo-ryzen-ai", "gfx1151"),
+            ("ai370", "gfx1150"),
+            (None, ""),
+        )
+        for platform_id, expected in cases:
+            with self.subTest(platform_id=platform_id):
+                with tempfile.TemporaryDirectory() as directory:
+                    profile_path = Path(directory) / "s1-m5-system-profile.json"
+                    profile_path.write_text(
+                        json.dumps({"classification": {"platform_id": platform_id}}),
+                        encoding="utf-8",
+                    )
+                    completed = subprocess.run(
+                        [
+                            "bash",
+                            "-c",
+                            'source "$1" && hardware_profile_gpu_target_from_system_profile "$2"',
+                            "bash",
+                            str(script),
+                            str(profile_path),
+                        ],
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                        env=env,
+                    )
+                    self.assertEqual(completed.stdout, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

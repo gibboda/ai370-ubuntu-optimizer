@@ -512,9 +512,24 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
             "evidence": [], "mismatches": all_mismatches}
 
 
+def _supplied_gpu_architecture(value: Any) -> str | None:
+    """Return architecture evidence already attached to a device or probe."""
+    if isinstance(value, dict):
+        value = value.get("value")
+    return _nullable(value)
+
+
 def _normalized_gpu_device(device: dict[str, Any]) -> dict[str, Any]:
     mapping = lookup_gpu_pci_mapping(device.get("vendor_id"), device.get("device_id"))
     key = pci_architecture_key(device.get("vendor_id"), device.get("device_id"))
+    if mapping:
+        architecture = mapping["arch"]
+        family = mapping.get("family")
+        source = f"pci:{key}"
+    else:
+        architecture = _supplied_gpu_architecture(device.get("architecture"))
+        family = _nullable(device.get("architecture_family"))
+        source = "supplied" if architecture else None
     return {
         "name": device.get("device_name") or device.get("name"),
         "address": device.get("slot") or device.get("address"),
@@ -523,9 +538,9 @@ def _normalized_gpu_device(device: dict[str, Any]) -> dict[str, Any]:
         "subsystem_vendor_id": _identity_id(device.get("subsystem_vendor_id")),
         "subsystem_device_id": _identity_id(device.get("subsystem_device_id")),
         "bound_driver": device.get("bound_driver"),
-        "architecture": mapping["arch"] if mapping else None,
-        "architecture_family": mapping.get("family") if mapping else None,
-        "architecture_source": f"pci:{key}" if mapping else None,
+        "architecture": architecture,
+        "architecture_family": family,
+        "architecture_source": source,
     }
 
 
@@ -666,6 +681,7 @@ def hardware_from_system_profile(profile: dict[str, Any]) -> dict[str, Any]:
                 "subsystem_vendor_id": pci.get("subsystem_vendor_id"),
                 "subsystem_device_id": pci.get("subsystem_device_id"),
                 "bound_driver": driver.get("name"),
+                "architecture": gpu.get("architecture"),
             }
         )
 
@@ -733,6 +749,8 @@ def hardware_from_normalized(facts: dict[str, Any]) -> dict[str, Any]:
             "subsystem_vendor_id": device.get("subsystem_vendor_id"),
             "subsystem_device_id": device.get("subsystem_device_id"),
             "bound_driver": device.get("bound_driver"),
+            "architecture": device.get("architecture"),
+            "architecture_family": device.get("architecture_family"),
         })
     npu_devices = []
     for device in npu.get("devices") or []:
@@ -829,8 +847,7 @@ def _gpu_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
             lookup_gpu_pci_mapping(device.get("vendor_id"), device.get("device_id"))
             for device in structured
         ]
-        any_mapped = any(mapping for mapping in mapped_devices)
-        supplied_arch = None if any_mapped else _nullable(gpu.get("arch"))
+        single_device = len(structured) == 1
         for idx, device in enumerate(structured):
             mapping = mapped_devices[idx]
             driver_name = device.get("bound_driver")
@@ -838,13 +855,19 @@ def _gpu_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
                 driver = {"state": "observed", "name": driver_name}
             else:
                 driver = _gpu_driver(gpu)
+            if mapping:
+                architecture = mapping["arch"]
+            else:
+                architecture = _supplied_gpu_architecture(device.get("architecture"))
+                if architecture is None and single_device:
+                    architecture = _nullable(gpu.get("arch"))
             records.append({
                 "state": "observed",
                 "id": f"gpu{idx}",
                 "name": device.get("device_name") or device.get("name") or gpu.get("text") or None,
                 "pci": _pci_from_device(device),
                 "driver": driver,
-                "architecture": mapping["arch"] if mapping else supplied_arch,
+                "architecture": architecture,
                 "vram_bytes": None,
                 "runtime": "unknown",
             })

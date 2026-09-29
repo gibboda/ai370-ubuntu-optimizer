@@ -303,7 +303,7 @@ feature is not treated as implemented unless code exists.
 | Path | Status | Notes |
 | --- | --- | --- |
 | `scripts/100-install-pytorch-rocm.sh` | PARTIAL | Install/validate PyTorch ROCm into repo venv; target S3-M3 |
-| `scripts/110-install-llama-cpp.sh` | PARTIAL | HIP/Vulkan/CPU backend selection; default HIP target `gfx1150`; target S3-M2 |
+| `scripts/110-install-llama-cpp.sh` | PARTIAL | HIP/Vulkan/CPU backend selection; HIP target from the consumed Stage 1 classified platform; target S3-M2 |
 | `scripts/120-install-ollama.sh` | PARTIAL | Install or validate Ollama; target S3-M2 |
 | `scripts/140-benchmark-llm.sh` | PARTIAL | LLM smoke; target S3-M6 |
 | `scripts/145-write-tier2-validation.sh` | DEPRECATED | Compatibility aggregate; target S3-M7 |
@@ -379,7 +379,7 @@ files, and docs.
 | `scripts/s2-m3-validate-gpu-stack.sh` JSON `target_gpu_arch` | Reads from consumed S1-M5 profile (`#176`) | CAPABILITY_DETECTION_RULE | KEEP |
 | `scripts/legacy/70-validate-gpu-stack.sh` JSON `target_gpu_arch` | Frozen hardcoded `"gfx1150"` | UNNECESSARY_HARDCODE | KEEP frozen; REMOVE at R1 |
 | `scripts/90-validate.sh` | Missing gfx1150/NPU is acceptance WARN, or FAIL with `--strict` | TEMPORARY_COMPATIBILITY_RULE | SPLIT: facts in S1, policy in S2; `--strict` must not become generic policy |
-| `scripts/110-install-llama-cpp.sh` | `LLAMA_CPP_AMDGPU_TARGETS` defaults from the selected hardware profile (`ai370` → `gfx1150`, `strix-halo-ryzen-ai` → `gfx1151`, generic → empty) | CAPABILITY_DETECTION_RULE | KEEP the override; do not restore a universal `gfx1150` default |
+| `scripts/110-install-llama-cpp.sh` | `LLAMA_CPP_AMDGPU_TARGETS` defaults from the classified platform in `s1-m5-system-profile.json` (`ai370` → `gfx1150`, `strix-halo-ryzen-ai` → `gfx1151`, generic or missing profile → empty) | CAPABILITY_DETECTION_RULE | KEEP the override; do not derive the target from the CLI profile name |
 | `scripts/245-compare-cpu-gpu-npu.sh` | gfx1150/Radeon 890M guidance strings | REFERENCE_PLATFORM_FACT | KEEP as reference advice; do not gate generic hosts |
 | `scripts/lib/hardware-detect.sh` | `TARGET_UBUNTU_VERSION=26.04` | TEMPORARY_COMPATIBILITY_RULE | REFACTOR behind a distribution abstraction after Ubuntu reference stability |
 | `scripts/lib/system_profile.py` | Schema name `ai370-system-profile` | TEMPORARY_COMPATIBILITY_RULE | KEEP until a schema-versioned rename |
@@ -468,7 +468,7 @@ abbreviated; see the assumption table for the full class.
 | `scripts/90-validate.sh` | Platform aggregate compatibility shim | Prior `tier1-*` artifacts and S2-M3/S2-M4 reports | gfx1150/NPU acceptance from consumed facts | S1-M5 facts plus S2-M7 policy | SPLIT | Gate schema tests | High |
 | `scripts/80-benchmark-local-ai.sh` | Optional AI visibility smoke | Local venv | No longer called from Stage 1 | S3-M6 | MOVE | Benchmark methodology tests | Medium |
 | `scripts/100-install-pytorch-rocm.sh` | PyTorch ROCm runtime | venv, wheel indexes | ROCm indexes | S3-M3 | REFACTOR; prove GPU vs CPU selection | CPU/GPU fallback tests | High |
-| `scripts/110-install-llama-cpp.sh` | llama.cpp build/install | HIP/Vulkan/CPU; hardware-profile GPU target; `.ai370-ai/tools/llama.cpp` gitlink | HIP target from the selected profile; checkout path `.ai370-ai/tools/llama.cpp` | S3-M2 | KEEP profile default; backend selection remains the installer | Backend-selection fixtures | Medium |
+| `scripts/110-install-llama-cpp.sh` | llama.cpp build/install | HIP/Vulkan/CPU; consumed Stage 1 profile; `.ai370-ai/tools/llama.cpp` gitlink | HIP target from the classified platform; checkout path `.ai370-ai/tools/llama.cpp` | S3-M2 | KEEP classified-platform default; backend selection remains the installer | Backend-selection fixtures | Medium |
 | `.ai370-ai/tools/llama.cpp` | Tracked llama.cpp source gitlink | `scripts/110-install-llama-cpp.sh` | Mode `160000` commit `86b94708f22478f900b76ca02e316f4f3418faff`; no `.gitmodules` | S3-M2 | KEEP gitlink as optional source tree | Offline existing-binary tests | Medium |
 | `scripts/120-install-ollama.sh` | Ollama install/validate | Network or preinstalled binary | None hardware-specific | S3-M2 | KEEP then rename after canonical validation | Offline missing-binary tests | Low |
 | `scripts/200-install-onnxruntime.sh` | ONNX Runtime | venv/wheelhouse | None | S3-M4 | KEEP then canonicalize | Provider tests | Medium |
