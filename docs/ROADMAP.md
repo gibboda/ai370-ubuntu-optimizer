@@ -325,7 +325,7 @@ consumers span milestones.
 Stage 1 and Stage 2 gates meet their exit evidence. `R2` is the next major
 release after all canonical Stage 3 and Stage 4 consumer migrations are
 complete. No date or version is invented here; release planning must bind these
-targets to versions before removal. Current repository version `2.2.0` and the
+targets to versions before removal. Current repository version `2.3.0` and the
 earlier `1.0.0` Release Please / agent-architecture bump are not R1.
 Compatibility items receive bug fixes only.
 

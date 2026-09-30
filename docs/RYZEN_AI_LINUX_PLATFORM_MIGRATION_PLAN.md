@@ -42,11 +42,11 @@ documentation matches implementation, and the repository functions as the
 broader platform.
 
 Current CLI entry point: `./ai370-optimize.sh`.
-Current version at last review: `2.2.0`. Historical landings remain NPU
+Current version at last review: `2.3.0`. Historical landings remain NPU
 publisher `0.21.0`, GPU publisher `#176` / `0.20.0`, and sequence 3
-`#203` / `0.25.0`. Releases after `0.25.0` through `2.2.0` are agent,
+`#203` / `0.25.0`. Releases after `0.25.0` through `2.3.0` are agent,
 governance, and contract work, not platform-boundary PRs. Do not treat
-`1.0.0` or `2.2.0` as R1.
+`1.0.0` or `2.3.0` as R1.
 
 ## Terminology
 
@@ -528,9 +528,9 @@ backup/rollback stay on ROADMAP and are filed as Stage 2 follow-up issues
 OPEN `needs-triage` backlog even though this plan previously said not to
 file them until the prior boundary had tests. Those issues exist; do not
 pretend they were not filed. Implementation PRs for sequences 4–11 have
-not started. Post-`0.25.0` releases through `2.2.0` are agent,
+not started. Post-`0.25.0` releases through `2.3.0` are agent,
 governance, and contract work, not platform-boundary PRs. Do not treat
-`1.0.0` or `2.2.0` as R1.
+`1.0.0` or `2.3.0` as R1.
 
 | Sequence | Status | Tracked issue |
 | --- | --- | --- |
