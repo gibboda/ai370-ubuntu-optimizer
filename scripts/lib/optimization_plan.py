@@ -13,6 +13,7 @@ from typing import Any
 
 import capability_ladder
 import firmware_policy
+import hardware_profile
 import system_profile
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -67,6 +68,16 @@ def build_s2_m5_optimization_plan(
         )
     status = "WARN" if warnings else "PASS"
     classified = firmware_policy.classified_platform_id(profile)
+    notes = [
+        "S2-M5 is plan-only. It does not set power profiles, governors, or zram.",
+        "Apply with ./ai370-optimize.sh stage2-optimize-apply --approve "
+        "(scripts/40-platform-tuning.sh apply --approve).",
+        "Generated commands are written to reports/latest/tier1-cpu-runtime-commands.sh "
+        "for review before any apply.",
+    ]
+    overlay_note = hardware_profile.plan_note(classified)
+    if overlay_note:
+        notes.append(overlay_note)
     return {
         "schema": {
             "name": "s2-m5-optimization-plan",
@@ -105,13 +116,7 @@ def build_s2_m5_optimization_plan(
             "tier1-cpu-runtime-commands.sh",
         ],
         "warnings": warnings,
-        "notes": [
-            "S2-M5 is plan-only. It does not set power profiles, governors, or zram.",
-            "Apply with ./ai370-optimize.sh stage2-optimize-apply --approve "
-            "(scripts/40-platform-tuning.sh apply --approve).",
-            "Generated commands are written to reports/latest/tier1-cpu-runtime-commands.sh "
-            "for review before any apply.",
-        ],
+        "notes": notes,
     }
 
 

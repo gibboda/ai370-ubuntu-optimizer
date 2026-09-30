@@ -12,6 +12,12 @@ Default profile:
 - Radeon 890M integrated GPU
 - AMD XDNA2 NPU
 
+AI370 / Strix Point and Ryzen AI Halo / Strix Halo are separate hardware
+profiles of the same Ryzen AI Linux platform. The default profile remains
+`ai370`. `strix-halo-ryzen-ai` selects the officially documented Ryzen AI MAX /
+Strix Halo profile (`gfx1151`, no AI370 BIOS target). It does not define a
+second platform architecture.
+
 ## Guiding Principles
 
 1. **Offline-first** — Prefer local artifacts, staged wheels, and pre-downloaded
@@ -398,8 +404,10 @@ scripts/
   time) in those reports. Override with `SMOKE_N_PREDICT`, `SMOKE_PROMPT`,
   `SMOKE_LLAMA_TIMEOUT_SEC`, `SMOKE_OLLAMA_TIMEOUT_SEC`, or `OLLAMA_HOST`.
 - `110-install-llama-cpp.sh` prefers HIP (`GGML_HIP`) when `hipcc` is available,
-  else Vulkan, else CPU. Existing CPU-only builds are left in place with a WARN
-  and rebuild guidance (`LLAMA_CPP_FORCE_REBUILD=true`).
+  else Vulkan, else CPU. Unless `LLAMA_CPP_AMDGPU_TARGETS` is set, the HIP
+  target comes from the classified platform in `s1-m5-system-profile.json`.
+  Existing CPU-only builds are left in place with a WARN and rebuild guidance
+  (`LLAMA_CPP_FORCE_REBUILD=true`).
 - Stage 2 scripts exit **non-zero only on `status=FAIL`**. `PASS` and `WARN`
   remain exit 0 so experimental stacks can continue.
 

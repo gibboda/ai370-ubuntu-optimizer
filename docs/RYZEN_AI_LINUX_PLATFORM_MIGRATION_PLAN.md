@@ -6,7 +6,7 @@ Tasks 2 through 5 and Task 24. It is analysis and planning only. It does not
 authorize a repository rewrite, a GitHub rename, or new public `stageN`
 commands.
 
-**Last reviewed:** 2026-09-07
+**Last reviewed:** 2026-09-26
 
 ## Document roles
 
@@ -255,8 +255,12 @@ feature is not treated as implemented unless code exists.
 | `configs/schemas/s2-m1-firmware-validation.schema.json` | IMPLEMENTED | S2-M1 firmware validation contract; facts vs policy |
 | `configs/schemas/s2-m2-kernel-driver-validation.schema.json` | IMPLEMENTED | S2-M2 kernel/driver validation contract |
 | `configs/profiles/gpu-pci-architectures.json` | IMPLEMENTED | Declarative PCI vendor:device to gfx mapping |
-| `configs/profiles/ai370.env` | IMPLEMENTED | Reference-platform profile |
+| `configs/profiles/hardware-profiles.json` | IMPLEMENTED | Hardware profiles of one `ryzen-ai-linux` platform, including match rules, providers, and optimization-profile names |
+| `configs/profiles/ai370.env` | IMPLEMENTED | Reference-platform profile for AI370 / Strix Point |
+| `configs/profiles/strix-point-ryzen-ai.env` | IMPLEMENTED | Strix Point family profile; does not inherit BIOS 2.01 |
+| `configs/profiles/strix-halo-ryzen-ai.env` | IMPLEMENTED | Officially documented Ryzen AI Halo / Strix Halo profile; `gfx1151`; no AI370 BIOS target |
 | `configs/profiles/generic-ryzen-ai.env` | IMPLEMENTED | Broader Ryzen AI profile |
+| `scripts/lib/hardware_profile.py`, `scripts/lib/hardware-profile.sh` | IMPLEMENTED | Adapters that read the hardware-profile catalog; they do not probe or apply tuning |
 | `tests/test_s1_m1_probe.py` | IMPLEMENTED | Fixture replay coverage |
 | `tests/test_s1_m2_normalize.py` | IMPLEMENTED | PCI architecture and live artifact-name coverage |
 | `tests/test_s1_m3_classify.py` | IMPLEMENTED | Table-driven family and unknown-platform coverage |
@@ -299,7 +303,7 @@ feature is not treated as implemented unless code exists.
 | Path | Status | Notes |
 | --- | --- | --- |
 | `scripts/100-install-pytorch-rocm.sh` | PARTIAL | Install/validate PyTorch ROCm into repo venv; target S3-M3 |
-| `scripts/110-install-llama-cpp.sh` | PARTIAL | HIP/Vulkan/CPU backend selection; default HIP target `gfx1150`; target S3-M2 |
+| `scripts/110-install-llama-cpp.sh` | PARTIAL | HIP/Vulkan/CPU backend selection; HIP target from the consumed Stage 1 classified platform; target S3-M2 |
 | `scripts/120-install-ollama.sh` | PARTIAL | Install or validate Ollama; target S3-M2 |
 | `scripts/140-benchmark-llm.sh` | PARTIAL | LLM smoke; target S3-M6 |
 | `scripts/145-write-tier2-validation.sh` | DEPRECATED | Compatibility aggregate; target S3-M7 |
@@ -363,18 +367,19 @@ files, and docs.
 | --- | --- | --- | --- |
 | `configs/profiles/ai370.env` | HX 370, gfx1150, XDNA2, BIOS 2.01, Minisforum EliteMini AI370 | REFERENCE_PLATFORM_FACT | KEEP as declarative profile data |
 | `tests/fixtures/raw-probes/v1/observed-ai370.json` and profile fixtures | Same reference identity | REFERENCE_PLATFORM_FACT | KEEP as regression fixtures |
-| `scripts/lib/system_profile.py` `PLATFORM_DEFINITIONS` `ai370` | Exact DMI/CPU match for EliteMini AI370 | REFERENCE_PLATFORM_FACT | KEEP; unknown hosts must remain valid |
-| `scripts/lib/system_profile.py` `CPU_FAMILY_SIGNATURES` | CPU family 26 / model 36 → `ryzen-ai-300` | CAPABILITY_DETECTION_RULE | KEEP; extend with data, not collector rewrites |
-| `scripts/lib/system_profile.py` `GPU_ARCHITECTURE_MAPPINGS` | `gfx1150`/`gfx1151` → RDNA 3.5 | CAPABILITY_DETECTION_RULE | KEEP and extend |
+| `configs/profiles/hardware-profiles.json` `ai370` | Exact DMI/CPU match for EliteMini AI370, loaded by `system_profile.py` | REFERENCE_PLATFORM_FACT | KEEP; unknown hosts must remain valid |
+| `configs/profiles/hardware-profiles.json` `cpu_family_signatures` | CPU family 26 / model 36 → `ryzen-ai-300` | CAPABILITY_DETECTION_RULE | KEEP; extend with data, not collector rewrites |
+| `configs/profiles/hardware-profiles.json` `gpu_architecture_mappings` | `gfx1150`/`gfx1151` → RDNA 3.5 | CAPABILITY_DETECTION_RULE | KEEP and extend |
+| `configs/profiles/hardware-profiles.json` `strix-halo-ryzen-ai` | Ryzen AI MAX / Strix Halo / Ryzen AI Halo product strings; GPU capability `gfx1151` | CAPABILITY_DETECTION_RULE | KEEP as a hardware profile of `ryzen-ai-linux`; do not copy BIOS 2.01 |
 | `configs/profiles/gpu-pci-architectures.json` | `1002:1900` → `gfx1150` | CAPABILITY_DETECTION_RULE | KEEP; extend with PCI data, not marketing names |
-| `scripts/lib/system_profile.py` `NPU_FAMILY_MAPPINGS` | PCI `1022:17f0` XDNA2, `1022:1502` XDNA | CAPABILITY_DETECTION_RULE | KEEP; do not treat these IDs as universal PASS |
+| `configs/profiles/hardware-profiles.json` `npu_family_mappings` | PCI `1022:17f0` XDNA2, `1022:1502` XDNA | CAPABILITY_DETECTION_RULE | KEEP; do not treat these IDs as universal PASS |
 | `configs/profiles/generic-ryzen-ai.env` | Broad Ryzen AI / XDNA profile | CAPABILITY_DETECTION_RULE | KEEP |
 | `scripts/lib/hardware-detect.sh` `detect_gpu_arch()` | PCI `[vvvv:dddd]` lookup via `gpu-pci-architectures.json` | CAPABILITY_DETECTION_RULE | KEEP; do not restore `890M`/`Strix` greps |
 | `scripts/s2-m3-validate-gpu-stack.sh` observed `gpu_arch` | Uses `detect_gpu_arch()` PCI lookup | CAPABILITY_DETECTION_RULE | KEEP |
 | `scripts/s2-m3-validate-gpu-stack.sh` JSON `target_gpu_arch` | Reads from consumed S1-M5 profile (`#176`) | CAPABILITY_DETECTION_RULE | KEEP |
 | `scripts/legacy/70-validate-gpu-stack.sh` JSON `target_gpu_arch` | Frozen hardcoded `"gfx1150"` | UNNECESSARY_HARDCODE | KEEP frozen; REMOVE at R1 |
 | `scripts/90-validate.sh` | Missing gfx1150/NPU is acceptance WARN, or FAIL with `--strict` | TEMPORARY_COMPATIBILITY_RULE | SPLIT: facts in S1, policy in S2; `--strict` must not become generic policy |
-| `scripts/110-install-llama-cpp.sh` | `LLAMA_CPP_AMDGPU_TARGETS` defaults to `gfx1150` | UNNECESSARY_HARDCODE | REFACTOR to profile/capability input |
+| `scripts/110-install-llama-cpp.sh` | `LLAMA_CPP_AMDGPU_TARGETS` defaults from the classified platform in `s1-m5-system-profile.json` (`ai370` → `gfx1150`, `strix-halo-ryzen-ai` → `gfx1151`, generic or missing profile → empty) | CAPABILITY_DETECTION_RULE | KEEP the override; do not derive the target from the CLI profile name |
 | `scripts/245-compare-cpu-gpu-npu.sh` | gfx1150/Radeon 890M guidance strings | REFERENCE_PLATFORM_FACT | KEEP as reference advice; do not gate generic hosts |
 | `scripts/lib/hardware-detect.sh` | `TARGET_UBUNTU_VERSION=26.04` | TEMPORARY_COMPATIBILITY_RULE | REFACTOR behind a distribution abstraction after Ubuntu reference stability |
 | `scripts/lib/system_profile.py` | Schema name `ai370-system-profile` | TEMPORARY_COMPATIBILITY_RULE | KEEP until a schema-versioned rename |
@@ -409,11 +414,15 @@ abbreviated; see the assumption table for the full class.
 | `ai370-optimize.sh` | Command router | Numbered scripts | Default `ai370` profile | Router only; each branch keeps its ROADMAP owner | SPLIT command owners; KEEP file | Help/smoke tests | Medium |
 | `scripts/lib/common.sh` | Shared shell helpers | Reports dir | `ai370_*` names | Shared infrastructure | KEEP; document consumer milestone per function | ShellCheck; smoke syntax | Low |
 | `scripts/lib/hardware-detect.sh` | Probe helpers and raw collector | `lscpu`, `lspci`, sysfs, DMI | Ubuntu 26.04 defaults; GPU arch from PCI map | Detection modules | KEEP PCI lookup; SPLIT facts from policy | Probe fixtures | High |
-| `scripts/lib/system_profile.py` | Normalize, classify, publish profile | Raw inventory, schemas, PCI map | Schema name `ai370-*`; declarative AI370 match | S1-M2 through S1-M5 library | KEEP as shared library behind canonical scripts | `test_system_profile.py` plus owner tests | High |
+| `scripts/lib/system_profile.py` | Normalize, classify, publish profile | Raw inventory, schemas, PCI map, hardware-profile catalog | Schema name `ai370-*`; matcher tables come from `hardware-profiles.json` | S1-M2 through S1-M5 library | KEEP as shared library behind canonical scripts | `test_system_profile.py` plus owner tests | High |
+| `scripts/lib/hardware_profile.py`, `scripts/lib/hardware-profile.sh` | Load hardware profiles, provider names, GPU targets, and optimization-profile notes | `configs/profiles/hardware-profiles.json` | One `ryzen-ai-linux` architecture | S1-M3 adapter; S3-M2 target lookup; S2-M5 note | KEEP | `test_s1_m3_classify.py` | Medium |
 | `scripts/lib/capability_ladder.py` | GPU/NPU ladder states and visibility report builders | S1-M5 profile; Stage 2 visibility checks | Candidates are not validation | S2-M3 / S2-M4 library | KEEP; GPU publisher landed in `#176` / `0.20.0`; NPU publisher landed in `#180` / `0.21.0` | `test_capability_ladder.py`, `test_s2_visibility_schemas.py`, `test_s2_m3_gpu_visibility.py`, `test_s2_m4_npu_visibility.py` | Medium |
 | `configs/schemas/system-profile.schema.json` | v3 profile contract | None | Schema id still AI370-named | S1-M5 | KEEP; version before rename | Schema fixtures | High |
 | `configs/schemas/system-profile-v1.schema.json`, `...-v2.schema.json` | Migration validation | v3 publisher | Historical | S1-M5 migration | KEEP until consumers reject v1 and finish v2 | Existing schema tests | Medium |
+| `configs/profiles/hardware-profiles.json` | Hardware-profile catalog for one platform architecture | Match rules and capability data | AI370 and Strix Halo are profiles, not architectures | S1-M3 | KEEP; extend with data | `test_s1_m3_classify.py` | Medium |
 | `configs/profiles/ai370.env` | Reference profile | BIOS/GPU/NPU expected values | REFERENCE_PLATFORM_FACT | S1-M3 | KEEP | Classification tests | Low |
+| `configs/profiles/strix-point-ryzen-ai.env` | Strix Point family profile | GPU `gfx1150`; no BIOS target | CAPABILITY_DETECTION_RULE | S1-M3 | KEEP | Classification tests | Low |
+| `configs/profiles/strix-halo-ryzen-ai.env` | Ryzen AI Halo / Strix Halo profile | GPU `gfx1151`; no BIOS 2.01 | CAPABILITY_DETECTION_RULE | S1-M3 | KEEP | Classification tests | Low |
 | `configs/profiles/generic-ryzen-ai.env` | Broad Ryzen AI profile | Family strings | CAPABILITY_DETECTION_RULE | S1-M3 | KEEP; extend with data | Unknown-host tests | Low |
 | `configs/tuning/*.env` | Safe/aggressive tuning modes | Platform tuning | Mode names | S2-M5/S2-M6 | KEEP | Plan idempotence tests | Low |
 | `configs/amd-acceleration.env` | ROCm/XRT artifact layout | Ubuntu 26.04 package layout | Distro-specific | S2-M6 / S3-M3/S3-M4 | REFACTOR behind platform abstraction later | Offline missing-artifact tests | Medium |
@@ -459,7 +468,7 @@ abbreviated; see the assumption table for the full class.
 | `scripts/90-validate.sh` | Platform aggregate compatibility shim | Prior `tier1-*` artifacts and S2-M3/S2-M4 reports | gfx1150/NPU acceptance from consumed facts | S1-M5 facts plus S2-M7 policy | SPLIT | Gate schema tests | High |
 | `scripts/80-benchmark-local-ai.sh` | Optional AI visibility smoke | Local venv | No longer called from Stage 1 | S3-M6 | MOVE | Benchmark methodology tests | Medium |
 | `scripts/100-install-pytorch-rocm.sh` | PyTorch ROCm runtime | venv, wheel indexes | ROCm indexes | S3-M3 | REFACTOR; prove GPU vs CPU selection | CPU/GPU fallback tests | High |
-| `scripts/110-install-llama-cpp.sh` | llama.cpp build/install | HIP/Vulkan/CPU; `.ai370-ai/tools/llama.cpp` gitlink | Default `gfx1150` target; checkout path `.ai370-ai/tools/llama.cpp` | S3-M2 | REFACTOR backend from profile | Backend-selection fixtures | Medium |
+| `scripts/110-install-llama-cpp.sh` | llama.cpp build/install | HIP/Vulkan/CPU; consumed Stage 1 profile; `.ai370-ai/tools/llama.cpp` gitlink | HIP target from the classified platform; checkout path `.ai370-ai/tools/llama.cpp` | S3-M2 | KEEP classified-platform default; backend selection remains the installer | Backend-selection fixtures | Medium |
 | `.ai370-ai/tools/llama.cpp` | Tracked llama.cpp source gitlink | `scripts/110-install-llama-cpp.sh` | Mode `160000` commit `86b94708f22478f900b76ca02e316f4f3418faff`; no `.gitmodules` | S3-M2 | KEEP gitlink as optional source tree | Offline existing-binary tests | Medium |
 | `scripts/120-install-ollama.sh` | Ollama install/validate | Network or preinstalled binary | None hardware-specific | S3-M2 | KEEP then rename after canonical validation | Offline missing-binary tests | Low |
 | `scripts/200-install-onnxruntime.sh` | ONNX Runtime | venv/wheelhouse | None | S3-M4 | KEEP then canonicalize | Provider tests | Medium |
@@ -530,6 +539,12 @@ governance, and contract work, not platform-boundary PRs. Do not treat
 | 3 Stop Stage 1 mutation | **done**; `stage1` is read-only; `stage2-platform-validate` invokes existing GPU/NPU commands and the S2-M7 publisher; `require_tier123_pass` prefers `s2-m7-platform-validation.json`; remaining S2-M1/S2-M2 remediations and S2-M5/S2-M6 backup/rollback are ROADMAP follow-ups | [#169](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/169) |
 | 3-docs Documentation sync | **done** (this change) | Not a sequence 4–11 issue |
 | 4–11 later boundaries | **planned** (no implementation PRs) | Filed 2026-08-24 as OPEN `needs-triage` issues #209–#239 |
+
+Hardware-profile extraction under S1-M3 is data for the existing classifier.
+It does not start sequences 4–11. AI370 / Strix Point and Ryzen AI Halo /
+Strix Halo are hardware profiles of `ryzen-ai-linux`. Strix Halo is officially
+documented, not a project-verified integration system, and it does not inherit
+BIOS 2.01.
 
 Filed backlog (OPEN, `needs-triage`; no implementation PRs):
 

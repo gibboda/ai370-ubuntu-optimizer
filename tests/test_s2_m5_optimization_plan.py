@@ -141,6 +141,33 @@ class Stage2OptimizationPlanTests(unittest.TestCase):
                 )
             self.assertEqual(destination.read_bytes(), before)
 
+    def test_hardware_optimization_overlay_is_plan_data_only(self) -> None:
+        facts = {
+            "cpu_model": "AMD Ryzen AI MAX+",
+            "target_power": "balanced",
+            "governor": "schedutil",
+            "cpu_source": "s1-m5-system-profile",
+            "mem_total": "128Gi",
+            "zram_active": "inactive",
+            "mem_source": "s1-m5-system-profile",
+        }
+        reference = load_reference_profile()
+        ai370_plan = optimization_plan.build_s2_m5_optimization_plan(reference, facts=facts)
+        system_profile.validate_document(ai370_plan, optimization_plan.S2_M5_SCHEMA, "S2-M5")
+        self.assertFalse(
+            any("strix-halo-shared-memory" in note for note in ai370_plan["notes"])
+        )
+        halo = json.loads(json.dumps(reference))
+        halo["classification"]["platform_id"] = "strix-halo-ryzen-ai"
+        plan = optimization_plan.build_s2_m5_optimization_plan(halo, facts=facts)
+        system_profile.validate_document(plan, optimization_plan.S2_M5_SCHEMA, "S2-M5")
+        self.assertTrue(plan["plan_only"])
+        self.assertFalse(plan["approved"])
+        self.assertTrue(
+            any("configs/tuning/strix-halo-shared-memory.env" in note for note in plan["notes"])
+        )
+        self.assertTrue(any("not applied" in note for note in plan["notes"]))
+
 
 if __name__ == "__main__":
     unittest.main()

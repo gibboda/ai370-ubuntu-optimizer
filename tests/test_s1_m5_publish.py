@@ -136,6 +136,33 @@ class Stage1PublishTests(unittest.TestCase):
         self.assertEqual(by_id[("1002", "1900")]["architecture"], "gfx1150")
         self.assertIsNone(by_id[("8086", "46b3")]["architecture"])
 
+    def test_global_architecture_is_not_copied_to_every_unmapped_gpu(self) -> None:
+        raw = load_raw("observed-ryzen-ai-max-strix-halo.json")
+        raw["gpu"]["devices"].append({
+            "device_name": "Intel Graphics",
+            "bound_driver": "i915",
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            profile, _summary = self.publish_cli(raw, Path(directory))
+        system_profile.validate_profile(profile)
+        self.assertEqual([gpu["architecture"] for gpu in profile["gpus"]], [None, None])
+
+    def test_per_device_architecture_stays_on_that_device(self) -> None:
+        raw = load_raw("observed-ryzen-ai-max-strix-halo.json")
+        raw["gpu"]["devices"][0]["architecture"] = {
+            "state": "observed",
+            "value": "gfx1151",
+        }
+        raw["gpu"]["devices"].append({
+            "device_name": "Intel Graphics",
+            "bound_driver": "i915",
+        })
+        with tempfile.TemporaryDirectory() as directory:
+            profile, _summary = self.publish_cli(raw, Path(directory))
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["gpus"][0]["architecture"], "gfx1151")
+        self.assertIsNone(profile["gpus"][1]["architecture"])
+
     def test_sata_only_profile_does_not_advertise_nvme(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile, _summary = self.publish_cli(load_raw("storage-sata-only.json"), Path(directory))

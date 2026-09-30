@@ -130,6 +130,24 @@ class Stage1NormalizeTests(unittest.TestCase):
         self.assertIsNone(by_id[("8086", "46b3")]["architecture"])
         self.assertEqual(facts["gpu"]["architecture"], "gfx1150")
 
+    def test_device_architecture_survives_when_pci_is_unmapped(self) -> None:
+        raw = load_raw("observed-ryzen-ai-max-strix-halo.json")
+        raw["gpu"]["devices"][0]["architecture"] = {
+            "state": "observed",
+            "value": "gfx1151",
+        }
+        raw["gpu"]["devices"].append({
+            "device_name": "Intel Graphics",
+            "bound_driver": "i915",
+        })
+        facts = self.normalize_cli(raw)
+        system_profile.validate_document(facts, system_profile.S1_M2_SCHEMA, "S1-M2")
+        devices = facts["gpu"]["devices"]
+        self.assertEqual(devices[0]["architecture"], "gfx1151")
+        self.assertEqual(devices[0]["architecture_source"], "supplied")
+        self.assertIsNone(devices[1]["architecture"])
+        self.assertIsNone(devices[1]["architecture_source"])
+
 
 class GpuPciTextLookupTests(unittest.TestCase):
     def test_lspci_nn_text_maps_without_marketing_names(self) -> None:

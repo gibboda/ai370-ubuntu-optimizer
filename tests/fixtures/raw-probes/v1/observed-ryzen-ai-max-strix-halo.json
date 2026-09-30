@@ -1,0 +1,91 @@
+{
+  "stage": 1,
+  "phase": "detect-hardware",
+  "artifact": "stage1-raw-probes",
+  "timestamp": "2026-01-01T00:00:00Z",
+  "inputs": {"profile": "auto", "mode": "auto", "persistence": "none"},
+  "cpu": {
+    "state": "observed",
+    "vendor_id": "AuthenticAMD",
+    "model_name": "AMD Ryzen AI MAX+",
+    "family": null,
+    "model": null,
+    "stepping": null,
+    "architecture": "x86_64",
+    "topology": {"logical_processors": 32}
+  },
+  "dmi": {
+    "system": {
+      "vendor": {"state": "observed", "value": "AMD"},
+      "product": {"state": "observed", "value": "Ryzen AI MAX+"},
+      "version": {"state": "unknown", "value": null}
+    },
+    "board": {
+      "vendor": {"state": "unknown", "value": null},
+      "product": {"state": "unknown", "value": null},
+      "version": {"state": "unknown", "value": null}
+    }
+  },
+  "pci": {"state": "observed", "evidence_source": "constructed-fixture", "devices": []},
+  "gpu": {
+    "state": "observed",
+    "devices": [
+      {
+        "device_name": "Radeon Graphics",
+        "bound_driver": "amdgpu"
+      }
+    ],
+    "architecture": {
+      "state": "observed",
+      "value": "gfx1151",
+      "evidence_source": "rocm-strix-halo-documentation"
+    }
+  },
+  "accelerators": {
+    "state": "observed",
+    "devices": [
+      {
+        "device_name": "Strix/Krackan/Strix Halo Neural Processing Unit",
+        "bound_driver": "amdxdna",
+        "vendor_id": "1022",
+        "device_id": "17f0"
+      }
+    ],
+    "device_nodes": [
+      {"path": "/dev/accel/accel0", "state": "observed", "evidence_source": "filesystem glob"}
+    ]
+  },
+  "memory": {
+    "state": "observed",
+    "total_bytes": 137438953472,
+    "evidence_source": "constructed-fixture"
+  },
+  "storage": {
+    "state": "observed",
+    "evidence_source": "constructed-fixture",
+    "devices": [{"name": "nvme0n1", "size": 1000000000000, "type": "disk", "tran": "nvme"}]
+  },
+  "os": {
+    "state": "observed",
+    "id": "ubuntu",
+    "name": "Ubuntu",
+    "pretty_name": "Ubuntu 26.04 LTS",
+    "version_id": "26.04",
+    "version_codename": "resolute",
+    "evidence_source": "constructed-fixture"
+  },
+  "kernel": {
+    "state": "observed",
+    "release": "6.18.4-generic",
+    "architecture": "x86_64",
+    "evidence_source": "rocm-strix-halo-documentation"
+  },
+  "firmware": {
+    "bios_vendor": {"state": "unknown", "value": null},
+    "bios_version": {"state": "unknown", "value": null},
+    "bios_date": {"state": "unknown", "value": null},
+    "uefi": {"state": "unknown"},
+    "secure_boot": {"state": "unknown", "enabled": null}
+  },
+  "collection": {"missing_tools": [], "permission_errors": [], "failed_probes": [], "probes": []}
+}

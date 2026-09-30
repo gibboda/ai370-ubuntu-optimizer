@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Features
+
+- **architecture:** Load Stage 1 classification from declarative hardware
+  profiles of one `ryzen-ai-linux` platform. AI370 / Strix Point stays the
+  project-verified reference. Ryzen AI Halo / Strix Halo is a separate
+  officially documented profile (`gfx1151`, shared-memory optimization data,
+  no BIOS 2.01). llama.cpp HIP targets follow the selected profile.
+
 ### Documentation
 
 - **architecture:** Sync current-version stamps to `2.2.0` in ROADMAP,

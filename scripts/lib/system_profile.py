@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import re
@@ -367,75 +368,23 @@ def _pci() -> dict[str, None]:
             "subsystem_vendor_id": None, "subsystem_device_id": None}
 
 
+def _classification_catalog() -> dict[str, Any]:
+    """Load matcher tables from the declarative hardware-profile adapter."""
+    module_path = Path(__file__).resolve().parent / "hardware_profile.py"
+    spec = importlib.util.spec_from_file_location("_hardware_profile_catalog", module_path)
+    if spec is None or spec.loader is None:
+        raise ProfileValidationError(f"Cannot load hardware profile adapter {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.classification_tables()
 
-PLATFORM_DEFINITIONS: list[dict[str, Any]] = [
-    {
-        "id": "ai370",
-        "confidence": "exact",
-        "priority": 100,
-        "description": "Minisforum EliteMini AI370 reference platform",
-        "requires": [
-            {"path": "system.product", "equals_any": ["EliteMini AI370", "AI370"]},
-            {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
-            {"path": "cpu.model", "contains_any": ["Ryzen AI 9 HX 370"]},
-        ],
-        "requires_if_known": [
-            {"path": "system.vendor", "equals_any": ["MINISFORUM", "Micro Computer (HK) Tech Limited"]},
-        ],
-        "optional": [
-            {"path": "gpu.arch", "equals_any": ["gfx1150"]},
-            {"path": "npu.family", "equals_any": ["xdna2"]},
-        ],
-    },
-    {
-        "id": "strix-point-ryzen-ai",
-        "confidence": "family",
-        "priority": 50,
-        "description": "AMD Ryzen AI 300 family platform",
-        "requires": [
-            {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
-            {"path": "cpu.family_profile", "equals_any": ["ryzen-ai-300"]},
-        ],
-        "optional": [
-            {"path": "gpu.family", "equals_any": ["rdna3.5"]},
-            {"path": "npu.family", "equals_any": ["xdna2"]},
-        ],
-    },
-    {
-        "id": "generic-ryzen-ai",
-        "confidence": "family",
-        "priority": 10,
-        "description": "Generic AMD Ryzen AI platform",
-        "requires": [
-            {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
-            {"path": "cpu.family_profile", "equals_any": ["ryzen-ai"]},
-        ],
-        "optional": [
-            {"path": "gpu.family", "equals_any": ["rdna3.5", "unknown"]},
-            {"path": "npu.family", "equals_any": ["xdna", "xdna2", "unknown"]},
-        ],
-    },
-]
 
-CPU_FAMILY_PROFILES: list[dict[str, Any]] = [
-    {"id": "ryzen-ai", "contains_any": ["Ryzen AI"]},
-]
-
-CPU_FAMILY_SIGNATURES: list[dict[str, Any]] = [
-    {"id": "ryzen-ai-300", "cpu_families": [26], "cpu_models": [36]},
-]
-
-GPU_ARCHITECTURE_MAPPINGS: dict[str, dict[str, Any]] = {
-    "gfx1150": {"family": "rdna3.5", "description": "AMD RDNA 3.5 integrated GPU"},
-    "gfx1151": {"family": "rdna3.5", "description": "AMD RDNA 3.5 integrated GPU alternative identifier"},
-}
-
-NPU_FAMILY_MAPPINGS: list[dict[str, Any]] = [
-    {"family": "xdna2", "contains_any": ["xdna2", "ai engine v2"], "vendor_ids": ["1022", "0x1022"],
-     "device_ids": ["17f0"]},
-    {"family": "xdna", "contains_any": ["xdna", "ai engine"], "vendor_ids": ["1022", "0x1022"],
-     "device_ids": ["1502"]},
-]
+_CATALOG = _classification_catalog()
+PLATFORM_DEFINITIONS: list[dict[str, Any]] = _CATALOG["platform_definitions"]
+CPU_FAMILY_PROFILES: list[dict[str, Any]] = _CATALOG["cpu_family_profiles"]
+CPU_FAMILY_SIGNATURES: list[dict[str, Any]] = _CATALOG["cpu_family_signatures"]
+GPU_ARCHITECTURE_MAPPINGS: dict[str, dict[str, Any]] = _CATALOG["gpu_architecture_mappings"]
+NPU_FAMILY_MAPPINGS: list[dict[str, Any]] = _CATALOG["npu_family_mappings"]
 
 
 def _first_match(value: str, mappings: list[dict[str, Any]]) -> str | None:
@@ -563,9 +512,24 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
             "evidence": [], "mismatches": all_mismatches}
 
 
+def _supplied_gpu_architecture(value: Any) -> str | None:
+    """Return architecture evidence already attached to a device or probe."""
+    if isinstance(value, dict):
+        value = value.get("value")
+    return _nullable(value)
+
+
 def _normalized_gpu_device(device: dict[str, Any]) -> dict[str, Any]:
     mapping = lookup_gpu_pci_mapping(device.get("vendor_id"), device.get("device_id"))
     key = pci_architecture_key(device.get("vendor_id"), device.get("device_id"))
+    if mapping:
+        architecture = mapping["arch"]
+        family = mapping.get("family")
+        source = f"pci:{key}"
+    else:
+        architecture = _supplied_gpu_architecture(device.get("architecture"))
+        family = _nullable(device.get("architecture_family"))
+        source = "supplied" if architecture else None
     return {
         "name": device.get("device_name") or device.get("name"),
         "address": device.get("slot") or device.get("address"),
@@ -574,9 +538,9 @@ def _normalized_gpu_device(device: dict[str, Any]) -> dict[str, Any]:
         "subsystem_vendor_id": _identity_id(device.get("subsystem_vendor_id")),
         "subsystem_device_id": _identity_id(device.get("subsystem_device_id")),
         "bound_driver": device.get("bound_driver"),
-        "architecture": mapping["arch"] if mapping else None,
-        "architecture_family": mapping.get("family") if mapping else None,
-        "architecture_source": f"pci:{key}" if mapping else None,
+        "architecture": architecture,
+        "architecture_family": family,
+        "architecture_source": source,
     }
 
 
@@ -717,6 +681,7 @@ def hardware_from_system_profile(profile: dict[str, Any]) -> dict[str, Any]:
                 "subsystem_vendor_id": pci.get("subsystem_vendor_id"),
                 "subsystem_device_id": pci.get("subsystem_device_id"),
                 "bound_driver": driver.get("name"),
+                "architecture": gpu.get("architecture"),
             }
         )
 
@@ -784,6 +749,8 @@ def hardware_from_normalized(facts: dict[str, Any]) -> dict[str, Any]:
             "subsystem_vendor_id": device.get("subsystem_vendor_id"),
             "subsystem_device_id": device.get("subsystem_device_id"),
             "bound_driver": device.get("bound_driver"),
+            "architecture": device.get("architecture"),
+            "architecture_family": device.get("architecture_family"),
         })
     npu_devices = []
     for device in npu.get("devices") or []:
@@ -876,20 +843,31 @@ def _gpu_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     structured = gpu.get("devices") or []
     if structured:
+        mapped_devices = [
+            lookup_gpu_pci_mapping(device.get("vendor_id"), device.get("device_id"))
+            for device in structured
+        ]
+        single_device = len(structured) == 1
         for idx, device in enumerate(structured):
-            mapping = lookup_gpu_pci_mapping(device.get("vendor_id"), device.get("device_id"))
+            mapping = mapped_devices[idx]
             driver_name = device.get("bound_driver")
             if driver_name:
                 driver = {"state": "observed", "name": driver_name}
             else:
                 driver = _gpu_driver(gpu)
+            if mapping:
+                architecture = mapping["arch"]
+            else:
+                architecture = _supplied_gpu_architecture(device.get("architecture"))
+                if architecture is None and single_device:
+                    architecture = _nullable(gpu.get("arch"))
             records.append({
                 "state": "observed",
                 "id": f"gpu{idx}",
                 "name": device.get("device_name") or device.get("name") or gpu.get("text") or None,
                 "pci": _pci_from_device(device),
                 "driver": driver,
-                "architecture": mapping["arch"] if mapping else None,
+                "architecture": architecture,
                 "vram_bytes": None,
                 "runtime": "unknown",
             })
