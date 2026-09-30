@@ -6,15 +6,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.3.0](https://github.com/gibboda/ai370-ubuntu-optimizer/compare/v2.2.0...v2.3.0) (2026-09-30)
+
 
 ### Features
 
-- **architecture:** Load Stage 1 classification from declarative hardware
-  profiles of one `ryzen-ai-linux` platform. AI370 / Strix Point stays the
-  project-verified reference. Ryzen AI Halo / Strix Halo is a separate
-  officially documented profile (`gfx1151`, shared-memory optimization data,
-  no BIOS 2.01). llama.cpp HIP targets follow the selected profile.
+* **architecture:** Add Strix Halo as a Ryzen AI hardware profile ([#304](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/304)) ([5e35762](https://github.com/gibboda/ai370-ubuntu-optimizer/commit/5e357629f68515895a89fe50dec7457daa13ab73))
+
+## [Unreleased]
 
 ### Documentation
 
