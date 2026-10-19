@@ -54,6 +54,20 @@ class Stage1NormalizeTests(unittest.TestCase):
         self.assertEqual(facts["gpu"]["architecture"], "gfx1150")
         self.assertEqual(facts["system"]["product"], "EliteMini AI370")
 
+    def test_hx470_maps_150e_and_recovers_signal_processing_npu(self) -> None:
+        facts = self.normalize_cli(load_raw("observed-ryzen-ai-hx470.json"))
+        system_profile.validate_document(facts, system_profile.S1_M2_SCHEMA, "S1-M2")
+        self.assertEqual(facts["gpu"]["architecture"], "gfx1150")
+        self.assertEqual(facts["gpu"]["architecture_family"], "rdna3.5")
+        self.assertEqual(facts["gpu"]["architecture_source"], "pci:1002:150e")
+        self.assertEqual(facts["gpu"]["devices"][0]["device_id"], "150e")
+        self.assertTrue(facts["npu"]["present"])
+        self.assertEqual(facts["npu"]["family"], "xdna2")
+        self.assertEqual(facts["npu"]["driver"], "amdxdna")
+        self.assertEqual(facts["npu"]["devices"][0]["device_id"], "17f0")
+        self.assertNotIn("164a", {device["device_id"] for device in facts["npu"]["devices"]})
+        self.assertIn("/dev/accel/accel0", facts["npu"]["device_nodes"])
+
     def test_unknown_gpu_pci_stays_unknown(self) -> None:
         facts = self.normalize_cli(load_raw("unsupported-host.json"))
         self.assertIsNone(facts["gpu"]["architecture"])
@@ -152,6 +166,10 @@ class Stage1NormalizeTests(unittest.TestCase):
 class GpuPciTextLookupTests(unittest.TestCase):
     def test_lspci_nn_text_maps_without_marketing_names(self) -> None:
         text = "03:00.0 VGA compatible controller [0300]: AMD [1002:1900]"
+        self.assertEqual(system_profile.lookup_gpu_arch_from_pci_text(text), "gfx1150")
+
+    def test_strix_150e_text_maps_to_gfx1150(self) -> None:
+        text = "c7:00.0 Display controller [0380]: AMD/ATI [1002:150e]"
         self.assertEqual(system_profile.lookup_gpu_arch_from_pci_text(text), "gfx1150")
 
     def test_marketing_names_alone_are_unknown(self) -> None:

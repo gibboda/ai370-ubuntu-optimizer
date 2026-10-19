@@ -286,19 +286,13 @@ def _hardware_from_raw_probes(raw: dict[str, Any]) -> dict[str, Any]:
     storage = raw.get("storage", {})
     missing_tools = raw.get("collection", {}).get("missing_tools", [])
     gpu_lines = [device.get("device_name") or device.get("class") or "" for device in gpu.get("devices", [])]
-    _AMD_VENDOR_IDS = {"1022", "0x1022"}
-    _XDNA_DRIVER = "amdxdna"
     accel_devices = accelerators.get("devices", [])
     accel_nodes = accelerators.get("device_nodes", [])
-    _xdna_devices = [
-        d for d in accel_devices
-        if d.get("bound_driver") == _XDNA_DRIVER
-        or str(d.get("vendor_id", "")).lower() in _AMD_VENDOR_IDS
-        or "xdna" in str(d.get("device_name", "")).lower()
-    ]
+    npu_devices = _npu_devices_from_raw(raw)
     _xdna_nodes = [n for n in accel_nodes if "xdna" in str(n.get("path", "")).lower()]
-    npu_present = bool(_xdna_devices or _xdna_nodes)
-    npu_drivers = sorted({device.get("bound_driver") for device in _xdna_devices if device.get("bound_driver")})
+    npu_present = bool(npu_devices or _xdna_nodes)
+    reported_devices = npu_devices if npu_devices else list(accel_devices)
+    npu_drivers = sorted({device.get("bound_driver") for device in npu_devices if device.get("bound_driver")})
     npu_nodes = [node.get("path") for node in accel_nodes if node.get("path")]
     raw_arch = gpu.get("architecture", {})
     initial_arch = raw_arch.get("value") if isinstance(raw_arch, dict) else raw_arch
@@ -321,7 +315,7 @@ def _hardware_from_raw_probes(raw: dict[str, Any]) -> dict[str, Any]:
         "gpu": {"text": "\n".join(gpu_lines), "arch": initial_arch,
                 "devices": gpu.get("devices", []), "amdgpu_module": "loaded" if any(d.get("bound_driver") == "amdgpu" for d in gpu.get("devices", [])) else ""},
         "npu": {"present": npu_present, "module_text": "\n".join(npu_drivers), "device_text": "\n".join(npu_nodes),
-                "devices": accel_devices, "device_nodes": npu_nodes},
+                "devices": reported_devices, "device_nodes": npu_nodes},
         "memory": {"total_bytes": raw.get("memory", {}).get("total_bytes"), "total": raw.get("memory", {}).get("total_bytes")},
         "storage": {"devices": storage.get("devices", []), "nvme": "\n".join(device.get("name", "") for device in storage.get("devices", []) if str(device.get("name", "")).startswith("nvme"))},
         "tools": {"missing": ",".join(missing_tools)},
@@ -385,6 +379,81 @@ CPU_FAMILY_PROFILES: list[dict[str, Any]] = _CATALOG["cpu_family_profiles"]
 CPU_FAMILY_SIGNATURES: list[dict[str, Any]] = _CATALOG["cpu_family_signatures"]
 GPU_ARCHITECTURE_MAPPINGS: dict[str, dict[str, Any]] = _CATALOG["gpu_architecture_mappings"]
 NPU_FAMILY_MAPPINGS: list[dict[str, Any]] = _CATALOG["npu_family_mappings"]
+
+
+def _pci_match_token(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    if text.startswith("0x"):
+        text = text[2:]
+    return text
+
+
+def npu_family_for_pci(vendor_id: Any, device_id: Any) -> str | None:
+    """Return the declarative NPU family for a PCI vendor:device, if mapped."""
+    vendor = _pci_match_token(vendor_id)
+    device = _pci_match_token(device_id)
+    if not vendor or not device:
+        return None
+    for mapping in NPU_FAMILY_MAPPINGS:
+        vendors = {_pci_match_token(item) for item in mapping.get("vendor_ids", [])}
+        devices = {_pci_match_token(item) for item in mapping.get("device_ids", [])}
+        if vendor in vendors and device in devices:
+            return str(mapping["family"])
+    return None
+
+
+def is_npu_pci_device(device: dict[str, Any]) -> bool:
+    """True for a declarative NPU identity, an amdxdna binding, or an XDNA name."""
+    if not isinstance(device, dict):
+        return False
+    if npu_family_for_pci(device.get("vendor_id"), device.get("device_id")):
+        return True
+    if str(device.get("bound_driver") or "").casefold() == "amdxdna":
+        return True
+    name = str(device.get("device_name") or device.get("name") or "").casefold()
+    return "xdna" in name or "neural processing" in name
+
+
+def is_stage1_accelerator(device: dict[str, Any]) -> bool:
+    """PCI functions recorded in the raw accelerator list.
+
+    Class 1200 ("Processing accelerators") stays in the list. XDNA devices that
+    lspci reports as a signal-processing controller are included from the
+    declarative NPU map or the amdxdna driver. Other signal-processing
+    functions, such as a sensor hub, are not accelerators.
+    """
+    if not isinstance(device, dict):
+        return False
+    class_name = str(device.get("class") or "").casefold()
+    if "processing accelerators" in class_name:
+        return True
+    return is_npu_pci_device(device)
+
+
+def _accelerator_identity_key(device: dict[str, Any]) -> tuple[str, str, str]:
+    return (
+        _pci_match_token(device.get("vendor_id")),
+        _pci_match_token(device.get("device_id")),
+        str(device.get("slot") or device.get("address") or ""),
+    )
+
+
+def _npu_devices_from_raw(raw: dict[str, Any]) -> list[dict[str, Any]]:
+    """NPU PCI functions from the accelerator bucket or the full PCI inventory."""
+    accelerators = raw.get("accelerators") or {}
+    pci = raw.get("pci") or {}
+    seen: set[tuple[str, str, str]] = set()
+    selected: list[dict[str, Any]] = []
+    candidates = [*(accelerators.get("devices") or []), *(pci.get("devices") or [])]
+    for device in candidates:
+        if not isinstance(device, dict) or not is_npu_pci_device(device):
+            continue
+        key = _accelerator_identity_key(device)
+        if key in seen:
+            continue
+        seen.add(key)
+        selected.append(device)
+    return selected
 
 
 def _first_match(value: str, mappings: list[dict[str, Any]]) -> str | None:

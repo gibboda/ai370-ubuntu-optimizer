@@ -145,15 +145,23 @@ detect_powerprofiles() {
 }
 
 collect_stage1_raw_probes() {
-  python3 - "$@" <<'PYRAW'
+  local profile_root
+  profile_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  AI370_PROJECT_ROOT="$profile_root" python3 - "$@" <<'PYRAW'
 import glob
 import json
 import os
 import platform
 import shutil
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
+
+_profile_root = os.environ.get("AI370_PROJECT_ROOT", "")
+if _profile_root:
+    sys.path.insert(0, str(Path(_profile_root) / "scripts" / "lib"))
+import system_profile
 
 
 def read_file(path):
@@ -274,7 +282,7 @@ dev_nodes = sorted(glob.glob("/dev/accel/*") + glob.glob("/dev/*xdna*") + glob.g
 missing_tools = [name for name in ("lsb_release", "lscpu", "free", "lspci", "lsblk", "lsmod", "fwupdmgr", "dmidecode", "mokutil", "powerprofilesctl", "sensors", "vulkaninfo", "clinfo", "nvme", "smartctl", "jq", "python3") if shutil.which(name) is None]
 pci_devices = parse_lspci_mm(lspci["stdout"]) if lspci["state"] == "observed" else []
 gpus = [d for d in pci_devices if d.get("class") and any(token in d["class"].lower() for token in ("vga", "display", "3d"))]
-accelerators = [d for d in pci_devices if d.get("class") and "processing accelerators" in d["class"].lower()]
+accelerators = [d for d in pci_devices if system_profile.is_stage1_accelerator(d)]
 secure_boot_probe = run_probe("secure_boot.mokutil", ["mokutil", "--sb-state"])
 secure_boot_enabled = None
 if secure_boot_probe["state"] == "observed":

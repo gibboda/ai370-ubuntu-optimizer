@@ -31,6 +31,7 @@ import hardware_profile  # noqa: E402
 CASES = (
     ("observed-ai370.json", "ai370", "exact", "observed"),
     ("observed-ryzen-ai-pro-360.json", "strix-point-ryzen-ai", "family", "observed"),
+    ("observed-ryzen-ai-hx470.json", "strix-point-ryzen-ai", "family", "observed"),
     ("observed-ryzen-ai-max-strix-halo.json", "strix-halo-ryzen-ai", "family", "observed"),
     ("unsupported-host.json", None, "none", "unsupported"),
 )

@@ -6,6 +6,11 @@
       "arch": "gfx1150",
       "family": "rdna3.5",
       "description": "AMD RDNA 3.5 integrated GPU identity used by the EliteMini AI370 fixtures"
+    },
+    "1002:150e": {
+      "arch": "gfx1150",
+      "family": "rdna3.5",
+      "description": "Strix Radeon 880M/890M PCI identity. lspci reports this device as 1002:150e."
     }
   }
 }

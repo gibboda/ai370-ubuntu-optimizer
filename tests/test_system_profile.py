@@ -238,6 +238,26 @@ class RawProbeNormalizationTests(unittest.TestCase):
         self.assertEqual(gpu["state"], "probe_failed")
         self.assertIsNone(gpu["candidate"])
 
+    def test_hx470_profile_records_observed_gpu_and_npu(self) -> None:
+        profile = system_profile.build_profile(self._load("observed-ryzen-ai-hx470.json"), "test")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["classification"]["platform_id"], "strix-point-ryzen-ai")
+        self.assertEqual(profile["classification"]["confidence"], "family")
+        self.assertEqual(profile["system"]["product"], "AI Series")
+        self.assertEqual(profile["cpu"]["model_name"], "AMD Ryzen AI 9 HX 470 w/ Radeon 890M")
+        self.assertEqual(profile["gpus"][0]["architecture"], "gfx1150")
+        self.assertEqual(profile["gpus"][0]["pci"]["device_id"], "150e")
+        self.assertEqual(profile["gpus"][0]["driver"]["name"], "amdgpu")
+        self.assertEqual(profile["accelerators"][0]["state"], "observed")
+        self.assertEqual(profile["accelerators"][0]["kind"], "npu")
+        self.assertEqual(profile["accelerators"][0]["pci"]["device_id"], "17f0")
+        self.assertEqual(profile["accelerators"][0]["driver"]["name"], "amdxdna")
+        self.assertIn("/dev/accel/accel0", profile["accelerators"][0]["device_nodes"])
+        npu = next(item for item in profile["capability_candidates"] if item["id"] == "npu.runtime")
+        gpu = next(item for item in profile["capability_candidates"] if item["id"] == "gpu.rocm")
+        self.assertTrue(npu["candidate"])
+        self.assertTrue(gpu["candidate"])
+
     def test_non_xdna_accelerator_does_not_set_npu_present(self) -> None:
         raw = self._load("accelerator-non-xdna.json")
         profile = system_profile.build_profile(raw, "test")
