@@ -81,6 +81,24 @@ class Stage1ProbeFixtureTests(unittest.TestCase):
         self.assertTrue(system_profile.is_stage1_accelerator(other))
         self.assertFalse(system_profile.is_npu_pci_device(other))
 
+    def test_generic_npu_name_requires_amd_vendor(self) -> None:
+        intel_npu = {
+            "class": "Processing accelerators [1200]",
+            "vendor_id": "8086",
+            "device_id": "7d1d",
+            "bound_driver": "intel_vpu",
+            "device_name": "Meteor Lake Neural Processing Unit",
+        }
+        amd_named = {
+            "class": "Signal processing controller [1180]",
+            "vendor_id": "1022",
+            "device_id": "17f2",
+            "device_name": "Neural Processing Unit",
+        }
+        self.assertFalse(system_profile.is_npu_pci_device(intel_npu))
+        self.assertTrue(system_profile.is_stage1_accelerator(intel_npu))
+        self.assertTrue(system_profile.is_npu_pci_device(amd_named))
+
 
 if __name__ == "__main__":
     unittest.main()

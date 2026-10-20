@@ -266,6 +266,66 @@ class RawProbeNormalizationTests(unittest.TestCase):
         self.assertFalse(observed_accels,
                          "Non-AMD/XDNA accelerator must not produce an observed accelerator entry")
 
+    def test_recovered_npu_keeps_non_amdxdna_driver(self) -> None:
+        raw = self._load("observed-ryzen-ai-hx470.json")
+        for device in raw["pci"]["devices"]:
+            if device.get("device_id") == "17f0":
+                device["bound_driver"] = "vfio-pci"
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        accelerator = profile["accelerators"][0]
+        self.assertEqual(accelerator["pci"]["device_id"], "17f0")
+        self.assertEqual(accelerator["driver"]["state"], "observed")
+        self.assertEqual(accelerator["driver"]["name"], "vfio-pci")
+        facts = system_profile.normalize_facts(raw)
+        self.assertEqual(facts["npu"]["driver"], "vfio-pci")
+
+    def test_accel_nodes_follow_pci_slot_and_skip_other_owners(self) -> None:
+        raw = self._load("observed-ryzen-ai-hx470.json")
+        raw["accelerators"]["devices"] = [{
+            "slot": "0000:00:0b.0",
+            "class": "Processing accelerators [1200]",
+            "vendor_id": "8086",
+            "device_id": "7d1d",
+            "bound_driver": "intel_vpu",
+            "device_name": "Meteor Lake Neural Processing Unit",
+        }]
+        raw["accelerators"]["device_nodes"] = [
+            {"path": "/dev/accel/accel0", "slot": "0000:00:0b.0"},
+            {"path": "/dev/accel/accel1", "slot": "0000:c8:00.1"},
+        ]
+        profile = system_profile.build_profile(raw, "test")
+        self.assertEqual(profile["accelerators"][0]["device_nodes"], ["/dev/accel/accel1"])
+
+    def test_unscoped_accel_nodes_stay_off_when_another_accelerator_exists(self) -> None:
+        raw = self._load("observed-ryzen-ai-hx470.json")
+        raw["accelerators"]["devices"] = [{
+            "slot": "0000:00:0b.0",
+            "class": "Processing accelerators [1200]",
+            "vendor_id": "8086",
+            "device_id": "7d1d",
+            "bound_driver": "intel_vpu",
+            "device_name": "Meteor Lake Neural Processing Unit",
+        }]
+        raw["accelerators"]["device_nodes"] = [
+            {"path": "/dev/accel/accel0"},
+            {"path": "/dev/accel/accel1"},
+        ]
+        profile = system_profile.build_profile(raw, "test")
+        self.assertEqual(profile["accelerators"][0]["device_nodes"], [])
+
+    def test_slotless_pci_duplicate_collapses_to_the_slotted_npu(self) -> None:
+        raw = self._load("observed-ryzen-ai-hx470.json")
+        raw["accelerators"]["devices"] = [{
+            "vendor_id": "1022",
+            "device_id": "17f0",
+            "device_name": "Strix/Krackan/Strix Halo Neural Processing Unit [17f0]",
+            "bound_driver": "amdxdna",
+        }]
+        devices = system_profile._npu_devices_from_raw(raw)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(devices[0]["slot"], "0000:c8:00.1")
+
 
 if __name__ == "__main__":
     unittest.main()
