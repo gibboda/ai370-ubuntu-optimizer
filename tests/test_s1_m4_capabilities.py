@@ -69,6 +69,18 @@ class Stage1CapabilityTests(unittest.TestCase):
         self.assertEqual(by_id["gpu.rocm"]["state"], "tool_missing")
         self.assertIsNone(by_id["gpu.rocm"]["candidate"])
 
+    def test_hx470_gpu_and_npu_are_candidates(self) -> None:
+        document = self.derive_cli(load_raw("observed-ryzen-ai-hx470.json"))
+        system_profile.validate_document(document, system_profile.S1_M4_SCHEMA, "S1-M4")
+        by_id = {item["id"]: item for item in document["capability_candidates"]}
+        self.assertEqual(by_id["gpu.rocm"]["state"], "observed")
+        self.assertTrue(by_id["gpu.rocm"]["candidate"])
+        self.assertEqual(by_id["gpu.rocm"]["evidence"], ["gfx1150"])
+        self.assertFalse(by_id["gpu.rocm"]["validation_claim"])
+        self.assertEqual(by_id["npu.runtime"]["state"], "observed")
+        self.assertTrue(by_id["npu.runtime"]["candidate"])
+        self.assertFalse(by_id["npu.runtime"]["validation_claim"])
+
     def test_non_xdna_accelerator_is_not_an_npu_candidate(self) -> None:
         document = self.derive_cli(load_raw("accelerator-non-xdna.json"))
         by_id = {item["id"]: item for item in document["capability_candidates"]}

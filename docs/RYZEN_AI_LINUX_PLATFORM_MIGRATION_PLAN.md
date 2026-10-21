@@ -371,7 +371,7 @@ files, and docs.
 | `configs/profiles/hardware-profiles.json` `cpu_family_signatures` | CPU family 26 / model 36 → `ryzen-ai-300` | CAPABILITY_DETECTION_RULE | KEEP; extend with data, not collector rewrites |
 | `configs/profiles/hardware-profiles.json` `gpu_architecture_mappings` | `gfx1150`/`gfx1151` → RDNA 3.5 | CAPABILITY_DETECTION_RULE | KEEP and extend |
 | `configs/profiles/hardware-profiles.json` `strix-halo-ryzen-ai` | Ryzen AI MAX / Strix Halo / Ryzen AI Halo product strings; GPU capability `gfx1151` | CAPABILITY_DETECTION_RULE | KEEP as a hardware profile of `ryzen-ai-linux`; do not copy BIOS 2.01 |
-| `configs/profiles/gpu-pci-architectures.json` | `1002:1900` → `gfx1150` | CAPABILITY_DETECTION_RULE | KEEP; extend with PCI data, not marketing names |
+| `configs/profiles/gpu-pci-architectures.json` | `1002:1900` and `1002:150e` → `gfx1150` | CAPABILITY_DETECTION_RULE | KEEP; extend with PCI data, not marketing names |
 | `configs/profiles/hardware-profiles.json` `npu_family_mappings` | PCI `1022:17f0` XDNA2, `1022:1502` XDNA | CAPABILITY_DETECTION_RULE | KEEP; do not treat these IDs as universal PASS |
 | `configs/profiles/generic-ryzen-ai.env` | Broad Ryzen AI / XDNA profile | CAPABILITY_DETECTION_RULE | KEEP |
 | `scripts/lib/hardware-detect.sh` `detect_gpu_arch()` | PCI `[vvvv:dddd]` lookup via `gpu-pci-architectures.json` | CAPABILITY_DETECTION_RULE | KEEP; do not restore `890M`/`Strix` greps |
@@ -429,7 +429,7 @@ abbreviated; see the assumption table for the full class.
 | `configs/models/*` | Manifest and storage policy | `.ai370-ai/models` | Path name | S3-M1 | KEEP layout; REFACTOR naming later | `smoke_tier2.sh` layout checks | Low |
 | `configs/ai-runtime/requirements-offline.txt` | Offline CPU Python pin file | `scripts/lib/offline-paths.sh`, wheelhouse | `onnxruntime==1.22.0` and related pins; not VitisAI ORT | S3 CPU runtime / S3-M2 | KEEP; split NPU pins if added | Offline missing-wheelhouse tests | Medium |
 | `configs/offline/ai-runtime.env`, `configs/persistence/runtime.env` | Offline and persistence defaults | Runtime scripts | Runtime-only persistence; `OFFLINE_REQUIREMENTS` points at the pin file | Stage 3 / S5-M3 | KEEP | Persistence-refusal tests | Low |
-| `configs/profiles/gpu-pci-architectures.json` | PCI vendor:device to gfx map | None | Fixture identity `1002:1900` | S1-M2 | KEEP; extend with PCI data | `test_s1_m2_normalize.py` | Low |
+| `configs/profiles/gpu-pci-architectures.json` | PCI vendor:device to gfx map | None | `1002:1900` fixture id and `1002:150e` Strix 880M/890M id, both `gfx1150` | S1-M2 | KEEP; extend with PCI data | `test_s1_m2_normalize.py` | Low |
 | `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` | S2-M3 visibility JSON contract | Consumed S1-M5 profile | Visibility is not compute | S2-M3 | KEEP | `test_s2_visibility_schemas.py` | Low |
 | `configs/schemas/s2-m4-npu-runtime-validation.schema.json` | S2-M4 visibility JSON contract | Consumed S1-M5 profile | Visibility is not inference | S2-M4 | KEEP; execution proof stays S3-M4 | `test_s2_visibility_schemas.py` | Low |
 | `configs/schemas/s2-m1-firmware-validation.schema.json` | S2-M1 firmware validation contract | Consumed S1-M5 profile | Facts are not flash/update claims | S2-M1 | KEEP | `test_s2_m1_firmware.py` | Low |

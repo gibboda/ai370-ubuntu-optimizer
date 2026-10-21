@@ -145,15 +145,23 @@ detect_powerprofiles() {
 }
 
 collect_stage1_raw_probes() {
-  python3 - "$@" <<'PYRAW'
+  local profile_root
+  profile_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  AI370_PROJECT_ROOT="$profile_root" python3 - "$@" <<'PYRAW'
 import glob
 import json
 import os
 import platform
 import shutil
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
+
+_profile_root = os.environ.get("AI370_PROJECT_ROOT", "")
+if _profile_root:
+    sys.path.insert(0, str(Path(_profile_root) / "scripts" / "lib"))
+import system_profile
 
 
 def read_file(path):
@@ -262,6 +270,24 @@ def meminfo_total():
     return total, probe
 
 
+def accel_device_node(path, accelerators_present):
+    record = {
+        "path": path,
+        "state": "observed" if accelerators_present else "unrecognized",
+        "evidence_source": "filesystem glob",
+    }
+    sysfs_device = Path("/sys/class/accel") / Path(path).name / "device"
+    try:
+        if sysfs_device.exists():
+            slot = Path(os.path.realpath(sysfs_device)).name
+            if slot and slot != "device":
+                record["slot"] = slot
+                record["evidence_source"] = "/sys/class/accel device"
+    except OSError:
+        pass
+    return record
+
+
 lscpu = run_probe("cpu.lscpu", ["lscpu"])
 lspci = run_probe("pci.lspci", ["lspci", "-D", "-nn", "-vmm", "-k"])
 lsblk = run_probe("storage.lsblk", ["lsblk", "-J", "-b", "-O"])
@@ -274,12 +300,12 @@ dev_nodes = sorted(glob.glob("/dev/accel/*") + glob.glob("/dev/*xdna*") + glob.g
 missing_tools = [name for name in ("lsb_release", "lscpu", "free", "lspci", "lsblk", "lsmod", "fwupdmgr", "dmidecode", "mokutil", "powerprofilesctl", "sensors", "vulkaninfo", "clinfo", "nvme", "smartctl", "jq", "python3") if shutil.which(name) is None]
 pci_devices = parse_lspci_mm(lspci["stdout"]) if lspci["state"] == "observed" else []
 gpus = [d for d in pci_devices if d.get("class") and any(token in d["class"].lower() for token in ("vga", "display", "3d"))]
-accelerators = [d for d in pci_devices if d.get("class") and "processing accelerators" in d["class"].lower()]
+accelerators = [d for d in pci_devices if system_profile.is_stage1_accelerator(d)]
 secure_boot_probe = run_probe("secure_boot.mokutil", ["mokutil", "--sb-state"])
 secure_boot_enabled = None
 if secure_boot_probe["state"] == "observed":
     secure_boot_enabled = "enabled" in secure_boot_probe["stdout"].lower()
-raw = {"schema_version": 1, "stage": 1, "milestone": "S1-M1", "artifact": "s1-m1-raw-inventory", "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"), "inputs": {"profile": os.environ.get("PROFILE", "unknown"), "mode": os.environ.get("MODE", "unknown"), "persistence": os.environ.get("PERSISTENCE", "unknown")}, "cpu": {"state": lscpu["state"], "evidence_source": "lscpu", **parse_lscpu(lscpu["stdout"])}, "dmi": {"system": {"vendor": dmi["system_vendor"], "product": dmi["system_product"], "version": dmi["system_version"]}, "motherboard": {"vendor": dmi["board_vendor"], "product": dmi["board_product"], "version": dmi["board_version"]}}, "pci": {"state": lspci["state"], "evidence_source": "lspci -Dnnmmk", "devices": pci_devices}, "gpu": {"state": "observed" if gpus else ("tool_missing" if lspci["state"] == "tool_missing" else "not_present"), "devices": gpus, "architecture": {"state": "unknown", "value": None, "evidence_source": None, "error": {"code": "not_authoritative", "message": "No authoritative GPU architecture probe was available in Stage 1"}}}, "accelerators": {"state": "observed" if accelerators else ("unknown" if dev_nodes else "not_present"), "devices": accelerators, "device_nodes": [{"path": n, "state": "observed" if accelerators else "unrecognized", "evidence_source": "filesystem glob"} for n in dev_nodes]}, "memory": {"state": "observed" if mem_total is not None else mem_probe["state"], "total_bytes": mem_total, "evidence_source": "/proc/meminfo"}, "storage": {"state": lsblk["state"], "evidence_source": "lsblk -J -b -O", "devices": json.loads(lsblk["stdout"]).get("blockdevices", []) if lsblk["state"] == "observed" else []}, "os": {"state": os_probe["state"], "id": os_values.get("ID"), "name": os_values.get("NAME"), "pretty_name": os_values.get("PRETTY_NAME"), "version_id": os_values.get("VERSION_ID"), "version_codename": os_values.get("VERSION_CODENAME"), "evidence_source": "/etc/os-release"}, "kernel": {"state": "observed", "release": platform.release(), "architecture": platform.machine(), "evidence_source": "uname"}, "firmware": {"bios_vendor": dmi["bios_vendor"], "bios_version": dmi["bios_version"], "bios_date": dmi["bios_date"], "uefi": {"state": "observed" if Path("/sys/firmware/efi").exists() else "not_present", "evidence_source": "/sys/firmware/efi"}, "secure_boot": {"state": secure_boot_probe["state"], "enabled": secure_boot_enabled, "evidence_source": "mokutil --sb-state", "probe": secure_boot_probe}}, "collection": {"missing_tools": missing_tools, "permission_errors": [], "failed_probes": [], "probes": [lscpu, lspci, lsblk, lsmod, os_probe, mem_probe, secure_boot_probe, *dmi.values()]}}
+raw = {"schema_version": 1, "stage": 1, "milestone": "S1-M1", "artifact": "s1-m1-raw-inventory", "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"), "inputs": {"profile": os.environ.get("PROFILE", "unknown"), "mode": os.environ.get("MODE", "unknown"), "persistence": os.environ.get("PERSISTENCE", "unknown")}, "cpu": {"state": lscpu["state"], "evidence_source": "lscpu", **parse_lscpu(lscpu["stdout"])}, "dmi": {"system": {"vendor": dmi["system_vendor"], "product": dmi["system_product"], "version": dmi["system_version"]}, "motherboard": {"vendor": dmi["board_vendor"], "product": dmi["board_product"], "version": dmi["board_version"]}}, "pci": {"state": lspci["state"], "evidence_source": "lspci -Dnnmmk", "devices": pci_devices}, "gpu": {"state": "observed" if gpus else ("tool_missing" if lspci["state"] == "tool_missing" else "not_present"), "devices": gpus, "architecture": {"state": "unknown", "value": None, "evidence_source": None, "error": {"code": "not_authoritative", "message": "No authoritative GPU architecture probe was available in Stage 1"}}}, "accelerators": {"state": "observed" if accelerators else ("unknown" if dev_nodes else "not_present"), "devices": accelerators, "device_nodes": [accel_device_node(n, bool(accelerators)) for n in dev_nodes]}, "memory": {"state": "observed" if mem_total is not None else mem_probe["state"], "total_bytes": mem_total, "evidence_source": "/proc/meminfo"}, "storage": {"state": lsblk["state"], "evidence_source": "lsblk -J -b -O", "devices": json.loads(lsblk["stdout"]).get("blockdevices", []) if lsblk["state"] == "observed" else []}, "os": {"state": os_probe["state"], "id": os_values.get("ID"), "name": os_values.get("NAME"), "pretty_name": os_values.get("PRETTY_NAME"), "version_id": os_values.get("VERSION_ID"), "version_codename": os_values.get("VERSION_CODENAME"), "evidence_source": "/etc/os-release"}, "kernel": {"state": "observed", "release": platform.release(), "architecture": platform.machine(), "evidence_source": "uname"}, "firmware": {"bios_vendor": dmi["bios_vendor"], "bios_version": dmi["bios_version"], "bios_date": dmi["bios_date"], "uefi": {"state": "observed" if Path("/sys/firmware/efi").exists() else "not_present", "evidence_source": "/sys/firmware/efi"}, "secure_boot": {"state": secure_boot_probe["state"], "enabled": secure_boot_enabled, "evidence_source": "mokutil --sb-state", "probe": secure_boot_probe}}, "collection": {"missing_tools": missing_tools, "permission_errors": [], "failed_probes": [], "probes": [lscpu, lspci, lsblk, lsmod, os_probe, mem_probe, secure_boot_probe, *dmi.values()]}}
 for probe in raw["collection"]["probes"]:
     if probe.get("state") == "permission_denied": raw["collection"]["permission_errors"].append(probe)
     if probe.get("state") == "probe_failed": raw["collection"]["failed_probes"].append(probe)

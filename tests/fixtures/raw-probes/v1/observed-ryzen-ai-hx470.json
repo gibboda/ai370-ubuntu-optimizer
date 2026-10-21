@@ -1,0 +1,109 @@
+{
+  "stage": 1,
+  "phase": "detect-hardware",
+  "artifact": "stage1-raw-probes",
+  "timestamp": "2026-01-01T00:00:00Z",
+  "inputs": {"profile": "auto", "mode": "auto", "persistence": "none"},
+  "cpu": {
+    "state": "observed",
+    "vendor_id": "AuthenticAMD",
+    "model_name": "AMD Ryzen AI 9 HX 470 w/ Radeon 890M",
+    "family": 26,
+    "model": 36,
+    "stepping": 0,
+    "architecture": "x86_64",
+    "topology": {"logical_processors": 24}
+  },
+  "dmi": {
+    "system": {
+      "vendor": {"state": "observed", "value": "Micro Computer (HK) Tech Limited"},
+      "product": {"state": "observed", "value": "AI Series"},
+      "version": {"state": "observed", "value": "1.0"}
+    },
+    "board": {
+      "vendor": {"state": "observed", "value": "Generic"},
+      "product": {"state": "observed", "value": "GPBAC"},
+      "version": {"state": "observed", "value": "1.0"}
+    }
+  },
+  "pci": {
+    "state": "observed",
+    "evidence_source": "lspci -Dnnmmk",
+    "devices": [
+      {
+        "slot": "0000:c7:00.0",
+        "class": "Display controller [0380]",
+        "vendor_id": "1002",
+        "device_id": "150e",
+        "device_name": "Strix [Radeon 880M / 890M] [150e]",
+        "bound_driver": "amdgpu"
+      },
+      {
+        "slot": "0000:c7:00.7",
+        "class": "Signal processing controller [1180]",
+        "vendor_id": "1022",
+        "device_id": "164a",
+        "device_name": "Sensor Fusion Hub [164a]",
+        "bound_driver": "pcie_mp2_amd"
+      },
+      {
+        "slot": "0000:c8:00.1",
+        "class": "Signal processing controller [1180]",
+        "vendor_id": "1022",
+        "device_id": "17f0",
+        "device_name": "Strix/Krackan/Strix Halo Neural Processing Unit [17f0]",
+        "bound_driver": "amdxdna"
+      }
+    ]
+  },
+  "gpu": {
+    "state": "observed",
+    "devices": [
+      {
+        "slot": "0000:c7:00.0",
+        "class": "Display controller [0380]",
+        "device_name": "Strix [Radeon 880M / 890M] [150e]",
+        "bound_driver": "amdgpu",
+        "vendor_id": "1002",
+        "device_id": "150e"
+      }
+    ],
+    "architecture": {
+      "state": "unknown",
+      "value": null,
+      "evidence_source": null,
+      "error": {"code": "not_authoritative", "message": "No authoritative GPU architecture probe was available in Stage 1"}
+    }
+  },
+  "accelerators": {
+    "state": "unknown",
+    "devices": [],
+    "device_nodes": [
+      {"path": "/dev/accel/accel0", "state": "unrecognized", "evidence_source": "filesystem glob"}
+    ]
+  },
+  "memory": {"state": "observed", "total_bytes": 49057144832, "evidence_source": "/proc/meminfo"},
+  "storage": {
+    "state": "observed",
+    "evidence_source": "lsblk -J -b -O",
+    "devices": [{"name": "nvme0n1", "size": 1000000000000, "type": "disk", "tran": "nvme"}]
+  },
+  "os": {
+    "state": "observed",
+    "id": "ubuntu",
+    "name": "Ubuntu",
+    "pretty_name": "Ubuntu 26.04.1 LTS",
+    "version_id": "26.04",
+    "version_codename": "resolute",
+    "evidence_source": "/etc/os-release"
+  },
+  "kernel": {"state": "observed", "release": "7.0.0-38-generic", "architecture": "x86_64", "evidence_source": "uname"},
+  "firmware": {
+    "bios_vendor": {"state": "observed", "value": "American Megatrends International, LLC."},
+    "bios_version": {"state": "observed", "value": "1.00"},
+    "bios_date": {"state": "observed", "value": "01/15/2026"},
+    "uefi": {"state": "observed", "evidence_source": "/sys/firmware/efi"},
+    "secure_boot": {"state": "observed", "enabled": true, "evidence_source": "mokutil --sb-state"}
+  },
+  "collection": {"missing_tools": [], "permission_errors": [], "failed_probes": [], "probes": []}
+}
