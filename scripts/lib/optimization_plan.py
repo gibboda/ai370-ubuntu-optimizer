@@ -7,7 +7,7 @@ run governors, zram, or power-profile commands.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +26,7 @@ COMMANDS_RELATIVE = f"{COMPAT_RELATIVE}/tier1-cpu-runtime-commands.sh"
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
 def proposed_actions_for_mode(mode: str) -> list[dict[str, Any]]:

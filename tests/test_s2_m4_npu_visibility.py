@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/raw-probes/v1"
 PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
@@ -78,7 +77,6 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
         )
 
     def test_visibility_does_not_claim_inference(self) -> None:
-        hardware = hardware_from_fixture("observed-ai370.json")
         checks = {
             "module_present": True,
             "device_nodes_present": True,

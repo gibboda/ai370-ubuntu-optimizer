@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 WRAPPER = ROOT / "scripts/external-agent"
 REPO_ROOT = subprocess.check_output(

@@ -17,7 +17,7 @@ Child ``FAIL`` does. Missing gfx1150/NPU without ``--strict`` is recorded in
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -575,7 +575,7 @@ def _notes_for_scope(scope: str, strict: bool) -> list[str]:
 
 def compat_tier1_validation(report: dict[str, Any]) -> dict[str, Any]:
     """Compatibility tier1-validation.json consumed by require_tier123_pass until R2."""
-    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    timestamp = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     return {
         "tier": 1,
         "status": report["status"],

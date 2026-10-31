@@ -14,9 +14,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -175,13 +174,13 @@ def _fallback_onnx_analyze(model_path: Path, out_dir: Path) -> dict[str, Any]:
     lines = [
         f"Model: {model_name}",
         f"Path: {model_path}",
-        f"Engine: onnx-fallback",
+        "Engine: onnx-fallback",
         f"Opset: {opset}",
         f"IR version: {result['ir_version']}",
         f"Nodes: {total_nodes}",
         f"Parameter elements: {param_elems}",
         f"Parameter bytes: {param_bytes}",
-        f"FLOPs: n/a (requires Digest AI)",
+        "FLOPs: n/a (requires Digest AI)",
         "",
         "Op type counts:",
     ]
@@ -260,7 +259,7 @@ def write_markdown_report(results: list[dict[str, Any]], path: Path, meta: dict[
         "- **Never** treat parameters, FLOPs, or op histograms as NPU inference proof.",
         "- Inference truth sources: profiled EP verification (`npu_ep_verify`) and Lemonade smokes (S3-M5).",
         "",
-        f"Engine preference: Digest AI when importable; ONNX fallback otherwise.",
+        "Engine preference: Digest AI when importable; ONNX fallback otherwise.",
         "",
     ]
     if not results:
@@ -345,7 +344,7 @@ def main(argv: list[str] | None = None) -> int:
         detail = "Analysis attempted with errors."
 
     meta = {
-        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "profile": args.profile,
         "mode": args.mode,
         "offline": args.offline,
