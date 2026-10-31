@@ -3,7 +3,7 @@ setuptools==84.1.0
 wheel==0.46.2
 numpy==2.3.0
 scipy==1.15.3
-pandas==2.3.0
+pandas==3.1.0
 pillow==13.0.0
 psutil==7.0.0
 py-cpuinfo==9.0.0
