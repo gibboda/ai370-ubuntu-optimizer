@@ -305,7 +305,9 @@ def write_markdown_report(results: list[dict[str, Any]], path: Path, meta: dict[
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="S3-M4 Digest/ONNX model analysis")
-    parser.add_argument("--model", action="append", default=[], help="ONNX file or directory (repeatable)")
+    parser.add_argument(
+        "--model", action="append", default=[], help="ONNX file or directory (repeatable)"
+    )
     parser.add_argument("--out-dir", required=True, help="Output directory for analysis artifacts")
     parser.add_argument("--report-json", required=True, help="Aggregate JSON path")
     parser.add_argument("--report-md", required=True, help="Markdown report path")

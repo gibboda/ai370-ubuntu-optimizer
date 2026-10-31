@@ -24,8 +24,17 @@ class Stage1ProbeFixtureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "inventory.json"
             subprocess.run(
-                ["bash", str(SCRIPT), "--fixture", str(FIXTURES / fixture),
-                 "--output", str(output)], check=True, capture_output=True, text=True
+                [
+                    "bash",
+                    str(SCRIPT),
+                    "--fixture",
+                    str(FIXTURES / fixture),
+                    "--output",
+                    str(output),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
             )
             return json.loads(output.read_text(encoding="utf-8"))
 

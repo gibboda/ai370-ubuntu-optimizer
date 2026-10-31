@@ -165,9 +165,7 @@ def build_s2_m6_optimization_application(
         },
         "backup": {
             "status": "not-implemented",
-            "note": (
-                "Configuration backup and rollback remain Planned S2-M6 exit evidence."
-            ),
+            "note": ("Configuration backup and rollback remain Planned S2-M6 exit evidence."),
         },
         "warnings": warnings,
         "notes": [
@@ -284,9 +282,7 @@ def publish_s2_m6_optimization_application(
         system_profile.atomic_write_text(
             compat_output,
             json.dumps(
-                compat_tier1_platform_tuning(
-                    plan, runtime_apply=application["runtime_apply"]
-                ),
+                compat_tier1_platform_tuning(plan, runtime_apply=application["runtime_apply"]),
                 indent=2,
             )
             + "\n",

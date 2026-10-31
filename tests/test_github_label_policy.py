@@ -251,20 +251,12 @@ class LabelPolicyTests(unittest.TestCase):
         self.assertEqual(result["remove"], [])
 
     def test_path_globs_match_nested_and_basename_patterns(self) -> None:
-        self.assertTrue(
-            policy_mod.path_matches("docs/ROADMAP.md", "docs/**")
-        )
+        self.assertTrue(policy_mod.path_matches("docs/ROADMAP.md", "docs/**"))
         self.assertTrue(policy_mod.path_matches("README.md", "*.md"))
         self.assertFalse(policy_mod.path_matches("docs/ROADMAP.md", "*.md"))
+        self.assertTrue(policy_mod.path_matches("scripts/s1-m1-probe-system.sh", "scripts/s1-*"))
         self.assertTrue(
-            policy_mod.path_matches(
-                "scripts/s1-m1-probe-system.sh", "scripts/s1-*"
-            )
-        )
-        self.assertTrue(
-            policy_mod.path_matches(
-                "workflows/comfyui/sdxl.json", "workflows/comfyui/**"
-            )
+            policy_mod.path_matches("workflows/comfyui/sdxl.json", "workflows/comfyui/**")
         )
 
     def test_issue_form_area_options_match_policy(self) -> None:

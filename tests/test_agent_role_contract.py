@@ -37,7 +37,9 @@ class AgentRoleContractTests(unittest.TestCase):
         discovered: set[str] = set()
         for root_spec in discovery["roots"]:
             root = ROOT / root_spec["path"]
-            self.assertTrue(root.is_dir(), f"overlay discovery root does not exist: {root_spec['path']}")
+            self.assertTrue(
+                root.is_dir(), f"overlay discovery root does not exist: {root_spec['path']}"
+            )
             for pattern in root_spec["patterns"]:
                 for path in root.glob(pattern):
                     if path.is_file():
@@ -113,7 +115,9 @@ class AgentRoleContractTests(unittest.TestCase):
     def test_v4_documents_exclusive_independent_review_migration(self) -> None:
         v3 = json.loads(V3_FIXTURE.read_text(encoding="utf-8"))
         self.assertEqual(self.contract["schema_version"], 4)
-        self.assertEqual(set(v3["roles"]["independent_reviewer"]["providers"]), {"grok_build", "antigravity_cli"})
+        self.assertEqual(
+            set(v3["roles"]["independent_reviewer"]["providers"]), {"grok_build", "antigravity_cli"}
+        )
         self.assertEqual(set(self.roles["independent_reviewer"]["providers"]), {"grok_build"})
         self.assertTrue(self.roles["independent_reviewer"]["exclusive"])
         self.assertTrue(self.invariants["grok_exclusive_independent_review"])
@@ -125,7 +129,9 @@ class AgentRoleContractTests(unittest.TestCase):
     def test_native_specialist_roles_precede_merge_validation(self) -> None:
         order = self.contract["pre_merge_logical_order"]
         self.assertEqual(len(order), len(set(order)), "logical order must not repeat roles")
-        self.assertTrue(set(order).issubset(self.roles), "logical order must reference declared roles")
+        self.assertTrue(
+            set(order).issubset(self.roles), "logical order must reference declared roles"
+        )
         validation_index = order.index("merge_validation")
         self.assertLess(order.index("github_native_fallback"), validation_index)
         self.assertLess(order.index("codex_coding_agent"), validation_index)
@@ -249,12 +255,18 @@ class AgentRoleContractTests(unittest.TestCase):
         approved = schema["properties"]["approved_resource"]
         self.assertEqual(approved["type"], "string")
         self.assertGreaterEqual(approved["minLength"], 1)
-        self.assertEqual(schema["if"]["properties"]["selected_resource"]["const"], "maintainer_approved")
+        self.assertEqual(
+            schema["if"]["properties"]["selected_resource"]["const"], "maintainer_approved"
+        )
         self.assertEqual(schema["then"]["required"], ["approved_resource"])
         self.assertEqual(schema["else"]["not"]["required"], ["approved_resource"])
 
-        named = json.loads((ESCALATION_FIXTURES / "v1-named-resource.json").read_text(encoding="utf-8"))
-        custom = json.loads((ESCALATION_FIXTURES / "v1-maintainer-approved.json").read_text(encoding="utf-8"))
+        named = json.loads(
+            (ESCALATION_FIXTURES / "v1-named-resource.json").read_text(encoding="utf-8")
+        )
+        custom = json.loads(
+            (ESCALATION_FIXTURES / "v1-maintainer-approved.json").read_text(encoding="utf-8")
+        )
         self.assertEqual(self._escalation_record_errors(named, schema), [])
         self.assertEqual(self._escalation_record_errors(custom, schema), [])
 

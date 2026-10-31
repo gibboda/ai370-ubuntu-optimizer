@@ -110,21 +110,17 @@ class RepositoryInstructionsTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.agent_instructions = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         cls.contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
-        cls.pull_request_template = (
-            ROOT / ".github/PULL_REQUEST_TEMPLATE.md"
-        ).read_text(encoding="utf-8")
-        cls.copilot_pointer = (
-            ROOT / ".github/copilot-instructions.md"
-        ).read_text(encoding="utf-8")
+        cls.pull_request_template = (ROOT / ".github/PULL_REQUEST_TEMPLATE.md").read_text(
+            encoding="utf-8"
+        )
+        cls.copilot_pointer = (ROOT / ".github/copilot-instructions.md").read_text(encoding="utf-8")
         cls.copilot_instructions = (
             ROOT / ".github/instructions/copilot.instructions.md"
         ).read_text(encoding="utf-8")
-        cls.codex_instructions = (
-            ROOT / ".github/instructions/codex.instructions.md"
-        ).read_text(encoding="utf-8")
-        cls.cursor_rules = (
-            ROOT / ".cursor/rules/cursor.mdc"
-        ).read_text(encoding="utf-8")
+        cls.codex_instructions = (ROOT / ".github/instructions/codex.instructions.md").read_text(
+            encoding="utf-8"
+        )
+        cls.cursor_rules = (ROOT / ".cursor/rules/cursor.mdc").read_text(encoding="utf-8")
 
     def test_instruction_hierarchy_files_exist(self) -> None:
         for path in (
@@ -149,9 +145,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
                 self.assertTrue(path.is_file(), path)
 
         instruction_names = sorted(
-            path.name
-            for path in (ROOT / ".github/instructions").iterdir()
-            if path.is_file()
+            path.name for path in (ROOT / ".github/instructions").iterdir() if path.is_file()
         )
         self.assertEqual(
             instruction_names,
@@ -159,9 +153,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         )
 
         agent_names = sorted(
-            path.name
-            for path in (ROOT / ".github/agents").iterdir()
-            if path.is_file()
+            path.name for path in (ROOT / ".github/agents").iterdir() if path.is_file()
         )
         self.assertEqual(
             agent_names,
@@ -185,9 +177,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("must follow this policy", self.contributing)
         self.assertIn("Co-authored-by", self.agent_instructions)
         self.assertIn("Co-authored-by", self.contributing)
-        self.assertIn(
-            "bash scripts/validate-pr-title.sh", self.agent_instructions
-        )
+        self.assertIn("bash scripts/validate-pr-title.sh", self.agent_instructions)
         self.assertIn(
             "Do not open the PR unless the title validation command passes",
             self.agent_instructions,
@@ -199,12 +189,8 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "compatibility pointer, not a second policy surface",
             self.copilot_pointer,
         )
-        self.assertIn(
-            "[`../../AGENTS.md`](../../AGENTS.md)", self.copilot_instructions
-        )
-        self.assertIn(
-            "[`../../AGENTS.md`](../../AGENTS.md)", self.codex_instructions
-        )
+        self.assertIn("[`../../AGENTS.md`](../../AGENTS.md)", self.copilot_instructions)
+        self.assertIn("[`../../AGENTS.md`](../../AGENTS.md)", self.codex_instructions)
         self.assertIn("[`AGENTS.md`](../../AGENTS.md)", self.cursor_rules)
         self.assertIn(
             "[`AGENTS.md`](AGENTS.md)",
@@ -213,15 +199,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
 
     def test_shared_policy_names_authoritative_documents(self) -> None:
         self.assertIn("`docs/ROADMAP.md`", self.agent_instructions)
-        self.assertIn(
-            "HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md", self.agent_instructions
-        )
-        self.assertIn(
-            "RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md", self.agent_instructions
-        )
-        self.assertIn(
-            "configs/schemas/system-profile.schema.json", self.agent_instructions
-        )
+        self.assertIn("HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md", self.agent_instructions)
+        self.assertIn("RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md", self.agent_instructions)
+        self.assertIn("configs/schemas/system-profile.schema.json", self.agent_instructions)
         self.assertIn("`docs/AUTHORITATIVE-SOURCES.md`", self.agent_instructions)
         self.assertIn("`docs/TEST-PLATFORMS.md`", self.agent_instructions)
         self.assertRegex(
@@ -234,9 +214,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("reading order in `AGENTS.md`", self.copilot_instructions)
 
     def test_shared_evidence_registries_lock_portability_invariants(self) -> None:
-        sources = (ROOT / "docs/AUTHORITATIVE-SOURCES.md").read_text(
-            encoding="utf-8"
-        )
+        sources = (ROOT / "docs/AUTHORITATIVE-SOURCES.md").read_text(encoding="utf-8")
         platforms = (ROOT / "docs/TEST-PLATFORMS.md").read_text(encoding="utf-8")
         self.assertIn(
             "do not define the hardware-independent project architecture",
@@ -278,12 +256,8 @@ class RepositoryInstructionsTests(unittest.TestCase):
 
     def test_shared_policy_prohibits_new_tier_names(self) -> None:
         self.assertIn("do not introduce new tier", self.agent_instructions.casefold())
-        self.assertNotIn(
-            "do not introduce new tier", self.copilot_instructions.casefold()
-        )
-        self.assertNotIn(
-            "do not introduce new tier", self.codex_instructions.casefold()
-        )
+        self.assertNotIn("do not introduce new tier", self.copilot_instructions.casefold())
+        self.assertNotIn("do not introduce new tier", self.codex_instructions.casefold())
 
     def test_shared_policy_defines_elitemini_as_reference_only(self) -> None:
         self.assertIn("EliteMini AI370 is", self.agent_instructions)
@@ -293,16 +267,10 @@ class RepositoryInstructionsTests(unittest.TestCase):
 
     def test_agent_instructions_preserve_roadmap_authority_and_plan_docs(self) -> None:
         self.assertIn("`docs/ROADMAP.md` is authoritative", self.agent_instructions)
-        self.assertIn(
-            "HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md", self.agent_instructions
-        )
-        self.assertIn(
-            "RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md", self.agent_instructions
-        )
+        self.assertIn("HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md", self.agent_instructions)
+        self.assertIn("RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md", self.agent_instructions)
         self.assertIn("not public command names", self.agent_instructions)
-        self.assertIn(
-            "Never label planned functionality as implemented", self.agent_instructions
-        )
+        self.assertIn("Never label planned functionality as implemented", self.agent_instructions)
         self.assertIn(
             "first-party technical-source",
             self.agent_instructions,
@@ -359,9 +327,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "GitHub remains the source of truth and control plane",
             self.agent_instructions,
         )
-        self.assertIn(
-            "GitHub-native fallback / specialist", self.agent_instructions
-        )
+        self.assertIn("GitHub-native fallback / specialist", self.agent_instructions)
         self.assertIn(
             "must not be invoked automatically for",
             self.agent_instructions,
@@ -423,12 +389,8 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("## Precedence", self.agent_instructions)
         self.assertIn("GitHub is not an implementation agent", self.agent_instructions)
         self.assertIn("default task owner", self.agent_instructions)
-        self.assertIn(
-            "before another AI agent is invoked", self.agent_instructions
-        )
-        self.assertIn(
-            "narrowly scoped and capability-driven", self.agent_instructions
-        )
+        self.assertIn("before another AI agent is invoked", self.agent_instructions)
+        self.assertIn("narrowly scoped and capability-driven", self.agent_instructions)
         self.assertIn("### Prevent duplicate AI usage", self.agent_instructions)
         self.assertIn("### Secrets model", self.agent_instructions)
         self.assertIn("equivalent routine analysis", self.agent_instructions)
@@ -436,22 +398,14 @@ class RepositoryInstructionsTests(unittest.TestCase):
             "Parallel multi-agent analysis requires an explicit reason",
             self.agent_instructions,
         )
-        self.assertIn(
-            "GitHub Actions and repository checks", self.agent_instructions
-        )
+        self.assertIn("GitHub Actions and repository checks", self.agent_instructions)
         self.assertIn("final merge authority", self.agent_instructions)
-        self.assertIn(
-            "deterministic merge validation", self.agent_instructions
-        )
+        self.assertIn("deterministic merge validation", self.agent_instructions)
         self.assertNotIn("## Agent hierarchy", self.copilot_instructions)
         self.assertNotIn("## Agent hierarchy", self.codex_instructions)
         self.assertNotIn("## Agent hierarchy", self.cursor_rules)
-        self.assertNotIn(
-            "### Prevent duplicate AI usage", self.copilot_instructions
-        )
-        self.assertNotIn(
-            "### Prevent duplicate AI usage", self.codex_instructions
-        )
+        self.assertNotIn("### Prevent duplicate AI usage", self.copilot_instructions)
+        self.assertNotIn("### Prevent duplicate AI usage", self.codex_instructions)
         self.assertEqual(self.agent_instructions.count("## Agent hierarchy"), 1)
         self.assertIn("### CODEOWNER review assignment", self.agent_instructions)
         self.assertIn(
@@ -519,15 +473,9 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("See the Agent hierarchy", self.cursor_rules)
         self.assertIn("See the Agent hierarchy", self.copilot_instructions)
         self.assertIn("See the Agent hierarchy", self.codex_instructions)
-        self.assertNotIn(
-            "narrowly scoped and capability-driven", self.copilot_instructions
-        )
-        self.assertNotIn(
-            "narrowly scoped and capability-driven", self.codex_instructions
-        )
-        self.assertNotIn(
-            "narrowly scoped and capability-driven", self.cursor_rules
-        )
+        self.assertNotIn("narrowly scoped and capability-driven", self.copilot_instructions)
+        self.assertNotIn("narrowly scoped and capability-driven", self.codex_instructions)
+        self.assertNotIn("narrowly scoped and capability-driven", self.cursor_rules)
         self.assertIn(
             "Use Antigravity as the secondary / specialist agent",
             self.agent_instructions,
@@ -653,9 +601,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
                 self.assertNotIn("## Agent hierarchy", text)
                 self.assertNotIn("Stage 1 is read-only", text)
 
-        architecture = (ROOT / "docs/AI-AGENT-ARCHITECTURE.md").read_text(
-            encoding="utf-8"
-        )
+        architecture = (ROOT / "docs/AI-AGENT-ARCHITECTURE.md").read_text(encoding="utf-8")
         self.assertIn("Primary Development Orchestrator", architecture)
         self.assertIn("Primary does not mean exclusive", architecture)
         self.assertIn("docs/AUTHORITATIVE-SOURCES.md", architecture)
@@ -715,12 +661,10 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertEqual(settings, {})
         self.assertNotIn("modelProvider", settings)
 
-        antigravity_readme = (ROOT / ".github/antigravity/README.md").read_text(
-            encoding="utf-8"
-        )
+        antigravity_readme = (ROOT / ".github/antigravity/README.md").read_text(encoding="utf-8")
         self.assertNotIn("emergency fallback", antigravity_readme)
         self.assertNotIn('data["modelProvider"] = "gemini"', antigravity_readme)
-        self.assertIn("Path(\".github/antigravity/settings.json\")", antigravity_readme)
+        self.assertIn('Path(".github/antigravity/settings.json")', antigravity_readme)
         self.assertIn('data.pop("modelProvider", None)', antigravity_readme)
         self.assertIn("repository root", antigravity_readme)
         self.assertIn("account login", antigravity_readme)
@@ -738,9 +682,7 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn(".gemini/", gitignore)
         self.assertFalse((ROOT / ".gemini").exists())
 
-        portable_tests = (ROOT / ".github/workflows/portable-tests.yml").read_text(
-            encoding="utf-8"
-        )
+        portable_tests = (ROOT / ".github/workflows/portable-tests.yml").read_text(encoding="utf-8")
         self.assertNotIn("tests.test_grok_pr_review", portable_tests)
         self.assertNotIn("tests.test_gemini_pr_review", portable_tests)
         self.assertNotIn("tests.test_grok_pr_review", self.agent_instructions)
@@ -762,48 +704,32 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("tests.test_pr_governance_contract", self.agent_instructions)
         self.assertIn("tests.test_pr_governance_contract", tests_readme)
         self.assertIn("tests.test_agent_cross_contract_consistency", portable_tests)
-        self.assertIn(
-            "tests.test_agent_cross_contract_consistency", self.agent_instructions
-        )
+        self.assertIn("tests.test_agent_cross_contract_consistency", self.agent_instructions)
         self.assertIn("tests.test_agent_cross_contract_consistency", tests_readme)
         self.assertIn("tests.test_agent_contract_compatibility", portable_tests)
-        self.assertIn(
-            "tests.test_agent_contract_compatibility", self.agent_instructions
-        )
+        self.assertIn("tests.test_agent_contract_compatibility", self.agent_instructions)
         self.assertIn("tests.test_agent_contract_compatibility", tests_readme)
         self.assertIn("tests.test_agent_distribution_contract", portable_tests)
-        self.assertIn(
-            "tests.test_agent_distribution_contract", self.agent_instructions
-        )
+        self.assertIn("tests.test_agent_distribution_contract", self.agent_instructions)
         self.assertIn("tests.test_agent_distribution_contract", tests_readme)
         self.assertIn("tests.test_agent_architecture_conformance", portable_tests)
-        self.assertIn(
-            "tests.test_agent_architecture_conformance", self.agent_instructions
-        )
+        self.assertIn("tests.test_agent_architecture_conformance", self.agent_instructions)
         self.assertIn("tests.test_agent_architecture_conformance", tests_readme)
 
         workflow_modules = parse_portable_unittest_modules(portable_tests)
         agents_modules = parse_portable_unittest_modules(self.agent_instructions)
         readme_modules = parse_portable_unittest_modules(tests_readme)
-        migration_plan = (
-            ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md"
-        ).read_text(encoding="utf-8")
+        migration_plan = (ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").read_text(
+            encoding="utf-8"
+        )
         plan_modules = parse_portable_unittest_modules(migration_plan)
         self.assertEqual(workflow_modules, agents_modules)
         self.assertEqual(workflow_modules, readme_modules)
         self.assertEqual(workflow_modules, plan_modules)
-        self.assertIn(
-            "tests.test_agent_cross_contract_consistency", workflow_modules
-        )
-        self.assertIn(
-            "tests.test_agent_contract_compatibility", workflow_modules
-        )
-        self.assertIn(
-            "tests.test_agent_distribution_contract", workflow_modules
-        )
-        self.assertIn(
-            "tests.test_agent_architecture_conformance", workflow_modules
-        )
+        self.assertIn("tests.test_agent_cross_contract_consistency", workflow_modules)
+        self.assertIn("tests.test_agent_contract_compatibility", workflow_modules)
+        self.assertIn("tests.test_agent_distribution_contract", workflow_modules)
+        self.assertIn("tests.test_agent_architecture_conformance", workflow_modules)
 
         self.assertIn(
             "GitHub Actions does not call xAI or Gemini",
@@ -997,16 +923,12 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("[`.github/github-mcp.md`](.github/github-mcp.md)", self.contributing)
 
     def test_codex_pr_title_requirements_live_in_codex_instructions(self) -> None:
-        self.assertIn(
-            "Codex is the **Codex Coding Agent**", self.codex_instructions
-        )
+        self.assertIn("Codex is the **Codex Coding Agent**", self.codex_instructions)
         self.assertIn(
             "[`../../CONTRIBUTING.md`](../../CONTRIBUTING.md)",
             self.codex_instructions,
         )
-        self.assertIn(
-            "bash scripts/validate-pr-title.sh", self.codex_instructions
-        )
+        self.assertIn("bash scripts/validate-pr-title.sh", self.codex_instructions)
         self.assertIn(
             "Do not open the PR unless the title validation command passes",
             self.codex_instructions,
@@ -1019,18 +941,16 @@ class RepositoryInstructionsTests(unittest.TestCase):
 class MigrationPlanTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.plan = (
-            ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md"
-        ).read_text(encoding="utf-8")
-        cls.architecture = (
-            ROOT / "docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md"
-        ).read_text(encoding="utf-8")
+        cls.plan = (ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").read_text(
+            encoding="utf-8"
+        )
+        cls.architecture = (ROOT / "docs/HARDWARE_AWARE_RYZEN_AI_LINUX_PLATFORM.md").read_text(
+            encoding="utf-8"
+        )
         cls.roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
 
     def test_migration_plan_exists(self) -> None:
-        self.assertTrue(
-            (ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").is_file()
-        )
+        self.assertTrue((ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").is_file())
 
     def test_migration_plan_names_current_and_future_repository(self) -> None:
         self.assertIn("gibboda/ai370-ubuntu-optimizer", self.plan)
@@ -1173,9 +1093,7 @@ class MigrationPlanTests(unittest.TestCase):
     def test_migration_plan_defines_documentation_sync_contract(self) -> None:
         version = repository_version()
         plan_last_reviewed = _LAST_REVIEWED.search(self.plan)
-        self.assertIsNotNone(
-            plan_last_reviewed, "migration plan missing Last reviewed date"
-        )
+        self.assertIsNotNone(plan_last_reviewed, "migration plan missing Last reviewed date")
         last_reviewed = plan_last_reviewed.group(1)
         roadmap_last_reviewed = _LAST_REVIEWED.search(self.roadmap)
         self.assertIsNotNone(roadmap_last_reviewed, "ROADMAP missing Last reviewed date")
@@ -1215,12 +1133,8 @@ class MigrationPlanTests(unittest.TestCase):
         )
 
     def test_open_issue_templates_match_remaining_publisher_work(self) -> None:
-        issue168 = (ROOT / ".github/issues/pr2-capability-ladders.md").read_text(
-            encoding="utf-8"
-        )
-        issue169 = (ROOT / ".github/issues/pr3-read-only-stage1.md").read_text(
-            encoding="utf-8"
-        )
+        issue168 = (ROOT / ".github/issues/pr2-capability-ladders.md").read_text(encoding="utf-8")
+        issue169 = (ROOT / ".github/issues/pr3-read-only-stage1.md").read_text(encoding="utf-8")
         self.assertIn("Workstream C GPU publisher", issue168)
         self.assertIn("Workstream D NPU publisher", issue168)
         self.assertIn("`#180`", issue168)
@@ -1330,7 +1244,10 @@ class MigrationPlanTests(unittest.TestCase):
         )
         self.assertIn("- [x] Mark migration plan step 3 done", issue169)
         self.assertIn("- [x] Deprecate `TASK_PROPOSALS.md` Tier language", issue169)
-        self.assertIn("- [x] Update ROADMAP milestone status for S2-M1/M2/M5/M7 only when exit evidence exists", issue169)
+        self.assertIn(
+            "- [x] Update ROADMAP milestone status for S2-M1/M2/M5/M7 only when exit evidence exists",
+            issue169,
+        )
         proposals = (ROOT / "TASK_PROPOSALS.md").read_text(encoding="utf-8")
         self.assertIn("compatibility backlog", proposals.casefold())
         self.assertIn("Do not add new Tier-named tasks", proposals)
@@ -1390,7 +1307,9 @@ class MigrationPlanTests(unittest.TestCase):
     def test_stage1_orchestrator_is_read_only_profile(self) -> None:
         orchestrator = (ROOT / "ai370-optimize.sh").read_text(encoding="utf-8")
         self.assertIn("Stage 1 is read-only probe + profile", orchestrator)
-        self.assertNotIn("export AI370_APPLY_TUNING=true", orchestrator.split("run_stage2_optimize_apply")[0])
+        self.assertNotIn(
+            "export AI370_APPLY_TUNING=true", orchestrator.split("run_stage2_optimize_apply")[0]
+        )
         self.assertIn("run_stage1_profile", orchestrator)
         self.assertNotIn("\nrun_stage1()\n", orchestrator)
         self.assertIn("stage2-validate is a cheap runtime/NPU gate refresh", orchestrator)
@@ -1418,9 +1337,7 @@ class MigrationPlanTests(unittest.TestCase):
 
     def test_readme_stage2_status_matches_roadmap(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        issue169 = (ROOT / ".github/issues/pr3-read-only-stage1.md").read_text(
-            encoding="utf-8"
-        )
+        issue169 = (ROOT / ".github/issues/pr3-read-only-stage1.md").read_text(encoding="utf-8")
         self.assertNotIn("scope is **implemented** (S2-M1–S2-M7)", readme)
         self.assertIn("stage2-platform-validate", readme)
         statuses = parse_roadmap_milestone_statuses(self.roadmap)
@@ -1436,19 +1353,11 @@ class MigrationPlanTests(unittest.TestCase):
             "ROADMAP Stage 2 table must list S2-M1 through S2-M7",
         )
         in_progress = sorted(
-            (
-                milestone_id
-                for milestone_id, status in s2.items()
-                if status == "In progress"
-            ),
+            (milestone_id for milestone_id, status in s2.items() if status == "In progress"),
             key=_milestone_sort_key,
         )
         implemented = sorted(
-            (
-                milestone_id
-                for milestone_id, status in s2.items()
-                if status == "Implemented"
-            ),
+            (milestone_id for milestone_id, status in s2.items() if status == "Implemented"),
             key=_milestone_sort_key,
         )
         progress_groups = _README_S2_IN_PROGRESS_GROUP.findall(readme)
@@ -1884,20 +1793,12 @@ class ConventionalCommitScopeTests(unittest.TestCase):
 
     def test_policy_and_validators_list_the_same_scopes(self) -> None:
         pr_title = (ROOT / "scripts/validate-pr-title.sh").read_text(encoding="utf-8")
-        commit_subject = (ROOT / "scripts/validate-commit-subject.sh").read_text(
-            encoding="utf-8"
-        )
-        workflow = (ROOT / ".github/workflows/pr-title-lint.yml").read_text(
-            encoding="utf-8"
-        )
+        commit_subject = (ROOT / "scripts/validate-commit-subject.sh").read_text(encoding="utf-8")
+        workflow = (ROOT / ".github/workflows/pr-title-lint.yml").read_text(encoding="utf-8")
         agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
-        template = (ROOT / ".github/PULL_REQUEST_TEMPLATE.md").read_text(
-            encoding="utf-8"
-        )
-        codex = (ROOT / ".github/instructions/codex.instructions.md").read_text(
-            encoding="utf-8"
-        )
+        template = (ROOT / ".github/PULL_REQUEST_TEMPLATE.md").read_text(encoding="utf-8")
+        codex = (ROOT / ".github/instructions/codex.instructions.md").read_text(encoding="utf-8")
 
         pr_scopes = re.search(r"allowed_scopes='([^']+)'", pr_title)
         commit_scopes = re.search(r"allowed_scopes='([^']+)'", commit_subject)
@@ -1940,9 +1841,7 @@ class OfflineAiRuntimePinTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.pins = parse_requirement_pins(
-            ROOT / "configs/ai-runtime/requirements-offline.txt"
-        )
+        cls.pins = parse_requirement_pins(ROOT / "configs/ai-runtime/requirements-offline.txt")
 
     def test_huggingface_hub_satisfies_transformers_5_5_0(self) -> None:
         # transformers==5.5.0 requires huggingface-hub>=1.5.0,<2.0
@@ -1959,9 +1858,7 @@ class OfflineAiRuntimePinTests(unittest.TestCase):
         self.assertLessEqual(numeric, (0, 23, 0), tokenizers)
 
     def test_migration_plan_describes_current_transformers_pin(self) -> None:
-        plan = (ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").read_text(
-            encoding="utf-8"
-        )
+        plan = (ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").read_text(encoding="utf-8")
         self.assertIn("transformers==5.5.0", plan)
         self.assertIn("huggingface-hub==1.29.0", plan)
         self.assertNotIn("transformers 4.52.4", plan)

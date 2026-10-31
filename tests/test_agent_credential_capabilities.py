@@ -15,7 +15,9 @@ POLICY = ROOT / "docs/AGENT-CREDENTIAL-CAPABILITIES.md"
 ARCHITECTURE = ROOT / "docs/AI-AGENT-ARCHITECTURE.md"
 CURSOR_MCP = ROOT / ".cursor/mcp.json"
 GROK_MCP = ROOT / ".grok/config.toml"
-SECRET_VALUE = re.compile(r"github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9_]+|xai-[A-Za-z0-9]+|AIza[0-9A-Za-z_-]+")
+SECRET_VALUE = re.compile(
+    r"github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9_]+|xai-[A-Za-z0-9]+|AIza[0-9A-Za-z_-]+"
+)
 
 
 class AgentCredentialCapabilityTests(unittest.TestCase):
@@ -64,8 +66,12 @@ class AgentCredentialCapabilityTests(unittest.TestCase):
             with self.subTest(variable=variable):
                 self.assertFalse(variable.startswith("GITHUB_"))
                 self.assertFalse(variable.endswith("_API_KEY"))
-        self.assertEqual(self.contract["credential_domains"]["github"]["reserved_prefixes"], ["GITHUB_"])
-        self.assertEqual(self.contract["credential_domains"]["github"]["forbidden_suffixes"], ["_API_KEY"])
+        self.assertEqual(
+            self.contract["credential_domains"]["github"]["reserved_prefixes"], ["GITHUB_"]
+        )
+        self.assertEqual(
+            self.contract["credential_domains"]["github"]["forbidden_suffixes"], ["_API_KEY"]
+        )
         self.assertTrue(self.contract["invariants"]["portable_secret_names"])
 
     def test_grok_is_read_only(self) -> None:
@@ -106,10 +112,16 @@ class AgentCredentialCapabilityTests(unittest.TestCase):
         copilot = self.clients["github_copilot"]
         self.assertEqual(copilot["github_auth"]["mode"], "oauth_or_session")
         self.assertIsNone(copilot["github_auth"]["credential_variable"])
-        self.assertTrue(all(value == "authorization_dependent" for value in copilot["capabilities"].values()))
+        self.assertTrue(
+            all(value == "authorization_dependent" for value in copilot["capabilities"].values())
+        )
 
     def test_vendor_credentials_cannot_authorize_github(self) -> None:
-        self.assertTrue(self.contract["credential_domains"]["vendor"]["must_not_be_used_for_github_authorization"])
+        self.assertTrue(
+            self.contract["credential_domains"]["vendor"][
+                "must_not_be_used_for_github_authorization"
+            ]
+        )
         naming = self.contract["credential_domains"]["vendor"]["preferred_naming"]
         self.assertIn("do not start with GITHUB_", naming)
         self.assertIn("do not end in _API_KEY", naming)
@@ -141,12 +153,12 @@ class AgentCredentialCapabilityTests(unittest.TestCase):
     def test_tracked_mcp_configs_use_declared_client_variables(self) -> None:
         cursor_var = self.clients["cursor"]["github_auth"]["credential_variable"]
         grok_var = self.clients["grok_build"]["github_auth"]["credential_variable"]
-        cursor_auth = json.loads(CURSOR_MCP.read_text(encoding="utf-8"))[
-            "mcpServers"
-        ]["github"]["headers"]["Authorization"]
-        grok_headers = tomllib.loads(GROK_MCP.read_text(encoding="utf-8"))[
-            "mcp_servers"
-        ]["github"]["headers"]
+        cursor_auth = json.loads(CURSOR_MCP.read_text(encoding="utf-8"))["mcpServers"]["github"][
+            "headers"
+        ]["Authorization"]
+        grok_headers = tomllib.loads(GROK_MCP.read_text(encoding="utf-8"))["mcp_servers"]["github"][
+            "headers"
+        ]
         grok_auth = grok_headers["Authorization"]
         self.assertIn(f"${{env:{cursor_var}}}", cursor_auth)
         self.assertEqual(grok_auth, f"Bearer ${{{grok_var}}}")
