@@ -11,3 +11,5 @@ exclude = [
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+# Line length is enforced by `ruff format` at line-length above, not E501.
+ignore = ["E501"]

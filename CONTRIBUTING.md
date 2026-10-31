@@ -91,6 +91,7 @@ change maps cleanly to a single milestone owner.
 | `mcp` | GitHub MCP client configuration and least-privilege contract (`.github/github-mcp.md`) |
 | `contract` | Machine-readable agent and PR contracts (`config/pr-governance.json`, `config/agent-*.json`, related schemas) |
 | `workflows` | `workflows/` |
+| `lint` | Python lint and format policy (Ruff, `pyproject.toml`) |
 | `vscode` | VS Code workspace settings (`.vscode/`) |
 | `workspace` | Multi-root workspace files (`*.code-workspace`) |
 | `settings` | Editor and plugin settings (`.cursor/settings.json`) |

@@ -1572,6 +1572,7 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         "mcp",
         "contract",
         "workflows",
+        "lint",
         "vscode",
         "workspace",
         "settings",
