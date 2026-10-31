@@ -1619,6 +1619,31 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Conventional Commit compliant", result.stdout)
 
+    def test_validate_pr_title_accepts_dependabot_ci_deps_github_actions(self) -> None:
+        sample = "ci(deps): bump actions/checkout from 4.2.2 to 4.3.0"
+        result = subprocess.run(
+            ["bash", str(ROOT / "scripts/validate-pr-title.sh"), sample],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Dependabot deps", result.stdout)
+
+    def test_validate_pr_title_rejects_lowercase_non_dependabot_subject(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "chore(lint): apply ruff autofixes",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("uppercase letter", result.stderr)
+
     def test_validate_pr_title_accepts_agents_scope(self) -> None:
         result = subprocess.run(
             [
