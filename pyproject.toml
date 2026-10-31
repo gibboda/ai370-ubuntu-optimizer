@@ -1,4 +1,8 @@
 # Ruff configuration only — not a Python package manifest (no [project] / [build-system]).
+#
+# Default target-version is py311 (host `python3` for Stage 1/2 publishers and tests).
+# Any script executed inside a third-party venv with a lower Python floor must declare
+# its own minimum in [tool.ruff.per-file-target-version] below.
 
 [tool.ruff]
 line-length = 100
@@ -8,6 +12,9 @@ exclude = [
   "node_modules",
   "reports",
 ]
+
+[tool.ruff.per-file-target-version]
+"scripts/lib/digest_analyze.py" = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
