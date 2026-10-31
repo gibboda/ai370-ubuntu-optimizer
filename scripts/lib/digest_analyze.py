@@ -15,7 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections import Counter
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -344,7 +344,7 @@ def main(argv: list[str] | None = None) -> int:
         detail = "Analysis attempted with errors."
 
     meta = {
-        "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "profile": args.profile,
         "mode": args.mode,
         "offline": args.offline,
