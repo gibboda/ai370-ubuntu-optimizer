@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: GPL-3.0-only
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: ci(deps)
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: chore(deps)
+
+  - package-ecosystem: pip
+    directory: /configs/ai-runtime
+    schedule:
+      interval: weekly
+    groups:
+      pip:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: chore(deps)
