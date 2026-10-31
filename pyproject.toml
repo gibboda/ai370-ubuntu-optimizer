@@ -1,0 +1,13 @@
+# Ruff configuration only — not a Python package manifest (no [project] / [build-system]).
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [
+  ".ai370-ai",
+  "node_modules",
+  "reports",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
