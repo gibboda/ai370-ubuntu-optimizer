@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Check if title lint exists on base branch
         id: title-lint-gate
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const workflowPath = '.github/workflows/pr-title-lint.yml';
@@ -75,7 +75,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Validate PR commit subjects follow Conventional Commits
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const { execFileSync } = require('node:child_process');
