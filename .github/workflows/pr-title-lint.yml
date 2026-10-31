@@ -11,7 +11,10 @@ on:
 permissions:
   contents: read
   pull-requests: read
-  statuses: write
+
+concurrency:
+  group: pr-title-lint-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   lint-pr-title:
@@ -19,7 +22,7 @@ jobs:
     steps:
       - name: Check if title lint exists on base branch
         id: title-lint-gate
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const workflowPath = '.github/workflows/pr-title-lint.yml';
@@ -57,7 +60,7 @@ jobs:
 
       - name: Check out repository
         if: steps.title-lint-gate.outputs.enforce == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Validate PR title follows Conventional Commits
         if: steps.title-lint-gate.outputs.enforce == 'true'
@@ -69,10 +72,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Validate PR commit subjects follow Conventional Commits
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const { execFileSync } = require('node:child_process');
