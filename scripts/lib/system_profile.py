@@ -58,10 +58,18 @@ def _identity_id(value: Any) -> str | None:
     return text.removeprefix("0x") if text else None
 
 
-_COLLECTION_STATES = frozenset({
-    "observed", "not_present", "unsupported", "unknown",
-    "tool_missing", "permission_denied", "probe_failed", "unrecognized",
-})
+_COLLECTION_STATES = frozenset(
+    {
+        "observed",
+        "not_present",
+        "unsupported",
+        "unknown",
+        "tool_missing",
+        "permission_denied",
+        "probe_failed",
+        "unrecognized",
+    }
+)
 
 
 def _normalize_error(value: Any, default_code: str, default_message: str) -> dict[str, str]:
@@ -79,7 +87,9 @@ def _normalize_collection_records(records: Any, default_state: str) -> list[dict
         if isinstance(item, str):
             source = item.strip() or default_state
             state = default_state
-            error = _normalize_error(None, default_state, f"{source} {default_state.replace('_', ' ')}")
+            error = _normalize_error(
+                None, default_state, f"{source} {default_state.replace('_', ' ')}"
+            )
         elif isinstance(item, dict):
             source = str(item.get("source") or item.get("id") or item.get("path") or default_state)
             raw_state = str(item.get("state") or default_state)
@@ -104,7 +114,9 @@ def _probe_from_collection_record(record: dict[str, Any]) -> dict[str, Any]:
         "id": source,
         "state": state,
         "source": source,
-        "error": record.get("error") if isinstance(record.get("error"), dict) else {
+        "error": record.get("error")
+        if isinstance(record.get("error"), dict)
+        else {
             "code": state,
             "message": f"{source} {state.replace('_', ' ')}",
         },
@@ -123,12 +135,14 @@ def _collection_probes(hardware: dict[str, Any]) -> list[dict[str, Any]]:
     ]
     if probes:
         return probes
-    return [{
-        "id": "compatibility-inventory",
-        "state": "observed",
-        "source": "tier1-hardware.json",
-        "error": None,
-    }]
+    return [
+        {
+            "id": "compatibility-inventory",
+            "state": "observed",
+            "source": "tier1-hardware.json",
+            "error": None,
+        }
+    ]
 
 
 def _is_nvme_device(device: dict[str, Any]) -> bool:
@@ -153,7 +167,9 @@ def load_gpu_pci_architectures() -> dict[str, dict[str, Any]]:
     global _GPU_PCI_MAPPINGS
     if _GPU_PCI_MAPPINGS is None:
         data = json.loads(GPU_PCI_MAP_PATH.read_text(encoding="utf-8"))
-        _GPU_PCI_MAPPINGS = {str(key).lower(): value for key, value in data.get("mappings", {}).items()}
+        _GPU_PCI_MAPPINGS = {
+            str(key).lower(): value for key, value in data.get("mappings", {}).items()
+        }
     return _GPU_PCI_MAPPINGS
 
 
@@ -198,46 +214,76 @@ def is_raw_inventory(data: dict[str, Any]) -> bool:
 def _fingerprint_facts(hardware: dict[str, Any]) -> dict[str, Any]:
     """Return the versioned, normalized stable-identity fingerprint payload."""
     system, cpu = hardware.get("system", {}), hardware.get("cpu", {})
-    gpu, npu, storage = hardware.get("gpu", {}), hardware.get("npu", {}), hardware.get("storage", {})
+    gpu, npu, storage = (
+        hardware.get("gpu", {}),
+        hardware.get("npu", {}),
+        hardware.get("storage", {}),
+    )
     raw_pci = hardware.get("_raw_stage1", {}).get("pci", {}).get("devices", [])
     # Build the canonical PCI identity list from raw_pci, preserving multiplicity.
-    raw_identities = [identity for device in raw_pci
-                      if (identity := _pci_identity(device)) is not None]
+    raw_identities = [
+        identity for device in raw_pci if (identity := _pci_identity(device)) is not None
+    ]
     # Filter class-specific entries (gpu, npu) that are already present in the
     # canonical raw PCI list to avoid double-counting while preserving exact
     # device counts from the authoritative source.
-    raw_set = {json.dumps(identity, sort_keys=True, separators=(",", ":")) for identity in raw_identities}
+    raw_set = {
+        json.dumps(identity, sort_keys=True, separators=(",", ":")) for identity in raw_identities
+    }
     extra_identities = [
-        identity for device in [*gpu.get("devices", []), *npu.get("devices", [])]
+        identity
+        for device in [*gpu.get("devices", []), *npu.get("devices", [])]
         if (identity := _pci_identity(device)) is not None
         and json.dumps(identity, sort_keys=True, separators=(",", ":")) not in raw_set
     ]
-    pci_identities = [json.loads(v) for v in sorted(
-        json.dumps(i, sort_keys=True, separators=(",", ":")) for i in raw_identities + extra_identities
-    )]
-    accelerators = [identity for device in npu.get("devices", [])
-                    if (identity := _pci_identity(device)) is not None]
+    pci_identities = [
+        json.loads(v)
+        for v in sorted(
+            json.dumps(i, sort_keys=True, separators=(",", ":"))
+            for i in raw_identities + extra_identities
+        )
+    ]
+    accelerators = [
+        identity
+        for device in npu.get("devices", [])
+        if (identity := _pci_identity(device)) is not None
+    ]
     # Sort deterministically while preserving multiplicity (identical accelerator
     # devices must not be collapsed to a single entry).
-    accelerators = [json.loads(v) for v in sorted(
-        json.dumps(identity, sort_keys=True, separators=(",", ":")) for identity in accelerators
-    )]
-    storage_identities = sorted({
-        "|".join(filter(None, (_identity_text(device.get("model")),
-                               _identity_text(device.get("serial")))))
-        for device in storage.get("devices", []) if _known(device.get("serial"))
-    })
+    accelerators = [
+        json.loads(v)
+        for v in sorted(
+            json.dumps(identity, sort_keys=True, separators=(",", ":")) for identity in accelerators
+        )
+    ]
+    storage_identities = sorted(
+        {
+            "|".join(
+                filter(
+                    None,
+                    (_identity_text(device.get("model")), _identity_text(device.get("serial"))),
+                )
+            )
+            for device in storage.get("devices", [])
+            if _known(device.get("serial"))
+        }
+    )
     return {
-        "cpu": {"vendor_id": _identity_text(cpu.get("vendor")),
-                "family": _as_int(cpu.get("family")), "model": _as_int(cpu.get("cpu_model")),
-                "stepping": _as_int(cpu.get("stepping")),
-                "model_name": _identity_text(cpu.get("model"))},
-        "dmi": {"system_manufacturer": _identity_text(system.get("vendor")),
-                "system_product": _identity_text(system.get("product")),
-                "system_version": _identity_text(system.get("version")),
-                "board_manufacturer": _identity_text(system.get("board_vendor")),
-                "board_product": _identity_text(system.get("board_product")),
-                "board_version": _identity_text(system.get("board_version"))},
+        "cpu": {
+            "vendor_id": _identity_text(cpu.get("vendor")),
+            "family": _as_int(cpu.get("family")),
+            "model": _as_int(cpu.get("cpu_model")),
+            "stepping": _as_int(cpu.get("stepping")),
+            "model_name": _identity_text(cpu.get("model")),
+        },
+        "dmi": {
+            "system_manufacturer": _identity_text(system.get("vendor")),
+            "system_product": _identity_text(system.get("product")),
+            "system_version": _identity_text(system.get("version")),
+            "board_manufacturer": _identity_text(system.get("board_vendor")),
+            "board_product": _identity_text(system.get("board_product")),
+            "board_version": _identity_text(system.get("board_version")),
+        },
         "pci_devices": pci_identities,
         "accelerators": accelerators,
         "storage": storage_identities,
@@ -256,13 +302,20 @@ def _bytes(value: Any) -> int | None:
     # Normalise abbreviated IEC suffixes (Gi -> GiB, etc.)
     if not suffix.endswith("B"):
         suffix += "B"
-    units = {"KB": 1000, "MB": 1000**2, "GB": 1000**3, "TB": 1000**4,
-             "KIB": 1024, "MIB": 1024**2, "GIB": 1024**3, "TIB": 1024**4}
+    units = {
+        "KB": 1000,
+        "MB": 1000**2,
+        "GB": 1000**3,
+        "TB": 1000**4,
+        "KIB": 1024,
+        "MIB": 1024**2,
+        "GIB": 1024**3,
+        "TIB": 1024**4,
+    }
     multiplier = units.get(suffix)
     if multiplier is None:
         return None
     return int(float(match.group(1)) * multiplier)
-
 
 
 def _probe_value(probe: Any) -> Any:
@@ -284,40 +337,88 @@ def _hardware_from_raw_probes(raw: dict[str, Any]) -> dict[str, Any]:
     accelerators = raw.get("accelerators", {})
     storage = raw.get("storage", {})
     missing_tools = raw.get("collection", {}).get("missing_tools", [])
-    gpu_lines = [device.get("device_name") or device.get("class") or "" for device in gpu.get("devices", [])]
+    gpu_lines = [
+        device.get("device_name") or device.get("class") or "" for device in gpu.get("devices", [])
+    ]
     accel_devices = accelerators.get("devices", [])
     accel_nodes = accelerators.get("device_nodes", [])
     npu_devices = _npu_devices_from_raw(raw)
     _xdna_nodes = [n for n in accel_nodes if "xdna" in str(n.get("path", "")).lower()]
     npu_present = bool(npu_devices or _xdna_nodes)
-    npu_drivers = sorted({
-        device.get("bound_driver") for device in npu_devices if device.get("bound_driver")
-    })
+    npu_drivers = sorted(
+        {device.get("bound_driver") for device in npu_devices if device.get("bound_driver")}
+    )
     npu_nodes = _npu_node_paths(npu_devices, accel_nodes, accel_devices)
     raw_arch = gpu.get("architecture", {})
     initial_arch = raw_arch.get("value") if isinstance(raw_arch, dict) else raw_arch
     return {
         "_raw_stage1": raw,
-        "system": {"vendor": _probe_value(system.get("vendor")), "product": _probe_value(system.get("product")),
-                   "version": _probe_value(system.get("version")), "bios_vendor": _probe_value(firmware.get("bios_vendor")),
-                   "bios_version": _probe_value(firmware.get("bios_version")), "bios_date": _probe_value(firmware.get("bios_date")),
-                   "uefi": firmware.get("uefi", {}).get("state", "unknown") if isinstance(firmware.get("uefi"), dict) else firmware.get("uefi", "unknown"),
-                   "secure_boot": {"state": firmware.get("secure_boot", {}).get("state", "unknown") if isinstance(firmware.get("secure_boot"), dict) else "unknown",
-                                   "enabled": firmware.get("secure_boot", {}).get("enabled") if isinstance(firmware.get("secure_boot"), dict) else None},
-                   "os": os_info.get("pretty_name"), "os_id": os_info.get("id"), "os_name": os_info.get("name"),
-                   "os_version_id": os_info.get("version_id"), "os_codename": os_info.get("version_codename"),
-                   "kernel": kernel.get("release"), "kernel_architecture": kernel.get("architecture"),
-                   "board_vendor": _probe_value(board.get("vendor")), "board_product": _probe_value(board.get("product")),
-                   "board_version": _probe_value(board.get("version"))},
-        "cpu": {"model": cpu.get("model_name"), "vendor": cpu.get("vendor_id"), "family": cpu.get("family"),
-                "cpu_model": cpu.get("model"), "stepping": cpu.get("stepping"), "architecture": cpu.get("architecture"),
-                "topology": cpu.get("topology", {}), "logical_cores": cpu.get("topology", {}).get("logical_processors")},
-        "gpu": {"text": "\n".join(gpu_lines), "arch": initial_arch,
-                "devices": gpu.get("devices", []), "amdgpu_module": "loaded" if any(d.get("bound_driver") == "amdgpu" for d in gpu.get("devices", [])) else ""},
-        "npu": {"present": npu_present, "module_text": "\n".join(npu_drivers), "device_text": "\n".join(npu_nodes),
-                "devices": npu_devices, "device_nodes": npu_nodes},
-        "memory": {"total_bytes": raw.get("memory", {}).get("total_bytes"), "total": raw.get("memory", {}).get("total_bytes")},
-        "storage": {"devices": storage.get("devices", []), "nvme": "\n".join(device.get("name", "") for device in storage.get("devices", []) if str(device.get("name", "")).startswith("nvme"))},
+        "system": {
+            "vendor": _probe_value(system.get("vendor")),
+            "product": _probe_value(system.get("product")),
+            "version": _probe_value(system.get("version")),
+            "bios_vendor": _probe_value(firmware.get("bios_vendor")),
+            "bios_version": _probe_value(firmware.get("bios_version")),
+            "bios_date": _probe_value(firmware.get("bios_date")),
+            "uefi": firmware.get("uefi", {}).get("state", "unknown")
+            if isinstance(firmware.get("uefi"), dict)
+            else firmware.get("uefi", "unknown"),
+            "secure_boot": {
+                "state": firmware.get("secure_boot", {}).get("state", "unknown")
+                if isinstance(firmware.get("secure_boot"), dict)
+                else "unknown",
+                "enabled": firmware.get("secure_boot", {}).get("enabled")
+                if isinstance(firmware.get("secure_boot"), dict)
+                else None,
+            },
+            "os": os_info.get("pretty_name"),
+            "os_id": os_info.get("id"),
+            "os_name": os_info.get("name"),
+            "os_version_id": os_info.get("version_id"),
+            "os_codename": os_info.get("version_codename"),
+            "kernel": kernel.get("release"),
+            "kernel_architecture": kernel.get("architecture"),
+            "board_vendor": _probe_value(board.get("vendor")),
+            "board_product": _probe_value(board.get("product")),
+            "board_version": _probe_value(board.get("version")),
+        },
+        "cpu": {
+            "model": cpu.get("model_name"),
+            "vendor": cpu.get("vendor_id"),
+            "family": cpu.get("family"),
+            "cpu_model": cpu.get("model"),
+            "stepping": cpu.get("stepping"),
+            "architecture": cpu.get("architecture"),
+            "topology": cpu.get("topology", {}),
+            "logical_cores": cpu.get("topology", {}).get("logical_processors"),
+        },
+        "gpu": {
+            "text": "\n".join(gpu_lines),
+            "arch": initial_arch,
+            "devices": gpu.get("devices", []),
+            "amdgpu_module": "loaded"
+            if any(d.get("bound_driver") == "amdgpu" for d in gpu.get("devices", []))
+            else "",
+        },
+        "npu": {
+            "present": npu_present,
+            "module_text": "\n".join(npu_drivers),
+            "device_text": "\n".join(npu_nodes),
+            "devices": npu_devices,
+            "device_nodes": npu_nodes,
+        },
+        "memory": {
+            "total_bytes": raw.get("memory", {}).get("total_bytes"),
+            "total": raw.get("memory", {}).get("total_bytes"),
+        },
+        "storage": {
+            "devices": storage.get("devices", []),
+            "nvme": "\n".join(
+                device.get("name", "")
+                for device in storage.get("devices", [])
+                if str(device.get("name", "")).startswith("nvme")
+            ),
+        },
         "tools": {"missing": ",".join(missing_tools)},
     }
 
@@ -358,8 +459,13 @@ def hardware_from_input(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def _pci() -> dict[str, None]:
-    return {"address": None, "vendor_id": None, "device_id": None,
-            "subsystem_vendor_id": None, "subsystem_device_id": None}
+    return {
+        "address": None,
+        "vendor_id": None,
+        "device_id": None,
+        "subsystem_vendor_id": None,
+        "subsystem_device_id": None,
+    }
 
 
 def _classification_catalog() -> dict[str, Any]:
@@ -460,7 +566,8 @@ def _npu_devices_from_raw(raw: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         if slot:
             slotless = [
-                existing for existing in selected
+                existing
+                for existing in selected
                 if _same_pci_identity(device, existing)
                 and not (existing.get("slot") or existing.get("address"))
             ]
@@ -476,10 +583,9 @@ def _npu_devices_from_raw(raw: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _same_pci_identity(left: dict[str, Any], right: dict[str, Any]) -> bool:
-    return (
-        _pci_match_token(left.get("vendor_id")) == _pci_match_token(right.get("vendor_id"))
-        and _pci_match_token(left.get("device_id")) == _pci_match_token(right.get("device_id"))
-    )
+    return _pci_match_token(left.get("vendor_id")) == _pci_match_token(
+        right.get("vendor_id")
+    ) and _pci_match_token(left.get("device_id")) == _pci_match_token(right.get("device_id"))
 
 
 def _node_path_and_slot(node: Any) -> tuple[str, str]:
@@ -507,8 +613,7 @@ def _npu_node_paths(
         if isinstance(device, dict) and (device.get("slot") or device.get("address"))
     }
     other_accelerator = any(
-        isinstance(device, dict) and not is_npu_pci_device(device)
-        for device in accelerator_devices
+        isinstance(device, dict) and not is_npu_pci_device(device) for device in accelerator_devices
     )
     matched: list[str] = []
     unscoped: list[str] = []
@@ -560,15 +665,24 @@ def _cpu_family_profile(cpu: dict[str, Any]) -> str | None:
 
 def _npu_family(npu: dict[str, Any]) -> str | None:
     device_text = "\n".join(
-        str(device.get("device_name") or device.get("name") or "") for device in npu.get("devices", [])
+        str(device.get("device_name") or device.get("name") or "")
+        for device in npu.get("devices", [])
     )
-    device_text = "\n".join([device_text, str(npu.get("module_text", "")), str(npu.get("device_text", ""))])
+    device_text = "\n".join(
+        [device_text, str(npu.get("module_text", "")), str(npu.get("device_text", ""))]
+    )
     vendor_ids = {str(device.get("vendor_id", "")).lower() for device in npu.get("devices", [])}
     device_ids = {str(device.get("device_id", "")).lower() for device in npu.get("devices", [])}
     for mapping in NPU_FAMILY_MAPPINGS:
-        text_match = any(token.casefold() in device_text.casefold() for token in mapping.get("contains_any", []))
-        device_match = bool(device_ids & {device.lower() for device in mapping.get("device_ids", [])})
-        vendor_match = bool(vendor_ids & {vendor.lower() for vendor in mapping.get("vendor_ids", [])})
+        text_match = any(
+            token.casefold() in device_text.casefold() for token in mapping.get("contains_any", [])
+        )
+        device_match = bool(
+            device_ids & {device.lower() for device in mapping.get("device_ids", [])}
+        )
+        vendor_match = bool(
+            vendor_ids & {vendor.lower() for vendor in mapping.get("vendor_ids", [])}
+        )
         if (device_match or text_match) and (vendor_match or npu.get("present") is True):
             return mapping["family"]
     return "unknown" if npu.get("present") is True else None
@@ -590,7 +704,9 @@ def _classification_facts(hardware: dict[str, Any]) -> dict[str, Any]:
         "cpu.model": _nullable(cpu_model),
         "cpu.family_profile": cpu_family,
         "gpu.arch": gpu_arch,
-        "gpu.family": gpu.get("family") or gpu_mapping.get("family") or ("unknown" if _known(gpu_arch) else None),
+        "gpu.family": gpu.get("family")
+        or gpu_mapping.get("family")
+        or ("unknown" if _known(gpu_arch) else None),
         "npu.present": npu.get("present") is True,
         "npu.driver": _nullable(npu.get("module_text")),
         "npu.nodes": _nullable(npu.get("device_text")),
@@ -600,9 +716,15 @@ def _classification_facts(hardware: dict[str, Any]) -> dict[str, Any]:
 
 def _matches_requirement(value: Any, requirement: dict[str, Any]) -> bool:
     if "equals_any" in requirement:
-        return any(str(value).casefold() == str(candidate).casefold() for candidate in requirement["equals_any"])
+        return any(
+            str(value).casefold() == str(candidate).casefold()
+            for candidate in requirement["equals_any"]
+        )
     if "contains_any" in requirement:
-        return any(str(candidate).casefold() in str(value).casefold() for candidate in requirement["contains_any"])
+        return any(
+            str(candidate).casefold() in str(value).casefold()
+            for candidate in requirement["contains_any"]
+        )
     return bool(value)
 
 
@@ -646,14 +768,26 @@ def classify(hardware: dict[str, Any]) -> dict[str, Any]:
         all_mismatches.extend(f"{definition['id']}: {message}" for message in mismatches)
 
     if matches:
-        _, definition, evidence, mismatches = sorted(matches, key=lambda item: item[0], reverse=True)[0]
-        return {"state": "observed", "platform_id": definition["id"], "confidence": definition["confidence"],
-                "evidence": [definition["description"], *evidence], "mismatches": mismatches}
+        _, definition, evidence, mismatches = sorted(
+            matches, key=lambda item: item[0], reverse=True
+        )[0]
+        return {
+            "state": "observed",
+            "platform_id": definition["id"],
+            "confidence": definition["confidence"],
+            "evidence": [definition["description"], *evidence],
+            "mismatches": mismatches,
+        }
 
     cpu_identified = _known(facts.get("cpu.model")) and _known(facts.get("cpu.vendor"))
     state = "unsupported" if cpu_identified else "unknown"
-    return {"state": state, "platform_id": None, "confidence": "none",
-            "evidence": [], "mismatches": all_mismatches}
+    return {
+        "state": state,
+        "platform_id": None,
+        "confidence": "none",
+        "evidence": [],
+        "mismatches": all_mismatches,
+    }
 
 
 def _supplied_gpu_architecture(value: Any) -> str | None:
@@ -694,8 +828,12 @@ def normalize_facts(raw: dict[str, Any]) -> dict[str, Any]:
     system, cpu = hardware.get("system", {}), hardware.get("cpu", {})
     gpu, npu = hardware.get("gpu", {}), hardware.get("npu", {})
     memory, storage = hardware.get("memory", {}), hardware.get("storage", {})
-    missing_tools = [name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name]
-    collection = (hardware.get("_raw_stage1") or {}).get("collection") or raw.get("collection") or {}
+    missing_tools = [
+        name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name
+    ]
+    collection = (
+        (hardware.get("_raw_stage1") or {}).get("collection") or raw.get("collection") or {}
+    )
     gpu_devices = [_normalized_gpu_device(device) for device in gpu.get("devices") or []]
     raw_pci = (hardware.get("_raw_stage1") or {}).get("pci") or {}
     pci_probe_state = str(raw_pci.get("state") or "").strip()
@@ -719,15 +857,20 @@ def normalize_facts(raw: dict[str, Any]) -> dict[str, Any]:
             unknown_paths.append(path)
     npu_devices = []
     for device in npu.get("devices") or []:
-        npu_devices.append({
-            "name": device.get("device_name") or device.get("name"),
-            "vendor_id": _identity_id(device.get("vendor_id")),
-            "device_id": _identity_id(device.get("device_id")),
-            "bound_driver": device.get("bound_driver"),
-        })
+        npu_devices.append(
+            {
+                "name": device.get("device_name") or device.get("name"),
+                "vendor_id": _identity_id(device.get("vendor_id")),
+                "device_id": _identity_id(device.get("device_id")),
+                "bound_driver": device.get("bound_driver"),
+            }
+        )
     return {
-        "schema": {"name": "s1-m2-normalized-facts", "version": 1,
-                   "uri": "https://ai370.local/schemas/s1-m2-normalized-facts-v1.json"},
+        "schema": {
+            "name": "s1-m2-normalized-facts",
+            "version": 1,
+            "uri": "https://ai370.local/schemas/s1-m2-normalized-facts-v1.json",
+        },
         "stage": 1,
         "milestone": "S1-M2",
         "artifact": "s1-m2-normalized-facts",
@@ -762,7 +905,11 @@ def normalize_facts(raw: dict[str, Any]) -> dict[str, Any]:
             "stepping": _as_int(cpu.get("stepping")),
             "topology": cpu.get("topology") or {},
         },
-        "memory": {"total_bytes": memory.get("total_bytes") if isinstance(memory.get("total_bytes"), int) else _bytes(memory.get("total"))},
+        "memory": {
+            "total_bytes": memory.get("total_bytes")
+            if isinstance(memory.get("total_bytes"), int)
+            else _bytes(memory.get("total"))
+        },
         "storage": {"devices": storage.get("devices") or []},
         "gpu": {
             "state": gpu_state,
@@ -800,8 +947,10 @@ def normalize_facts(raw: dict[str, Any]) -> dict[str, Any]:
                 default_state="probe_failed",
             ),
         },
-        "unknown_facts": [{"path": path, "state": "unknown", "reason": "collector returned no recognized value"}
-                          for path in unknown_paths],
+        "unknown_facts": [
+            {"path": path, "state": "unknown", "reason": "collector returned no recognized value"}
+            for path in unknown_paths
+        ],
     }
 
 
@@ -854,7 +1003,9 @@ def hardware_from_system_profile(profile: dict[str, Any]) -> dict[str, Any]:
     amdgpu_loaded = any(device.get("bound_driver") == "amdgpu" for device in gpu_devices)
     return {
         "gpu": {
-            "text": "\n".join(filter(None, (gpu.get("name") for gpu in gpus if isinstance(gpu, dict)))),
+            "text": "\n".join(
+                filter(None, (gpu.get("name") for gpu in gpus if isinstance(gpu, dict)))
+            ),
             "arch": gpu_arch,
             "devices": gpu_devices,
             "amdgpu_module": "loaded" if amdgpu_loaded else "",
@@ -883,27 +1034,31 @@ def hardware_from_normalized(facts: dict[str, Any]) -> dict[str, Any]:
     firmware = facts.get("firmware", {})
     gpu_devices = []
     for device in gpu.get("devices") or []:
-        gpu_devices.append({
-            "device_name": device.get("name"),
-            "name": device.get("name"),
-            "slot": device.get("address"),
-            "address": device.get("address"),
-            "vendor_id": device.get("vendor_id"),
-            "device_id": device.get("device_id"),
-            "subsystem_vendor_id": device.get("subsystem_vendor_id"),
-            "subsystem_device_id": device.get("subsystem_device_id"),
-            "bound_driver": device.get("bound_driver"),
-            "architecture": device.get("architecture"),
-            "architecture_family": device.get("architecture_family"),
-        })
+        gpu_devices.append(
+            {
+                "device_name": device.get("name"),
+                "name": device.get("name"),
+                "slot": device.get("address"),
+                "address": device.get("address"),
+                "vendor_id": device.get("vendor_id"),
+                "device_id": device.get("device_id"),
+                "subsystem_vendor_id": device.get("subsystem_vendor_id"),
+                "subsystem_device_id": device.get("subsystem_device_id"),
+                "bound_driver": device.get("bound_driver"),
+                "architecture": device.get("architecture"),
+                "architecture_family": device.get("architecture_family"),
+            }
+        )
     npu_devices = []
     for device in npu.get("devices") or []:
-        npu_devices.append({
-            "device_name": device.get("name"),
-            "vendor_id": device.get("vendor_id"),
-            "device_id": device.get("device_id"),
-            "bound_driver": device.get("bound_driver"),
-        })
+        npu_devices.append(
+            {
+                "device_name": device.get("name"),
+                "vendor_id": device.get("vendor_id"),
+                "device_id": device.get("device_id"),
+                "bound_driver": device.get("bound_driver"),
+            }
+        )
     missing_tools = facts.get("collection", {}).get("missing_tools", [])
     return {
         "_raw_stage1": {
@@ -912,31 +1067,46 @@ def hardware_from_normalized(facts: dict[str, Any]) -> dict[str, Any]:
             "collection": facts.get("collection") or {},
         },
         "system": {
-            "vendor": system.get("manufacturer"), "product": system.get("product"),
+            "vendor": system.get("manufacturer"),
+            "product": system.get("product"),
             "version": system.get("version"),
-            "bios_vendor": firmware.get("bios_vendor"), "bios_version": firmware.get("bios_version"),
-            "bios_date": firmware.get("bios_date"), "uefi": firmware.get("uefi", "unknown"),
+            "bios_vendor": firmware.get("bios_vendor"),
+            "bios_version": firmware.get("bios_version"),
+            "bios_date": firmware.get("bios_date"),
+            "uefi": firmware.get("uefi", "unknown"),
             "secure_boot": firmware.get("secure_boot") or {"state": "unknown", "enabled": None},
-            "os": os_info.get("pretty_name"), "os_id": os_info.get("id"), "os_name": os_info.get("name"),
-            "os_version_id": os_info.get("version_id"), "os_codename": os_info.get("version_codename"),
-            "kernel": kernel.get("release"), "kernel_architecture": kernel.get("architecture"),
-            "board_vendor": board.get("manufacturer"), "board_product": board.get("product"),
+            "os": os_info.get("pretty_name"),
+            "os_id": os_info.get("id"),
+            "os_name": os_info.get("name"),
+            "os_version_id": os_info.get("version_id"),
+            "os_codename": os_info.get("version_codename"),
+            "kernel": kernel.get("release"),
+            "kernel_architecture": kernel.get("architecture"),
+            "board_vendor": board.get("manufacturer"),
+            "board_product": board.get("product"),
             "board_version": board.get("version"),
         },
         "cpu": {
-            "model": cpu.get("model_name"), "vendor": cpu.get("vendor_id"),
-            "family": cpu.get("family"), "cpu_model": cpu.get("model"),
-            "stepping": cpu.get("stepping"), "architecture": cpu.get("architecture"),
+            "model": cpu.get("model_name"),
+            "vendor": cpu.get("vendor_id"),
+            "family": cpu.get("family"),
+            "cpu_model": cpu.get("model"),
+            "stepping": cpu.get("stepping"),
+            "architecture": cpu.get("architecture"),
             "topology": cpu.get("topology") or {},
             "logical_cores": (cpu.get("topology") or {}).get("logical_processors"),
         },
         "gpu": {
-            "text": "\n".join(filter(None, (device.get("name") for device in gpu.get("devices") or []))),
+            "text": "\n".join(
+                filter(None, (device.get("name") for device in gpu.get("devices") or []))
+            ),
             "arch": gpu.get("architecture"),
             "family": gpu.get("architecture_family"),
             "architecture_source": gpu.get("architecture_source"),
             "devices": gpu_devices,
-            "amdgpu_module": "loaded" if any(device.get("bound_driver") == "amdgpu" for device in gpu_devices) else "",
+            "amdgpu_module": "loaded"
+            if any(device.get("bound_driver") == "amdgpu" for device in gpu_devices)
+            else "",
         },
         "npu": {
             "present": npu.get("present") is True,
@@ -948,8 +1118,11 @@ def hardware_from_normalized(facts: dict[str, Any]) -> dict[str, Any]:
         "memory": {"total_bytes": memory.get("total_bytes"), "total": memory.get("total_bytes")},
         "storage": {
             "devices": storage.get("devices") or [],
-            "nvme": "\n".join(device.get("name", "") for device in storage.get("devices") or []
-                              if str(device.get("name", "")).startswith("nvme")),
+            "nvme": "\n".join(
+                device.get("name", "")
+                for device in storage.get("devices") or []
+                if str(device.get("name", "")).startswith("nvme")
+            ),
         },
         "tools": {"missing": ",".join(missing_tools)},
     }
@@ -959,8 +1132,11 @@ def classify_platform_document(facts: dict[str, Any]) -> dict[str, Any]:
     """S1-M3: classify a platform from normalized facts."""
     hardware = hardware_from_input(facts)
     return {
-        "schema": {"name": "s1-m3-platform-classification", "version": 1,
-                   "uri": "https://ai370.local/schemas/s1-m3-platform-classification-v1.json"},
+        "schema": {
+            "name": "s1-m3-platform-classification",
+            "version": 1,
+            "uri": "https://ai370.local/schemas/s1-m3-platform-classification-v1.json",
+        },
         "stage": 1,
         "milestone": "S1-M3",
         "artifact": "s1-m3-platform-classification",
@@ -982,7 +1158,9 @@ def _pci_from_device(device: dict[str, Any]) -> dict[str, Any]:
 
 def _gpu_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
     gpu = hardware.get("gpu", {})
-    missing_tools = [name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name]
+    missing_tools = [
+        name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name
+    ]
     lspci_tool_present = "lspci" not in missing_tools
     records: list[dict[str, Any]] = []
     structured = gpu.get("devices") or []
@@ -1005,16 +1183,21 @@ def _gpu_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
                 architecture = _supplied_gpu_architecture(device.get("architecture"))
                 if architecture is None and single_device:
                     architecture = _nullable(gpu.get("arch"))
-            records.append({
-                "state": "observed",
-                "id": f"gpu{idx}",
-                "name": device.get("device_name") or device.get("name") or gpu.get("text") or None,
-                "pci": _pci_from_device(device),
-                "driver": driver,
-                "architecture": architecture,
-                "vram_bytes": None,
-                "runtime": "unknown",
-            })
+            records.append(
+                {
+                    "state": "observed",
+                    "id": f"gpu{idx}",
+                    "name": device.get("device_name")
+                    or device.get("name")
+                    or gpu.get("text")
+                    or None,
+                    "pci": _pci_from_device(device),
+                    "driver": driver,
+                    "architecture": architecture,
+                    "vram_bytes": None,
+                    "runtime": "unknown",
+                }
+            )
         return records
     gpu_text = gpu.get("text", "")
     if _known(gpu_text):
@@ -1022,18 +1205,22 @@ def _gpu_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
             line = line.strip()
             if not line:
                 continue
-            records.append({
-                "state": "observed",
-                "id": f"gpu{idx}",
-                "name": line,
-                "pci": _pci(),
-                "driver": _gpu_driver(gpu),
-                "architecture": _nullable(gpu.get("arch")),
-                "vram_bytes": None,
-                "runtime": "unknown",
-            })
+            records.append(
+                {
+                    "state": "observed",
+                    "id": f"gpu{idx}",
+                    "name": line,
+                    "pci": _pci(),
+                    "driver": _gpu_driver(gpu),
+                    "architecture": _nullable(gpu.get("arch")),
+                    "vram_bytes": None,
+                    "runtime": "unknown",
+                }
+            )
         return records
-    pci_state = str(((hardware.get("_raw_stage1") or {}).get("pci") or {}).get("state") or "").strip()
+    pci_state = str(
+        ((hardware.get("_raw_stage1") or {}).get("pci") or {}).get("state") or ""
+    ).strip()
     if not lspci_tool_present or pci_state == "tool_missing":
         unavailable_state = "tool_missing"
     elif pci_state in {"probe_failed", "permission_denied"}:
@@ -1041,60 +1228,83 @@ def _gpu_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
     else:
         unavailable_state = None
     if unavailable_state:
-        return [{
-            "state": unavailable_state,
-            "id": "gpu0",
-            "name": None,
-            "pci": _pci(),
-            "driver": {"state": "unknown", "name": None},
-            "architecture": None,
-            "vram_bytes": None,
-            "runtime": "unknown",
-        }]
+        return [
+            {
+                "state": unavailable_state,
+                "id": "gpu0",
+                "name": None,
+                "pci": _pci(),
+                "driver": {"state": "unknown", "name": None},
+                "architecture": None,
+                "vram_bytes": None,
+                "runtime": "unknown",
+            }
+        ]
     return []
 
 
 def _storage_records(hardware: dict[str, Any]) -> list[dict[str, Any]]:
     storage = hardware.get("storage", {})
-    missing_tools = [name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name]
+    missing_tools = [
+        name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name
+    ]
     lsblk_tool_present = "lsblk" not in missing_tools
     storage_devices: list[dict[str, Any]] = []
     raw_storage_devices = storage.get("devices", [])
     if raw_storage_devices:
         for device in raw_storage_devices:
             name = device.get("name")
-            storage_devices.append({
-                "state": "observed",
-                "name": name or "unknown",
-                "device_path": f"/dev/{name}" if name else None,
-                "kind": device.get("type") or "unknown",
-                "transport": device.get("tran"),
-                "size_bytes": device.get("size") if isinstance(device.get("size"), int) else None,
-                "removable": device.get("rm") if isinstance(device.get("rm"), bool) else None,
-                "model": device.get("model"),
-                "serial": device.get("serial"),
-                "firmware_version": device.get("rev"),
-            })
+            storage_devices.append(
+                {
+                    "state": "observed",
+                    "name": name or "unknown",
+                    "device_path": f"/dev/{name}" if name else None,
+                    "kind": device.get("type") or "unknown",
+                    "transport": device.get("tran"),
+                    "size_bytes": device.get("size")
+                    if isinstance(device.get("size"), int)
+                    else None,
+                    "removable": device.get("rm") if isinstance(device.get("rm"), bool) else None,
+                    "model": device.get("model"),
+                    "serial": device.get("serial"),
+                    "firmware_version": device.get("rev"),
+                }
+            )
         return storage_devices
     if _known(storage.get("nvme")):
         for line in str(storage.get("nvme")).splitlines():
             fields = line.split()
             if fields:
-                storage_devices.append({"state": "observed", "name": fields[0], "device_path": None, "kind": "disk", "transport": "nvme", "size_bytes": None, "removable": None, "model": None, "serial": None, "firmware_version": None})
+                storage_devices.append(
+                    {
+                        "state": "observed",
+                        "name": fields[0],
+                        "device_path": None,
+                        "kind": "disk",
+                        "transport": "nvme",
+                        "size_bytes": None,
+                        "removable": None,
+                        "model": None,
+                        "serial": None,
+                        "firmware_version": None,
+                    }
+                )
         return storage_devices
     if not lsblk_tool_present:
-        return [{
-            "state": "tool_missing",
-            "name": "unknown",
-            "device_path": None,
-            "kind": "unknown",
-            "transport": None,
-            "size_bytes": None,
-            "removable": None,
-            "model": None,
-            "serial": None,
-            "firmware_version": None,
-        }]
+        return [
+            {
+                "state": "tool_missing",
+                "name": "unknown",
+                "device_path": None,
+                "kind": "unknown",
+                "transport": None,
+                "size_bytes": None,
+                "removable": None,
+                "model": None,
+                "serial": None,
+                "firmware_version": None,
+            }
+        ]
     return []
 
 
@@ -1105,21 +1315,25 @@ def _accelerator_records(hardware: dict[str, Any]) -> tuple[list[dict[str, Any]]
     accelerators: list[dict[str, Any]] = []
     npu_evidence = None
     if npu_present:
-        npu_evidence = "XDNA device visible" if _known(npu_device_text) else "XDNA kernel module loaded"
+        npu_evidence = (
+            "XDNA device visible" if _known(npu_device_text) else "XDNA kernel module loaded"
+        )
         first = (npu.get("devices") or [{}])[0] if npu.get("devices") else {}
         nodes = [node for node in (npu.get("device_nodes") or []) if node]
         if not nodes and _known(npu_device_text):
             nodes = [line for line in str(npu_device_text).splitlines() if line]
-        accelerators.append({
-            "state": "observed",
-            "id": "npu0",
-            "kind": "npu",
-            "name": first.get("device_name") or first.get("name") or "AMD XDNA",
-            "pci": _pci_from_device(first) if first else _pci(),
-            "device_nodes": nodes,
-            "driver": _accel_driver(npu),
-            "runtime": "unknown",
-        })
+        accelerators.append(
+            {
+                "state": "observed",
+                "id": "npu0",
+                "kind": "npu",
+                "name": first.get("device_name") or first.get("name") or "AMD XDNA",
+                "pci": _pci_from_device(first) if first else _pci(),
+                "device_nodes": nodes,
+                "driver": _accel_driver(npu),
+                "runtime": "unknown",
+            }
+        )
     return accelerators, npu_evidence
 
 
@@ -1147,28 +1361,46 @@ def derive_capability_candidates(hardware: dict[str, Any]) -> list[dict[str, Any
         nvme_candidate_state = "not_present"
     gpu_arch = gpu.get("arch")
     return [
-        {"id": "gpu.rocm",
-         "state": gpu_candidate_state,
-         "candidate": str(gpu_arch) in GPU_ARCHITECTURE_MAPPINGS if gpu_candidate_state == "observed" else None,
-         "evidence": [str(gpu_arch)] if _known(gpu_arch) else []},
-        {"id": "npu.runtime",
-         "state": "observed" if npu_present else "not_present",
-         "candidate": npu_present if npu_present else None,
-         "evidence": [npu_evidence] if npu_evidence else []},
-        {"id": "storage.nvme",
-         "state": nvme_candidate_state,
-         "candidate": bool(nvme_devices) if nvme_candidate_state == "observed" else None,
-         "evidence": [str(device.get("name") or "") for device in nvme_devices if device.get("state") == "observed"]},
+        {
+            "id": "gpu.rocm",
+            "state": gpu_candidate_state,
+            "candidate": str(gpu_arch) in GPU_ARCHITECTURE_MAPPINGS
+            if gpu_candidate_state == "observed"
+            else None,
+            "evidence": [str(gpu_arch)] if _known(gpu_arch) else [],
+        },
+        {
+            "id": "npu.runtime",
+            "state": "observed" if npu_present else "not_present",
+            "candidate": npu_present if npu_present else None,
+            "evidence": [npu_evidence] if npu_evidence else [],
+        },
+        {
+            "id": "storage.nvme",
+            "state": nvme_candidate_state,
+            "candidate": bool(nvme_devices) if nvme_candidate_state == "observed" else None,
+            "evidence": [
+                str(device.get("name") or "")
+                for device in nvme_devices
+                if device.get("state") == "observed"
+            ],
+        },
     ]
 
 
 def derive_capability_document(facts: dict[str, Any]) -> dict[str, Any]:
     """S1-M4 artifact: candidates with an explicit non-validation flag."""
     hardware = hardware_from_input(facts)
-    candidates = [{**candidate, "validation_claim": False} for candidate in derive_capability_candidates(hardware)]
+    candidates = [
+        {**candidate, "validation_claim": False}
+        for candidate in derive_capability_candidates(hardware)
+    ]
     return {
-        "schema": {"name": "s1-m4-capability-candidates", "version": 1,
-                   "uri": "https://ai370.local/schemas/s1-m4-capability-candidates-v1.json"},
+        "schema": {
+            "name": "s1-m4-capability-candidates",
+            "version": 1,
+            "uri": "https://ai370.local/schemas/s1-m4-capability-candidates-v1.json",
+        },
         "stage": 1,
         "milestone": "S1-M4",
         "artifact": "s1-m4-capability-candidates",
@@ -1214,7 +1446,9 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
     hardware = hardware_from_input(hardware)
     system, cpu = hardware.get("system", {}), hardware.get("cpu", {})
     memory = hardware.get("memory", {})
-    missing_tools = [name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name]
+    missing_tools = [
+        name for name in str(hardware.get("tools", {}).get("missing", "")).split(",") if name
+    ]
 
     unknown_paths: list[str] = []
     for path, value in (
@@ -1237,49 +1471,109 @@ def build_profile(hardware: dict[str, Any], generator_version: str = "unknown") 
         hashlib.sha256(
             json.dumps(fingerprint_facts, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
-        if lspci_tool_present else None
+        if lspci_tool_present
+        else None
     )
 
     gpu_devices = _gpu_records(hardware)
     accelerators, _npu_evidence = _accelerator_records(hardware)
     storage_devices = _storage_records(hardware)
-    tools = [{"name": name, "state": "tool_missing", "path": None, "version": None,
-              "error": {"code": "not_found", "message": f"{name} was not found in PATH"}} for name in missing_tools]
+    tools = [
+        {
+            "name": name,
+            "state": "tool_missing",
+            "path": None,
+            "version": None,
+            "error": {"code": "not_found", "message": f"{name} was not found in PATH"},
+        }
+        for name in missing_tools
+    ]
 
     return {
         "schema": {"name": SCHEMA_NAME, "version": SCHEMA_VERSION, "uri": SCHEMA_URI},
-        "generation": {"timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-                       "generator": {"name": "system_profile.py", "version": generator_version},
-                       "complete": not unknown_paths},
-        "fingerprint": {"algorithm": "sha256", "algorithm_version": FINGERPRINT_ALGORITHM_VERSION,
-                        "value": digest,
-                        "inputs": fingerprint_inputs},
-        "system": {"state": _state(system.get("vendor") or system.get("product")),
-                   "manufacturer": _nullable(system.get("vendor")), "product": _nullable(system.get("product")),
-                   "version": _nullable(system.get("version")), "serial": None, "uuid": None,
-                   "motherboard": {"state": _state(system.get("board_vendor") or system.get("board_product")), "manufacturer": _nullable(system.get("board_vendor")), "product": _nullable(system.get("board_product")),
-                                   "version": _nullable(system.get("board_version")), "serial": None}},
-        "operating_system": {"state": _state(system.get("os")), "id": _nullable(system.get("os_id")), "name": _nullable(system.get("os_name")),
-                             "pretty_name": _nullable(system.get("os")), "version_id": _nullable(system.get("os_version_id")), "version_codename": _nullable(system.get("os_codename"))},
-        "kernel": {"state": _state(system.get("kernel")), "release": _nullable(system.get("kernel")),
-                   "architecture": _nullable(system.get("kernel_architecture")), "command_line": None},
-        "cpu": {"state": _state(cpu.get("model")), "vendor_id": _nullable(cpu.get("vendor")),
-                "model_name": _nullable(cpu.get("model")), "architecture": _nullable(cpu.get("architecture")), "family": int(cpu.get("family")) if str(cpu.get("family") or "").isdigit() else None,
-                "model": int(cpu.get("cpu_model")) if str(cpu.get("cpu_model") or "").isdigit() else None, "stepping": int(cpu.get("stepping")) if str(cpu.get("stepping") or "").isdigit() else None,
-                "topology": {"sockets": cpu.get("topology", {}).get("sockets"), "physical_cores": None,
-                             "logical_processors": cpu.get("logical_cores") or None,
-                             "cores_per_socket": cpu.get("topology", {}).get("cores_per_socket"), "threads_per_core": cpu.get("topology", {}).get("threads_per_core")}},
-        "memory": {"state": _state(_bytes(memory.get("total"))), "total_bytes": _bytes(memory.get("total")),
-                   "available_bytes": None},
-        "storage": storage_devices, "gpus": gpu_devices, "accelerators": accelerators,
-        "firmware": {"state": _state(system.get("bios_version")), "bios_vendor": _nullable(system.get("bios_vendor")),
-                     "bios_version": _nullable(system.get("bios_version")), "bios_date": _nullable(system.get("bios_date")),
-                     "uefi": system.get("uefi", "unknown"), "secure_boot": system.get("secure_boot", {"state": "unknown", "enabled": None})},
+        "generation": {
+            "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "generator": {"name": "system_profile.py", "version": generator_version},
+            "complete": not unknown_paths,
+        },
+        "fingerprint": {
+            "algorithm": "sha256",
+            "algorithm_version": FINGERPRINT_ALGORITHM_VERSION,
+            "value": digest,
+            "inputs": fingerprint_inputs,
+        },
+        "system": {
+            "state": _state(system.get("vendor") or system.get("product")),
+            "manufacturer": _nullable(system.get("vendor")),
+            "product": _nullable(system.get("product")),
+            "version": _nullable(system.get("version")),
+            "serial": None,
+            "uuid": None,
+            "motherboard": {
+                "state": _state(system.get("board_vendor") or system.get("board_product")),
+                "manufacturer": _nullable(system.get("board_vendor")),
+                "product": _nullable(system.get("board_product")),
+                "version": _nullable(system.get("board_version")),
+                "serial": None,
+            },
+        },
+        "operating_system": {
+            "state": _state(system.get("os")),
+            "id": _nullable(system.get("os_id")),
+            "name": _nullable(system.get("os_name")),
+            "pretty_name": _nullable(system.get("os")),
+            "version_id": _nullable(system.get("os_version_id")),
+            "version_codename": _nullable(system.get("os_codename")),
+        },
+        "kernel": {
+            "state": _state(system.get("kernel")),
+            "release": _nullable(system.get("kernel")),
+            "architecture": _nullable(system.get("kernel_architecture")),
+            "command_line": None,
+        },
+        "cpu": {
+            "state": _state(cpu.get("model")),
+            "vendor_id": _nullable(cpu.get("vendor")),
+            "model_name": _nullable(cpu.get("model")),
+            "architecture": _nullable(cpu.get("architecture")),
+            "family": int(cpu.get("family")) if str(cpu.get("family") or "").isdigit() else None,
+            "model": int(cpu.get("cpu_model"))
+            if str(cpu.get("cpu_model") or "").isdigit()
+            else None,
+            "stepping": int(cpu.get("stepping"))
+            if str(cpu.get("stepping") or "").isdigit()
+            else None,
+            "topology": {
+                "sockets": cpu.get("topology", {}).get("sockets"),
+                "physical_cores": None,
+                "logical_processors": cpu.get("logical_cores") or None,
+                "cores_per_socket": cpu.get("topology", {}).get("cores_per_socket"),
+                "threads_per_core": cpu.get("topology", {}).get("threads_per_core"),
+            },
+        },
+        "memory": {
+            "state": _state(_bytes(memory.get("total"))),
+            "total_bytes": _bytes(memory.get("total")),
+            "available_bytes": None,
+        },
+        "storage": storage_devices,
+        "gpus": gpu_devices,
+        "accelerators": accelerators,
+        "firmware": {
+            "state": _state(system.get("bios_version")),
+            "bios_vendor": _nullable(system.get("bios_vendor")),
+            "bios_version": _nullable(system.get("bios_version")),
+            "bios_date": _nullable(system.get("bios_date")),
+            "uefi": system.get("uefi", "unknown"),
+            "secure_boot": system.get("secure_boot", {"state": "unknown", "enabled": None}),
+        },
         "collection": {"tools": tools, "probes": _collection_probes(hardware)},
         "classification": classify(hardware),
         "capability_candidates": derive_capability_candidates(hardware),
-        "unknown_facts": [{"path": path, "state": "unknown", "reason": "collector returned no recognized value"}
-                          for path in unknown_paths],
+        "unknown_facts": [
+            {"path": path, "state": "unknown", "reason": "collector returned no recognized value"}
+            for path in unknown_paths
+        ],
     }
 
 
@@ -1295,7 +1589,9 @@ def assemble_profile(
         profile["classification"] = classification["classification"]
     candidates = []
     for candidate in capabilities.get("capability_candidates") or []:
-        candidates.append({key: value for key, value in candidate.items() if key != "validation_claim"})
+        candidates.append(
+            {key: value for key, value in candidate.items() if key != "validation_claim"}
+        )
     if candidates:
         profile["capability_candidates"] = candidates
     return profile
@@ -1355,9 +1651,14 @@ def _validate(instance: Any, rule: dict[str, Any], root: dict[str, Any], path: s
     types = rule.get("type")
     if types:
         allowed = [types] if isinstance(types, str) else types
-        checks = {"object": lambda x: isinstance(x, dict), "array": lambda x: isinstance(x, list),
-                  "string": lambda x: isinstance(x, str), "integer": lambda x: isinstance(x, int) and not isinstance(x, bool),
-                  "boolean": lambda x: isinstance(x, bool), "null": lambda x: x is None}
+        checks = {
+            "object": lambda x: isinstance(x, dict),
+            "array": lambda x: isinstance(x, list),
+            "string": lambda x: isinstance(x, str),
+            "integer": lambda x: isinstance(x, int) and not isinstance(x, bool),
+            "boolean": lambda x: isinstance(x, bool),
+            "null": lambda x: x is None,
+        }
         if not any(checks[k](instance) for k in allowed):
             return [f"{path}: expected {' or '.join(allowed)}"]
     if "const" in rule and instance != rule["const"]:
@@ -1378,7 +1679,9 @@ def _validate(instance: Any, rule: dict[str, Any], root: dict[str, Any], path: s
     if isinstance(instance, list):
         if len(instance) < rule.get("minItems", 0):
             errors.append(f"{path}: expected at least {rule['minItems']} items")
-        if rule.get("uniqueItems") and len({json.dumps(x, sort_keys=True) for x in instance}) != len(instance):
+        if rule.get("uniqueItems") and len(
+            {json.dumps(x, sort_keys=True) for x in instance}
+        ) != len(instance):
             errors.append(f"{path}: items must be unique")
         for index, value in enumerate(instance):
             errors.extend(_validate(value, rule.get("items", {}), root, f"{path}[{index}]"))
@@ -1394,7 +1697,11 @@ def _validate(instance: Any, rule: dict[str, Any], root: dict[str, Any], path: s
                     raise ValueError
             except ValueError:
                 errors.append(f"{path}: is not an RFC 3339 date-time")
-    if isinstance(instance, int) and not isinstance(instance, bool) and instance < rule.get("minimum", instance):
+    if (
+        isinstance(instance, int)
+        and not isinstance(instance, bool)
+        and instance < rule.get("minimum", instance)
+    ):
         errors.append(f"{path}: is less than {rule['minimum']}")
     return errors
 
@@ -1413,7 +1720,9 @@ def validate_profile(profile: dict[str, Any], schema_path: Path = DEFAULT_SCHEMA
     validate_document(profile, schema_path, "system profile")
 
 
-def atomic_write_document(path: Path, data: dict[str, Any], schema_path: Path, label: str = "document") -> None:
+def atomic_write_document(
+    path: Path, data: dict[str, Any], schema_path: Path, label: str = "document"
+) -> None:
     """Validate before creating a temporary file or replacing the last document."""
     validate_document(data, schema_path, label)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1454,8 +1763,11 @@ def atomic_write_text(path: Path, text: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Publish the validated Stage 1 system profile")
-    parser.add_argument("--lookup-gpu-arch", metavar="PCI_TEXT",
-                        help="Print GPU architecture from lspci -nn text using the PCI map")
+    parser.add_argument(
+        "--lookup-gpu-arch",
+        metavar="PCI_TEXT",
+        help="Print GPU architecture from lspci -nn text using the PCI map",
+    )
     parser.add_argument("--input", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA)

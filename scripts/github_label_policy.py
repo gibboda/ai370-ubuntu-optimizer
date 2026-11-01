@@ -207,9 +207,7 @@ def main() -> int:
         help="Label policy JSON path",
     )
     args = parser.parse_args()
-    raw = sys.stdin.read() if args.input == "-" else Path(args.input).read_text(
-        encoding="utf-8"
-    )
+    raw = sys.stdin.read() if args.input == "-" else Path(args.input).read_text(encoding="utf-8")
     event = json.loads(raw)
     result = compute_mutations(event, load_policy(args.policy))
     json.dump(result, sys.stdout, indent=2, sort_keys=True)

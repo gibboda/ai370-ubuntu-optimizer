@@ -101,9 +101,7 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertFalse(reviewer["automatic"])
         self.assertEqual(credential["role"], "independent_reviewer")
         self.assertEqual(credential["default_posture"], "read_only")
-        self.assertTrue(
-            all(value == "read_only" for value in credential["capabilities"].values())
-        )
+        self.assertTrue(all(value == "read_only" for value in credential["capabilities"].values()))
         self.assertEqual(mcp["readonly_header"], "true")
         self.assertFalse(credential["advice_record"]["mcp_write"])
         self.assertTrue(credential["advice_record"]["required_when_assigned"])
@@ -128,12 +126,8 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertIn(provider, self.mcp["clients"])
 
     def test_escalation_and_allocation_resource_sets_match(self):
-        escalation_resources = set(
-            self.escalation["properties"]["selected_resource"]["enum"]
-        )
-        allocation_resources = set(
-            self.allocation["properties"]["additional_resource"]["enum"]
-        )
+        escalation_resources = set(self.escalation["properties"]["selected_resource"]["enum"])
+        allocation_resources = set(self.allocation["properties"]["additional_resource"]["enum"])
         self.assertEqual(escalation_resources, allocation_resources)
         self.assertNotIn("cursor", escalation_resources)
         self.assertNotIn("github", escalation_resources)
@@ -149,9 +143,7 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
                 self.assertNotEqual(self.providers[canonical], "merge_authority")
 
     def test_governance_advisory_resources_cover_escalation_ai_resources(self):
-        escalation_resources = set(
-            self.escalation["properties"]["selected_resource"]["enum"]
-        )
+        escalation_resources = set(self.escalation["properties"]["selected_resource"]["enum"])
         advisory_resources = set(self.governance["advisory_ai_review"]["providers"])
         self.assertTrue(escalation_resources.issubset(advisory_resources))
         self.assertEqual(advisory_resources - escalation_resources, {"cursor_bugbot"})
@@ -187,15 +179,15 @@ class AgentCrossContractConsistencyTests(unittest.TestCase):
         self.assertFalse(fallback["may_be_assigned_when_grok_available"])
         self.assertFalse(fallback["transfers_independent_review_role"])
         self.assertEqual(
-            second_look["advice_record"]["form_constraints"]["comment_review"]["github_review_state"],
+            second_look["advice_record"]["form_constraints"]["comment_review"][
+                "github_review_state"
+            ],
             "comment_only",
         )
         self.assertTrue(second_look["advice_record"]["required_when_assigned"])
         self.assertFalse(second_look["advice_record"]["satisfies_branch_protection"])
         self.assertIsNone(fallback["provider"])
-        self.assertTrue(
-            set(second_look["cli_advisory_reviewers"]).issubset(advisory_providers)
-        )
+        self.assertTrue(set(second_look["cli_advisory_reviewers"]).issubset(advisory_providers))
         self.assertTrue(set(final_pass["providers"]).issubset(advisory_providers))
         self.assertFalse(final_pass["process_required"])
         self.assertEqual(final_pass["process_required_for"], ["high"])

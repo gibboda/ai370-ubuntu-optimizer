@@ -13,7 +13,9 @@ CAPABILITIES = ROOT / "config/agent-credential-capabilities.json"
 CURSOR = ROOT / ".cursor/mcp.json"
 GROK = ROOT / ".grok/config.toml"
 MCP_DOC = ROOT / ".github/github-mcp.md"
-SECRET_VALUE = re.compile(r"github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9_]+|Bearer\s+(?!\$|<|PASTE_)[A-Za-z0-9_.-]{20,}")
+SECRET_VALUE = re.compile(
+    r"github_pat_[A-Za-z0-9_]+|gh[pousr]_[A-Za-z0-9_]+|Bearer\s+(?!\$|<|PASTE_)[A-Za-z0-9_.-]{20,}"
+)
 
 
 def _markdown_section(text: str, heading: str) -> str:
@@ -45,16 +47,16 @@ class AgentMcpContractTests(unittest.TestCase):
         cls.cursor = json.loads(CURSOR.read_text(encoding="utf-8"))["mcpServers"]["github"]
         cls.grok = tomllib.loads(GROK.read_text(encoding="utf-8"))["mcp_servers"]["github"]
         cls.doc = MCP_DOC.read_text(encoding="utf-8")
-        cls.antigravity_example = _first_json_block(
-            _markdown_section(cls.doc, "Antigravity")
-        )
+        cls.antigravity_example = _first_json_block(_markdown_section(cls.doc, "Antigravity"))
         cls.copilot_example = _first_json_block(
             _markdown_section(cls.doc, "GitHub Copilot / VS Code")
         )
 
     def test_contract_defers_to_policy_and_capability_contract(self) -> None:
         self.assertEqual(self.contract["authority"], "AGENTS.md")
-        self.assertEqual(self.contract["capability_contract"], "config/agent-credential-capabilities.json")
+        self.assertEqual(
+            self.contract["capability_contract"], "config/agent-credential-capabilities.json"
+        )
         self.assertEqual(set(self.contract["clients"]), set(self.capability_contract["clients"]))
 
     def test_tracked_cursor_configuration_matches_contract(self) -> None:
@@ -62,7 +64,9 @@ class AgentMcpContractTests(unittest.TestCase):
         self.assertEqual(expected["path"], ".cursor/mcp.json")
         self.assertEqual(self.cursor[expected["endpoint_field"]], self.contract["endpoint"])
         self.assertEqual(self.cursor["headers"]["Authorization"], expected["credential_syntax"])
-        self.assertEqual(self.cursor["headers"]["X-MCP-Toolsets"], ",".join(self.contract["toolsets"]))
+        self.assertEqual(
+            self.cursor["headers"]["X-MCP-Toolsets"], ",".join(self.contract["toolsets"])
+        )
         self.assertNotIn("X-MCP-Readonly", self.cursor["headers"])
         self.assertEqual(
             self.capability_contract["clients"]["cursor"]["github_auth"]["credential_variable"],
@@ -74,19 +78,29 @@ class AgentMcpContractTests(unittest.TestCase):
         self.assertEqual(expected["path"], ".grok/config.toml")
         self.assertEqual(self.grok[expected["endpoint_field"]], self.contract["endpoint"])
         self.assertEqual(self.grok["headers"]["Authorization"], expected["credential_syntax"])
-        self.assertEqual(self.grok["headers"]["X-MCP-Toolsets"], ",".join(self.contract["toolsets"]))
+        self.assertEqual(
+            self.grok["headers"]["X-MCP-Toolsets"], ",".join(self.contract["toolsets"])
+        )
         self.assertEqual(self.grok["headers"]["X-MCP-Readonly"], "true")
-        self.assertEqual(self.capability_contract["clients"]["grok_build"]["default_posture"], "read_only")
-        self.assertTrue(all(
-            value == "read_only"
-            for value in self.capability_contract["clients"]["grok_build"]["capabilities"].values()
-        ))
+        self.assertEqual(
+            self.capability_contract["clients"]["grok_build"]["default_posture"], "read_only"
+        )
+        self.assertTrue(
+            all(
+                value == "read_only"
+                for value in self.capability_contract["clients"]["grok_build"][
+                    "capabilities"
+                ].values()
+            )
+        )
 
     def test_documented_antigravity_expectation_matches_capability_contract(self) -> None:
         expected = self.contract["clients"]["antigravity"]
         capability = self.capability_contract["clients"]["antigravity"]
         self.assertEqual(expected["configuration"], "documented_untracked")
-        self.assertEqual(expected["credential_variable"], capability["github_auth"]["credential_variable"])
+        self.assertEqual(
+            expected["credential_variable"], capability["github_auth"]["credential_variable"]
+        )
         self.assertEqual(capability["capabilities"]["projects"], "read_only_by_default")
         for marker in (
             "~/.gemini/antigravity/mcp_config.json",
@@ -150,7 +164,9 @@ class AgentMcpContractTests(unittest.TestCase):
         for variable in (
             self.capability_contract["clients"]["cursor"]["github_auth"]["credential_variable"],
             self.capability_contract["clients"]["grok_build"]["github_auth"]["credential_variable"],
-            self.capability_contract["clients"]["antigravity"]["github_auth"]["credential_variable"],
+            self.capability_contract["clients"]["antigravity"]["github_auth"][
+                "credential_variable"
+            ],
         ):
             self.assertFalse(variable.startswith("GITHUB_"))
             self.assertFalse(variable.endswith("_API_KEY"))
@@ -170,7 +186,10 @@ class AgentMcpContractTests(unittest.TestCase):
         self.assertTrue(invariants["capability_contract_is_upper_bound"])
         self.assertIn("Perform only harmless reads first.", self.doc)
         self.assertIn("Do not modify a Project merely to\nprove connectivity.", self.doc)
-        self.assertIn("Do not weaken token permissions, rulesets, or branch protection to make\na test pass.", self.doc)
+        self.assertIn(
+            "Do not weaken token permissions, rulesets, or branch protection to make\na test pass.",
+            self.doc,
+        )
 
 
 if __name__ == "__main__":

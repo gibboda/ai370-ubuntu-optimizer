@@ -17,9 +17,15 @@ def main() -> None:
         description="S1-M5 publish s1-m5-system-profile.json from milestone artifacts"
     )
     parser.add_argument("--facts", required=True, type=Path, help="S1-M2 normalized facts JSON")
-    parser.add_argument("--classification", required=True, type=Path, help="S1-M3 classification JSON")
-    parser.add_argument("--capabilities", required=True, type=Path, help="S1-M4 capability candidates JSON")
-    parser.add_argument("--output", required=True, type=Path, help="Canonical s1-m5-system-profile.json")
+    parser.add_argument(
+        "--classification", required=True, type=Path, help="S1-M3 classification JSON"
+    )
+    parser.add_argument(
+        "--capabilities", required=True, type=Path, help="S1-M4 capability candidates JSON"
+    )
+    parser.add_argument(
+        "--output", required=True, type=Path, help="Canonical s1-m5-system-profile.json"
+    )
     parser.add_argument("--summary", required=True, type=Path, help="s1-m5-inventory-summary.md")
     parser.add_argument("--compat-output", type=Path, help="Compatibility system-profile.json copy")
     parser.add_argument("--schema", type=Path, default=system_profile.S1_M5_SCHEMA)

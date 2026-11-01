@@ -45,7 +45,9 @@ class Stage1ClassifyTests(unittest.TestCase):
             source.write_text(json.dumps(facts), encoding="utf-8")
             subprocess.run(
                 ["python3", str(SCRIPT), "--input", str(source), "--output", str(output)],
-                check=True, capture_output=True, text=True,
+                check=True,
+                capture_output=True,
+                text=True,
             )
             return json.loads(output.read_text(encoding="utf-8"))
 
@@ -53,9 +55,7 @@ class Stage1ClassifyTests(unittest.TestCase):
         for fixture, platform_id, confidence, state in CASES:
             with self.subTest(fixture=fixture):
                 document = self.classify_fixture(fixture)
-                system_profile.validate_document(
-                    document, system_profile.S1_M3_SCHEMA, "S1-M3"
-                )
+                system_profile.validate_document(document, system_profile.S1_M3_SCHEMA, "S1-M3")
                 classification = document["classification"]
                 self.assertEqual(classification["platform_id"], platform_id)
                 self.assertEqual(classification["confidence"], confidence)
@@ -92,7 +92,9 @@ class Stage1ClassifyTests(unittest.TestCase):
         self.assertNotEqual(point["hardware_family"], halo["hardware_family"])
         self.assertEqual(point["validation"], "project-verified")
         self.assertEqual(halo["validation"], "officially-documented")
-        self.assertEqual(hardware_profile.providers("ai370"), hardware_profile.providers("strix-halo"))
+        self.assertEqual(
+            hardware_profile.providers("ai370"), hardware_profile.providers("strix-halo")
+        )
         self.assertEqual(hardware_profile.gpu_target("ai370"), "gfx1150")
         self.assertEqual(hardware_profile.gpu_target("strix-point"), "gfx1150")
         self.assertEqual(hardware_profile.gpu_target("strix-halo-ryzen-ai"), "gfx1151")

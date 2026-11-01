@@ -10,7 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 ROLES_PATH = ROOT / "config/agent-roles.json"
 COMPATIBILITY_PATH = ROOT / "config/agent-contract-compatibility.json"
 FIXTURE_PATH = ROOT / "tests/fixtures/agent-architecture-mutations/v1.json"
-EXPECTED_CONTRACTS = {"roles", "escalation", "work_allocation", "credential_capabilities", "mcp", "pr_governance"}
+EXPECTED_CONTRACTS = {
+    "roles",
+    "escalation",
+    "work_allocation",
+    "credential_capabilities",
+    "mcp",
+    "pr_governance",
+}
 
 
 def load(path):
@@ -37,7 +44,11 @@ def validate(roles, compatibility):
         failures.add("canonical_authority")
     role_map = roles.get("roles", {})
     primary = role_map.get("primary_orchestrator", {})
-    if primary.get("provider") != "cursor" or primary.get("count") != 1 or not primary.get("default_task_owner"):
+    if (
+        primary.get("provider") != "cursor"
+        or primary.get("count") != 1
+        or not primary.get("default_task_owner")
+    ):
         failures.add("primary_orchestrator")
     if not role_map.get("deterministic_validation", {}).get("before_ai_escalation"):
         failures.add("deterministic_before_escalation")
@@ -91,7 +102,9 @@ def validate(roles, compatibility):
     for root in overlay_contract.get("discovery", {}).get("roots", []):
         base = ROOT / root["path"]
         for pattern in root["patterns"]:
-            discovered.update(path.relative_to(ROOT).as_posix() for path in base.glob(pattern) if path.is_file())
+            discovered.update(
+                path.relative_to(ROOT).as_posix() for path in base.glob(pattern) if path.is_file()
+            )
     exclusions = set(overlay_contract.get("discovery", {}).get("exclusions", []))
     if discovered != declared | exclusions or declared & exclusions:
         failures.add("overlay_completeness")
@@ -114,7 +127,11 @@ def apply_mutation(roles, compatibility, mutation):
     if operation == "set":
         set_path(target, mutation["path"], mutation["value"])
     elif operation == "remove_overlay":
-        target["overlay_contract"]["overlays"] = [entry for entry in target["overlay_contract"]["overlays"] if entry["path"] != mutation["value"]]
+        target["overlay_contract"]["overlays"] = [
+            entry
+            for entry in target["overlay_contract"]["overlays"]
+            if entry["path"] != mutation["value"]
+        ]
     elif operation == "remove_contract":
         target["contracts"].pop(mutation["value"])
     else:
@@ -183,7 +200,30 @@ class AgentArchitectureMutationTests(unittest.TestCase):
 
     def test_mutations_cover_critical_architecture_boundaries(self):
         covered = {mutation["expected_rule"] for mutation in self.fixture["mutations"]}
-        self.assertEqual(covered, {"canonical_authority", "primary_orchestrator", "deterministic_before_escalation", "advisory_review", "human_merge_authority", "no_vendor_chaining", "bounded_role_failover", "provider_quota_exhaustion_is_not_workflow_completion", "required_work_continues_on_provider_capacity_failure", "least_agent_principle", "duplicate_routine_ai_work", "ai_reviews_advisory", "grok_exclusive_independent_review", "cursor_remains_primary", "bugbot_is_cursor_native_autofixer", "native_specialist_pass_precedes_final_merge_validation", "overlay_completeness", "contract_coverage", "schema_version_match"})
+        self.assertEqual(
+            covered,
+            {
+                "canonical_authority",
+                "primary_orchestrator",
+                "deterministic_before_escalation",
+                "advisory_review",
+                "human_merge_authority",
+                "no_vendor_chaining",
+                "bounded_role_failover",
+                "provider_quota_exhaustion_is_not_workflow_completion",
+                "required_work_continues_on_provider_capacity_failure",
+                "least_agent_principle",
+                "duplicate_routine_ai_work",
+                "ai_reviews_advisory",
+                "grok_exclusive_independent_review",
+                "cursor_remains_primary",
+                "bugbot_is_cursor_native_autofixer",
+                "native_specialist_pass_precedes_final_merge_validation",
+                "overlay_completeness",
+                "contract_coverage",
+                "schema_version_match",
+            },
+        )
 
 
 if __name__ == "__main__":

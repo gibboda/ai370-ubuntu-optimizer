@@ -17,7 +17,9 @@ def main() -> None:
         description="S1-M4 derive capability candidates from s1-m2-normalized-facts.json"
     )
     parser.add_argument("--input", required=True, type=Path, help="S1-M2 normalized facts JSON")
-    parser.add_argument("--output", required=True, type=Path, help="S1-M4 capability candidates JSON")
+    parser.add_argument(
+        "--output", required=True, type=Path, help="S1-M4 capability candidates JSON"
+    )
     parser.add_argument("--schema", type=Path, default=system_profile.S1_M4_SCHEMA)
     args = parser.parse_args()
     facts = json.loads(args.input.read_text(encoding="utf-8"))

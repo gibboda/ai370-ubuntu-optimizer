@@ -44,7 +44,9 @@ class AgentWorkAllocationTests(unittest.TestCase):
         self.assertGreaterEqual(evidence["minItems"], 1)
         allowed = set(evidence["items"]["enum"])
         self.assertTrue({"cursor_findings", "logs", "ci", "tests"}.issubset(allowed))
-        self.assertTrue({"issue_discussion", "pr_discussion", "prior_agent_output"}.issubset(allowed))
+        self.assertTrue(
+            {"issue_discussion", "pr_discussion", "prior_agent_output"}.issubset(allowed)
+        )
 
     def _requirements_for(self, work_kind: str) -> set[str]:
         for rule in self.allocation["allOf"]:
@@ -55,12 +57,14 @@ class AgentWorkAllocationTests(unittest.TestCase):
     def _resource_match_rules(self) -> dict[str, str]:
         rules: dict[str, str] = {}
         for rule in self.allocation["allOf"]:
-            resource = rule.get("if", {}).get("properties", {}).get("additional_resource", {}).get("const")
+            resource = (
+                rule.get("if", {}).get("properties", {}).get("additional_resource", {}).get("const")
+            )
             if resource is None:
                 continue
-            selected = (
-                rule["then"]["properties"]["escalation_record"]["properties"]["selected_resource"]["const"]
-            )
+            selected = rule["then"]["properties"]["escalation_record"]["properties"][
+                "selected_resource"
+            ]["const"]
             rules[resource] = selected
         return rules
 
@@ -159,7 +163,9 @@ class AgentWorkAllocationTests(unittest.TestCase):
     def test_escalation_record_references_escalation_schema(self) -> None:
         ref = self.allocation["properties"]["escalation_record"]["$ref"]
         self.assertTrue(ref.endswith("agent-escalation-record.schema.json"))
-        self.assertNotEqual(self.allocation["properties"]["escalation_record"].get("type"), "object")
+        self.assertNotEqual(
+            self.allocation["properties"]["escalation_record"].get("type"), "object"
+        )
 
     def test_additional_resource_must_match_escalation_selected_resource(self) -> None:
         resources = self.allocation["properties"]["additional_resource"]["enum"]
@@ -238,7 +244,9 @@ class AgentWorkAllocationTests(unittest.TestCase):
         self.assertIn("records `grok_build` as `independent_review`", text)
         self.assertIn("as `specialist_review`, not `independent_review`", text)
         self.assertIn("does not transfer the independent-review role", text)
-        self.assertIn("must be recorded as a COMMENT-only pull-request comment or COMMENT review", text)
+        self.assertIn(
+            "must be recorded as a COMMENT-only pull-request comment or COMMENT review", text
+        )
         self.assertIn("### `specialist_review`", text)
         self.assertIn("`specialist_review_reason`", text)
         self.assertIn("A CODEOWNER-assigned Antigravity second look uses this work kind", text)
@@ -252,7 +260,9 @@ class AgentWorkAllocationTests(unittest.TestCase):
         self.assertIn("does not invoke agents", text)
         self.assertIn("human PR governance remains final authority", text)
         self.assertIn("An empty `escalation_record` object is not valid", text)
-        self.assertIn("`additional_resource` must equal `escalation_record.selected_resource`", text)
+        self.assertIn(
+            "`additional_resource` must equal `escalation_record.selected_resource`", text
+        )
 
     def test_agents_policy_contains_required_duplicate_controls(self) -> None:
         text = AGENTS.read_text(encoding="utf-8")
