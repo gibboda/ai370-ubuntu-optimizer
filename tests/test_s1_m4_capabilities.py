@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/raw-probes/v1"
 SCRIPT = ROOT / "scripts/s1-m4-derive-capabilities.py"

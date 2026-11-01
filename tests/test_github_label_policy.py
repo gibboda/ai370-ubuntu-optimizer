@@ -4,12 +4,11 @@
 from __future__ import annotations
 
 import json
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-
-import sys
 
 sys.path.insert(0, str(ROOT / "scripts"))
 import github_label_policy as policy_mod  # noqa: E402

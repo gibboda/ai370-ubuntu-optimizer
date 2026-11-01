@@ -11,7 +11,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
 KERNEL_SCRIPT = ROOT / "scripts/30-validate-kernel.sh"

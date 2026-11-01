@@ -12,7 +12,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/raw-probes/v1"
 SCRIPT = ROOT / "scripts/s1-m3-classify-platform.py"
@@ -26,7 +25,6 @@ SPEC.loader.exec_module(system_profile)
 sys.path.insert(0, str(ROOT / "scripts/lib"))
 import firmware_policy  # noqa: E402
 import hardware_profile  # noqa: E402
-
 
 CASES = (
     ("observed-ai370.json", "ai370", "exact", "observed"),

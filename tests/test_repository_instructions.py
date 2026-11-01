@@ -7,7 +7,6 @@ import subprocess
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 VERSION_PATH = ROOT / "VERSION"
 _LAST_REVIEWED = re.compile(r"\*\*Last reviewed:\*\* (\d{4}-\d{2}-\d{2})")

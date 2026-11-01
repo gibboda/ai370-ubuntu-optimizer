@@ -14,7 +14,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 SCHEMA_NAME = "ai370-system-profile"
 SCHEMA_VERSION = 3
 SCHEMA_URI = "https://ai370.local/schemas/system-profile-v3.json"

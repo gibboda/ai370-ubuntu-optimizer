@@ -16,7 +16,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CATALOG_PATH = PROJECT_ROOT / "configs/profiles/hardware-profiles.json"
 TUNING_DIR = PROJECT_ROOT / "configs/tuning"
