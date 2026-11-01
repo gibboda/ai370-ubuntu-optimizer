@@ -126,8 +126,13 @@ jobs:
           format_path = Path("ruff-format.txt")
           if format_path.is_file():
               text = format_path.read_text(encoding="utf-8")
-              match = re.search(r"(\d+) files would be reformatted", text)
-              reformat_count = match.group(1) if match else "unknown"
+              match = re.search(r"(\d+) files? would be reformatted", text)
+              if match:
+                  reformat_count = match.group(1)
+              elif format_rc == "0":
+                  reformat_count = "0"
+              else:
+                  reformat_count = "unknown"
               lines.extend(
                   [
                       "### `ruff format --check`",
