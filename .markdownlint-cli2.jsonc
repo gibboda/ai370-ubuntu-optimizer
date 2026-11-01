@@ -1,0 +1,9 @@
+{
+  "gitignore": true,
+  "globs": [
+    "**/*.md"
+  ],
+  "ignores": [
+    "CHANGELOG.md"
+  ]
+}
