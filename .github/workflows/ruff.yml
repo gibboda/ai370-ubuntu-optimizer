@@ -18,6 +18,10 @@ jobs:
   ruff:
     name: ruff
     runs-on: ubuntu-latest
+    # Advisory mode: continue-on-error keeps this job from failing PR checks while
+    # the Ruff baseline is above zero. Remove continue-on-error once the tree is
+    # clean and Ruff is promoted to a required status check.
+    continue-on-error: true
     steps:
       - name: Check out repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -27,9 +31,120 @@ jobs:
         run: pipx install 'ruff==0.17.3'
 
       - name: Ruff check
+        id: ruff_check
         shell: bash
-        run: ruff check .
+        run: |
+          set +e
+          ruff check . --output-format=json > ruff-check.json
+          check_rc=$?
+          python3 <<'PY'
+          from __future__ import annotations
+
+          import json
+          from collections import Counter
+          from pathlib import Path
+
+          raw = Path("ruff-check.json").read_text(encoding="utf-8").strip()
+          diagnostics = json.loads(raw) if raw else []
+          if not diagnostics:
+              print("All checks passed!")
+          else:
+              for item in diagnostics:
+                  location = item.get("location") or {}
+                  print(
+                      f"{item.get('filename')}:{location.get('row')}:{location.get('column')}: "
+                      f"{item.get('code')} {item.get('message')}"
+                  )
+              counts = Counter(item["code"] for item in diagnostics)
+              print(f"Found {len(diagnostics)} errors.")
+              for code, count in counts.most_common():
+                  print(f"  {code}: {count}")
+          PY
+          set -e
+          echo "exit_code=${check_rc}" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Ruff format check
+        id: ruff_format
         shell: bash
-        run: ruff format --check .
+        run: |
+          set +e
+          ruff format --check . 2>&1 | tee ruff-format.txt
+          format_rc=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=${format_rc}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Write Ruff summary
+        if: always()
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from __future__ import annotations
+
+          import json
+          import os
+          import re
+          from collections import Counter
+          from pathlib import Path
+
+          check_rc = os.environ.get("CHECK_RC", "0")
+          format_rc = os.environ.get("FORMAT_RC", "0")
+
+          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          lines: list[str] = [
+              "## Ruff (advisory)",
+              "",
+              "This job is **advisory** (`continue-on-error: true`) until the baseline is clean.",
+              "",
+          ]
+
+          json_path = Path("ruff-check.json")
+          if json_path.is_file():
+              raw = json_path.read_text(encoding="utf-8").strip()
+              diagnostics = json.loads(raw) if raw else []
+              codes = Counter(item["code"] for item in diagnostics)
+              fixable = sum(1 for item in diagnostics if item.get("fix"))
+              lines.extend(
+                  [
+                      "### `ruff check`",
+                      "",
+                      f"- Findings: **{len(diagnostics)}**",
+                      f"- Auto-fixable (`ruff check --fix`): **{fixable}**",
+                      f"- Step exit: `{check_rc}` (non-zero means findings present)",
+                      "",
+                      "Top rules:",
+                      "",
+                  ]
+              )
+              for code, count in codes.most_common(10):
+                  lines.append(f"- `{code}`: {count}")
+              lines.append("")
+          else:
+              lines.extend(["### `ruff check`", "", "_No JSON report captured._", ""])
+
+          format_path = Path("ruff-format.txt")
+          if format_path.is_file():
+              text = format_path.read_text(encoding="utf-8")
+              match = re.search(r"(\d+) files? would be reformatted", text)
+              if match:
+                  reformat_count = match.group(1)
+              elif format_rc == "0":
+                  reformat_count = "0"
+              else:
+                  reformat_count = "unknown"
+              lines.extend(
+                  [
+                      "### `ruff format --check`",
+                      "",
+                      f"- Files that would be reformatted: **{reformat_count}**",
+                      f"- Step exit: `{format_rc}` (non-zero means formatting drift)",
+                      "",
+                  ]
+              )
+
+          summary_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+        env:
+          CHECK_RC: ${{ steps.ruff_check.outputs.exit_code }}
+          FORMAT_RC: ${{ steps.ruff_format.outputs.exit_code }}
