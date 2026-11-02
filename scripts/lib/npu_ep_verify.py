@@ -48,7 +48,14 @@ def find_vaip_config() -> str:
             ]
         )
         # Installation path sometimes points at .../ryzen-ai/venv
-        candidates.append(base / "lib" / "python3.12" / "site-packages" / "voe-4.0-linux_x86_64" / "vaip_config.json")
+        candidates.append(
+            base
+            / "lib"
+            / "python3.12"
+            / "site-packages"
+            / "voe-4.0-linux_x86_64"
+            / "vaip_config.json"
+        )
 
     try:
         import onnxruntime as ort
@@ -192,7 +199,9 @@ def run_provider_benchmark(
         require_ep_execution = is_amd_provider(provider, tokens)
 
     prof_dir = tempfile.mkdtemp(prefix="ai370-ort-prof-")
-    cache_dir = tempfile.mkdtemp(prefix="ai370-vai-cache-") if is_amd_provider(provider, tokens) else ""
+    cache_dir = (
+        tempfile.mkdtemp(prefix="ai370-vai-cache-") if is_amd_provider(provider, tokens) else ""
+    )
     profile_path = ""
     vaiml: dict[str, Any] = {}
     session_providers: list[str] = []

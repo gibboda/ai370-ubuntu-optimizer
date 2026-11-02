@@ -8,7 +8,6 @@ import json
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/raw-probes/v1"
 SPEC = importlib.util.spec_from_file_location(

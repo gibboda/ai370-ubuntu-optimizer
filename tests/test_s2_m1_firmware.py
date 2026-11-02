@@ -11,7 +11,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
 BIOS_SCRIPT = ROOT / "scripts/20-check-bios.sh"
@@ -112,9 +111,7 @@ class FirmwareScriptTests(unittest.TestCase):
                 (latest / "s2-m1-firmware-validation.json").read_text(encoding="utf-8")
             )
             facts_md = (latest / "tier1-firmware.md").read_text(encoding="utf-8")
-            policy_md = (latest / "tier1-firmware-validation.md").read_text(
-                encoding="utf-8"
-            )
+            policy_md = (latest / "tier1-firmware-validation.md").read_text(encoding="utf-8")
         self.assertEqual(report["profile"], "generic-ryzen-ai")
         self.assertEqual(report["classified_platform_id"], "ai370")
         self.assertEqual(report["bios_expected"], "2.01")
@@ -127,9 +124,7 @@ class FirmwareScriptTests(unittest.TestCase):
             validation["consumed_profile"]["fingerprint"]["value"],
             report["consumed_profile"]["fingerprint"]["value"],
         )
-        system_profile.validate_document(
-            canonical, firmware_policy.S2_M1_SCHEMA, "S2-M1"
-        )
+        system_profile.validate_document(canonical, firmware_policy.S2_M1_SCHEMA, "S2-M1")
         self.assertEqual(canonical["milestone"], "S2-M1")
         self.assertNotIn("bios_expected", canonical["facts"]["bios"])
         self.assertNotIn("bios_version", canonical["policy"])
@@ -154,8 +149,8 @@ class FirmwareScriptTests(unittest.TestCase):
             stub = bindir / "fwupdmgr"
             stub.write_text(
                 "#!/bin/bash\n"
-                "if [[ \"$1\" == \"--version\" ]]; then echo 'fwupd 1.9'; exit 0; fi\n"
-                "if [[ \"$1\" == \"get-devices\" ]]; then\n"
+                'if [[ "$1" == "--version" ]]; then echo \'fwupd 1.9\'; exit 0; fi\n'
+                'if [[ "$1" == "get-devices" ]]; then\n'
                 "  echo 'Failed to connect to daemon' >&2\n"
                 "  exit 1\n"
                 "fi\n"

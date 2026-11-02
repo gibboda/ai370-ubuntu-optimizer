@@ -8,7 +8,7 @@ verdict is tied to detected hardware (schema version + fingerprint) rather than
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -85,10 +85,7 @@ def bios_acceptable(observed: str | None, expected: str) -> str:
     observed_text_value = (observed or "").strip()
     if not expected_text or not observed_text_value:
         return "unknown"
-    if (
-        observed_text_value == expected_text
-        or expected_text in observed_text_value
-    ):
+    if observed_text_value == expected_text or expected_text in observed_text_value:
         return "true"
     return "false"
 
@@ -138,9 +135,7 @@ def build_firmware_baseline(
         "bios_vendor": display_or_unknown(facts["bios_vendor"]),
         "bios_expected": expected,
         "bios_acceptable": acceptable,
-        "policy_source": (
-            f"configs/profiles/{platform_id}.env" if platform_id else None
-        ),
+        "policy_source": (f"configs/profiles/{platform_id}.env" if platform_id else None),
         "system": {
             "vendor": display_or_unknown(facts["system_vendor"]),
             "product": display_or_unknown(facts["system_product"]),
@@ -166,7 +161,7 @@ def firmware_policy_verdict(
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _normalize_checks(checks: dict[str, Any] | None) -> dict[str, Any]:

@@ -11,7 +11,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
 KERNEL_SCRIPT = ROOT / "scripts/30-validate-kernel.sh"
@@ -56,9 +55,7 @@ class Stage2KernelDriverTests(unittest.TestCase):
             )
             compat = json.loads((latest / "tier1-kernel-plan.json").read_text(encoding="utf-8"))
             self.assertTrue((latest / "s2-m2-kernel-driver-validation.md").is_file())
-        system_profile.validate_document(
-            canonical, kernel_validation.S2_M2_SCHEMA, "S2-M2"
-        )
+        system_profile.validate_document(canonical, kernel_validation.S2_M2_SCHEMA, "S2-M2")
         fixture = load_reference_profile()
         self.assertEqual(canonical["milestone"], "S2-M2")
         self.assertEqual(canonical["cli_profile"], "generic-ryzen-ai")
@@ -73,7 +70,9 @@ class Stage2KernelDriverTests(unittest.TestCase):
             compat["canonical_artifact"],
             "reports/latest/s2-m2-kernel-driver-validation.json",
         )
-        self.assertEqual(compat["consumed_profile"]["fingerprint"]["value"], fixture["fingerprint"]["value"])
+        self.assertEqual(
+            compat["consumed_profile"]["fingerprint"]["value"], fixture["fingerprint"]["value"]
+        )
 
     def test_publisher_requires_stage1_profile(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -183,11 +182,11 @@ class Stage2KernelDriverTests(unittest.TestCase):
             cat_stub = bindir / "cat"
             cat_stub.write_text(
                 "#!/bin/bash\n"
-                "if [[ \"$1\" == \"/proc/modules\" ]]; then\n"
+                'if [[ "$1" == "/proc/modules" ]]; then\n'
                 "  echo 'cat: /proc/modules: Permission denied' >&2\n"
                 "  exit 1\n"
                 "fi\n"
-                "exec /bin/cat \"$@\"\n",
+                'exec /bin/cat "$@"\n',
                 encoding="utf-8",
             )
             cat_stub.chmod(0o755)

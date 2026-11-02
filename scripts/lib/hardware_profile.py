@@ -16,13 +16,20 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CATALOG_PATH = PROJECT_ROOT / "configs/profiles/hardware-profiles.json"
 TUNING_DIR = PROJECT_ROOT / "configs/tuning"
 _PROFILE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _MODE_PROFILES = frozenset({"safe", "aggressive"})
-_MATCH_KEYS = ("id", "confidence", "priority", "description", "requires", "requires_if_known", "optional")
+_MATCH_KEYS = (
+    "id",
+    "confidence",
+    "priority",
+    "description",
+    "requires",
+    "requires_if_known",
+    "optional",
+)
 
 
 class HardwareProfileError(ValueError):
@@ -63,7 +70,14 @@ def load_catalog() -> dict[str, Any]:
             raise HardwareProfileError(
                 f"{profile_id} must use platform architecture {architecture_id}"
             )
-        for key in ("confidence", "priority", "description", "requires", "capabilities", "providers"):
+        for key in (
+            "confidence",
+            "priority",
+            "description",
+            "requires",
+            "capabilities",
+            "providers",
+        ):
             if key not in profile:
                 raise HardwareProfileError(f"{profile_id} is missing {key}")
         overlay = str(profile.get("optimization_profile") or "")

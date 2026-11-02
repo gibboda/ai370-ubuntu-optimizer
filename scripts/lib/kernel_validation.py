@@ -7,7 +7,7 @@ observations. It does not change kernel parameters, packages, or firmware.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +21,7 @@ COMPAT_RELATIVE = "reports/latest"
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _bool_or_none(value: Any) -> bool | None:

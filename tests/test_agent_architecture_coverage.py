@@ -48,7 +48,9 @@ class AgentArchitectureCoverageTests(unittest.TestCase):
         for invariant, evidence in self.coverage["coverage"].items():
             for evidence_type, paths in evidence.items():
                 for relative_path in paths:
-                    with self.subTest(invariant=invariant, evidence=evidence_type, path=relative_path):
+                    with self.subTest(
+                        invariant=invariant, evidence=evidence_type, path=relative_path
+                    ):
                         self.assertTrue(relative_path.startswith("tests/test_"))
                         self.assertTrue(relative_path.endswith(".py"))
 

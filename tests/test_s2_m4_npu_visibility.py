@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/raw-probes/v1"
 PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
@@ -78,7 +77,6 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
         )
 
     def test_visibility_does_not_claim_inference(self) -> None:
-        hardware = hardware_from_fixture("observed-ai370.json")
         checks = {
             "module_present": True,
             "device_nodes_present": True,
@@ -174,7 +172,9 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             report = self.publish_cli(checks, PROFILE_FIXTURE, Path(directory) / "report.json")
         by_id = {step["id"]: step for step in report["ladder"]["steps"]}
-        self.assertEqual(report["consumed_profile"]["fingerprint"]["value"], profile["fingerprint"]["value"])
+        self.assertEqual(
+            report["consumed_profile"]["fingerprint"]["value"], profile["fingerprint"]["value"]
+        )
         self.assertFalse(report["checks"]["module_present"])
         self.assertFalse(report["checks"]["device_nodes_present"])
         self.assertEqual(by_id["DETECTED"]["status"], "not_satisfied")
@@ -224,7 +224,7 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
 
     def test_collector_does_not_run_npu_benchmark(self) -> None:
         source = COLLECTOR.read_text(encoding="utf-8")
-        self.assertNotRegex(source, r'(?m)^\s*bash .+230-benchmark-npu\.sh')
+        self.assertNotRegex(source, r"(?m)^\s*bash .+230-benchmark-npu\.sh")
         self.assertNotIn("npu_ep_verify", source)
         self.assertIn("visibility only", source.lower())
         check_210 = CHECK_210.read_text(encoding="utf-8")

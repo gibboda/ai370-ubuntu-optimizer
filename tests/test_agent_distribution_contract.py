@@ -46,7 +46,8 @@ class AgentDistributionContractTests(unittest.TestCase):
 
     def test_distribution_covers_compatible_portable_contracts(self):
         compatibility_paths = {
-            entry["path"] for name, entry in self.compatibility["contracts"].items()
+            entry["path"]
+            for name, entry in self.compatibility["contracts"].items()
             if name != "pr_governance"
         }
         portable = set(self.distribution["portable"])

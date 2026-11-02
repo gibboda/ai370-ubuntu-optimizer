@@ -128,7 +128,9 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
     def test_governance_invariants_match_agent_policy(self) -> None:
         invariants = self.contract["invariants"]
         self.assertTrue(invariants["human_final_authority"])
-        self.assertTrue(invariants["deterministic_checks_authoritative_for_machine_verifiable_facts"])
+        self.assertTrue(
+            invariants["deterministic_checks_authoritative_for_machine_verifiable_facts"]
+        )
         self.assertTrue(invariants["optional_ai_unavailability_must_not_block_merge"])
         self.assertTrue(invariants["mcp_access_does_not_bypass_governance"])
         self.assertNotIn("copilot_and_codex_fallback_only", invariants)
@@ -137,8 +139,12 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
         self.assertTrue(invariants["provider_quota_exhaustion_is_not_workflow_completion"])
         self.assertTrue(invariants["required_work_continues_on_provider_capacity_failure"])
         self.assertTrue(self.roles["invariants"]["bounded_role_failover"])
-        self.assertTrue(self.roles["invariants"]["provider_quota_exhaustion_is_not_workflow_completion"])
-        self.assertTrue(self.roles["invariants"]["required_work_continues_on_provider_capacity_failure"])
+        self.assertTrue(
+            self.roles["invariants"]["provider_quota_exhaustion_is_not_workflow_completion"]
+        )
+        self.assertTrue(
+            self.roles["invariants"]["required_work_continues_on_provider_capacity_failure"]
+        )
         self.assertTrue(invariants["native_specialist_pass_precedes_final_required_checks"])
         self.assertTrue(
             self.roles["invariants"]["native_specialist_pass_precedes_final_merge_validation"]
@@ -162,7 +168,9 @@ class PullRequestGovernanceContractTests(unittest.TestCase):
 
     def test_mcp_document_preserves_governance_boundary(self) -> None:
         text = " ".join(MCP_POLICY.read_text(encoding="utf-8").split())
-        self.assertIn("GitHub rulesets and branch protection remain the final merge authority", text)
+        self.assertIn(
+            "GitHub rulesets and branch protection remain the final merge authority", text
+        )
         self.assertIn("MCP credentials must not bypass those controls", text)
 
     def test_review_pipeline_requires_codeowner_and_keeps_ai_advisory(self) -> None:

@@ -7,7 +7,7 @@ run governors, zram, or power-profile commands.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +26,7 @@ COMMANDS_RELATIVE = f"{COMPAT_RELATIVE}/tier1-cpu-runtime-commands.sh"
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
 def proposed_actions_for_mode(mode: str) -> list[dict[str, Any]]:
@@ -165,9 +165,7 @@ def build_s2_m6_optimization_application(
         },
         "backup": {
             "status": "not-implemented",
-            "note": (
-                "Configuration backup and rollback remain Planned S2-M6 exit evidence."
-            ),
+            "note": ("Configuration backup and rollback remain Planned S2-M6 exit evidence."),
         },
         "warnings": warnings,
         "notes": [
@@ -284,9 +282,7 @@ def publish_s2_m6_optimization_application(
         system_profile.atomic_write_text(
             compat_output,
             json.dumps(
-                compat_tier1_platform_tuning(
-                    plan, runtime_apply=application["runtime_apply"]
-                ),
+                compat_tier1_platform_tuning(plan, runtime_apply=application["runtime_apply"]),
                 indent=2,
             )
             + "\n",

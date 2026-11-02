@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/raw-probes/v1"
 SCRIPT = ROOT / "scripts/s1-m4-derive-capabilities.py"
@@ -35,7 +34,9 @@ class Stage1CapabilityTests(unittest.TestCase):
             source.write_text(json.dumps(facts), encoding="utf-8")
             subprocess.run(
                 ["python3", str(SCRIPT), "--input", str(source), "--output", str(output)],
-                check=True, capture_output=True, text=True,
+                check=True,
+                capture_output=True,
+                text=True,
             )
             return json.loads(output.read_text(encoding="utf-8"))
 

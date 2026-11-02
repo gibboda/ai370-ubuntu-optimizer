@@ -157,7 +157,9 @@ def _gpu_driver_ready(hardware: dict[str, Any]) -> tuple[bool, list[str]]:
 def _npu_present(hardware: dict[str, Any]) -> tuple[bool, list[str]]:
     npu = hardware.get("npu") or {}
     if npu.get("present") is True:
-        evidence = [text for text in (npu.get("module_text"), npu.get("device_text")) if _known(text)]
+        evidence = [
+            text for text in (npu.get("module_text"), npu.get("device_text")) if _known(text)
+        ]
         return True, evidence or ["npu.present"]
     return False, []
 
@@ -190,7 +192,9 @@ def _highest_satisfied(steps: list[dict[str, Any]], ordered_ids: tuple[str, ...]
     return current
 
 
-def _assessment_from_steps(steps: list[dict[str, Any]], ordered_ids: tuple[str, ...]) -> AssessmentState:
+def _assessment_from_steps(
+    steps: list[dict[str, Any]], ordered_ids: tuple[str, ...]
+) -> AssessmentState:
     if not steps:
         return "UNKNOWN"
     first = steps[0]
@@ -399,17 +403,23 @@ def npu_ladder_from_visibility(
     backend_ready = checks.get("backend_ready") is True
 
     steps["FIRMWARE_READY"]["status"] = (
-        "satisfied" if firmware_ready else ("unknown" if checks.get("firmware_ready") is None else "not_satisfied")
+        "satisfied"
+        if firmware_ready
+        else ("unknown" if checks.get("firmware_ready") is None else "not_satisfied")
     )
     steps["FIRMWARE_READY"]["evidence"] = ["firmware visible"] if firmware_ready else []
 
     steps["RUNTIME_READY"]["status"] = (
-        "satisfied" if runtime_ready else ("unknown" if checks.get("runtime_ready") is None else "not_satisfied")
+        "satisfied"
+        if runtime_ready
+        else ("unknown" if checks.get("runtime_ready") is None else "not_satisfied")
     )
     steps["RUNTIME_READY"]["evidence"] = ["runtime visible"] if runtime_ready else []
 
     steps["BACKEND_READY"]["status"] = (
-        "satisfied" if backend_ready else ("unknown" if checks.get("backend_ready") is None else "not_satisfied")
+        "satisfied"
+        if backend_ready
+        else ("unknown" if checks.get("backend_ready") is None else "not_satisfied")
     )
     steps["BACKEND_READY"]["evidence"] = ["backend visible"] if backend_ready else []
 
@@ -426,9 +436,18 @@ def hardware_from_live_gpu_checks(checks: dict[str, Any]) -> dict[str, Any]:
     amdgpu_loaded = str(checks.get("amdgpu", "")).lower() == "loaded"
     devices: list[dict[str, Any]] = []
     if gpu_text or _known(gpu_arch):
-        vendor_id = "1002" if amdgpu_loaded or "1002" in gpu_text.lower() or "amd" in gpu_text.lower() else None
+        vendor_id = (
+            "1002"
+            if amdgpu_loaded or "1002" in gpu_text.lower() or "amd" in gpu_text.lower()
+            else None
+        )
         if vendor_id:
-            devices.append({"vendor_id": vendor_id, "device_name": gpu_text.splitlines()[0] if gpu_text else None})
+            devices.append(
+                {
+                    "vendor_id": vendor_id,
+                    "device_name": gpu_text.splitlines()[0] if gpu_text else None,
+                }
+            )
         elif gpu_text:
             devices.append({"device_name": gpu_text.splitlines()[0]})
     return {
@@ -465,8 +484,12 @@ def hardware_from_live_npu_checks(checks: dict[str, Any]) -> dict[str, Any]:
     if present:
         devices.append(
             {
-                "bound_driver": "amdxdna" if module_present or "amdxdna" in module_text.lower() else None,
-                "device_name": node_list[0] if node_list else (device_text.splitlines()[0] if device_text else None),
+                "bound_driver": "amdxdna"
+                if module_present or "amdxdna" in module_text.lower()
+                else None,
+                "device_name": node_list[0]
+                if node_list
+                else (device_text.splitlines()[0] if device_text else None),
             }
         )
     return {
@@ -550,7 +573,9 @@ def normalize_gpu_checks(checks: dict[str, Any], hardware: dict[str, Any]) -> di
     )
     gpu_arch = checks.get("gpu_arch", gpu.get("arch"))
     return {
-        "amdgpu": "loaded" if amdgpu_loaded else ("missing" if _gpu_detected(hardware)[0] else "unknown"),
+        "amdgpu": "loaded"
+        if amdgpu_loaded
+        else ("missing" if _gpu_detected(hardware)[0] else "unknown"),
         "gpu_arch": str(gpu_arch) if _known(gpu_arch) else None,
         "vulkan": checks.get("vulkan", "unknown"),
         "opencl": checks.get("opencl", "unknown"),
@@ -569,7 +594,9 @@ def normalize_npu_checks(checks: dict[str, Any], hardware: dict[str, Any]) -> di
     device_nodes_present = checks.get("device_nodes_present")
     return {
         "module_present": module_present if isinstance(module_present, bool) else None,
-        "device_nodes_present": device_nodes_present if isinstance(device_nodes_present, bool) else None,
+        "device_nodes_present": device_nodes_present
+        if isinstance(device_nodes_present, bool)
+        else None,
         "firmware_ready": checks.get("firmware_ready"),
         "runtime_ready": checks.get("runtime_ready"),
         "backend_ready": checks.get("backend_ready"),
