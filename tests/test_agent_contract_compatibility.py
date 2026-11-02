@@ -73,9 +73,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
 
     def test_compatibility_contract_defers_to_agents_md(self):
         self.assertEqual(self.compatibility["authority"], "AGENTS.md")
-        self.assertTrue(
-            self.compatibility["invariants"]["agents_md_remains_authoritative"]
-        )
+        self.assertTrue(self.compatibility["invariants"]["agents_md_remains_authoritative"])
         self.assertGreaterEqual(self.compatibility["architecture_contract_version"], 1)
 
     def test_all_declared_contracts_exist_and_match_exact_schema_versions(self):
@@ -109,9 +107,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
         self.assertEqual(classes["documentation_only"]["minimum_repository_release"], "patch")
         self.assertEqual(classes["backward_compatible"]["minimum_repository_release"], "minor")
         self.assertEqual(classes["breaking"]["minimum_repository_release"], "major")
-        self.assertEqual(
-            classes["breaking"]["architecture_contract_version_change"], "increment"
-        )
+        self.assertEqual(classes["breaking"]["architecture_contract_version_change"], "increment")
         self.assertEqual(
             classes["backward_compatible"]["architecture_contract_version_change"], "none"
         )
@@ -209,8 +205,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
         self.assertGreaterEqual(
             introduced_sv,
             next_release(previous, minimum_release),
-            f"{change_class} requires at least a {minimum_release} bump from "
-            f"{previous}",
+            f"{change_class} requires at least a {minimum_release} bump from {previous}",
         )
         if introduced_sv > semver(current):
             self.assertGreaterEqual(
@@ -266,9 +261,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
 
     def test_documented_release_as_example_is_a_git_trailer(self):
         documented = (
-            "chore(release)!: Route the 1.0.0 bump through Release Please\n"
-            "\n"
-            "Release-As: 1.0.0\n"
+            "chore(release)!: Route the 1.0.0 bump through Release Please\n\nRelease-As: 1.0.0\n"
         )
         split_from_coauthor = (
             "chore(release)!: Route the 1.0.0 bump through Release Please\n"
@@ -284,9 +277,7 @@ class AgentContractCompatibilityTests(unittest.TestCase):
             "Co-authored-by: gibboda <gibboda@users.noreply.github.com>\n"
         )
         documented_2_0_0 = (
-            "feat(contract)!: Increment architecture contract to version 3\n"
-            "\n"
-            "Release-As: 2.0.0\n"
+            "feat(contract)!: Increment architecture contract to version 3\n\nRelease-As: 2.0.0\n"
         )
 
         self.assertEqual(parse_git_trailers(documented).get("Release-As"), ["1.0.0"])

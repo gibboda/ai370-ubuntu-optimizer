@@ -34,9 +34,7 @@ class ExternalAgentTests(unittest.TestCase):
         for agent in ("grok", "agy"):
             stub = self.stub_bin / agent
             stub.write_text(_STUB_TEMPLATE.format(agent=agent), encoding="utf-8")
-            stub.chmod(
-                stub.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-            )
+            stub.chmod(stub.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
     def _run(
         self,

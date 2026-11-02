@@ -35,7 +35,7 @@ class Stage2OptimizationApplyTests(unittest.TestCase):
             fake_bin.mkdir()
             marker = latest / "powerprofilesctl.called"
             stub = fake_bin / "powerprofilesctl"
-            stub.write_text("#!/bin/sh\necho called > \"$MARKER\"\n", encoding="utf-8")
+            stub.write_text('#!/bin/sh\necho called > "$MARKER"\n', encoding="utf-8")
             stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
             env = {
                 **os.environ,
@@ -93,7 +93,7 @@ class Stage2OptimizationApplyTests(unittest.TestCase):
             fake_bin.mkdir()
             marker = latest / "powerprofilesctl.called"
             stub = fake_bin / "powerprofilesctl"
-            stub.write_text("#!/bin/sh\necho called > \"$MARKER\"\n", encoding="utf-8")
+            stub.write_text('#!/bin/sh\necho called > "$MARKER"\n', encoding="utf-8")
             stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
             completed = subprocess.run(
                 [
@@ -121,9 +121,7 @@ class Stage2OptimizationApplyTests(unittest.TestCase):
             report_path = latest / "s2-m6-optimization-application.json"
             self.assertTrue(report_path.is_file())
             report = json.loads(report_path.read_text(encoding="utf-8"))
-            system_profile.validate_document(
-                report, optimization_plan.S2_M6_SCHEMA, "S2-M6"
-            )
+            system_profile.validate_document(report, optimization_plan.S2_M6_SCHEMA, "S2-M6")
             self.assertEqual(report["milestone"], "S2-M6")
             self.assertTrue(report["approved"])
             self.assertTrue(report["dry_run"])
@@ -142,7 +140,7 @@ class Stage2OptimizationApplyTests(unittest.TestCase):
             fake_bin.mkdir()
             marker = latest / "powerprofilesctl.called"
             stub = fake_bin / "powerprofilesctl"
-            stub.write_text("#!/bin/sh\necho called > \"$MARKER\"\n", encoding="utf-8")
+            stub.write_text('#!/bin/sh\necho called > "$MARKER"\n', encoding="utf-8")
             stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
             completed = subprocess.run(
                 [

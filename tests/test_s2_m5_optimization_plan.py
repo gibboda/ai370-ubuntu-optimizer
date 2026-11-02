@@ -36,7 +36,7 @@ class Stage2OptimizationPlanTests(unittest.TestCase):
             fake_bin.mkdir()
             marker = latest / "powerprofilesctl.called"
             stub = fake_bin / "powerprofilesctl"
-            stub.write_text("#!/bin/sh\necho called > \"$MARKER\"\n", encoding="utf-8")
+            stub.write_text('#!/bin/sh\necho called > "$MARKER"\n', encoding="utf-8")
             stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
             env = {
                 **os.environ,
@@ -58,9 +58,7 @@ class Stage2OptimizationPlanTests(unittest.TestCase):
             self.assertTrue(plan_path.is_file())
             self.assertFalse((latest / "s2-m6-optimization-application.json").exists())
             plan = json.loads(plan_path.read_text(encoding="utf-8"))
-            system_profile.validate_document(
-                plan, optimization_plan.S2_M5_SCHEMA, "S2-M5"
-            )
+            system_profile.validate_document(plan, optimization_plan.S2_M5_SCHEMA, "S2-M5")
             self.assertEqual(plan["milestone"], "S2-M5")
             self.assertTrue(plan["plan_only"])
             self.assertFalse(plan["approved"])
@@ -153,9 +151,7 @@ class Stage2OptimizationPlanTests(unittest.TestCase):
         reference = load_reference_profile()
         ai370_plan = optimization_plan.build_s2_m5_optimization_plan(reference, facts=facts)
         system_profile.validate_document(ai370_plan, optimization_plan.S2_M5_SCHEMA, "S2-M5")
-        self.assertFalse(
-            any("strix-halo-shared-memory" in note for note in ai370_plan["notes"])
-        )
+        self.assertFalse(any("strix-halo-shared-memory" in note for note in ai370_plan["notes"]))
         halo = json.loads(json.dumps(reference))
         halo["classification"]["platform_id"] = "strix-halo-ryzen-ai"
         plan = optimization_plan.build_s2_m5_optimization_plan(halo, facts=facts)

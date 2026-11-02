@@ -383,9 +383,7 @@ def build_s2_m7_platform_validation_report(
     strict = normalize_strict(strict)
     reports_dir = Path(reports_dir)
 
-    collected = [
-        collect_milestone(reports_dir, spec, scope, profile) for spec in MILESTONE_SPECS
-    ]
+    collected = [collect_milestone(reports_dir, spec, scope, profile) for spec in MILESTONE_SPECS]
     by_id = {entry["id"]: entry for entry in collected}
     s2_m1 = by_id["S2-M1"]["document"]
     s2_m3_entry = by_id["S2-M3"]
@@ -402,18 +400,12 @@ def build_s2_m7_platform_validation_report(
     else:
         s2_m3_checks_source = s2_m3
 
-    gpu_arch = gpu_arch_from_inputs(
-        s2_m3=s2_m3, profile=profile, gpu_stack=gpu_stack_for_facts
-    )
+    gpu_arch = gpu_arch_from_inputs(s2_m3=s2_m3, profile=profile, gpu_stack=gpu_stack_for_facts)
     npu_present = npu_present_from_inputs(
         s2_m4=s2_m4, profile=profile, npu_compat=npu_compat_for_facts
     )
-    vulkan = vulkan_state_from_inputs(
-        s2_m3=s2_m3_checks_source, gpu_stack=gpu_stack_for_facts
-    )
-    amdgpu = amdgpu_state_from_inputs(
-        s2_m3=s2_m3_checks_source, gpu_stack=gpu_stack_for_facts
-    )
+    vulkan = vulkan_state_from_inputs(s2_m3=s2_m3_checks_source, gpu_stack=gpu_stack_for_facts)
+    amdgpu = amdgpu_state_from_inputs(s2_m3=s2_m3_checks_source, gpu_stack=gpu_stack_for_facts)
     bios_acc = bios_acceptable_from_inputs(s2_m1=s2_m1, firmware_compat=firmware_compat)
     classified = firmware_policy.classified_platform_id(profile)
 
@@ -483,9 +475,7 @@ def build_s2_m7_platform_validation_report(
         "firmware": f"{COMPAT_RELATIVE}/tier1-firmware.json",
         "firmware_validation": f"{COMPAT_RELATIVE}/tier1-firmware-validation.json",
         "platform_tuning": (
-            f"{COMPAT_RELATIVE}/tier1-platform-tuning.json"
-            if scope in {"full", "smoke"}
-            else None
+            f"{COMPAT_RELATIVE}/tier1-platform-tuning.json" if scope in {"full", "smoke"} else None
         ),
         "local_ai": (
             f"{COMPAT_RELATIVE}/tier1-local-ai-benchmark.json" if scope == "smoke" else None

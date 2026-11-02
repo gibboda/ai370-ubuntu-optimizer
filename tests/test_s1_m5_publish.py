@@ -41,22 +41,44 @@ class Stage1PublishTests(unittest.TestCase):
         raw_path.write_text(json.dumps(raw), encoding="utf-8")
         subprocess.run(
             ["python3", str(S1_M2), "--input", str(raw_path), "--output", str(facts_path)],
-            check=True, capture_output=True, text=True,
+            check=True,
+            capture_output=True,
+            text=True,
         )
         subprocess.run(
             ["python3", str(S1_M3), "--input", str(facts_path), "--output", str(class_path)],
-            check=True, capture_output=True, text=True,
+            check=True,
+            capture_output=True,
+            text=True,
         )
         subprocess.run(
             ["python3", str(S1_M4), "--input", str(facts_path), "--output", str(caps_path)],
-            check=True, capture_output=True, text=True,
+            check=True,
+            capture_output=True,
+            text=True,
         )
         subprocess.run(
-            ["python3", str(S1_M5), "--facts", str(facts_path),
-             "--classification", str(class_path), "--capabilities", str(caps_path),
-             "--output", str(profile_path), "--summary", str(summary_path),
-             "--compat-output", str(compat_path), "--generator-version", "test"],
-            check=True, capture_output=True, text=True,
+            [
+                "python3",
+                str(S1_M5),
+                "--facts",
+                str(facts_path),
+                "--classification",
+                str(class_path),
+                "--capabilities",
+                str(caps_path),
+                "--output",
+                str(profile_path),
+                "--summary",
+                str(summary_path),
+                "--compat-output",
+                str(compat_path),
+                "--generator-version",
+                "test",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
         )
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
         summary = summary_path.read_text(encoding="utf-8")
@@ -82,7 +104,9 @@ class Stage1PublishTests(unittest.TestCase):
     def test_compat_system_profile_validates_as_v3(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             profile, _summary = self.publish_cli(load_raw("observed-ai370.json"), Path(directory))
-            compat = json.loads((Path(directory) / "system-profile.json").read_text(encoding="utf-8"))
+            compat = json.loads(
+                (Path(directory) / "system-profile.json").read_text(encoding="utf-8")
+            )
         system_profile.validate_profile(compat, ROOT / "configs/schemas/system-profile.schema.json")
         self.assertEqual(compat["schema"]["version"], 3)
         self.assertEqual(compat["fingerprint"]["value"], profile["fingerprint"]["value"])
@@ -119,28 +143,29 @@ class Stage1PublishTests(unittest.TestCase):
 
     def test_unmapped_sibling_gpu_architecture_stays_unknown(self) -> None:
         raw = load_raw("observed-ai370.json")
-        raw["gpu"]["devices"].append({
-            "device_name": "Intel Graphics",
-            "bound_driver": "i915",
-            "vendor_id": "8086",
-            "device_id": "46b3",
-        })
+        raw["gpu"]["devices"].append(
+            {
+                "device_name": "Intel Graphics",
+                "bound_driver": "i915",
+                "vendor_id": "8086",
+                "device_id": "46b3",
+            }
+        )
         with tempfile.TemporaryDirectory() as directory:
             profile, _summary = self.publish_cli(raw, Path(directory))
         system_profile.validate_profile(profile)
-        by_id = {
-            (gpu["pci"]["vendor_id"], gpu["pci"]["device_id"]): gpu
-            for gpu in profile["gpus"]
-        }
+        by_id = {(gpu["pci"]["vendor_id"], gpu["pci"]["device_id"]): gpu for gpu in profile["gpus"]}
         self.assertEqual(by_id[("1002", "1900")]["architecture"], "gfx1150")
         self.assertIsNone(by_id[("8086", "46b3")]["architecture"])
 
     def test_global_architecture_is_not_copied_to_every_unmapped_gpu(self) -> None:
         raw = load_raw("observed-ryzen-ai-max-strix-halo.json")
-        raw["gpu"]["devices"].append({
-            "device_name": "Intel Graphics",
-            "bound_driver": "i915",
-        })
+        raw["gpu"]["devices"].append(
+            {
+                "device_name": "Intel Graphics",
+                "bound_driver": "i915",
+            }
+        )
         with tempfile.TemporaryDirectory() as directory:
             profile, _summary = self.publish_cli(raw, Path(directory))
         system_profile.validate_profile(profile)
@@ -152,10 +177,12 @@ class Stage1PublishTests(unittest.TestCase):
             "state": "observed",
             "value": "gfx1151",
         }
-        raw["gpu"]["devices"].append({
-            "device_name": "Intel Graphics",
-            "bound_driver": "i915",
-        })
+        raw["gpu"]["devices"].append(
+            {
+                "device_name": "Intel Graphics",
+                "bound_driver": "i915",
+            }
+        )
         with tempfile.TemporaryDirectory() as directory:
             profile, _summary = self.publish_cli(raw, Path(directory))
         system_profile.validate_profile(profile)
@@ -164,7 +191,9 @@ class Stage1PublishTests(unittest.TestCase):
 
     def test_sata_only_profile_does_not_advertise_nvme(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            profile, _summary = self.publish_cli(load_raw("storage-sata-only.json"), Path(directory))
+            profile, _summary = self.publish_cli(
+                load_raw("storage-sata-only.json"), Path(directory)
+            )
         system_profile.validate_profile(profile)
         by_id = {item["id"]: item for item in profile["capability_candidates"]}
         self.assertEqual(by_id["storage.nvme"]["state"], "not_present")

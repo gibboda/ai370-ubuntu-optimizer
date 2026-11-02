@@ -43,15 +43,15 @@ def generic_profile_without_accelerators() -> dict:
 
 def write_profile(path: Path, profile: dict | None = None) -> Path:
     payload = (
-        profile
-        if profile is not None
-        else json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+        profile if profile is not None else json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
     )
     write_json(path, payload)
     return path
 
 
-def write_compat_artifacts(reports_dir: Path, scope: str, *, gpu_arch: str | None, npu: bool, vulkan: str) -> None:
+def write_compat_artifacts(
+    reports_dir: Path, scope: str, *, gpu_arch: str | None, npu: bool, vulkan: str
+) -> None:
     for name in platform_validation.expected_compat_artifacts(scope):
         payload: dict = {"status": "PASS"}
         if name == "tier1-firmware.json":
@@ -124,9 +124,7 @@ class Stage2PlatformValidationTests(unittest.TestCase):
         profile_path = reports_dir / "s1-m5-system-profile.json"
         shutil.copyfile(PROFILE_FIXTURE, profile_path)
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
-        write_compat_artifacts(
-            reports_dir, scope, gpu_arch="gfx1150", npu=True, vulkan="visible"
-        )
+        write_compat_artifacts(reports_dir, scope, gpu_arch="gfx1150", npu=True, vulkan="visible")
         write_visibility_reports(
             reports_dir,
             profile=profile,
@@ -154,9 +152,7 @@ class Stage2PlatformValidationTests(unittest.TestCase):
             result = self.publish_cli(reports_dir, output, profile_path=profile_path)
             self.assertEqual(result.returncode, 0, result.stderr)
             report = json.loads(output.read_text(encoding="utf-8"))
-            system_profile.validate_document(
-                report, platform_validation.S2_M7_SCHEMA, "S2-M7"
-            )
+            system_profile.validate_document(report, platform_validation.S2_M7_SCHEMA, "S2-M7")
             self.assertEqual(report["milestone"], "S2-M7")
             self.assertEqual(report["artifact"], "s2-m7-platform-validation")
             self.assertEqual(report["status"], "PASS")
@@ -189,9 +185,7 @@ class Stage2PlatformValidationTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             report = json.loads(output.read_text(encoding="utf-8"))
-            system_profile.validate_document(
-                report, platform_validation.S2_M7_SCHEMA, "S2-M7"
-            )
+            system_profile.validate_document(report, platform_validation.S2_M7_SCHEMA, "S2-M7")
             self.assertEqual(report["status"], "PASS")
             self.assertFalse(report["acceptance"]["radeon_890m_gfx1150"])
             self.assertFalse(report["acceptance"]["amdxdna_npu"])
@@ -228,9 +222,7 @@ class Stage2PlatformValidationTests(unittest.TestCase):
                 reports_dir, "full", gpu_arch="unknown", npu=False, vulkan="visible"
             )
             output = reports_dir / "report.json"
-            result = self.publish_cli(
-                reports_dir, output, profile_path=profile_path, strict="true"
-            )
+            result = self.publish_cli(reports_dir, output, profile_path=profile_path, strict="true")
             self.assertEqual(result.returncode, 3, result.stderr)
             report = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(report["status"], "FAIL")
@@ -296,7 +288,9 @@ class Stage2PlatformValidationTests(unittest.TestCase):
             self.assertEqual(data["status"], "PASS")
             self.assertIn("radeon_890m_gfx1150", data["acceptance"])
             self.assertIn("amdxdna_npu", data["acceptance"])
-            self.assertEqual(data["canonical_artifact"], "reports/latest/s2-m7-platform-validation.json")
+            self.assertEqual(
+                data["canonical_artifact"], "reports/latest/s2-m7-platform-validation.json"
+            )
 
     def test_invalid_report_does_not_replace_last_valid_publication(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -323,9 +317,7 @@ class Stage2PlatformValidationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             reports_dir = Path(directory)
             profile = generic_profile_without_accelerators()
-            profile_path = write_profile(
-                reports_dir / "s1-m5-system-profile.json", profile
-            )
+            profile_path = write_profile(reports_dir / "s1-m5-system-profile.json", profile)
             write_compat_artifacts(
                 reports_dir, "full", gpu_arch="unknown", npu=False, vulkan="not-visible"
             )
@@ -389,9 +381,7 @@ class Stage2PlatformValidationTests(unittest.TestCase):
                 (reports_dir / "s2-m7-platform-validation.json").read_text(encoding="utf-8")
             )
             compat = json.loads((reports_dir / "tier1-validation.json").read_text(encoding="utf-8"))
-            system_profile.validate_document(
-                canonical, platform_validation.S2_M7_SCHEMA, "S2-M7"
-            )
+            system_profile.validate_document(canonical, platform_validation.S2_M7_SCHEMA, "S2-M7")
             self.assertEqual(compat["tier"], 1)
             self.assertEqual(compat["status"], canonical["status"])
             self.assertTrue((reports_dir / "tier1-summary.md").is_file())
@@ -408,9 +398,7 @@ class Stage2PlatformValidationTests(unittest.TestCase):
             )
             output = reports_dir / "s2-m7-platform-validation.json"
             compat = reports_dir / "tier1-validation.json"
-            result = self.publish_cli(
-                reports_dir, output, profile_path=None, compat_output=compat
-            )
+            result = self.publish_cli(reports_dir, output, profile_path=None, compat_output=compat)
             self.assertEqual(result.returncode, 2, result.stderr + result.stdout)
             self.assertFalse(output.exists())
             self.assertFalse(compat.exists())
@@ -471,16 +459,12 @@ class Stage2PlatformValidationTests(unittest.TestCase):
             reports_dir = Path(directory)
             self.seed_reference_dir(reports_dir)
             current = generic_profile_without_accelerators()
-            profile_path = write_profile(
-                reports_dir / "s1-m5-system-profile.json", current
-            )
+            profile_path = write_profile(reports_dir / "s1-m5-system-profile.json", current)
             output = reports_dir / "report.json"
             result = self.publish_cli(reports_dir, output, profile_path=profile_path)
             self.assertEqual(result.returncode, 0, result.stderr)
             report = json.loads(output.read_text(encoding="utf-8"))
-            system_profile.validate_document(
-                report, platform_validation.S2_M7_SCHEMA, "S2-M7"
-            )
+            system_profile.validate_document(report, platform_validation.S2_M7_SCHEMA, "S2-M7")
             by_id = {entry["id"]: entry for entry in report["milestones"]}
             self.assertEqual(by_id["S2-M3"]["status"], "MISSING")
             self.assertEqual(by_id["S2-M4"]["status"], "MISSING")
@@ -505,9 +489,7 @@ class Stage2PlatformValidationTests(unittest.TestCase):
                 }
             }
         }
-        self.assertFalse(
-            platform_validation.document_is_stale_for_profile(profile, document)
-        )
+        self.assertFalse(platform_validation.document_is_stale_for_profile(profile, document))
         bound = {
             "consumed_profile": {
                 "fingerprint": {
@@ -519,18 +501,14 @@ class Stage2PlatformValidationTests(unittest.TestCase):
         }
         self.assertTrue(platform_validation.document_is_stale_for_profile(profile, bound))
         self.assertFalse(
-            platform_validation.document_is_stale_for_profile(
-                profile, {"status": "PASS"}
-            )
+            platform_validation.document_is_stale_for_profile(profile, {"status": "PASS"})
         )
 
     def test_s2_m1_status_comes_from_firmware_validation_json(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             reports_dir = Path(directory)
             profile_path = self.seed_reference_dir(reports_dir)
-            write_json(
-                reports_dir / "tier1-firmware-validation.json", {"status": "WARN"}
-            )
+            write_json(reports_dir / "tier1-firmware-validation.json", {"status": "WARN"})
             write_json(reports_dir / "tier1-firmware.json", {"bios_acceptable": "true"})
             output = reports_dir / "report.json"
             result = self.publish_cli(reports_dir, output, profile_path=profile_path)
@@ -538,20 +516,14 @@ class Stage2PlatformValidationTests(unittest.TestCase):
             report = json.loads(output.read_text(encoding="utf-8"))
             by_id = {entry["id"]: entry for entry in report["milestones"]}
             self.assertEqual(by_id["S2-M1"]["status"], "WARN")
-            self.assertEqual(
-                by_id["S2-M1"]["artifact"], "tier1-firmware-validation.json"
-            )
+            self.assertEqual(by_id["S2-M1"]["artifact"], "tier1-firmware-validation.json")
             self.assertFalse(by_id["S2-M1"]["canonical"])
             self.assertEqual(report["acceptance"]["bios_version_acceptable"], "true")
             self.assertNotEqual(report["status"], "FAIL")
 
-            write_json(
-                reports_dir / "tier1-firmware-validation.json", {"status": "FAIL"}
-            )
+            write_json(reports_dir / "tier1-firmware-validation.json", {"status": "FAIL"})
             fail_output = reports_dir / "report-fail.json"
-            fail_result = self.publish_cli(
-                reports_dir, fail_output, profile_path=profile_path
-            )
+            fail_result = self.publish_cli(reports_dir, fail_output, profile_path=profile_path)
             self.assertEqual(fail_result.returncode, 3, fail_result.stderr)
             fail_report = json.loads(fail_output.read_text(encoding="utf-8"))
             fail_by_id = {entry["id"]: entry for entry in fail_report["milestones"]}
@@ -570,12 +542,14 @@ class Stage2PlatformValidationTests(unittest.TestCase):
                     "consumed_profile": capability_ladder.consumed_profile_from_system_profile(
                         json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
                     ),
-                    "policy": {"bios_acceptable": "false", "bios_expected": "2.01", "source": "configs/profiles/ai370.env"},
+                    "policy": {
+                        "bios_acceptable": "false",
+                        "bios_expected": "2.01",
+                        "source": "configs/profiles/ai370.env",
+                    },
                 },
             )
-            write_json(
-                reports_dir / "tier1-firmware-validation.json", {"status": "PASS"}
-            )
+            write_json(reports_dir / "tier1-firmware-validation.json", {"status": "PASS"})
             write_json(reports_dir / "tier1-firmware.json", {"bios_acceptable": "true"})
             output = reports_dir / "report.json"
             result = self.publish_cli(reports_dir, output, profile_path=profile_path)

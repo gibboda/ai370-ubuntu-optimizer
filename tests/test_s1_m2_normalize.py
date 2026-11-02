@@ -33,7 +33,9 @@ class Stage1NormalizeTests(unittest.TestCase):
             source.write_text(json.dumps(raw), encoding="utf-8")
             subprocess.run(
                 ["python3", str(SCRIPT), "--input", str(source), "--output", str(output)],
-                check=True, capture_output=True, text=True,
+                check=True,
+                capture_output=True,
+                text=True,
             )
             return json.loads(output.read_text(encoding="utf-8"))
 
@@ -130,15 +132,19 @@ class Stage1NormalizeTests(unittest.TestCase):
 
     def test_unmapped_sibling_gpu_does_not_inherit_mapped_architecture(self) -> None:
         raw = load_raw("observed-ai370.json")
-        raw["gpu"]["devices"].append({
-            "device_name": "Intel Graphics",
-            "bound_driver": "i915",
-            "vendor_id": "8086",
-            "device_id": "46b3",
-        })
+        raw["gpu"]["devices"].append(
+            {
+                "device_name": "Intel Graphics",
+                "bound_driver": "i915",
+                "vendor_id": "8086",
+                "device_id": "46b3",
+            }
+        )
         facts = self.normalize_cli(raw)
         system_profile.validate_document(facts, system_profile.S1_M2_SCHEMA, "S1-M2")
-        by_id = {(device["vendor_id"], device["device_id"]): device for device in facts["gpu"]["devices"]}
+        by_id = {
+            (device["vendor_id"], device["device_id"]): device for device in facts["gpu"]["devices"]
+        }
         self.assertEqual(by_id[("1002", "1900")]["architecture"], "gfx1150")
         self.assertIsNone(by_id[("8086", "46b3")]["architecture"])
         self.assertEqual(facts["gpu"]["architecture"], "gfx1150")
@@ -149,10 +155,12 @@ class Stage1NormalizeTests(unittest.TestCase):
             "state": "observed",
             "value": "gfx1151",
         }
-        raw["gpu"]["devices"].append({
-            "device_name": "Intel Graphics",
-            "bound_driver": "i915",
-        })
+        raw["gpu"]["devices"].append(
+            {
+                "device_name": "Intel Graphics",
+                "bound_driver": "i915",
+            }
+        )
         facts = self.normalize_cli(raw)
         system_profile.validate_document(facts, system_profile.S1_M2_SCHEMA, "S1-M2")
         devices = facts["gpu"]["devices"]
