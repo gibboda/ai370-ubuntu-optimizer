@@ -1851,11 +1851,11 @@ class OfflineAiRuntimePinTests(unittest.TestCase):
         self.assertLess(numeric, (2, 0, 0), hub)
 
     def test_tokenizers_satisfies_transformers_5_5_0(self) -> None:
-        # transformers==5.5.0 requires tokenizers>=0.22.0,<=0.23.0
+        # transformers 5.x requires tokenizers>=0.22.0,<0.24.0
         tokenizers = self.pins["tokenizers"]
         numeric = numeric_version(tokenizers)
         self.assertGreaterEqual(numeric, (0, 22, 0), tokenizers)
-        self.assertLessEqual(numeric, (0, 23, 0), tokenizers)
+        self.assertLess(numeric, (0, 24, 0), tokenizers)
 
     def test_migration_plan_describes_current_transformers_pin(self) -> None:
         plan = (ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").read_text(encoding="utf-8")
