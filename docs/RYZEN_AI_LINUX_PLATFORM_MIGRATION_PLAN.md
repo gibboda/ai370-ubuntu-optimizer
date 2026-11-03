@@ -321,7 +321,7 @@ feature is not treated as implemented unless code exists.
 | `scripts/250-install-digest-ai.sh`, `255-analyze-model-digest.sh` | PARTIAL | Optional diagnostics; not NPU execution proof |
 | `scripts/lib/npu_ep_verify.py`, `scripts/lib/npu-venv.sh` | PARTIAL | Provider/execution helpers; split visibility vs execution |
 | `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | PARTIAL | Tracked AMD Ryzen AI 1.7.x installer consumed by `scripts/205-install-xrt-ryzen-ai.sh`; requires exact `python3.12`; pins `ryzen-ai>=1.7.0.dev0,<1.8.0.dev0` and `device-essentials-strx`/`device-essentials-phx` ranges; installs into the caller `-p` venv (205 uses `.ai370-ai/ryzen-ai/venv`); wheels must be in the process CWD |
-| `configs/ai-runtime/requirements-offline.txt` | IMPLEMENTED | Pinned offline CPU Python stack (`onnxruntime==1.22.0`, `transformers==5.5.0`, `huggingface-hub==1.29.0`, and related wheels); consumed via `configs/offline/ai-runtime.env` and `scripts/lib/offline-paths.sh`; distinct from Ryzen AI `onnxruntime-vitisai` |
+| `configs/ai-runtime/requirements-offline.txt` | IMPLEMENTED | Pinned offline CPU Python stack (`onnxruntime==1.31.1`, `transformers==5.22.1`, `huggingface-hub==2.4.0`, and related wheels); consumed via `configs/offline/ai-runtime.env` and `scripts/lib/offline-paths.sh`; distinct from Ryzen AI `onnxruntime-vitisai` |
 | `.ai370-ai/tools/llama.cpp` | PARTIAL | Tracked gitlink (mode `160000`, commit `86b94708f22478f900b76ca02e316f4f3418faff`); no `.gitmodules`; canonical checkout path for `scripts/110-install-llama-cpp.sh` |
 | FastFlowLM | PLANNED | Named in the architecture document only |
 
@@ -390,7 +390,7 @@ files, and docs.
 | `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | Installs Strix and Phoenix device-essentials without SoC detection | UNNECESSARY_HARDCODE | KEEP the vendor script; do not copy this into generic collectors |
 | `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | Warns below 8 CPUs, 36 GB RAM, or 50 GB disk; leftover Ubuntu 22.04 `/usr/include/asm` note | REFERENCE_PLATFORM_FACT | KEEP as vendor installer warnings, not Stage 1 success requirements |
 | `.ai370-ai/ryzen-ai/source/install_ryzen_ai.sh` | Venv/C++ install paths via `-p`/`-c`; `scripts/205` defaults to `.ai370-ai/ryzen-ai` | TEMPORARY_COMPATIBILITY_RULE | KEEP the path until a documented alias exists |
-| `configs/ai-runtime/requirements-offline.txt` | Pinned CPU `onnxruntime==1.22.0` and related wheels | TEMPORARY_COMPATIBILITY_RULE | KEEP as the S3 offline CPU pin file; do not treat it as NPU ORT |
+| `configs/ai-runtime/requirements-offline.txt` | Pinned CPU `onnxruntime==1.31.1` and related wheels | TEMPORARY_COMPATIBILITY_RULE | KEEP as the S3 offline CPU pin file; do not treat it as NPU ORT |
 | `.ai370-ai/tools/llama.cpp` | Gitlink commit pin at `.ai370-ai/tools/llama.cpp` with no `.gitmodules` | TEMPORARY_COMPATIBILITY_RULE | KEEP the gitlink; `scripts/110-install-llama-cpp.sh` may clone or update the same path |
 | `README.md` Stage 1/2 status summary | User-facing snapshot of ROADMAP milestone rows | TEMPORARY_COMPATIBILITY_RULE | KEEP; update in the same commit as ROADMAP status changes |
 | `TASK_PROPOSALS.md` | Stage/Milestone compatibility backlog | DEPRECATED | KEEP as backlog; do not extend with new Tier tasks |
@@ -427,7 +427,7 @@ abbreviated; see the assumption table for the full class.
 | `configs/tuning/*.env` | Safe/aggressive tuning modes | Platform tuning | Mode names | S2-M5/S2-M6 | KEEP | Plan idempotence tests | Low |
 | `configs/amd-acceleration.env` | ROCm/XRT artifact layout | Ubuntu 26.04 package layout | Distro-specific | S2-M6 / S3-M3/S3-M4 | REFACTOR behind platform abstraction later | Offline missing-artifact tests | Medium |
 | `configs/models/*` | Manifest and storage policy | `.ai370-ai/models` | Path name | S3-M1 | KEEP layout; REFACTOR naming later | `smoke_tier2.sh` layout checks | Low |
-| `configs/ai-runtime/requirements-offline.txt` | Offline CPU Python pin file | `scripts/lib/offline-paths.sh`, wheelhouse | `onnxruntime==1.22.0` and related pins; not VitisAI ORT | S3 CPU runtime / S3-M2 | KEEP; split NPU pins if added | Offline missing-wheelhouse tests | Medium |
+| `configs/ai-runtime/requirements-offline.txt` | Offline CPU Python pin file | `scripts/lib/offline-paths.sh`, wheelhouse | `onnxruntime==1.31.1` and related pins; not VitisAI ORT | S3 CPU runtime / S3-M2 | KEEP; split NPU pins if added | Offline missing-wheelhouse tests | Medium |
 | `configs/offline/ai-runtime.env`, `configs/persistence/runtime.env` | Offline and persistence defaults | Runtime scripts | Runtime-only persistence; `OFFLINE_REQUIREMENTS` points at the pin file | Stage 3 / S5-M3 | KEEP | Persistence-refusal tests | Low |
 | `configs/profiles/gpu-pci-architectures.json` | PCI vendor:device to gfx map | None | `1002:1900` fixture id and `1002:150e` Strix 880M/890M id, both `gfx1150` | S1-M2 | KEEP; extend with PCI data | `test_s1_m2_normalize.py` | Low |
 | `configs/schemas/s2-m3-gpu-runtime-visibility.schema.json` | S2-M3 visibility JSON contract | Consumed S1-M5 profile | Visibility is not compute | S2-M3 | KEEP | `test_s2_visibility_schemas.py` | Low |
