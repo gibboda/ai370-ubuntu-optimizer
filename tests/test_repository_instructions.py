@@ -1019,7 +1019,7 @@ class MigrationPlanTests(unittest.TestCase):
                 self.assertIn(path, self.plan)
         self.assertIn("python3.12", self.plan)
         self.assertIn("ryzen-ai>=1.7.0.dev0,<1.8.0.dev0", self.plan)
-        self.assertIn("onnxruntime==1.22.0", self.plan)
+        self.assertIn("onnxruntime==1.31.1", self.plan)
         self.assertIn("160000", self.plan)
         self.assertIn("86b94708f22478f900b76ca02e316f4f3418faff", self.plan)
 
@@ -1837,30 +1837,30 @@ class ConventionalCommitScopeTests(unittest.TestCase):
 
 
 class OfflineAiRuntimePinTests(unittest.TestCase):
-    """Keep the S3 offline CPU pin file installable with transformers 5.5.0."""
+    """Keep the S3 offline CPU pin file installable with transformers 5.22.1."""
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.pins = parse_requirement_pins(ROOT / "configs/ai-runtime/requirements-offline.txt")
 
-    def test_huggingface_hub_satisfies_transformers_5_5_0(self) -> None:
-        # transformers==5.5.0 requires huggingface-hub>=1.5.0,<2.0
+    def test_huggingface_hub_satisfies_transformers_5_22_1(self) -> None:
+        # transformers==5.22.1 requires huggingface-hub>=1.31.0,<3.0
         hub = self.pins["huggingface-hub"]
         numeric = numeric_version(hub)
-        self.assertGreaterEqual(numeric, (1, 5, 0), hub)
-        self.assertLess(numeric, (2, 0, 0), hub)
+        self.assertGreaterEqual(numeric, (1, 31, 0), hub)
+        self.assertLess(numeric, (3, 0, 0), hub)
 
-    def test_tokenizers_satisfies_transformers_5_5_0(self) -> None:
-        # transformers 5.x requires tokenizers>=0.22.0,<0.24.0
+    def test_tokenizers_satisfies_transformers_5_22_1(self) -> None:
+        # transformers==5.22.1 requires tokenizers>=0.23.1,<0.24.0
         tokenizers = self.pins["tokenizers"]
         numeric = numeric_version(tokenizers)
-        self.assertGreaterEqual(numeric, (0, 22, 0), tokenizers)
+        self.assertGreaterEqual(numeric, (0, 23, 1), tokenizers)
         self.assertLess(numeric, (0, 24, 0), tokenizers)
 
     def test_migration_plan_describes_current_transformers_pin(self) -> None:
         plan = (ROOT / "docs/RYZEN_AI_LINUX_PLATFORM_MIGRATION_PLAN.md").read_text(encoding="utf-8")
-        self.assertIn("transformers==5.5.0", plan)
-        self.assertIn("huggingface-hub==1.29.0", plan)
+        self.assertIn("transformers==5.22.1", plan)
+        self.assertIn("huggingface-hub==2.4.0", plan)
         self.assertNotIn("transformers 4.52.4", plan)
 
 
