@@ -44,7 +44,10 @@ concisely. Do not use leading emoji, and do not use a plain English title
 without a Conventional Commit type. Dependabot PR titles and commit subjects
 use the configured `chore(deps)` / `ci(deps)` prefixes with a lowercase
 `bump …` subject; `scripts/validate-pr-title.sh` and
-`scripts/validate-commit-subject.sh` accept that format explicitly. All
+`scripts/validate-commit-subject.sh` accept that format explicitly.
+Release Please release PRs use `chore(release): release …` (matching
+`release-please-config.json`); the same validators accept that lowercase
+`release …` subject explicitly. All
 contributors and co-contributors, including humans, AI agents, and automation,
 must follow this policy. The person or automation creating a commit and opening
 its pull request is responsible for ensuring that the shared commit subject and
