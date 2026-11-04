@@ -54,10 +54,24 @@ def main() -> None:
         default=optimization_plan.COMMANDS_RELATIVE,
         help="Relative path of the generated command script",
     )
+    parser.add_argument(
+        "--backup-json",
+        type=Path,
+        help="JSON file with S2-M6 backup block (from optimization_backup.capture_runtime_backup)",
+    )
     args = parser.parse_args()
 
     profile = _load_required_profile(args.profile)
     plan = _load_optional_plan(args.plan)
+    backup_block: dict | None = None
+    if args.backup_json is not None and args.backup_json.is_file():
+        try:
+            loaded = json.loads(args.backup_json.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            print(f"[ERROR] Backup JSON unreadable: {args.backup_json}: {exc}", file=sys.stderr)
+            raise SystemExit(2) from exc
+        if isinstance(loaded, dict):
+            backup_block = {key: loaded[key] for key in loaded if key != "manifest_path"}
     application = optimization_plan.build_s2_m6_optimization_application(
         profile,
         plan=plan,
@@ -65,6 +79,7 @@ def main() -> None:
         dry_run=args.dry_run == "true",
         applied=args.applied == "true",
         commands=args.commands,
+        backup=backup_block,
     )
     optimization_plan.publish_s2_m6_optimization_application(
         args.output,

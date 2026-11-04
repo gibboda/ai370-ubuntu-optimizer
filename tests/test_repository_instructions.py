@@ -1446,12 +1446,12 @@ class MigrationPlanTests(unittest.TestCase):
     def test_readme_stage2_status_detects_roadmap_drift(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         drifted_roadmap = self.roadmap.replace(
-            "| Deterministic policy fixtures and remediation docs | In progress |",
-            "| Deterministic policy fixtures and remediation docs | Implemented |",
+            "| Supported/unsupported matrix tests and docs | In progress |",
+            "| Supported/unsupported matrix tests and docs | Implemented |",
             1,
         )
         statuses = parse_roadmap_milestone_statuses(drifted_roadmap)
-        self.assertEqual(statuses.get("S2-M1"), "Implemented")
+        self.assertEqual(statuses.get("S2-M2"), "Implemented")
         in_progress = sorted(
             (
                 milestone_id

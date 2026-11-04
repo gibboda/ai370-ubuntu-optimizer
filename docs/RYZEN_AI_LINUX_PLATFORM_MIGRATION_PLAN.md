@@ -572,7 +572,7 @@ BIOS 2.01.
 
 Filed backlog (OPEN, `needs-triage`; no implementation PRs):
 
-- Stage 2 follow-ups: [#209](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/209) S2-M1 remediation docs, [#210](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/210) S2-M2 kernel/driver matrix, [#211](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/211) S2-M3 fixtures, [#212](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/212) S2-M4 visibility vs execution tests, [#213](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/213) S2-M6 backup/rollback
+- Stage 2 follow-ups: [#209](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/209) S2-M1 remediation docs (landed in `docs/stage2/S2-M1-firmware-remediation.md`), [#210](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/210) S2-M2 kernel/driver matrix operator docs, [#211](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/211) S2-M3 fixtures (portable layer tests), [#212](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/212) S2-M4 mixed `--bench` removal (S3-M6), [#213](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/213) S2-M6 persistent apply, [#325](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/325) hardware sign-off
 - Stage 3: [#214](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/214)–[#220](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/220)
 - Stage 4: [#221](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/221)–[#227](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/227)
 - Stage 5: [#228](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/228)–[#233](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/233)

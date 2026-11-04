@@ -315,7 +315,7 @@ assert report.get("milestone") == "S2-M6"
 assert report.get("approved") is True
 assert report.get("dry_run") is True
 assert report.get("applied") is False
-assert report.get("backup", {}).get("status") == "not-implemented"
+assert report.get("backup", {}).get("status") == "skipped"
 ra = compat.get("runtime_apply") or {}
 assert ra.get("requested") is True, "approved apply was requested"
 assert ra.get("dry_run") is True, "dry_run must be recorded"

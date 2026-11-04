@@ -126,7 +126,7 @@ class Stage2OptimizationApplyTests(unittest.TestCase):
             self.assertTrue(report["approved"])
             self.assertTrue(report["dry_run"])
             self.assertFalse(report["applied"])
-            self.assertEqual(report["backup"]["status"], "not-implemented")
+            self.assertEqual(report["backup"]["status"], "skipped")
             compat = json.loads((latest / "tier1-platform-tuning.json").read_text(encoding="utf-8"))
             self.assertTrue(compat["runtime_apply"]["requested"])
             self.assertTrue(compat["runtime_apply"]["dry_run"])

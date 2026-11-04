@@ -15,7 +15,8 @@
     "status": {"$ref": "#/$defs/gateStatus"},
     "checks": {"$ref": "#/$defs/npuChecks"},
     "ladder": {"$ref": "#/$defs/npuLadder"},
-    "notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+    "notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "provider_selection": {"$ref": "#/$defs/providerSelection"}
   },
   "$defs": {
     "schemaIdentity": {
@@ -98,6 +99,20 @@
         "id": {"$ref": "#/$defs/npuLadderStepId"},
         "status": {"$ref": "#/$defs/stepStatus"},
         "evidence": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "providerSelection": {
+      "type": "object",
+      "required": ["candidates", "selection_recorded", "inference_executed"],
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "selection_recorded": {"const": true},
+        "inference_executed": {"const": false}
       }
     },
     "npuLadder": {

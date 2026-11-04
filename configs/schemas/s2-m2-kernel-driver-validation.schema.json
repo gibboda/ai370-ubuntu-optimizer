@@ -20,6 +20,7 @@
     "os",
     "modules",
     "firmware",
+    "support_assessment",
     "recommendations",
     "warnings",
     "notes",
@@ -42,6 +43,7 @@
     "os": {"$ref": "#/$defs/osFacts"},
     "modules": {"$ref": "#/$defs/moduleFacts"},
     "firmware": {"$ref": "#/$defs/kernelFirmwareFacts"},
+    "support_assessment": {"$ref": "#/$defs/supportAssessment"},
     "recommendations": {"type": "array", "items": {"type": "string", "minLength": 1}},
     "warnings": {"type": "array", "items": {"type": "string", "minLength": 1}},
     "notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
@@ -129,6 +131,18 @@
       "additionalProperties": false,
       "properties": {
         "amdgpu_directory": {"enum": ["present", "missing", "unknown"]}
+      }
+    },
+    "supportAssessment": {
+      "type": "object",
+      "required": ["matrix_version", "minimum_kernel", "os_tier", "codes", "classified_platform_id"],
+      "additionalProperties": false,
+      "properties": {
+        "matrix_version": {"type": "integer", "minimum": 1},
+        "minimum_kernel": {"type": "string", "minLength": 1},
+        "os_tier": {"type": "string", "minLength": 1},
+        "codes": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "classified_platform_id": {"type": ["string", "null"]}
       }
     }
   }

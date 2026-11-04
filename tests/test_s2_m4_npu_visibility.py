@@ -231,6 +231,37 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
         self.assertIn("skipped-visibility-only", check_210)
         self.assertIn("VISIBILITY_ONLY", check_210)
 
+    def test_provider_selection_does_not_claim_inference(self) -> None:
+        checks = {
+            "module_present": True,
+            "device_nodes_present": True,
+            "firmware_ready": True,
+            "runtime_ready": True,
+            "backend_ready": True,
+            "provider_candidates": ["VitisAIExecutionProvider"],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            report = self.publish_cli(checks, PROFILE_FIXTURE, Path(directory) / "report.json")
+        self.assertIn("provider_selection", report)
+        self.assertFalse(report["provider_selection"]["inference_executed"])
+        self.assertTrue(report["provider_selection"]["selection_recorded"])
+        self.assertFalse(report["ladder"]["validation_claim"])
+        by_id = {step["id"]: step for step in report["ladder"]["steps"]}
+        self.assertEqual(by_id["APPLICATION_READY"]["status"], "unknown")
+
+    def test_backend_ready_without_provider_candidates_stays_visibility_only(self) -> None:
+        checks = {
+            "module_present": True,
+            "device_nodes_present": True,
+            "firmware_ready": True,
+            "runtime_ready": True,
+            "backend_ready": True,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            report = self.publish_cli(checks, PROFILE_FIXTURE, Path(directory) / "report.json")
+        self.assertNotIn("provider_selection", report)
+        self.assertFalse(report["ladder"]["validation_claim"])
+
     def test_collector_requires_stage1_profile(self) -> None:
         source = COLLECTOR.read_text(encoding="utf-8")
         self.assertIn("Stage 1 profile missing", source)

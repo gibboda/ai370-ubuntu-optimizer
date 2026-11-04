@@ -206,7 +206,7 @@ set -euo pipefail
 
 echo "[TUNE] Setting power profile (runtime)..."
 if command -v powerprofilesctl >/dev/null 2>&1; then
-  powerprofilesctl set ${target_power} || true
+  powerprofilesctl set ${target_power}
 else
   echo "[WARN] powerprofilesctl not available."
 fi
@@ -260,15 +260,51 @@ PY
   fi
 
   local applied="false"
+  local backup_json=""
+  backup_json="$(mktemp "${TMPDIR:-/tmp}/s2-m6-backup.XXXXXX")"
   if [[ "$DRY_RUN" == "true" ]]; then
     echo "[INFO] Approved apply with dry-run active; not applying runtime tuning."
+    python3 - "$backup_json" <<'PY'
+import json, sys
+from pathlib import Path
+block = {
+    "status": "skipped",
+    "rollback_available": False,
+    "note": "Dry-run apply skipped runtime backup capture.",
+}
+Path(sys.argv[1]).write_text(json.dumps(block, indent=2) + "\n", encoding="utf-8")
+PY
   else
+    PROJECT_ROOT="$PROJECT_ROOT" LATEST_DIR="$LATEST_DIR" python3 - "$backup_json" <<'PY'
+import json, os, sys
+from pathlib import Path
+sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
+import optimization_backup
+latest = Path(os.environ["LATEST_DIR"])
+block = optimization_backup.capture_runtime_backup(latest)
+Path(sys.argv[1]).write_text(
+    json.dumps({k: v for k, v in block.items() if k != "manifest_path"}, indent=2) + "\n",
+    encoding="utf-8",
+)
+PY
     echo "[INFO] Applying runtime tuning commands (--approve)..."
     # shellcheck disable=SC1091
-    bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh" || {
-      echo "[WARN] Runtime tuning commands exited non-zero; review tier1-cpu-runtime-commands.sh"
-    }
-    applied="true"
+    if bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh"; then
+      applied="true"
+    else
+      echo "[WARN] Runtime tuning commands exited non-zero; attempting rollback..."
+      PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
+        --latest-dir "$LATEST_DIR" || echo "[WARN] Rollback did not complete cleanly."
+      python3 - "$backup_json" <<'PY'
+import json, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+block = json.loads(path.read_text(encoding="utf-8"))
+block["status"] = "restored"
+block["note"] = "Apply failed; rollback attempted from pre-apply backup."
+path.write_text(json.dumps(block, indent=2) + "\n", encoding="utf-8")
+PY
+    fi
   fi
 
   python3 "$PROJECT_ROOT/scripts/s2-m6-publish-optimization-application.py" \
@@ -278,7 +314,9 @@ PY
     --compat-output "$LATEST_DIR/tier1-platform-tuning.json" \
     --cli-profile "$PROFILE" \
     --dry-run "$DRY_RUN" \
-    --applied "$applied"
+    --applied "$applied" \
+    --backup-json "$backup_json"
+  rm -f "$backup_json"
 
   echo "[INFO] Wrote s2-m6-optimization-application.json"
   echo "[INFO] 40-platform-tuning.sh complete."

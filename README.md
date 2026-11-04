@@ -3,6 +3,9 @@
 Ubuntu 26.04 LTS optimization toolkit for the Minisforum EliteMini AI370 and
 future Ryzen AI systems.
 
+**Runtime:** Python **3.11+** for Stage 1–2 publishers, schemas, and portable
+tests (GitHub Actions uses 3.12). Bash 5.x with `shellcheck`-clean scripts.
+
 ## Primary Target
 
 Default profile:
@@ -134,20 +137,15 @@ Current high-level status (see `docs/ROADMAP.md` for details):
 - Stage 1 profile pipeline: **Implemented** (S1-M1 through S1-M5). `stage1`,
   `stage1-probe`, and `stage1-profile` are read-only. BIOS, kernel, GPU/NPU
   visibility, and tuning run from Stage 2 platform commands.
-- Stage 2: S2-M7 is **Implemented**. S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6 are
-  **In progress** (capability ladder library and visibility schemas; GPU
-  publisher landed in
-  [#176](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/176);
-  NPU visibility-only publisher is `stage2-npu-validate` / S2-M4;
-  S2-M7 publisher landed in
-  [#197](https://github.com/gibboda/ai370-ubuntu-optimizer/issues/197);
-  S2-M5/S2-M6 canonical plan/apply JSON exists; S2-M1/S2-M2 canonical
-  firmware and kernel JSON exists).
-  Platform wrappers (`stage2-firmware-validate`, `stage2-kernel-validate`,
-  `stage2-optimize-plan`, `stage2-optimize-apply --approve`,
-  `stage2-platform-validate`) exist; they do not upgrade S2-M1/M2 to
-  Implemented, and S2-M5/S2-M6 stay In progress until backup/rollback
-  tests exist. Current runtime scripts remain partial compatibility
+- Stage 2: S2-M1 is **Implemented** (firmware remediation docs). S2-M3 is
+  **Implemented** (portable GPU visibility layer fixtures). S2-M7 is
+  **Implemented**. S2-M2/S2-M4/S2-M5/S2-M6 are **In progress** (kernel/driver
+  matrix docs, NPU visibility vs `--bench` scope, runtime backup/rollback, and
+  hardware sign-off). Platform wrappers (`stage2-firmware-validate`,
+  `stage2-kernel-validate`, `stage2-optimize-plan`, `stage2-optimize-apply
+  --approve`, `stage2-optimize-rollback`, `stage2-platform-validate`) exist.
+  S2-M5/S2-M6 record runtime power-profile backup before apply; persistent
+  sysfs/tuned apply remains out of scope. Current runtime scripts remain partial compatibility
   implementations (`stage2`, `stage2-runtime`, `stage2-npu`; legacy `tier2` /
   `tier3`). `stage2-validate` remains the runtime/NPU cheap gate until the
   S3 split; it is not the S2-M7 platform aggregate.
@@ -301,11 +299,10 @@ Stage 2 platform wrappers (not Stage 1): `20-check-bios.sh`, `30-validate-kernel
 
 ### Stage 2 – Platform Enablement and Local AI Runtime
 
-ROADMAP status: S2-M1/S2-M2/S2-M3/S2-M4/S2-M5/S2-M6 In progress. S2-M7
-Implemented. Canonical S2-M1/S2-M2 JSON exists; remaining S2-M1/S2-M2 work
-is remediation docs and the kernel/driver matrix. Canonical S2-M5/S2-M6 JSON
-exists; backup/rollback remain Planned. Wrappers below do not mark Planned
-milestones Implemented.
+ROADMAP status: S2-M1 and S2-M3 Implemented; S2-M7 Implemented;
+S2-M2/S2-M4/S2-M5/S2-M6 In progress. See `docs/stage2/` for S2-M1 remediation
+and S2-M4 visibility scope. Runtime backup/rollback uses `stage2-optimize-rollback`;
+persistent tuning remains Planned.
 
 **Platform commands (S2-M1–M7 wrappers):**
 
@@ -318,6 +315,7 @@ milestones Implemented.
 ./ai370-optimize.sh stage2-npu-validate [--offline]   # S2-M4 NPU visibility ladder report
 ./ai370-optimize.sh stage2-optimize-plan              # plan-only; no mutation
 ./ai370-optimize.sh stage2-optimize-apply --approve [--dry-run]
+./ai370-optimize.sh stage2-optimize-rollback
 ./ai370-optimize.sh stage2-platform-validate [--strict]
 ./ai370-optimize.sh stage2-platform-inventory [--strict]
 ```

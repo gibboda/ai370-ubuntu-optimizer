@@ -128,6 +128,7 @@ def build_s2_m6_optimization_application(
     dry_run: bool = False,
     applied: bool = False,
     commands: str = COMMANDS_RELATIVE,
+    backup: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the canonical S2-M6 apply document. Caller must have --approve."""
     warnings: list[str] = []
@@ -135,7 +136,18 @@ def build_s2_m6_optimization_application(
         warnings.append("Dry-run: runtime tuning commands were not executed.")
     if plan is None:
         warnings.append("S2-M5 plan artifact was missing; apply recorded without a consumed plan.")
+    backup_block = backup or {
+        "status": "skipped" if dry_run else "not-implemented",
+        "rollback_available": False,
+        "note": "No runtime backup was recorded for this apply.",
+    }
+    if applied and not dry_run and backup_block.get("status") != "captured":
+        warnings.append(
+            "Runtime apply ran without a successful pre-apply backup; rollback may be unavailable."
+        )
     status = "WARN" if warnings else "PASS"
+    if applied and not dry_run and backup_block.get("status") == "failed":
+        status = "WARN"
     classified = firmware_policy.classified_platform_id(profile)
     plan_artifact = "s2-m5-optimization-plan.json"
     if plan and plan.get("artifact"):
@@ -163,15 +175,12 @@ def build_s2_m6_optimization_application(
             "dry_run": dry_run,
             "commands": commands,
         },
-        "backup": {
-            "status": "not-implemented",
-            "note": ("Configuration backup and rollback remain Planned S2-M6 exit evidence."),
-        },
+        "backup": backup_block,
         "warnings": warnings,
         "notes": [
             "S2-M6 requires --approve. AI370_APPLY_TUNING alone does not apply tuning.",
-            "Backup and rollback are not implemented; keep S2-M6 In progress until "
-            "those exit-evidence tests exist.",
+            "Runtime backup captures power profile state before apply; use stage2-optimize-rollback "
+            "to restore the latest manifest.",
         ],
     }
 
