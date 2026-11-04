@@ -753,6 +753,17 @@ class RepositoryInstructionsTests(unittest.TestCase):
         self.assertIn("startup update script", self.cursor_rules)
         self.assertIn("markdownlint-cli2", self.cursor_rules)
 
+    def test_markdownlint_is_not_a_github_actions_gate(self) -> None:
+        self.assertIn("`markdownlint-cli2` is not a CI gate", self.agent_instructions)
+        self.assertFalse((ROOT / ".github/workflows/markdownlint.yml").exists())
+        self.assertFalse((ROOT / ".markdownlint.json").exists())
+        workflow_dir = ROOT / ".github/workflows"
+        for path in sorted(workflow_dir.glob("*.yml")):
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(path=path.name):
+                self.assertNotIn("markdownlint", text)
+                self.assertNotIn("markdownlint-cli2", text)
+
     def test_cursor_overlay_keeps_exclusive_grok_independent_review(self) -> None:
         self.assertIn(
             "Grok Build (`grok`) is the exclusive independent AI reviewer",
