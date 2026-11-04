@@ -3,14 +3,18 @@
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import json
 import os
+import pwd
+import shutil
 import stat
 import subprocess
 import sys
 import tempfile
 import unittest
+from collections.abc import Iterator
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
@@ -140,9 +144,66 @@ def _seed_s2_m6_application(latest: Path, profile_path: Path) -> Path:
     return report_path
 
 
-def _make_report_publish_unwritable(latest: Path) -> None:
-    """Prevent atomic replace of s2-m6-optimization-application.json (real OSError)."""
-    latest.chmod(stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP)
+def _chattr_immutable(path: Path, *, immutable: bool) -> bool:
+    flag = "+i" if immutable else "-i"
+    try:
+        completed = subprocess.run(
+            ["chattr", flag, str(path)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        return False
+    return completed.returncode == 0
+
+
+def _chown_tree(path: Path, uid: int, gid: int) -> None:
+    os.chown(path, uid, gid)
+    for child in path.rglob("*"):
+        os.chown(child, uid, gid)
+
+
+def _run_restore_subprocess(
+    argv: list[str], *, env: dict[str, str], latest: Path
+) -> subprocess.CompletedProcess[str]:
+    if os.geteuid() == 0:
+        try:
+            nobody = pwd.getpwnam("nobody")
+        except KeyError as exc:
+            raise unittest.SkipTest("root: nobody user unavailable for publish-failure tests") from exc
+        if not shutil.which("runuser"):
+            raise unittest.SkipTest("root: runuser unavailable for publish-failure tests")
+        _chown_tree(latest, nobody.pw_uid, nobody.pw_gid)
+        latest.chmod(stat.S_IRUSR | stat.S_IXUSR)
+        cmd = ["runuser", "-u", "nobody", "--"] + argv
+        return subprocess.run(
+            cmd, check=False, capture_output=True, text=True, env=env
+        )
+    return subprocess.run(
+        argv, check=False, capture_output=True, text=True, env=env
+    )
+
+
+@contextlib.contextmanager
+def _block_s2_m6_report_publish(latest: Path, profile_path: Path) -> Iterator[Path]:
+    """Force a real publish OSError (not mocks). chmod 555 is ignored for root."""
+    report_path = _seed_s2_m6_application(latest, profile_path)
+    mode = "readonly_dir"
+    if os.geteuid() == 0:
+        if _chattr_immutable(report_path, immutable=True):
+            mode = "chattr"
+        else:
+            mode = "nobody_runuser"
+    else:
+        latest.chmod(stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP)
+    try:
+        yield report_path
+    finally:
+        if mode == "chattr":
+            _chattr_immutable(report_path, immutable=False)
+        elif mode == "readonly_dir":
+            latest.chmod(stat.S_IRWXU)
 
 
 def _assert_no_false_restore_success_claims(stderr: str, stdout: str) -> None:
@@ -381,25 +442,18 @@ class OptimizationBackupTests(unittest.TestCase):
             bindir.mkdir()
             _powerprofilesctl_stub(bindir)
             _seed_manifest(latest, platform_id="ai370", observed="balanced")
-            _seed_s2_m6_application(latest, profile_path)
-            _make_report_publish_unwritable(latest)
-            try:
-                completed = subprocess.run(
-                    [
-                        "python3",
-                        str(RESTORE_CLI),
-                        "--latest-dir",
-                        str(latest),
-                        "--profile",
-                        str(profile_path),
-                    ],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    env=_stub_env(bindir, state),
+            with _block_s2_m6_report_publish(latest, profile_path):
+                argv = [
+                    "python3",
+                    str(RESTORE_CLI),
+                    "--latest-dir",
+                    str(latest),
+                    "--profile",
+                    str(profile_path),
+                ]
+                completed = _run_restore_subprocess(
+                    argv, env=_stub_env(bindir, state), latest=latest
                 )
-            finally:
-                latest.chmod(stat.S_IRWXU)
             self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
             self.assertEqual(state.read_text(encoding="utf-8").strip(), "balanced")
             stderr = completed.stderr
@@ -457,8 +511,6 @@ class OptimizationBackupTests(unittest.TestCase):
                     )
                     manifest_before = manifest_path.read_text(encoding="utf-8")
                     profile_path = _write_profile(latest, profile_platform)
-                    _seed_s2_m6_application(latest, profile_path)
-                    _make_report_publish_unwritable(latest)
                     argv = [
                         "python3",
                         str(RESTORE_CLI),
@@ -468,16 +520,12 @@ class OptimizationBackupTests(unittest.TestCase):
                         str(profile_path),
                         *options.get("extra_argv", []),
                     ]
-                    try:
-                        completed = subprocess.run(
+                    with _block_s2_m6_report_publish(latest, profile_path):
+                        completed = _run_restore_subprocess(
                             argv,
-                            check=False,
-                            capture_output=True,
-                            text=True,
                             env=_stub_env(bindir, state, set_log=set_log),
+                            latest=latest,
                         )
-                    finally:
-                        latest.chmod(stat.S_IRWXU)
                     self.assertEqual(
                         completed.returncode,
                         expected_rc,
