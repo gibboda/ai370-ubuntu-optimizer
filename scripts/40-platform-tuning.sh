@@ -241,6 +241,12 @@ PY
   local applied="false"
   local backup_json=""
   local apply_warnings_json=""
+  local s2_m6_preexisting=false
+  local restore_attempted=false
+  local restore_rc=""
+  if [[ -f "$LATEST_DIR/s2-m6-optimization-application.json" ]]; then
+    s2_m6_preexisting=true
+  fi
   backup_json="$(mktemp "${TMPDIR:-/tmp}/s2-m6-backup.XXXXXX")"
   apply_warnings_json="$(mktemp "${TMPDIR:-/tmp}/s2-m6-warnings.XXXXXX")"
   echo "[]" > "$apply_warnings_json"
@@ -253,7 +259,6 @@ PY
       --profile "$PROFILE_FILE"
     echo "[INFO] Applying runtime tuning commands (--approve)..."
     # shellcheck disable=SC1091
-    local restore_rc=""
     local apply_rc=""
     local apply_log=""
     local restore_result_json=""
@@ -287,6 +292,7 @@ PY
         --apply-succeeded true
     else
       echo "[WARN] Runtime tuning commands exited non-zero; attempting rollback..."
+      restore_attempted=true
       restore_rc=0
       PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
         --latest-dir "$LATEST_DIR" \
@@ -305,19 +311,22 @@ PY
     rm -f "$apply_log" "$restore_result_json"
   fi
 
-  python3 "$PROJECT_ROOT/scripts/s2-m6-publish-optimization-application.py" \
-    --profile "$PROFILE_FILE" \
-    --plan "$LATEST_DIR/s2-m5-optimization-plan.json" \
-    --output "$LATEST_DIR/s2-m6-optimization-application.json" \
-    --compat-output "$LATEST_DIR/tier1-platform-tuning.json" \
-    --cli-profile "$PROFILE" \
-    --dry-run "$DRY_RUN" \
-    --applied "$applied" \
-    --backup-json "$backup_json" \
-    --extra-warnings-json "$apply_warnings_json"
+  if [[ "$s2_m6_preexisting" == "true" && "$restore_attempted" == "true" && "$applied" == "false" && "$restore_rc" == "0" ]]; then
+    echo "[INFO] Keeping pre-existing s2-m6-optimization-application.json (apply-time rollback did not republish)."
+  else
+    python3 "$PROJECT_ROOT/scripts/s2-m6-publish-optimization-application.py" \
+      --profile "$PROFILE_FILE" \
+      --plan "$LATEST_DIR/s2-m5-optimization-plan.json" \
+      --output "$LATEST_DIR/s2-m6-optimization-application.json" \
+      --compat-output "$LATEST_DIR/tier1-platform-tuning.json" \
+      --cli-profile "$PROFILE" \
+      --dry-run "$DRY_RUN" \
+      --applied "$applied" \
+      --backup-json "$backup_json" \
+      --extra-warnings-json "$apply_warnings_json"
+    echo "[INFO] Wrote s2-m6-optimization-application.json"
+  fi
   rm -f "$backup_json" "$apply_warnings_json"
-
-  echo "[INFO] Wrote s2-m6-optimization-application.json"
   echo "[INFO] 40-platform-tuning.sh complete."
 }
 
