@@ -166,6 +166,9 @@ class Stage2KernelDriverTests(unittest.TestCase):
             },
         )
         system_profile.validate_document(report, kernel_validation.S2_M2_SCHEMA, "S2-M2")
+        self.assertIs(report["kernel"]["acceptable"], True)
+        self.assertIs(report["modules"]["amdgpu_loaded"], False)
+        self.assertIs(report["modules"]["amdxdna_seen"], None)
         self.assertIn("module-amdgpu-not-loaded", report["support_assessment"]["codes"])
 
     def test_support_matrix_flags_unsupported_ubuntu_and_missing_amdgpu(self) -> None:
@@ -307,6 +310,25 @@ class Stage2KernelDriverTests(unittest.TestCase):
             any("inventory is unavailable" in item for item in canonical["recommendations"]),
             canonical["recommendations"],
         )
+
+    def test_kernel_facts_writer_rejects_invalid_recommendations_json(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / "facts.json"
+            completed = subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "scripts/s2-m2-write-kernel-facts-json.py"),
+                    "--output",
+                    str(out),
+                    "--recommendations-json",
+                    "{not-json",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 2, completed.stderr + completed.stdout)
+            self.assertFalse(out.exists())
 
     def test_kernel_facts_json_writer_emits_booleans_not_strings(self) -> None:
         document = kernel_validation_facts.build_kernel_facts_document(
