@@ -28,25 +28,33 @@ jobs:
         shell: bash
         run: bash .github/scripts/ci-host-drift-canary.sh snapshot "${RUNNER_TEMP}/ci-host-canary.txt"
 
+      - name: Prepare unprivileged portable test user
+        shell: bash
+        run: bash .github/scripts/ci-prepare-portable-test-user.sh
+
       - name: Drop runner sudo before portable tests
         shell: bash
         run: bash .github/scripts/ci-drop-runner-sudo.sh
 
       - name: Assert sudo is unavailable during tests
         shell: bash
+        env:
+          AI370_CI_NO_HOST_MUTATION: "1"
         run: |
-          if sudo -n true 2>/dev/null; then
-            echo '::error::passwordless sudo is still available; portable tests must not run with elevated access'
-            exit 1
-          fi
-          echo 'sudo -n true failed as expected (portable tests run without passwordless sudo)'
+          bash .github/scripts/ci-as-test-user.sh bash -c '
+            if sudo -n true 2>/dev/null; then
+              echo "::error::passwordless sudo is still available to the portable test user"
+              exit 1
+            fi
+            echo "sudo -n true failed as expected (portable tests run without passwordless sudo)"
+          '
 
       - name: Run portable unit tests
         shell: bash
         env:
           AI370_CI_NO_HOST_MUTATION: "1"
         run: |
-          python3 -m unittest \
+          bash .github/scripts/ci-as-test-user.sh python3 -m unittest \
             tests.test_system_profile \
             tests.test_s1_m1_probe \
             tests.test_s1_m2_normalize \
@@ -81,18 +89,18 @@ jobs:
         env:
           AI370_CI_NO_HOST_MUTATION: "1"
         run: |
-          python3 -m unittest tests.test_agent_architecture_conformance
-          python3 -m unittest tests.test_agent_architecture_coverage
-          python3 -m unittest discover -s tests -p 'test_agent_architecture_mutations*.py'
+          bash .github/scripts/ci-as-test-user.sh python3 -m unittest tests.test_agent_architecture_conformance
+          bash .github/scripts/ci-as-test-user.sh python3 -m unittest tests.test_agent_architecture_coverage
+          bash .github/scripts/ci-as-test-user.sh python3 -m unittest discover -s tests -p 'test_agent_architecture_mutations*.py'
 
       - name: Run portable smoke tests
         shell: bash
         env:
           AI370_CI_NO_HOST_MUTATION: "1"
         run: |
-          bash tests/smoke_tier1.sh
-          bash tests/smoke_stage2_platform.sh
-          bash tests/smoke_tier2.sh
+          bash .github/scripts/ci-as-test-user.sh bash tests/smoke_tier1.sh
+          bash .github/scripts/ci-as-test-user.sh bash tests/smoke_stage2_platform.sh
+          bash .github/scripts/ci-as-test-user.sh bash tests/smoke_tier2.sh
 
       - name: Verify CI host drift canary
         if: always()
