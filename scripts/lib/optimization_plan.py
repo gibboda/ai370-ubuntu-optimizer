@@ -320,7 +320,11 @@ def merge_manual_runtime_rollback(
         backup["note"] = "Manual rollback restored pre-apply runtime backup."
     else:
         backup["status"] = "rollback_failed"
+        backup["rollback_available"] = False
         backup["note"] = "Manual rollback did not complete."
+        restore_errors = list(result.get("errors") or [])
+        if restore_errors:
+            backup["restore_errors"] = restore_errors
         message = "Runtime rollback failed."
         if message not in warnings:
             warnings.append(message)

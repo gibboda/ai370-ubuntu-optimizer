@@ -249,41 +249,49 @@ PY
     python3 "$PROJECT_ROOT/scripts/s2-m6-backup-block.py" --output "$backup_json" dry-run-skipped
   else
     python3 "$PROJECT_ROOT/scripts/s2-m6-backup-block.py" --output "$backup_json" capture \
-      --latest-dir "$LATEST_DIR"
+      --latest-dir "$LATEST_DIR" \
+      --profile "$PROFILE_FILE"
     echo "[INFO] Applying runtime tuning commands (--approve)..."
     # shellcheck disable=SC1091
     local restore_rc=""
+    local apply_rc=""
     local apply_log=""
+    local restore_result_json=""
     apply_log="$(mktemp "${TMPDIR:-/tmp}/s2-m6-apply-log.XXXXXX")"
-    if bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh" 2>&1 | tee "$apply_log"; then
+    restore_result_json="$(mktemp "${TMPDIR:-/tmp}/s2-m6-restore-result.XXXXXX")"
+    apply_rc=0
+    bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh" > "$apply_log" 2>&1 || apply_rc=$?
+    cat "$apply_log"
+    if [[ "$apply_rc" -eq 3 ]] || grep -q 'power_profile: unsupported' "$apply_log"; then
+      applied="false"
+      python3 "$PROJECT_ROOT/scripts/s2-m6-write-apply-warnings.py" \
+        --output "$apply_warnings_json" \
+        --warning "power_profile: unsupported"
+      python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
+        --backup-json "$backup_json" \
+        --apply-succeeded true
+    elif [[ "$apply_rc" -eq 0 ]]; then
       applied="true"
-      if grep -q 'power_profile: unsupported' "$apply_log"; then
-        python3 - "$apply_warnings_json" <<'PY'
-import json, sys
-from pathlib import Path
-Path(sys.argv[1]).write_text(
-    json.dumps(["power_profile: unsupported"], indent=2) + "\n",
-    encoding="utf-8",
-)
-PY
-      fi
       python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
         --backup-json "$backup_json" \
         --apply-succeeded true
     else
       echo "[WARN] Runtime tuning commands exited non-zero; attempting rollback..."
       restore_rc=0
-      if ! PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
-        --latest-dir "$LATEST_DIR"; then
-        restore_rc=$?
+      PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
+        --latest-dir "$LATEST_DIR" \
+        --profile "$PROFILE_FILE" > "$restore_result_json" || restore_rc=$?
+      cat "$restore_result_json"
+      if [[ "$restore_rc" != 0 ]]; then
         echo "[WARN] Rollback did not complete cleanly (exit ${restore_rc})."
       fi
       python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
         --backup-json "$backup_json" \
         --apply-succeeded false \
-        --restore-exit-code "$restore_rc"
+        --restore-exit-code "$restore_rc" \
+        --restore-result-json "$restore_result_json"
     fi
-    rm -f "$apply_log"
+    rm -f "$apply_log" "$restore_result_json"
   fi
 
   python3 "$PROJECT_ROOT/scripts/s2-m6-publish-optimization-application.py" \

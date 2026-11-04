@@ -20,6 +20,7 @@ BACKUP_SUBDIR = "s2-m6-runtime-backups"
 MANIFEST_NAME = "manifest.json"
 APPLY_POINTER_NAME = "s2-m6-apply-backup-pointer.json"
 POWER_PROFILE_ITEM = "power_profile"
+UNSUPPORTED_POWER_PROFILE_EXIT = 3
 
 
 def _utc_now() -> str:
@@ -64,11 +65,15 @@ def write_power_profile(
     value: str,
     *,
     runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
-) -> bool:
+) -> tuple[bool, str | None]:
+    """Return (success, error_message)."""
     completed = _run_command(["powerprofilesctl", "set", value], runner=runner)
     if completed is None:
-        return False
-    return completed.returncode == 0
+        return False, "powerprofilesctl not available"
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "powerprofilesctl set failed").strip()
+        return False, detail or "powerprofilesctl set failed"
+    return True, None
 
 
 def list_power_profiles(
@@ -113,10 +118,66 @@ def _unique_backup_id() -> str:
     return f"{stamp}-{uuid4().hex[:8]}"
 
 
+def manifest_platform_id(manifest: dict[str, Any]) -> str | None:
+    value = manifest.get("platform_id")
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def check_manifest_platform_match(
+    manifest: dict[str, Any],
+    *,
+    profile_platform_id: str | None,
+) -> dict[str, Any]:
+    """Compare manifest ``platform_id`` to the loaded Stage 1 profile."""
+    manifest_id = manifest_platform_id(manifest)
+    profile_id = (str(profile_platform_id).strip() if profile_platform_id else None) or None
+    if manifest_id is None:
+        return {
+            "ok": False,
+            "platform_mismatch": True,
+            "manifest_platform_id": None,
+            "profile_platform_id": profile_id,
+            "error": "backup manifest missing platform_id (re-capture after upgrade)",
+        }
+    if profile_id is None:
+        return {
+            "ok": False,
+            "platform_mismatch": True,
+            "manifest_platform_id": manifest_id,
+            "profile_platform_id": None,
+            "error": (
+                f"Stage 1 profile has no classified platform_id; "
+                f"manifest platform_id is {manifest_id}"
+            ),
+        }
+    if manifest_id != profile_id:
+        return {
+            "ok": False,
+            "platform_mismatch": True,
+            "manifest_platform_id": manifest_id,
+            "profile_platform_id": profile_id,
+            "error": (
+                f"platform_id mismatch: manifest has {manifest_id}, "
+                f"profile has {profile_id}"
+            ),
+        }
+    return {
+        "ok": True,
+        "platform_mismatch": False,
+        "manifest_platform_id": manifest_id,
+        "profile_platform_id": profile_id,
+        "error": None,
+    }
+
+
 def capture_runtime_backup(
     latest_dir: Path,
     *,
     backup_id: str | None = None,
+    classified_platform_id: str | None = None,
     runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
 ) -> dict[str, Any]:
     """Capture pre-apply runtime state. Does not mutate system settings."""
@@ -139,13 +200,15 @@ def capture_runtime_backup(
                 "observed": str(power["value"]),
             }
         )
-    manifest = {
+    manifest: dict[str, Any] = {
         "schema": {"name": "s2-m6-runtime-backup", "version": 1},
         "created_at": _utc_now(),
         "backup_id": backup_id,
         "items": items,
         "power_profile": power,
     }
+    if classified_platform_id:
+        manifest["platform_id"] = classified_platform_id
     manifest_path = directory / MANIFEST_NAME
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     relative_manifest = f"reports/latest/{BACKUP_SUBDIR}/{backup_id}/{MANIFEST_NAME}"
@@ -220,8 +283,14 @@ def restore_runtime_backup(
         item_id = str(item.get("id") or "")
         if item_id == POWER_PROFILE_ITEM:
             observed = str(item.get("observed") or "")
-            if observed and write_power_profile(observed, runner=runner):
+            if not observed:
+                errors.append("failed to restore power_profile: no observed value in manifest")
+                continue
+            ok, reason = write_power_profile(observed, runner=runner)
+            if ok:
                 restored.append(item_id)
+            elif reason:
+                errors.append(f"failed to restore {item_id}: {reason}")
             else:
                 errors.append(f"failed to restore {item_id}")
     return {
@@ -252,18 +321,34 @@ def resolve_restore_manifest(latest_dir: Path, explicit: Path | None = None) -> 
     return manifest_from_apply_pointer(latest_dir) or latest_manifest_in(latest_dir)
 
 
+def _restore_errors_from_result(restore_result: dict[str, Any] | None) -> list[str]:
+    if not restore_result:
+        return []
+    errors = [str(item) for item in (restore_result.get("errors") or []) if str(item).strip()]
+    if restore_result.get("error"):
+        errors.append(str(restore_result["error"]))
+    return errors
+
+
 def merge_backup_after_apply(
     block: dict[str, Any],
     *,
     apply_succeeded: bool,
     restore_exit_code: int | None,
+    restore_result: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Update backup block status after apply and optional rollback."""
     updated = {key: value for key, value in block.items() if key != "manifest_path"}
     had_rollback = bool(updated.get("rollback_available"))
     if apply_succeeded:
-        updated["status"] = "captured"
-        updated["note"] = "Apply succeeded; pre-apply backup retained for rollback."
+        if updated.get("status") == "failed":
+            updated["rollback_available"] = False
+            updated["note"] = (
+                "Apply completed but pre-apply backup failed; rollback unavailable."
+            )
+        else:
+            updated["status"] = "captured"
+            updated["note"] = "Apply succeeded; pre-apply backup retained for rollback."
         return updated
     if restore_exit_code is None:
         updated["status"] = "failed"
@@ -276,8 +361,11 @@ def merge_backup_after_apply(
         updated["note"] = "Apply failed; rollback restored pre-apply backup."
         return updated
     updated["status"] = "rollback_failed"
-    updated["rollback_available"] = had_rollback
+    updated["rollback_available"] = False
     updated["note"] = "Apply failed and rollback did not complete."
+    restore_errors = _restore_errors_from_result(restore_result)
+    if restore_errors:
+        updated["restore_errors"] = restore_errors
     return updated
 
 
@@ -297,6 +385,10 @@ def write_backup_block_json(path: Path, block: dict[str, Any]) -> None:
     path.write_text(json.dumps(backup_block_for_json(block), indent=2) + "\n", encoding="utf-8")
 
 
+def write_extra_warnings_json(path: Path, warnings: list[str]) -> None:
+    path.write_text(json.dumps(warnings, indent=2) + "\n", encoding="utf-8")
+
+
 def render_cpu_runtime_commands(target_power: str) -> str:
     """Shell script body for S2-M6 runtime apply (power profile + cpupower info)."""
     return f"""#!/usr/bin/env bash
@@ -312,7 +404,7 @@ if command -v powerprofilesctl >/dev/null 2>&1; then
     powerprofilesctl set "$target_power"
   else
     echo "[WARN] power_profile: unsupported (target $target_power not in powerprofilesctl list)"
-    exit 0
+    exit {UNSUPPORTED_POWER_PROFILE_EXIT}
   fi
 else
   echo "[WARN] powerprofilesctl not available."

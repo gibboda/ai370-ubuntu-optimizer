@@ -335,6 +335,7 @@ run_stage2_optimize_rollback() {
   ai370_init_latest_dir
   python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
     --latest-dir "$LATEST_DIR" \
+    --profile "$LATEST_DIR/s1-m5-system-profile.json" \
     --dry-run "$DRY_RUN"
 }
 

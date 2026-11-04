@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Update S2-M6 backup JSON after apply and optional rollback."""
+"""Update S2-M6 backup JSON after apply and optional rollback.
+
+Internal helper CLI: called from ``40-platform-tuning.sh`` after apply/rollback.
+"""
 
 from __future__ import annotations
 
@@ -21,15 +24,29 @@ def main() -> None:
         type=int,
         help="Omit when rollback was not attempted; 0 means success",
     )
+    parser.add_argument(
+        "--restore-result-json",
+        type=Path,
+        help="JSON object printed by s2-m6-restore-runtime-backup.py",
+    )
     args = parser.parse_args()
     block = json.loads(args.backup_json.read_text(encoding="utf-8"))
     restore_code = args.restore_exit_code
     if args.apply_succeeded == "true":
         restore_code = None
+    restore_result: dict | None = None
+    if args.restore_result_json is not None and args.restore_result_json.is_file():
+        try:
+            loaded = json.loads(args.restore_result_json.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            loaded = None
+        if isinstance(loaded, dict):
+            restore_result = loaded
     updated = optimization_backup.merge_backup_after_apply(
         block,
         apply_succeeded=args.apply_succeeded == "true",
         restore_exit_code=restore_code,
+        restore_result=restore_result,
     )
     args.backup_json.write_text(json.dumps(updated, indent=2) + "\n", encoding="utf-8")
 

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Write S2-M5 plan facts JSON from shell-collected identity fields."""
+"""Write S2-M5 plan facts JSON from shell-collected identity fields.
+
+Internal helper CLI: invoked from ``40-platform-tuning.sh`` after the parent
+loads the Stage 1 profile.
+"""
 
 from __future__ import annotations
 

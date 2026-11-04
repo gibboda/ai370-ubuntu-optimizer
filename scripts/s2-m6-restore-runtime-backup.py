@@ -9,8 +9,26 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
+import firmware_policy  # noqa: E402
 import optimization_backup  # noqa: E402
 import optimization_plan  # noqa: E402
+
+DEFAULT_PROFILE_NAME = "s1-m5-system-profile.json"
+
+
+def _load_required_profile(path: Path) -> dict:
+    try:
+        profile = firmware_policy.load_system_profile(path)
+    except FileNotFoundError as exc:
+        print(f"[ERROR] {exc}", file=sys.stderr)
+        raise SystemExit(2) from exc
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        print(f"[ERROR] Stage 1 profile unreadable: {path}: {exc}", file=sys.stderr)
+        raise SystemExit(2) from exc
+    if not isinstance(profile, dict):
+        print(f"[ERROR] Stage 1 profile is not a JSON object: {path}", file=sys.stderr)
+        raise SystemExit(2)
+    return profile
 
 
 def _load_application(path: Path) -> dict | None:
@@ -45,6 +63,11 @@ def main() -> None:
         help="Reports directory (defaults to reports/latest)",
     )
     parser.add_argument(
+        "--profile",
+        type=Path,
+        help=f"Stage 1 profile (default: <latest-dir>/{DEFAULT_PROFILE_NAME})",
+    )
+    parser.add_argument(
         "--manifest",
         type=Path,
         help="Explicit manifest path; default uses s2-m6-apply-backup-pointer.json",
@@ -57,20 +80,50 @@ def main() -> None:
     )
     args = parser.parse_args()
     latest = args.latest_dir.resolve()
+    profile_path = (args.profile or (latest / DEFAULT_PROFILE_NAME)).resolve()
     dry_run = args.dry_run == "true"
+
+    profile = _load_required_profile(profile_path)
+    profile_platform_id = firmware_policy.classified_platform_id(profile)
+
     manifest = optimization_backup.resolve_restore_manifest(
         latest, args.manifest.resolve() if args.manifest else None
     )
     if manifest is None:
         print("[ERROR] No S2-M6 runtime backup manifest found.", file=sys.stderr)
         raise SystemExit(2)
-    if dry_run:
+
+    manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
+    match = optimization_backup.check_manifest_platform_match(
+        manifest_data, profile_platform_id=profile_platform_id
+    )
+    if not match["ok"]:
         result: dict = {
+            "restored": False,
+            "dry_run": dry_run,
+            "manifest": str(manifest),
+            "restored_items": [],
+            "errors": [str(match["error"])],
+            "platform_mismatch": bool(match.get("platform_mismatch")),
+            "manifest_platform_id": match.get("manifest_platform_id"),
+            "profile_platform_id": match.get("profile_platform_id"),
+        }
+        print(json.dumps(result, indent=2))
+        _publish_rollback_report(latest, dry_run=dry_run, result=result)
+        if dry_run:
+            return
+        raise SystemExit(1)
+
+    if dry_run:
+        result = {
             "restored": False,
             "dry_run": True,
             "manifest": str(manifest),
             "restored_items": [],
             "errors": [],
+            "platform_mismatch": False,
+            "manifest_platform_id": match.get("manifest_platform_id"),
+            "profile_platform_id": match.get("profile_platform_id"),
             "note": "Dry-run: rollback was not executed.",
         }
         print(json.dumps(result, indent=2))
@@ -79,6 +132,9 @@ def main() -> None:
 
     result = optimization_backup.restore_runtime_backup(manifest.resolve())
     result["manifest"] = str(manifest)
+    result["platform_mismatch"] = False
+    result["manifest_platform_id"] = match.get("manifest_platform_id")
+    result["profile_platform_id"] = match.get("profile_platform_id")
     print(json.dumps(result, indent=2))
     _publish_rollback_report(latest, dry_run=False, result=result)
     if not result.get("restored"):

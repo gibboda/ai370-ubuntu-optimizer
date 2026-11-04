@@ -18,6 +18,9 @@ Policy for files under `configs/schemas/`:
 - **Requires `-v2` (new `$id` and schema `version`)** when a change adds a
   property to `required`, narrows an enum, removes a property, or renames a
   field consumers rely on.
+- When bumping schema version, update the builder/document `schema.uri` to match
+  the new `$id`, add fixtures and consumer tests for the new version, and record
+  migration notes for downstream readers.
 - Published builders must **always emit** optional fields defined in the current
   schema (for example `support_assessment` on S2-M2 and full `backup` metadata
   on S2-M6 including `rollback_available` when applicable).

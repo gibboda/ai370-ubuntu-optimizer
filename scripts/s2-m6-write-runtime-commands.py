@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Generate tier1-cpu-runtime-commands.sh for S2-M6 apply."""
+"""Generate tier1-cpu-runtime-commands.sh for S2-M6 apply.
+
+Internal helper CLI: invoked from ``40-platform-tuning.sh`` after the parent
+loads the Stage 1 profile.
+"""
 
 from __future__ import annotations
 

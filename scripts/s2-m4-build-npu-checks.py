@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Build S2-M4 NPU visibility checks JSON from reports/latest inventory artifacts."""
+"""Build S2-M4 NPU visibility checks JSON from reports/latest inventory artifacts.
+
+Internal helper CLI: ``s2-m4-validate-npu-stack.sh`` loads the Stage 1 profile
+before invoking this script.
+"""
 
 from __future__ import annotations
 

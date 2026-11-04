@@ -640,6 +640,7 @@ _PROVIDER_SMOKE_NON_CANDIDATES = frozenset(
         "unknown",
         "missing",
         "not-run",
+        "visible",
     }
 )
 

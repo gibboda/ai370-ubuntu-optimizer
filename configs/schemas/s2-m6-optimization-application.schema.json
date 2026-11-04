@@ -115,7 +115,7 @@
     },
     "backup": {
       "type": "object",
-      "required": ["status", "rollback_available"],
+      "required": ["status"],
       "additionalProperties": false,
       "properties": {
         "status": {
@@ -135,6 +135,10 @@
           "items": {"type": "string", "minLength": 1}
         },
         "rollback_available": {"type": "boolean"},
+        "restore_errors": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
         "note": {"type": "string", "minLength": 1}
       }
     }

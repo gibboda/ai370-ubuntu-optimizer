@@ -232,6 +232,18 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
         self.assertIn("skipped-visibility-only", check_210)
         self.assertIn("VISIBILITY_ONLY", check_210)
 
+    def test_provider_smoke_visible_is_not_a_provider_candidate(self) -> None:
+        checks = {
+            "module_present": True,
+            "device_nodes_present": True,
+            "firmware_ready": True,
+            "runtime_ready": True,
+            "backend_ready": True,
+            "provider_smoke": "visible",
+        }
+        selection = capability_ladder.npu_provider_selection_from_checks(checks)
+        self.assertIsNone(selection)
+
     def test_provider_smoke_missing_and_not_run_are_not_candidates(self) -> None:
         for smoke in ("missing", "not-run"):
             checks = {

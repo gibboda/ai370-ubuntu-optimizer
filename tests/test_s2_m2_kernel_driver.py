@@ -16,6 +16,7 @@ PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
 KERNEL_SCRIPT = ROOT / "scripts/30-validate-kernel.sh"
 sys.path.insert(0, str(ROOT / "scripts/lib"))
 import kernel_validation  # noqa: E402
+import kernel_validation_facts  # noqa: E402
 import system_profile  # noqa: E402
 
 
@@ -285,6 +286,62 @@ class Stage2KernelDriverTests(unittest.TestCase):
             any("inventory is unavailable" in item for item in canonical["recommendations"]),
             canonical["recommendations"],
         )
+
+    def test_kernel_facts_json_writer_emits_booleans_not_strings(self) -> None:
+        document = kernel_validation_facts.build_kernel_facts_document(
+            kernel="6.12.0",
+            target_kernel="6.11",
+            kernel_ok="true",
+            amdgpu_ok="false",
+            amdxdna_seen="unknown",
+            linux_firmware_state="present",
+            status="WARN",
+            os_description="Ubuntu",
+            os_version="24.04",
+            os_codename="noble",
+            recommendations=[],
+        )
+        self.assertIs(document["kernel_ok"], True)
+        self.assertIs(document["amdgpu_ok"], False)
+        self.assertIsNone(document["amdxdna_seen"])
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / "facts.json"
+            completed = subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "scripts/s2-m2-write-kernel-facts-json.py"),
+                    "--output",
+                    str(out),
+                    "--kernel",
+                    "6.12.0",
+                    "--target-kernel",
+                    "6.11",
+                    "--kernel-ok",
+                    "true",
+                    "--amdgpu-ok",
+                    "false",
+                    "--amdxdna-seen",
+                    "unknown",
+                    "--linux-firmware-state",
+                    "present",
+                    "--status",
+                    "WARN",
+                    "--os-description",
+                    "Ubuntu",
+                    "--os-version",
+                    "24.04",
+                    "--os-codename",
+                    "noble",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 0)
+            loaded = json.loads(out.read_text(encoding="utf-8"))
+        self.assertIs(loaded["kernel_ok"], True)
+        self.assertIs(loaded["amdgpu_ok"], False)
+        self.assertIsNone(loaded["amdxdna_seen"])
 
 
 if __name__ == "__main__":
