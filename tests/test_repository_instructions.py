@@ -1473,7 +1473,7 @@ class MigrationPlanTests(unittest.TestCase):
 
 
 class ConventionalCommitScopeTests(unittest.TestCase):
-    """Keep Conventional Commit allowlists aligned, including Dependabot `deps`."""
+    """Keep Conventional Commit allowlists aligned, including Dependabot `deps` and Release Please."""
 
     ALLOWED_SCOPES = (
         "audit",
@@ -1537,6 +1537,62 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Conventional Commit compliant", result.stdout)
+
+    def test_validate_pr_title_accepts_release_please_title(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "chore(release): release 1.2.3",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Release Please", result.stdout)
+
+    def test_validate_commit_subject_accepts_release_please_subject(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "chore(release): release 1.2.3",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Release Please", result.stdout)
+
+    def test_validate_pr_title_rejects_release_please_non_release_subject(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "chore(release): something else",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("uppercase letter", result.stderr)
+
+    def test_validate_commit_subject_rejects_release_please_non_release_subject(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "chore(release): something else",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("uppercase letter", result.stderr)
 
     def test_validate_pr_title_accepts_dependabot_ci_deps_github_actions(self) -> None:
         sample = "ci(deps): bump actions/checkout from 4.2.2 to 4.3.0"
