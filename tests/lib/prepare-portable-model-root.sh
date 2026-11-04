@@ -32,13 +32,16 @@ prepare_portable_model_root() {
   fi
 
   mkdir -p "$models_dir"
-  local uid gid
-  uid="$(id -u)"
-  gid="$(id -g)"
-  if ! sudo mount -o "loop,uid=${uid},gid=${gid}" "$img" "$models_dir"; then
-    echo "[FAIL] Could not mount portable model-root loop filesystem on $models_dir" >&2
-    return 1
+  if ! sudo mount -o loop "$img" "$models_dir"; then
+    rm -f "$img"
+    fallocate -l "${size_mb}M" "$img" 2>/dev/null || dd if=/dev/zero of="$img" bs=1M count="$size_mb" status=none
+    mkfs.ext4 -F -q "$img"
+    if ! sudo mount -o loop "$img" "$models_dir"; then
+      echo "[FAIL] Could not mount portable model-root loop filesystem on $models_dir" >&2
+      return 1
+    fi
   fi
+  sudo chown -R "$(id -u):$(id -g)" "$models_dir"
 
   export AI370_PORTABLE_MODEL_ROOT_PREPARED=1
   echo "[INFO] Portable model root mounted (loop ext4) at $models_dir for minimum_free_gb checks"
