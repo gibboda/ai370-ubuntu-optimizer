@@ -21,6 +21,12 @@ def main() -> None:
     parser.add_argument("--backup-json", required=True, type=Path)
     parser.add_argument("--apply-succeeded", choices=("true", "false"), required=True)
     parser.add_argument(
+        "--runtime-apply-skipped",
+        choices=("true", "false"),
+        default="false",
+        help="Runtime commands ran but mutating apply was skipped (unsupported/missing power profile)",
+    )
+    parser.add_argument(
         "--restore-exit-code",
         type=int,
         help="Omit when rollback was not attempted; 0 means success",
@@ -48,6 +54,7 @@ def main() -> None:
         apply_succeeded=args.apply_succeeded == "true",
         restore_exit_code=restore_code,
         restore_result=restore_result,
+        runtime_apply_skipped=args.runtime_apply_skipped == "true",
     )
     args.backup_json.write_text(json.dumps(updated, indent=2) + "\n", encoding="utf-8")
 

@@ -278,7 +278,8 @@ PY
       fi
       python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
         --backup-json "$backup_json" \
-        --apply-succeeded true
+        --apply-succeeded true \
+        --runtime-apply-skipped true
     elif [[ "$apply_rc" -eq 0 ]]; then
       applied="true"
       python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
@@ -289,7 +290,8 @@ PY
       restore_rc=0
       PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
         --latest-dir "$LATEST_DIR" \
-        --profile "$PROFILE_FILE" > "$restore_result_json" || restore_rc=$?
+        --profile "$PROFILE_FILE" \
+        --no-publish true > "$restore_result_json" || restore_rc=$?
       cat "$restore_result_json"
       if [[ "$restore_rc" != 0 ]]; then
         echo "[WARN] Rollback did not complete cleanly (exit ${restore_rc})."

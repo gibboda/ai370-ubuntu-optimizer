@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import stat
@@ -11,6 +12,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
@@ -216,6 +218,137 @@ class OptimizationBackupTests(unittest.TestCase):
         self.assertFalse(updated["rollback_available"])
         self.assertIn("powerprofilesctl", updated["restore_errors"][0])
 
+    def test_merge_keeps_failed_backup_on_successful_apply(self) -> None:
+        block = {
+            "status": "failed",
+            "rollback_available": False,
+            "note": "Backup unavailable: powerprofilesctl missing or power profile state unreadable.",
+        }
+        updated = optimization_backup.merge_backup_after_apply(
+            block,
+            apply_succeeded=True,
+            restore_exit_code=None,
+        )
+        self.assertEqual(updated["status"], "failed")
+        self.assertFalse(updated["rollback_available"])
+
+    def test_applied_run_warns_when_backup_capture_failed(self) -> None:
+        profile = json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+        application = optimization_plan.build_s2_m6_optimization_application(
+            profile,
+            plan=None,
+            applied=True,
+            dry_run=False,
+            backup={"status": "failed", "rollback_available": False},
+        )
+        self.assertEqual(application["backup"]["status"], "failed")
+        self.assertEqual(application["status"], "WARN")
+        self.assertTrue(
+            any("backup" in warning.lower() for warning in application["warnings"]),
+            application["warnings"],
+        )
+
+    def test_apply_time_restore_no_publish_leaves_s2_m6_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            profile_path = _write_profile(latest, "ai370")
+            profile = json.loads(profile_path.read_text(encoding="utf-8"))
+            application = optimization_plan.build_s2_m6_optimization_application(
+                profile,
+                plan=None,
+                applied=True,
+                dry_run=False,
+                backup={"status": "captured", "rollback_available": True},
+            )
+            report_path = latest / "s2-m6-optimization-application.json"
+            optimization_plan.publish_s2_m6_optimization_application(
+                report_path, application, plan=None
+            )
+            before = report_path.read_text(encoding="utf-8")
+            state = latest / "power.state"
+            state.write_text("performance\n", encoding="utf-8")
+            set_log = latest / "set.log"
+            bindir = latest / "bin"
+            bindir.mkdir()
+            _powerprofilesctl_stub(bindir)
+            _seed_manifest(latest, platform_id="ai370", observed="balanced")
+            completed = subprocess.run(
+                [
+                    "python3",
+                    str(RESTORE_CLI),
+                    "--latest-dir",
+                    str(latest),
+                    "--profile",
+                    str(profile_path),
+                    "--no-publish",
+                    "true",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                env={
+                    **os.environ,
+                    "PATH": f"{bindir}:/bin:/usr/bin",
+                    "STATE": str(state),
+                    "SET_LOG": str(set_log),
+                },
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            self.assertEqual(report_path.read_text(encoding="utf-8"), before)
+            self.assertNotIn("runtime_rollback", before)
+
+    def test_manual_restore_exits_zero_when_publish_fails(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "s2_m6_restore_runtime_backup", RESTORE_CLI
+        )
+        assert spec and spec.loader
+        restore_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restore_module)
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            profile_path = _write_profile(latest, "ai370")
+            state = latest / "power.state"
+            state.write_text("performance\n", encoding="utf-8")
+            bindir = latest / "bin"
+            bindir.mkdir()
+            _powerprofilesctl_stub(bindir)
+            _seed_manifest(latest, platform_id="ai370", observed="balanced")
+            profile = json.loads(profile_path.read_text(encoding="utf-8"))
+            application = optimization_plan.build_s2_m6_optimization_application(
+                profile,
+                plan=None,
+                applied=True,
+                dry_run=False,
+                backup={"status": "captured", "rollback_available": True},
+            )
+            report_path = latest / "s2-m6-optimization-application.json"
+            optimization_plan.publish_s2_m6_optimization_application(
+                report_path, application, plan=None
+            )
+            argv = [
+                "s2-m6-restore-runtime-backup.py",
+                "--latest-dir",
+                str(latest),
+                "--profile",
+                str(profile_path),
+            ]
+            env_patch = patch.dict(
+                os.environ,
+                {
+                    "PATH": f"{bindir}:/bin:/usr/bin",
+                    "STATE": str(state),
+                },
+                clear=False,
+            )
+            publish_patch = patch.object(
+                restore_module.optimization_plan,
+                "publish_s2_m6_optimization_application",
+                side_effect=OSError("publish failed"),
+            )
+            with env_patch, publish_patch, patch.object(sys, "argv", argv):
+                restore_module.main()
+            self.assertEqual(state.read_text(encoding="utf-8").strip(), "balanced")
+
     def test_restore_script_exits_2_without_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             latest = Path(directory)
@@ -302,7 +435,7 @@ class OptimizationBackupTests(unittest.TestCase):
                 },
             )
             combined = completed.stderr + completed.stdout
-            self.assertNotEqual(completed.returncode, 0, combined)
+            self.assertEqual(completed.returncode, 2, combined)
             self.assertIn("ai370", combined)
             self.assertIn("ai470", combined)
             self.assertEqual(state.read_text(encoding="utf-8").strip(), "performance")
@@ -484,6 +617,8 @@ class OptimizationBackupTests(unittest.TestCase):
             self.assertIn("power_profile: unsupported", report["warnings"])
             self.assertEqual(state.read_text(encoding="utf-8").strip(), "balanced")
             self.assertEqual(report["backup"]["status"], "captured")
+            self.assertIn("skipped", report["backup"]["note"].lower())
+            self.assertNotIn("Apply succeeded", report["backup"]["note"])
 
     def test_apply_failure_triggers_rollback_stub(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -528,6 +663,7 @@ class OptimizationBackupTests(unittest.TestCase):
             self.assertFalse(report["applied"])
             self.assertEqual(report["backup"]["status"], "restored")
             self.assertEqual(state.read_text(encoding="utf-8").strip(), "balanced")
+            self.assertNotIn("runtime_rollback", report)
 
     def test_apply_rollback_failed_when_all_powerprofilesctl_set_fail(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -176,8 +176,8 @@ def check_manifest_platform_match(
 def capture_runtime_backup(
     latest_dir: Path,
     *,
+    classified_platform_id: str,
     backup_id: str | None = None,
-    classified_platform_id: str | None = None,
     runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
 ) -> dict[str, Any]:
     """Capture pre-apply runtime state. Does not mutate system settings."""
@@ -207,8 +207,7 @@ def capture_runtime_backup(
         "items": items,
         "power_profile": power,
     }
-    if classified_platform_id:
-        manifest["platform_id"] = classified_platform_id
+    manifest["platform_id"] = classified_platform_id
     manifest_path = directory / MANIFEST_NAME
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     relative_manifest = f"reports/latest/{BACKUP_SUBDIR}/{backup_id}/{MANIFEST_NAME}"
@@ -336,6 +335,7 @@ def merge_backup_after_apply(
     apply_succeeded: bool,
     restore_exit_code: int | None,
     restore_result: dict[str, Any] | None = None,
+    runtime_apply_skipped: bool = False,
 ) -> dict[str, Any]:
     """Update backup block status after apply and optional rollback."""
     updated = {key: value for key, value in block.items() if key != "manifest_path"}
@@ -348,7 +348,12 @@ def merge_backup_after_apply(
             )
         else:
             updated["status"] = "captured"
-            updated["note"] = "Apply succeeded; pre-apply backup retained for rollback."
+            if runtime_apply_skipped:
+                updated["note"] = (
+                    "Power profile apply skipped; pre-apply backup retained for rollback."
+                )
+            else:
+                updated["note"] = "Apply succeeded; pre-apply backup retained for rollback."
         return updated
     if restore_exit_code is None:
         updated["status"] = "failed"

@@ -41,17 +41,27 @@ def _load_application(path: Path) -> dict | None:
     return loaded if isinstance(loaded, dict) else None
 
 
-def _publish_rollback_report(latest: Path, *, dry_run: bool, result: dict) -> None:
+def _publish_rollback_report(latest: Path, *, dry_run: bool, result: dict) -> bool:
+    """Merge manual rollback into the S2-M6 report. Returns False on publish failure."""
     application_path = latest / "s2-m6-optimization-application.json"
     application = _load_application(application_path)
     if application is None:
-        return
+        return True
     merged = optimization_plan.merge_manual_runtime_rollback(
         application, dry_run=dry_run, result=result
     )
-    optimization_plan.publish_s2_m6_optimization_application(
-        application_path, merged, plan=None
-    )
+    try:
+        optimization_plan.publish_s2_m6_optimization_application(
+            application_path, merged, plan=None
+        )
+    except (OSError, ValueError, TypeError) as exc:
+        print(
+            f"[WARN] Rollback restored runtime settings but failed to update "
+            f"{application_path.name}: {exc}",
+            file=sys.stderr,
+        )
+        return False
+    return True
 
 
 def main() -> None:
@@ -78,10 +88,17 @@ def main() -> None:
         default="false",
         help="Plan rollback without mutating runtime settings",
     )
+    parser.add_argument(
+        "--no-publish",
+        choices=("true", "false"),
+        default="false",
+        help="Do not merge results into s2-m6-optimization-application.json (apply-time rollback)",
+    )
     args = parser.parse_args()
     latest = args.latest_dir.resolve()
     profile_path = (args.profile or (latest / DEFAULT_PROFILE_NAME)).resolve()
     dry_run = args.dry_run == "true"
+    no_publish = args.no_publish == "true"
 
     profile = _load_required_profile(profile_path)
     profile_platform_id = firmware_policy.classified_platform_id(profile)
@@ -109,10 +126,11 @@ def main() -> None:
             "profile_platform_id": match.get("profile_platform_id"),
         }
         print(json.dumps(result, indent=2))
-        _publish_rollback_report(latest, dry_run=dry_run, result=result)
+        if not no_publish:
+            _publish_rollback_report(latest, dry_run=dry_run, result=result)
         if dry_run:
             return
-        raise SystemExit(1)
+        raise SystemExit(2)
 
     if dry_run:
         result = {
@@ -127,7 +145,8 @@ def main() -> None:
             "note": "Dry-run: rollback was not executed.",
         }
         print(json.dumps(result, indent=2))
-        _publish_rollback_report(latest, dry_run=True, result=result)
+        if not no_publish:
+            _publish_rollback_report(latest, dry_run=True, result=result)
         return
 
     result = optimization_backup.restore_runtime_backup(manifest.resolve())
@@ -136,8 +155,14 @@ def main() -> None:
     result["manifest_platform_id"] = match.get("manifest_platform_id")
     result["profile_platform_id"] = match.get("profile_platform_id")
     print(json.dumps(result, indent=2))
-    _publish_rollback_report(latest, dry_run=False, result=result)
-    if not result.get("restored"):
+    restored = bool(result.get("restored"))
+    if not no_publish and not _publish_rollback_report(latest, dry_run=False, result=result):
+        if restored:
+            print(
+                "[WARN] Rollback succeeded; S2-M6 report was not updated (see warnings above).",
+                file=sys.stderr,
+            )
+    if not restored:
         raise SystemExit(1)
     print(f"[INFO] Restored runtime backup from {manifest}")
 
