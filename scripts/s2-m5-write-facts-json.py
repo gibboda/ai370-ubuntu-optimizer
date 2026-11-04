@@ -2,7 +2,8 @@
 """Write S2-M5 plan facts JSON from shell-collected identity fields.
 
 Internal helper CLI: invoked from ``40-platform-tuning.sh`` after the parent
-loads the Stage 1 profile.
+loads the Stage 1 profile. Exempt from loading the Stage 1 profile itself (see
+``scripts/AGENTS.md``).
 """
 
 from __future__ import annotations

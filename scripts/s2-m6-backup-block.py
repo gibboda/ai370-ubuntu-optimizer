@@ -2,7 +2,8 @@
 """Write S2-M6 backup block JSON for apply (capture or dry-run skip).
 
 Internal helper CLI: invoked only from ``40-platform-tuning.sh`` after that
-script has loaded the canonical Stage 1 profile.
+script has loaded the canonical Stage 1 profile. Exempt from loading the Stage 1
+profile itself (see ``scripts/AGENTS.md``).
 """
 
 from __future__ import annotations

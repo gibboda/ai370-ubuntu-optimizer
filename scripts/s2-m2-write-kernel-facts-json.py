@@ -2,7 +2,8 @@
 """Write S2-M2 kernel/driver facts JSON for 30-validate-kernel.sh.
 
 Internal helper CLI: ``30-validate-kernel.sh`` loads the Stage 1 profile before
-calling this writer.
+calling this writer. Exempt from loading the Stage 1 profile itself (see
+``scripts/AGENTS.md``).
 """
 
 from __future__ import annotations

@@ -2,7 +2,8 @@
 """Build S2-M4 NPU visibility checks JSON from reports/latest inventory artifacts.
 
 Internal helper CLI: ``s2-m4-validate-npu-stack.sh`` loads the Stage 1 profile
-before invoking this script.
+before invoking this script. Exempt from loading the Stage 1 profile itself (see
+``scripts/AGENTS.md``).
 """
 
 from __future__ import annotations
