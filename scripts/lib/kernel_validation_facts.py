@@ -7,10 +7,15 @@ from pathlib import Path
 from typing import Any
 
 
-def tri_bool(text: str) -> bool | None:
-    if text == "true":
+def bool_or_none(value: Any) -> bool | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"true", "1", "yes", "on"}:
         return True
-    if text == "false":
+    if text in {"false", "0", "no", "off"}:
         return False
     return None
 
@@ -32,9 +37,9 @@ def build_kernel_facts_document(
     return {
         "kernel": kernel,
         "target_kernel": target_kernel,
-        "kernel_ok": tri_bool(kernel_ok),
-        "amdgpu_ok": tri_bool(amdgpu_ok),
-        "amdxdna_seen": tri_bool(amdxdna_seen),
+        "kernel_ok": bool_or_none(kernel_ok),
+        "amdgpu_ok": bool_or_none(amdgpu_ok),
+        "amdxdna_seen": bool_or_none(amdxdna_seen),
         "linux_firmware_state": linux_firmware_state,
         "status": status,
         "os_description": os_description,

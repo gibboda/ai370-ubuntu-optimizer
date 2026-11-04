@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import firmware_policy
+import kernel_validation_facts
 import system_profile
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -54,7 +55,7 @@ def evaluate_support_matrix(
         or "6.11"
     )
     kernel_version = str(facts.get("kernel") or "")
-    kernel_ok = _bool_or_none(facts.get("kernel_ok"))
+    kernel_ok = kernel_validation_facts.bool_or_none(facts.get("kernel_ok"))
     os_version = str(facts.get("os_version") or "")
     os_codename = str(facts.get("os_codename") or "").lower()
     codes: list[str] = []
@@ -86,14 +87,14 @@ def evaluate_support_matrix(
         for item in accelerators
     )
     module_rules = data.get("module_expectations") or {}
-    amdgpu_ok = _bool_or_none(facts.get("amdgpu_ok"))
+    amdgpu_ok = kernel_validation_facts.bool_or_none(facts.get("amdgpu_ok"))
     if gpu_present:
         rule = module_rules.get("amdgpu") or {}
         if amdgpu_ok is False and rule.get("code_missing"):
             codes.append(str(rule["code_missing"]))
         elif amdgpu_ok is None and rule.get("code_unknown"):
             codes.append(str(rule["code_unknown"]))
-    amdxdna_seen = _bool_or_none(facts.get("amdxdna_seen"))
+    amdxdna_seen = kernel_validation_facts.bool_or_none(facts.get("amdxdna_seen"))
     if npu_present:
         rule = module_rules.get("amdxdna") or {}
         if amdxdna_seen is False and rule.get("code_missing"):
@@ -116,19 +117,6 @@ def _utc_now() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
-def _bool_or_none(value: Any) -> bool | None:
-    if value is None:
-        return None
-    if isinstance(value, bool):
-        return value
-    text = str(value).strip().lower()
-    if text in {"true", "1", "yes", "on"}:
-        return True
-    if text in {"false", "0", "no", "off"}:
-        return False
-    return None
-
-
 def build_s2_m2_kernel_driver_validation(
     profile: dict[str, Any],
     *,
@@ -143,9 +131,9 @@ def build_s2_m2_kernel_driver_validation(
         str(item) for item in (facts.get("recommendations") or []) if str(item).strip()
     ]
     warnings = [str(item) for item in (facts.get("warnings") or []) if str(item).strip()]
-    kernel_ok = _bool_or_none(facts.get("kernel_ok"))
-    amdgpu_ok = _bool_or_none(facts.get("amdgpu_ok"))
-    amdxdna_seen = _bool_or_none(facts.get("amdxdna_seen"))
+    kernel_ok = kernel_validation_facts.bool_or_none(facts.get("kernel_ok"))
+    amdgpu_ok = kernel_validation_facts.bool_or_none(facts.get("amdgpu_ok"))
+    amdxdna_seen = kernel_validation_facts.bool_or_none(facts.get("amdxdna_seen"))
     firmware_state = str(facts.get("linux_firmware_state") or "unknown")
     if firmware_state not in {"present", "missing", "unknown"}:
         firmware_state = "unknown"

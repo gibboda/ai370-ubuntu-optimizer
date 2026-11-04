@@ -38,10 +38,12 @@ def main() -> None:
     args = parser.parse_args()
     try:
         recommendations = json.loads(args.recommendations_json or "[]")
-    except json.JSONDecodeError:
-        recommendations = []
+    except json.JSONDecodeError as exc:
+        print(f"[ERROR] Invalid --recommendations-json: {exc}", file=sys.stderr)
+        raise SystemExit(2) from exc
     if not isinstance(recommendations, list):
-        recommendations = []
+        print("[ERROR] --recommendations-json must be a JSON array.", file=sys.stderr)
+        raise SystemExit(2)
     document = kernel_validation_facts.build_kernel_facts_document(
         kernel=args.kernel,
         target_kernel=args.target_kernel,
