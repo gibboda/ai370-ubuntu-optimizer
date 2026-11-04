@@ -15,4 +15,14 @@ if id -nG "$test_user" | tr ' ' '\n' | grep -qx sudo; then
 fi
 
 sudo chown -R "$test_user:$test_user" "$workspace"
+
+# The checkout lives under /home/runner/work/...; grant traverse-only access on parents.
+dir="$workspace"
+while [[ "$dir" != / ]]; do
+  if [[ -d "$dir" ]]; then
+    sudo chmod o+x "$dir" 2>/dev/null || true
+  fi
+  dir="$(dirname "$dir")"
+done
+
 echo "Workspace owned by ${test_user} for portable tests"
