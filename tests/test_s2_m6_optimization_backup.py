@@ -403,7 +403,26 @@ class OptimizationBackupTests(unittest.TestCase):
                 (latest / "s2-m6-optimization-application.json").read_text(encoding="utf-8")
             )
             system_profile.validate_document(report, optimization_plan.S2_M6_SCHEMA, "S2-M6")
+            self.assertFalse(report["applied"])
+            self.assertFalse(report["runtime_apply"]["applied"])
+            self.assertEqual(report["status"], "WARN")
+            self.assertIn("powerprofilesctl not available", report["warnings"])
             self.assertEqual(report["backup"]["status"], "failed")
+            self.assertFalse(report["backup"]["rollback_available"])
+
+    def test_restore_runtime_backup_reports_missing_powerprofilesctl(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            manifest_path = _seed_manifest(latest, platform_id="ai370", observed="balanced")
+            result = optimization_backup.restore_runtime_backup(
+                manifest_path,
+                runner=lambda command, **kwargs: subprocess.run(
+                    command, env={"PATH": ""}, **kwargs
+                ),
+            )
+            self.assertFalse(result["restored"])
+            self.assertEqual(len(result["errors"]), 1)
+            self.assertIn("powerprofilesctl not available", result["errors"][0])
 
     def test_latest_manifest_in_skips_directory_without_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -460,6 +479,7 @@ class OptimizationBackupTests(unittest.TestCase):
             )
             system_profile.validate_document(report, optimization_plan.S2_M6_SCHEMA, "S2-M6")
             self.assertFalse(report["applied"])
+            self.assertFalse(report["runtime_apply"]["applied"])
             self.assertEqual(report["status"], "WARN")
             self.assertIn("power_profile: unsupported", report["warnings"])
             self.assertEqual(state.read_text(encoding="utf-8").strip(), "balanced")

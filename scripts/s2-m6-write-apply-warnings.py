@@ -2,6 +2,7 @@
 """Write S2-M6 apply warning JSON for 40-platform-tuning.sh.
 
 Internal helper CLI: parent ``40-platform-tuning.sh`` loads the Stage 1 profile.
+Exempt from loading the profile itself.
 """
 
 from __future__ import annotations

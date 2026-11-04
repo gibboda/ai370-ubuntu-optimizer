@@ -408,6 +408,7 @@ if command -v powerprofilesctl >/dev/null 2>&1; then
   fi
 else
   echo "[WARN] powerprofilesctl not available."
+  exit {UNSUPPORTED_POWER_PROFILE_EXIT}
 fi
 
 echo "[TUNE] CPU frequency info (if cpupower present)..."

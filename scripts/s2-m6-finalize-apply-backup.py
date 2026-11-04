@@ -2,6 +2,7 @@
 """Update S2-M6 backup JSON after apply and optional rollback.
 
 Internal helper CLI: called from ``40-platform-tuning.sh`` after apply/rollback.
+Exempt from loading the Stage 1 profile; the parent script already validated it.
 """
 
 from __future__ import annotations

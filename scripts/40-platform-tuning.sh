@@ -262,11 +262,20 @@ PY
     apply_rc=0
     bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh" > "$apply_log" 2>&1 || apply_rc=$?
     cat "$apply_log"
-    if [[ "$apply_rc" -eq 3 ]] || grep -q 'power_profile: unsupported' "$apply_log"; then
+    if [[ "$apply_rc" -eq 3 ]] || grep -qE 'power_profile: unsupported|powerprofilesctl not available' "$apply_log"; then
       applied="false"
-      python3 "$PROJECT_ROOT/scripts/s2-m6-write-apply-warnings.py" \
-        --output "$apply_warnings_json" \
-        --warning "power_profile: unsupported"
+      local apply_warn_args=()
+      if grep -q 'power_profile: unsupported' "$apply_log"; then
+        apply_warn_args+=(--warning "power_profile: unsupported")
+      fi
+      if grep -q 'powerprofilesctl not available' "$apply_log"; then
+        apply_warn_args+=(--warning "powerprofilesctl not available")
+      fi
+      if ((${#apply_warn_args[@]} > 0)); then
+        python3 "$PROJECT_ROOT/scripts/s2-m6-write-apply-warnings.py" \
+          --output "$apply_warnings_json" \
+          "${apply_warn_args[@]}"
+      fi
       python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
         --backup-json "$backup_json" \
         --apply-succeeded true
