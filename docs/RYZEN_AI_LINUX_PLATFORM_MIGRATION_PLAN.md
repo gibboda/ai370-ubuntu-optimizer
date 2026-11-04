@@ -358,6 +358,27 @@ feature is not treated as implemented unless code exists.
 
 ------------------------------------------------------------------------
 
+## Wave 1 Ryzen AI support matrix (repository-documented)
+
+This matrix records profile and validation class only. It is not a runtime
+support guarantee. Physical integration beyond Stage 1 remains opt-in
+(`needs-hardware`).
+
+| Profile id | Hardware identity | Classification | Validation class | Stage 2+ on reference host |
+| --- | --- | --- | --- | --- |
+| `ai370` | Minisforum EliteMini AI370, Ryzen AI 9 HX 370 | exact (DMI + CPU) | project-verified | Primary integration reference |
+| `ai470` | Minisforum AI Series, Ryzen AI 9 HX 470 | exact (DMI + CPU) | stage1-probe-verified | Stage 1 probe only (see #238) |
+| `strix-point-ryzen-ai` | AMD Ryzen AI 300 family (CPUID 26/36) without OEM exact match | family | capability-detection-rule | N/A (policy overlay, not a SKU) |
+| `strix-halo-ryzen-ai` | Ryzen AI MAX / Halo product strings | family | officially-documented | Opt-in physical validation |
+| `generic-ryzen-ai` | Ryzen AI CPU marketing class, no 300-signature | family | capability-detection-rule | N/A |
+| (none) | Unsupported or non-Ryzen hosts | unknown / unsupported | — | N/A |
+
+HX 470 and HX 370 share the `ryzen-ai-300` CPU family signature; exact OEM
+profiles must not remove the `strix-point-ryzen-ai` fallback for unmatched
+Strix Point hosts.
+
+------------------------------------------------------------------------
+
 ## AI370-specific assumptions
 
 Verified in code, profiles, fixtures, tracked vendor installers, pin
@@ -366,8 +387,11 @@ files, and docs.
 | Location | Assumption | Class | Recommended action |
 | --- | --- | --- | --- |
 | `configs/profiles/ai370.env` | HX 370, gfx1150, XDNA2, BIOS 2.01, Minisforum EliteMini AI370 | REFERENCE_PLATFORM_FACT | KEEP as declarative profile data |
+| `configs/profiles/ai470.env` | HX 470, gfx1150, XDNA2, Minisforum AI Series; no EXPECTED_BIOS_VERSION | REFERENCE_PLATFORM_FACT | KEEP; Stage 1 probe verified only |
 | `tests/fixtures/raw-probes/v1/observed-ai370.json` and profile fixtures | Same reference identity | REFERENCE_PLATFORM_FACT | KEEP as regression fixtures |
+| `tests/fixtures/raw-probes/v1/observed-ryzen-ai-hx470.json` | Sanitized HX 470 Stage 1 probe for `ai470` exact classification | REFERENCE_PLATFORM_FACT | KEEP as regression fixture |
 | `configs/profiles/hardware-profiles.json` `ai370` | Exact DMI/CPU match for EliteMini AI370, loaded by `system_profile.py` | REFERENCE_PLATFORM_FACT | KEEP; unknown hosts must remain valid |
+| `configs/profiles/hardware-profiles.json` `ai470` | Exact DMI/CPU match for Minisforum AI Series HX 470 | REFERENCE_PLATFORM_FACT | KEEP; Strix Point family fallback remains |
 | `configs/profiles/hardware-profiles.json` `cpu_family_signatures` | CPU family 26 / model 36 → `ryzen-ai-300` | CAPABILITY_DETECTION_RULE | KEEP; extend with data, not collector rewrites |
 | `configs/profiles/hardware-profiles.json` `gpu_architecture_mappings` | `gfx1150`/`gfx1151` → RDNA 3.5 | CAPABILITY_DETECTION_RULE | KEEP and extend |
 | `configs/profiles/hardware-profiles.json` `strix-halo-ryzen-ai` | Ryzen AI MAX / Strix Halo / Ryzen AI Halo product strings; GPU capability `gfx1151` | CAPABILITY_DETECTION_RULE | KEEP as a hardware profile of `ryzen-ai-linux`; do not copy BIOS 2.01 |
@@ -379,7 +403,7 @@ files, and docs.
 | `scripts/s2-m3-validate-gpu-stack.sh` JSON `target_gpu_arch` | Reads from consumed S1-M5 profile (`#176`) | CAPABILITY_DETECTION_RULE | KEEP |
 | `scripts/legacy/70-validate-gpu-stack.sh` JSON `target_gpu_arch` | Frozen hardcoded `"gfx1150"` | UNNECESSARY_HARDCODE | KEEP frozen; REMOVE at R1 |
 | `scripts/90-validate.sh` | Missing gfx1150/NPU is acceptance WARN, or FAIL with `--strict` | TEMPORARY_COMPATIBILITY_RULE | SPLIT: facts in S1, policy in S2; `--strict` must not become generic policy |
-| `scripts/110-install-llama-cpp.sh` | `LLAMA_CPP_AMDGPU_TARGETS` defaults from the classified platform in `s1-m5-system-profile.json` (`ai370` → `gfx1150`, `strix-halo-ryzen-ai` → `gfx1151`, generic or missing profile → empty) | CAPABILITY_DETECTION_RULE | KEEP the override; do not derive the target from the CLI profile name |
+| `scripts/110-install-llama-cpp.sh` | `LLAMA_CPP_AMDGPU_TARGETS` defaults from the classified platform in `s1-m5-system-profile.json` (`ai370` / `ai470` / `strix-point-ryzen-ai` → `gfx1150`, `strix-halo-ryzen-ai` → `gfx1151`, generic or missing profile → empty) | CAPABILITY_DETECTION_RULE | KEEP the override; do not derive the target from the CLI profile name |
 | `scripts/245-compare-cpu-gpu-npu.sh` | gfx1150/Radeon 890M guidance strings | REFERENCE_PLATFORM_FACT | KEEP as reference advice; do not gate generic hosts |
 | `scripts/lib/hardware-detect.sh` | `TARGET_UBUNTU_VERSION=26.04` | TEMPORARY_COMPATIBILITY_RULE | REFACTOR behind a distribution abstraction after Ubuntu reference stability |
 | `scripts/lib/system_profile.py` | Schema name `ai370-system-profile` | TEMPORARY_COMPATIBILITY_RULE | KEEP until a schema-versioned rename |

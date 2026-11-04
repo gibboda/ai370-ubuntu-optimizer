@@ -57,6 +57,29 @@ Documented identity, from AMD ROCm Strix Halo guidance:
 Do not copy AI370 BIOS 2.01, `gfx1150`, or EliteMini DMI identity onto this
 profile. No Strix Halo CPUID is recorded until a sanitized probe supplies it.
 
+## Wave 1 Ryzen AI profile (Stage 1 probe verified)
+
+### Minisforum AI Series (Ryzen AI 9 HX 470)
+
+Role: additional Wave 1 reference hardware with an exact-match profile (`ai470`).
+Stage 1 probe verified; Stage 2 platform validation and runtime integration are
+not claimed complete on this host.
+
+Recorded probe identity (sanitized fixture
+`tests/fixtures/raw-probes/v1/observed-ryzen-ai-hx470.json`):
+
+- System: Minisforum AI Series (DMI product `AI Series`, vendor Micro Computer
+  (HK) Tech Limited)
+- Processor: AMD Ryzen AI 9 HX 470 w/ Radeon 890M (CPUID family 26 / model 36,
+  same signature bucket as HX 370)
+- Integrated GPU: Radeon 890M, PCI `1002:150e`, architecture `gfx1150`
+- NPU: XDNA2, PCI `1022:17f0`, `amdxdna`, `/dev/accel/accel0`
+- Firmware observed: BIOS 1.00 (2026-01-15)
+- Operating system class: Ubuntu 26.04 LTS, kernel 7.x class
+
+Do not treat BIOS 1.00 or this DMI identity as requirements for generic Strix
+Point classification. Do not copy EliteMini AI370 BIOS 2.01 onto `ai470`.
+
 ## Portability rules
 
 Generic collectors, schemas, orchestration, policy, and platform-independent

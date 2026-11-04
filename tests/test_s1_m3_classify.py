@@ -29,7 +29,7 @@ import hardware_profile  # noqa: E402
 CASES = (
     ("observed-ai370.json", "ai370", "exact", "observed"),
     ("observed-ryzen-ai-pro-360.json", "strix-point-ryzen-ai", "family", "observed"),
-    ("observed-ryzen-ai-hx470.json", "strix-point-ryzen-ai", "family", "observed"),
+    ("observed-ryzen-ai-hx470.json", "ai470", "exact", "observed"),
     ("observed-ryzen-ai-max-strix-halo.json", "strix-halo-ryzen-ai", "family", "observed"),
     ("unsupported-host.json", None, "none", "unsupported"),
 )
@@ -91,6 +91,9 @@ class Stage1ClassifyTests(unittest.TestCase):
         self.assertEqual(halo["id"], "strix-halo-ryzen-ai")
         self.assertNotEqual(point["hardware_family"], halo["hardware_family"])
         self.assertEqual(point["validation"], "project-verified")
+        hx470 = hardware_profile.profile_by_id("ai470")
+        assert hx470 is not None
+        self.assertEqual(hx470["validation"], "stage1-probe-verified")
         self.assertEqual(halo["validation"], "officially-documented")
         self.assertEqual(
             hardware_profile.providers("ai370"), hardware_profile.providers("strix-halo")
@@ -117,14 +120,22 @@ class Stage1ClassifyTests(unittest.TestCase):
 
     def test_bios_policy_stays_on_the_ai370_profile(self) -> None:
         self.assertEqual(firmware_policy.expected_bios_version("ai370"), "2.01")
+        self.assertEqual(firmware_policy.expected_bios_version("ai470"), "")
         self.assertEqual(firmware_policy.expected_bios_version("strix-point-ryzen-ai"), "")
         self.assertEqual(firmware_policy.expected_bios_version("strix-halo-ryzen-ai"), "")
+
+    def test_ai470_alias_resolves_to_canonical_profile(self) -> None:
+        self.assertEqual(hardware_profile.profile_by_id("minisforum-ai-series")["id"], "ai470")
+        document = self.classify_fixture("observed-ryzen-ai-hx470.json")
+        self.assertEqual(document["classification"]["platform_id"], "ai470")
+        self.assertEqual(document["classification"]["confidence"], "exact")
 
     def test_shell_adapter_reads_profile_gpu_target(self) -> None:
         script = ROOT / "scripts/lib/hardware-profile.sh"
         env = {**os.environ, "PROJECT_ROOT": str(ROOT)}
         for profile, expected in (
             ("ai370", "gfx1150"),
+            ("ai470", "gfx1150"),
             ("strix-halo", "gfx1151"),
             ("generic-ryzen-ai", ""),
         ):

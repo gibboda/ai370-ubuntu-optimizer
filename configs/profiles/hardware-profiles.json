@@ -71,6 +71,40 @@
       }
     },
     {
+      "id": "ai470",
+      "platform_architecture": "ryzen-ai-linux",
+      "hardware_family": "strix-point",
+      "aliases": ["minisforum-ai-series", "ai-series-hx470"],
+      "validation": "stage1-probe-verified",
+      "adapter": "declarative-hardware-profile",
+      "confidence": "exact",
+      "priority": 100,
+      "description": "Minisforum AI Series with AMD Ryzen AI 9 HX 470 (Stage 1 probe verified; full integration validation pending)",
+      "requires": [
+        {"path": "system.product", "equals_any": ["AI Series"]},
+        {"path": "cpu.vendor", "equals_any": ["AuthenticAMD", "AMD"]},
+        {"path": "cpu.model", "contains_any": ["Ryzen AI 9 HX 470"]}
+      ],
+      "requires_if_known": [
+        {"path": "system.vendor", "equals_any": ["Micro Computer (HK) Tech Limited", "MINISFORUM"]}
+      ],
+      "optional": [
+        {"path": "gpu.arch", "equals_any": ["gfx1150"]},
+        {"path": "npu.family", "equals_any": ["xdna2"]}
+      ],
+      "capabilities": {
+        "gpu_arch": "gfx1150",
+        "gpu_family": "rdna3.5",
+        "npu_family": "xdna2"
+      },
+      "optimization_profile": "safe",
+      "providers": {
+        "gpu": ["amdgpu", "vulkan", "rocm", "hip"],
+        "npu": ["amdxdna", "xrt", "vitisai"],
+        "llm": ["llama.cpp", "ollama"]
+      }
+    },
+    {
       "id": "strix-halo-ryzen-ai",
       "platform_architecture": "ryzen-ai-linux",
       "hardware_family": "strix-halo",
