@@ -23,11 +23,17 @@ import optimization_plan  # noqa: E402
 import system_profile  # noqa: E402
 
 
-def _powerprofilesctl_stub(bindir: Path, *, set_performance_fails: bool = False) -> None:
+def _powerprofilesctl_stub(
+    bindir: Path,
+    *,
+    set_performance_fails: bool = False,
+) -> None:
     lines = [
         "#!/bin/sh",
         'case "$1" in',
         "  get) cat \"$STATE\"; exit 0 ;;",
+        "  list)",
+        '    printf "%s\\n" "${PROFILES_LIST:-performance balanced power-saver}"; exit 0 ;;',
         "  set)",
     ]
     if set_performance_fails:
@@ -105,7 +111,7 @@ class OptimizationBackupTests(unittest.TestCase):
         updated = optimization_backup.merge_backup_after_apply(
             block, apply_succeeded=False, restore_exit_code=1
         )
-        self.assertEqual(updated["status"], "restore-failed")
+        self.assertEqual(updated["status"], "rollback_failed")
         self.assertTrue(updated["rollback_available"])
 
     def test_restore_script_exits_2_without_manifest(self) -> None:
@@ -172,6 +178,66 @@ class OptimizationBackupTests(unittest.TestCase):
             system_profile.validate_document(report, optimization_plan.S2_M6_SCHEMA, "S2-M6")
             if report["applied"]:
                 self.assertIn(report["backup"]["status"], {"captured", "failed", "skipped"})
+
+    def test_latest_manifest_in_skips_directory_without_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            root = optimization_backup.backup_root(latest)
+            root.mkdir(parents=True)
+            (root / "20260101T120000-abc12345").mkdir()
+            (root / "20260102T120000-def67890").mkdir()
+            manifest_dir = root / "20260103T120000-ghiabcde"
+            manifest_dir.mkdir()
+            (manifest_dir / "manifest.json").write_text("{}", encoding="utf-8")
+            resolved = optimization_backup.latest_manifest_in(latest)
+            self.assertEqual(resolved, manifest_dir / "manifest.json")
+
+    def test_aggressive_apply_degrades_when_performance_profile_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            (latest / "s1-m5-system-profile.json").write_text(
+                PROFILE_FIXTURE.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            state = latest / "power.state"
+            state.write_text("balanced\n", encoding="utf-8")
+            bindir = latest / "bin"
+            bindir.mkdir()
+            _powerprofilesctl_stub(bindir)
+            (bindir / "cpupower").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            (bindir / "cpupower").chmod(0o755)
+            env = {
+                **os.environ,
+                "LATEST_DIR": str(latest),
+                "PATH": f"{bindir}:/bin:/usr/bin",
+                "STATE": str(state),
+                "PROFILES_LIST": "balanced power-saver",
+                "DRY_RUN": "false",
+            }
+            completed = subprocess.run(
+                [
+                    "bash",
+                    str(TUNING_SCRIPT),
+                    "generic-ryzen-ai",
+                    "aggressive",
+                    "runtime",
+                    "apply",
+                    "--approve",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            report = json.loads(
+                (latest / "s2-m6-optimization-application.json").read_text(encoding="utf-8")
+            )
+            system_profile.validate_document(report, optimization_plan.S2_M6_SCHEMA, "S2-M6")
+            self.assertTrue(report["applied"])
+            self.assertEqual(report["status"], "WARN")
+            self.assertIn("power_profile: unsupported", report["warnings"])
+            self.assertEqual(state.read_text(encoding="utf-8").strip(), "balanced")
+            self.assertEqual(report["backup"]["status"], "captured")
 
     def test_apply_failure_triggers_rollback_stub(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

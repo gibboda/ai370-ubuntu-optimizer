@@ -38,6 +38,7 @@
     "plan_artifact": {"type": "string", "minLength": 1},
     "runtime_apply": {"$ref": "#/$defs/runtimeApply"},
     "backup": {"$ref": "#/$defs/backup"},
+    "runtime_rollback": {"$ref": "#/$defs/runtimeRollback"},
     "warnings": {"type": "array", "items": {"type": "string", "minLength": 1}},
     "notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
   },
@@ -96,9 +97,25 @@
         "commands": {"type": "string", "minLength": 1}
       }
     },
+    "runtimeRollback": {
+      "type": "object",
+      "required": ["requested", "dry_run", "restored"],
+      "additionalProperties": false,
+      "properties": {
+        "requested": {"type": "boolean"},
+        "dry_run": {"type": "boolean"},
+        "restored": {"type": "boolean"},
+        "manifest": {"type": "string", "minLength": 1},
+        "restored_items": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "errors": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
     "backup": {
       "type": "object",
-      "required": ["status"],
+      "required": ["status", "rollback_available"],
       "additionalProperties": false,
       "properties": {
         "status": {
@@ -107,7 +124,7 @@
             "captured",
             "failed",
             "restored",
-            "restore-failed",
+            "rollback_failed",
             "not-implemented"
           ]
         },

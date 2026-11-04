@@ -54,7 +54,7 @@ def evaluate_support_matrix(
         or "6.11"
     )
     kernel_version = str(facts.get("kernel") or "")
-    kernel_ok = facts.get("kernel_ok")
+    kernel_ok = _bool_or_none(facts.get("kernel_ok"))
     os_version = str(facts.get("os_version") or "")
     os_codename = str(facts.get("os_codename") or "").lower()
     codes: list[str] = []
@@ -86,14 +86,14 @@ def evaluate_support_matrix(
         for item in accelerators
     )
     module_rules = data.get("module_expectations") or {}
-    amdgpu_ok = facts.get("amdgpu_ok")
+    amdgpu_ok = _bool_or_none(facts.get("amdgpu_ok"))
     if gpu_present:
         rule = module_rules.get("amdgpu") or {}
         if amdgpu_ok is False and rule.get("code_missing"):
             codes.append(str(rule["code_missing"]))
         elif amdgpu_ok is None and rule.get("code_unknown"):
             codes.append(str(rule["code_unknown"]))
-    amdxdna_seen = facts.get("amdxdna_seen")
+    amdxdna_seen = _bool_or_none(facts.get("amdxdna_seen"))
     if npu_present:
         rule = module_rules.get("amdxdna") or {}
         if amdxdna_seen is False and rule.get("code_missing"):

@@ -71,6 +71,39 @@ def write_power_profile(
     return completed.returncode == 0
 
 
+def list_power_profiles(
+    *,
+    runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
+) -> dict[str, Any]:
+    """Return profile names from ``powerprofilesctl list`` when available."""
+    completed = _run_command(["powerprofilesctl", "list"], runner=runner)
+    if completed is None:
+        return {"available": False, "profiles": [], "error": "powerprofilesctl not available"}
+    if completed.returncode != 0:
+        return {
+            "available": False,
+            "profiles": [],
+            "error": (completed.stderr or completed.stdout or "powerprofilesctl list failed").strip(),
+        }
+    profiles: list[str] = []
+    for line in (completed.stdout or "").splitlines():
+        token = line.strip().split()[0] if line.strip() else ""
+        if token and token not in profiles:
+            profiles.append(token)
+    return {"available": True, "profiles": profiles, "error": None}
+
+
+def target_power_profile_supported(
+    target: str,
+    *,
+    runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
+) -> bool:
+    listing = list_power_profiles(runner=runner)
+    if not listing["available"]:
+        return False
+    return target in listing["profiles"]
+
+
 def backup_root(latest_dir: Path) -> Path:
     return latest_dir / BACKUP_SUBDIR
 
@@ -199,18 +232,18 @@ def restore_runtime_backup(
 
 
 def latest_manifest_in(latest_dir: Path) -> Path | None:
-    """Newest manifest by mtime (fallback when no apply pointer exists)."""
+    """Newest manifest by backup_id lexicographic order (fallback when no apply pointer)."""
     root = backup_root(latest_dir)
     if not root.is_dir():
         return None
-    manifests = [
-        path
-        for path in (child / MANIFEST_NAME for child in root.iterdir() if child.is_dir())
-        if path.is_file()
-    ]
-    if not manifests:
-        return None
-    return max(manifests, key=lambda path: path.stat().st_mtime)
+    backup_ids = sorted(
+        child.name for child in root.iterdir() if child.is_dir() and child.name
+    )
+    for backup_id in reversed(backup_ids):
+        candidate = root / backup_id / MANIFEST_NAME
+        if candidate.is_file():
+            return candidate
+    return None
 
 
 def resolve_restore_manifest(latest_dir: Path, explicit: Path | None = None) -> Path | None:
@@ -242,10 +275,54 @@ def merge_backup_after_apply(
         updated["rollback_available"] = had_rollback
         updated["note"] = "Apply failed; rollback restored pre-apply backup."
         return updated
-    updated["status"] = "restore-failed"
+    updated["status"] = "rollback_failed"
     updated["rollback_available"] = had_rollback
     updated["note"] = "Apply failed and rollback did not complete."
     return updated
+
+
+def dry_run_backup_block() -> dict[str, Any]:
+    return {
+        "status": "skipped",
+        "rollback_available": False,
+        "note": "Dry-run apply skipped runtime backup capture.",
+    }
+
+
+def backup_block_for_json(block: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in block.items() if key != "manifest_path"}
+
+
+def write_backup_block_json(path: Path, block: dict[str, Any]) -> None:
+    path.write_text(json.dumps(backup_block_for_json(block), indent=2) + "\n", encoding="utf-8")
+
+
+def render_cpu_runtime_commands(target_power: str) -> str:
+    """Shell script body for S2-M6 runtime apply (power profile + cpupower info)."""
+    return f"""#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+# Generated S2-M5 CPU runtime tuning commands. Review before --approve execution.
+set -euo pipefail
+
+echo "[TUNE] Setting power profile (runtime)..."
+if command -v powerprofilesctl >/dev/null 2>&1; then
+  target_power="{target_power}"
+  profiles="$(powerprofilesctl list 2>/dev/null || true)"
+  if printf '%s\\n' "$profiles" | grep -qw "$target_power"; then
+    powerprofilesctl set "$target_power"
+  else
+    echo "[WARN] power_profile: unsupported (target $target_power not in powerprofilesctl list)"
+    exit 0
+  fi
+else
+  echo "[WARN] powerprofilesctl not available."
+fi
+
+echo "[TUNE] CPU frequency info (if cpupower present)..."
+if command -v cpupower >/dev/null 2>&1; then
+  cpupower frequency-info || true
+fi
+"""
 
 
 def rollback_from_latest(

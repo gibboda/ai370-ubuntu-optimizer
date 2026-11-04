@@ -198,42 +198,21 @@ PY
     echo "See also: tier1-platform-tuning.md (combined report)."
   } > "$LATEST_DIR/tier1-storage.md"
 
-  cat > "$LATEST_DIR/tier1-cpu-runtime-commands.sh" <<CMDS
-#!/usr/bin/env bash
-# SPDX-License-Identifier: GPL-3.0-only
-# Generated S2-M5 CPU runtime tuning commands. Review before --approve execution.
-set -euo pipefail
-
-echo "[TUNE] Setting power profile (runtime)..."
-if command -v powerprofilesctl >/dev/null 2>&1; then
-  powerprofilesctl set ${target_power}
-else
-  echo "[WARN] powerprofilesctl not available."
-fi
-
-echo "[TUNE] CPU frequency info (if cpupower present)..."
-if command -v cpupower >/dev/null 2>&1; then
-  cpupower frequency-info || true
-fi
-CMDS
-  chmod +x "$LATEST_DIR/tier1-cpu-runtime-commands.sh"
+  python3 "$PROJECT_ROOT/scripts/s2-m6-write-runtime-commands.py" \
+    --output "$LATEST_DIR/tier1-cpu-runtime-commands.sh" \
+    --target-power "$target_power"
 
   local facts_json
   facts_json="$(mktemp "${TMPDIR:-/tmp}/s2-m5-facts.XXXXXX")"
-  python3 - "$facts_json" "$cpu_model" "$target_power" "${governor:-}" "$cpu_source" \
-    "$mem_total" "$zram_active" "$mem_source" <<'PY'
-import json, sys
-path = sys.argv[1]
-json.dump({
-    "cpu_model": sys.argv[2],
-    "target_power": sys.argv[3],
-    "governor": sys.argv[4],
-    "cpu_source": sys.argv[5],
-    "mem_total": sys.argv[6],
-    "zram_active": sys.argv[7],
-    "mem_source": sys.argv[8],
-}, open(path, "w"), indent=2)
-PY
+  python3 "$PROJECT_ROOT/scripts/s2-m5-write-facts-json.py" \
+    --output "$facts_json" \
+    --cpu-model "$cpu_model" \
+    --target-power "$target_power" \
+    --governor "${governor:-}" \
+    --cpu-source "$cpu_source" \
+    --mem-total "$mem_total" \
+    --zram-active "$zram_active" \
+    --mem-source "$mem_source"
 
   python3 "$PROJECT_ROOT/scripts/s2-m5-publish-optimization-plan.py" \
     --profile "$PROFILE_FILE" \
@@ -261,37 +240,33 @@ PY
 
   local applied="false"
   local backup_json=""
+  local apply_warnings_json=""
   backup_json="$(mktemp "${TMPDIR:-/tmp}/s2-m6-backup.XXXXXX")"
+  apply_warnings_json="$(mktemp "${TMPDIR:-/tmp}/s2-m6-warnings.XXXXXX")"
+  echo "[]" > "$apply_warnings_json"
   if [[ "$DRY_RUN" == "true" ]]; then
     echo "[INFO] Approved apply with dry-run active; not applying runtime tuning."
-    python3 - "$backup_json" <<'PY'
-import json, sys
-from pathlib import Path
-block = {
-    "status": "skipped",
-    "rollback_available": False,
-    "note": "Dry-run apply skipped runtime backup capture.",
-}
-Path(sys.argv[1]).write_text(json.dumps(block, indent=2) + "\n", encoding="utf-8")
-PY
+    python3 "$PROJECT_ROOT/scripts/s2-m6-backup-block.py" --output "$backup_json" dry-run-skipped
   else
-    PROJECT_ROOT="$PROJECT_ROOT" LATEST_DIR="$LATEST_DIR" python3 - "$backup_json" <<'PY'
-import json, os, sys
-from pathlib import Path
-sys.path.insert(0, str(Path(os.environ["PROJECT_ROOT"]) / "scripts/lib"))
-import optimization_backup
-latest = Path(os.environ["LATEST_DIR"])
-block = optimization_backup.capture_runtime_backup(latest)
-Path(sys.argv[1]).write_text(
-    json.dumps({k: v for k, v in block.items() if k != "manifest_path"}, indent=2) + "\n",
-    encoding="utf-8",
-)
-PY
+    python3 "$PROJECT_ROOT/scripts/s2-m6-backup-block.py" --output "$backup_json" capture \
+      --latest-dir "$LATEST_DIR"
     echo "[INFO] Applying runtime tuning commands (--approve)..."
     # shellcheck disable=SC1091
     local restore_rc=""
-    if bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh"; then
+    local apply_log=""
+    apply_log="$(mktemp "${TMPDIR:-/tmp}/s2-m6-apply-log.XXXXXX")"
+    if bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh" 2>&1 | tee "$apply_log"; then
       applied="true"
+      if grep -q 'power_profile: unsupported' "$apply_log"; then
+        python3 - "$apply_warnings_json" <<'PY'
+import json, sys
+from pathlib import Path
+Path(sys.argv[1]).write_text(
+    json.dumps(["power_profile: unsupported"], indent=2) + "\n",
+    encoding="utf-8",
+)
+PY
+      fi
       python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
         --backup-json "$backup_json" \
         --apply-succeeded true
@@ -308,6 +283,7 @@ PY
         --apply-succeeded false \
         --restore-exit-code "$restore_rc"
     fi
+    rm -f "$apply_log"
   fi
 
   python3 "$PROJECT_ROOT/scripts/s2-m6-publish-optimization-application.py" \
@@ -318,8 +294,9 @@ PY
     --cli-profile "$PROFILE" \
     --dry-run "$DRY_RUN" \
     --applied "$applied" \
-    --backup-json "$backup_json"
-  rm -f "$backup_json"
+    --backup-json "$backup_json" \
+    --extra-warnings-json "$apply_warnings_json"
+  rm -f "$backup_json" "$apply_warnings_json"
 
   echo "[INFO] Wrote s2-m6-optimization-application.json"
   echo "[INFO] 40-platform-tuning.sh complete."

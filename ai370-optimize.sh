@@ -333,7 +333,9 @@ run_stage2_optimize_rollback() {
   fi
   echo "[INFO] Stage 2 optimize rollback – restore apply-session S2-M6 runtime backup"
   ai370_init_latest_dir
-  python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" --latest-dir "$LATEST_DIR"
+  python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
+    --latest-dir "$LATEST_DIR" \
+    --dry-run "$DRY_RUN"
 }
 
 write_report_index() {

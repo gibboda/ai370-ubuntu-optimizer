@@ -59,6 +59,11 @@ def main() -> None:
         type=Path,
         help="JSON file with S2-M6 backup block (from optimization_backup.capture_runtime_backup)",
     )
+    parser.add_argument(
+        "--extra-warnings-json",
+        type=Path,
+        help="JSON array of additional apply warnings (for example power_profile: unsupported)",
+    )
     args = parser.parse_args()
 
     profile = _load_required_profile(args.profile)
@@ -72,6 +77,14 @@ def main() -> None:
             raise SystemExit(2) from exc
         if isinstance(loaded, dict):
             backup_block = {key: loaded[key] for key in loaded if key != "manifest_path"}
+    extra_warnings: list[str] = []
+    if args.extra_warnings_json is not None and args.extra_warnings_json.is_file():
+        try:
+            loaded_warnings = json.loads(args.extra_warnings_json.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            loaded_warnings = []
+        if isinstance(loaded_warnings, list):
+            extra_warnings = [str(item) for item in loaded_warnings if str(item).strip()]
     application = optimization_plan.build_s2_m6_optimization_application(
         profile,
         plan=plan,
@@ -80,6 +93,7 @@ def main() -> None:
         applied=args.applied == "true",
         commands=args.commands,
         backup=backup_block,
+        extra_warnings=extra_warnings,
     )
     optimization_plan.publish_s2_m6_optimization_application(
         args.output,

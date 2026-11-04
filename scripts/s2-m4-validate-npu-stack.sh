@@ -16,7 +16,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/lib/npu-venv.sh
 source "$PROJECT_ROOT/scripts/lib/npu-venv.sh"
 
-LATEST_DIR="$PROJECT_ROOT/reports/latest"
+LATEST_DIR="${LATEST_DIR:-$PROJECT_ROOT/reports/latest}"
 mkdir -p "$LATEST_DIR"
 
 VISIBILITY_FILE="$LATEST_DIR/s2-m4-npu-runtime-validation.json"
@@ -66,76 +66,26 @@ main() {
     device_nodes_present="true"
   fi
 
-  echo "[INFO] Inventory-only XRT/Ryzen AI check (205; no package install)"
-  bash "$PROJECT_ROOT/scripts/205-install-xrt-ryzen-ai.sh" "$PROFILE" "$MODE" "$PERSISTENCE" "$OFFLINE" "false"
+  if [[ "${AI370_SKIP_NPU_INVENTORY:-false}" != "true" ]]; then
+    echo "[INFO] Inventory-only XRT/Ryzen AI check (205; no package install)"
+    bash "$PROJECT_ROOT/scripts/205-install-xrt-ryzen-ai.sh" "$PROFILE" "$MODE" "$PERSISTENCE" "$OFFLINE" "false"
 
-  echo "[INFO] Visibility-only Ryzen AI software check (210; skip xrt-smi validate)"
-  bash "$PROJECT_ROOT/scripts/210-check-ryzen-ai-software.sh" "$PROFILE" "$MODE" "$PERSISTENCE" "$OFFLINE" "true"
+    echo "[INFO] Visibility-only Ryzen AI software check (210; skip xrt-smi validate)"
+    bash "$PROJECT_ROOT/scripts/210-check-ryzen-ai-software.sh" "$PROFILE" "$MODE" "$PERSISTENCE" "$OFFLINE" "true"
 
-  echo "[INFO] Vitis AI EP provider listing (220; no inference)"
-  bash "$PROJECT_ROOT/scripts/220-check-vitis-ai-ep.sh" "$PROFILE" "$MODE" "$PERSISTENCE" "$OFFLINE"
+    echo "[INFO] Vitis AI EP provider listing (220; no inference)"
+    bash "$PROJECT_ROOT/scripts/220-check-vitis-ai-ep.sh" "$PROFILE" "$MODE" "$PERSISTENCE" "$OFFLINE"
+  else
+    echo "[INFO] Skipping 205/210/220 inventory (AI370_SKIP_NPU_INVENTORY=true)"
+  fi
 
-  python3 - "$CHECKS_FILE" "$module_present" "$device_nodes_present" "$module_text" "$device_nodes" "$LATEST_DIR" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-checks_path = Path(sys.argv[1])
-module_present = sys.argv[2] == "true"
-device_nodes_present = sys.argv[3] == "true"
-module_text = sys.argv[4]
-device_text = sys.argv[5]
-latest = Path(sys.argv[6])
-
-def load_json(name: str) -> dict:
-    path = latest / name
-    if not path.is_file():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return {}
-    return data if isinstance(data, dict) else {}
-
-inventory = load_json("xrt-ryzen-ai-install.json")
-status = load_json("npu-acceleration-status.json")
-capabilities = load_json("npu-capabilities.json")
-backend = load_json("vitis-ai-ep-status.json")
-runtime = inventory.get("runtime") or {}
-
-xrt_examine = str(capabilities.get("xrt_smi_examine") or "")
-xrt_validate = str(capabilities.get("xrt_smi_validate") or "")
-runtime_tools = str(status.get("runtime_tools") or runtime.get("xrt") or "")
-ryzen_ai = str(runtime.get("ryzen_ai") or "")
-
-runtime_ready = runtime_tools in {"available"} or ryzen_ai in {"available"} or runtime.get("xrt") == "available"
-
-examine_lower = xrt_examine.strip().lower()
-if not xrt_examine.strip() or examine_lower in {"not-run", "not-visible"} or examine_lower.startswith("command-not-found"):
-    firmware_ready = False if not runtime_ready else None
-elif "error" in examine_lower and "firmware" not in examine_lower:
-    firmware_ready = False
-else:
-    firmware_ready = True
-
-providers = backend.get("amd_provider_candidates") or []
-provider_smoke = str(backend.get("provider_smoke") or "")
-backend_ready = bool(providers) or provider_smoke == "visible"
-
-payload = {
-    "module_present": module_present,
-    "device_nodes_present": device_nodes_present,
-    "firmware_ready": firmware_ready,
-    "runtime_ready": runtime_ready,
-    "backend_ready": backend_ready,
-    "provider_candidates": providers,
-    "provider_smoke": provider_smoke,
-    "module_text": module_text,
-    "device_text": device_text,
-    "xrt_smi_validate": xrt_validate,
-}
-checks_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-PY
+  python3 "$PROJECT_ROOT/scripts/s2-m4-build-npu-checks.py" \
+    --output "$CHECKS_FILE" \
+    --latest-dir "$LATEST_DIR" \
+    --module-present "$module_present" \
+    --device-nodes-present "$device_nodes_present" \
+    --module-text "$module_text" \
+    --device-text "$device_nodes"
 
   python3 "$PROJECT_ROOT/scripts/s2-m4-publish-npu-visibility.py" \
     --checks "$CHECKS_FILE" \

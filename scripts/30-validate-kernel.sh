@@ -134,12 +134,20 @@ main() {
     "$os_description" "$os_version" "$os_codename" "$recommendations_json" <<'PY'
 import json, sys
 from pathlib import Path
+
+def tri_bool(text: str):
+    if text == "true":
+        return True
+    if text == "false":
+        return False
+    return None
+
 Path(sys.argv[1]).write_text(json.dumps({
     "kernel": sys.argv[2],
     "target_kernel": sys.argv[3],
-    "kernel_ok": sys.argv[4],
-    "amdgpu_ok": sys.argv[5],
-    "amdxdna_seen": sys.argv[6],
+    "kernel_ok": tri_bool(sys.argv[4]),
+    "amdgpu_ok": tri_bool(sys.argv[5]),
+    "amdxdna_seen": tri_bool(sys.argv[6]),
     "linux_firmware_state": sys.argv[7],
     "status": sys.argv[8],
     "os_description": sys.argv[9],

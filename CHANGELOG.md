@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Bug Fixes
 
 - **stage2:** Handle missing `powerprofilesctl` during S2-M6 backup capture;
-  record accurate rollback status (`restore-failed`) after failed apply (#328).
+  record accurate rollback status (`rollback_failed`) after failed apply (#328).
 - **stage2:** Exact BIOS version-token matching and `.env`/`hardware-profiles.json`
   validation parity (#326, #327).
 
