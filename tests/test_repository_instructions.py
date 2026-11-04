@@ -1552,6 +1552,21 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Release Please", result.stdout)
 
+    def test_validate_pr_title_accepts_release_scope_uppercase_subject(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-pr-title.sh"),
+                "chore(release): Release 2.4.0",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+        self.assertNotIn("Release Please", result.stdout)
+
     def test_validate_commit_subject_accepts_release_please_subject(self) -> None:
         result = subprocess.run(
             [
@@ -1565,6 +1580,21 @@ class ConventionalCommitScopeTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Release Please", result.stdout)
+
+    def test_validate_commit_subject_accepts_release_scope_uppercase_subject(self) -> None:
+        result = subprocess.run(
+            [
+                "bash",
+                str(ROOT / "scripts/validate-commit-subject.sh"),
+                "chore(release): Release 2.4.0",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Conventional Commit compliant", result.stdout)
+        self.assertNotIn("Release Please", result.stdout)
 
     def test_validate_pr_title_rejects_release_please_non_release_subject(self) -> None:
         result = subprocess.run(
