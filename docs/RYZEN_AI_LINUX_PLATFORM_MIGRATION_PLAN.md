@@ -387,7 +387,7 @@ files, and docs.
 | Location | Assumption | Class | Recommended action |
 | --- | --- | --- | --- |
 | `configs/profiles/ai370.env` | HX 370, gfx1150, XDNA2, BIOS 2.01, Minisforum EliteMini AI370 | REFERENCE_PLATFORM_FACT | KEEP as declarative profile data |
-| `configs/profiles/ai470.env` | HX 470, gfx1150, XDNA2, BIOS 1.00, Minisforum AI Series | REFERENCE_PLATFORM_FACT | KEEP; Stage 1 probe verified only |
+| `configs/profiles/ai470.env` | HX 470, gfx1150, XDNA2, Minisforum AI Series; no EXPECTED_BIOS_VERSION | REFERENCE_PLATFORM_FACT | KEEP; Stage 1 probe verified only |
 | `tests/fixtures/raw-probes/v1/observed-ai370.json` and profile fixtures | Same reference identity | REFERENCE_PLATFORM_FACT | KEEP as regression fixtures |
 | `tests/fixtures/raw-probes/v1/observed-ryzen-ai-hx470.json` | Sanitized HX 470 Stage 1 probe for `ai470` exact classification | REFERENCE_PLATFORM_FACT | KEEP as regression fixture |
 | `configs/profiles/hardware-profiles.json` `ai370` | Exact DMI/CPU match for EliteMini AI370, loaded by `system_profile.py` | REFERENCE_PLATFORM_FACT | KEEP; unknown hosts must remain valid |

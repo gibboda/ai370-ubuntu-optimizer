@@ -120,7 +120,7 @@ class Stage1ClassifyTests(unittest.TestCase):
 
     def test_bios_policy_stays_on_the_ai370_profile(self) -> None:
         self.assertEqual(firmware_policy.expected_bios_version("ai370"), "2.01")
-        self.assertEqual(firmware_policy.expected_bios_version("ai470"), "1.00")
+        self.assertEqual(firmware_policy.expected_bios_version("ai470"), "")
         self.assertEqual(firmware_policy.expected_bios_version("strix-point-ryzen-ai"), "")
         self.assertEqual(firmware_policy.expected_bios_version("strix-halo-ryzen-ai"), "")
 

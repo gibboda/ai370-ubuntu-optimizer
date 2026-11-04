@@ -25,3 +25,7 @@ remain. The iGPU PCI id is `1002:150e`. The XDNA2 function `1022:17f0` appears
 in both the PCI inventory and accelerator inventory with class
 `Signal processing controller`, matching current lspci. The sensor hub
 `1022:164a` shares that class and must not become an NPU.
+
+`observed-ryzen-ai-hx470-pci-npu-only.json` is the same host identity with an
+empty accelerator device list so portable tests cover `_npu_devices_from_raw`
+PCI-inventory fallback (NPU only under `pci.devices`).

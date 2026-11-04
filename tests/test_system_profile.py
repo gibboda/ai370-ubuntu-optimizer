@@ -334,12 +334,30 @@ class RawProbeNormalizationTests(unittest.TestCase):
             "Non-AMD/XDNA accelerator must not produce an observed accelerator entry",
         )
 
+    def test_hx470_npu_recovered_from_pci_inventory_only(self) -> None:
+        raw = self._load("observed-ryzen-ai-hx470-pci-npu-only.json")
+        npu_pci = [
+            device for device in raw["pci"]["devices"] if device.get("device_id") == "17f0"
+        ]
+        self.assertEqual(len(npu_pci), 1)
+        self.assertEqual(raw["accelerators"]["devices"], [])
+        devices = system_profile._npu_devices_from_raw(raw)
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(devices[0]["device_id"], "17f0")
+        self.assertEqual(devices[0]["slot"], "0000:c8:00.1")
+        facts = system_profile.normalize_facts(raw)
+        self.assertTrue(facts["npu"]["present"])
+        self.assertEqual(facts["npu"]["devices"][0]["device_id"], "17f0")
+        profile = system_profile.build_profile(raw, "test")
+        system_profile.validate_profile(profile)
+        self.assertEqual(profile["classification"]["platform_id"], "ai470")
+        self.assertEqual(profile["accelerators"][0]["pci"]["device_id"], "17f0")
+
     def test_recovered_npu_keeps_non_amdxdna_driver(self) -> None:
-        raw = self._load("observed-ryzen-ai-hx470.json")
-        for collection in (raw["pci"]["devices"], raw["accelerators"]["devices"]):
-            for device in collection:
-                if device.get("device_id") == "17f0":
-                    device["bound_driver"] = "vfio-pci"
+        raw = self._load("observed-ryzen-ai-hx470-pci-npu-only.json")
+        for device in raw["pci"]["devices"]:
+            if device.get("device_id") == "17f0":
+                device["bound_driver"] = "vfio-pci"
         profile = system_profile.build_profile(raw, "test")
         system_profile.validate_profile(profile)
         accelerator = profile["accelerators"][0]
