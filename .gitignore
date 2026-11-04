@@ -36,6 +36,8 @@ __pycache__/
 .venv/
 venv/
 env/
+# Root pyproject.toml is Ruff-only (no [project]); ignore accidental uv lockfiles.
+uv.lock
 
 
 # Local environment and machine-specific configuration
