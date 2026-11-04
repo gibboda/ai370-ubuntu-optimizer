@@ -119,11 +119,18 @@ def _unique_backup_id() -> str:
 
 
 def manifest_platform_id(manifest: dict[str, Any]) -> str | None:
-    value = manifest.get("platform_id")
+    """Return classified platform_id from manifest, or None when explicitly unclassified."""
+    if "platform_id" not in manifest:
+        return None
+    value = manifest["platform_id"]
     if value is None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def manifest_platform_id_key_present(manifest: dict[str, Any]) -> bool:
+    return "platform_id" in manifest
 
 
 def check_manifest_platform_match(
@@ -132,15 +139,34 @@ def check_manifest_platform_match(
     profile_platform_id: str | None,
 ) -> dict[str, Any]:
     """Compare manifest ``platform_id`` to the loaded Stage 1 profile."""
-    manifest_id = manifest_platform_id(manifest)
     profile_id = (str(profile_platform_id).strip() if profile_platform_id else None) or None
-    if manifest_id is None:
+    if not manifest_platform_id_key_present(manifest):
         return {
             "ok": False,
             "platform_mismatch": True,
             "manifest_platform_id": None,
             "profile_platform_id": profile_id,
             "error": "backup manifest missing platform_id (re-capture after upgrade)",
+        }
+    manifest_id = manifest_platform_id(manifest)
+    if manifest_id is None and profile_id is None:
+        return {
+            "ok": True,
+            "platform_mismatch": False,
+            "manifest_platform_id": None,
+            "profile_platform_id": None,
+            "error": None,
+        }
+    if manifest_id is None and profile_id is not None:
+        return {
+            "ok": False,
+            "platform_mismatch": True,
+            "manifest_platform_id": None,
+            "profile_platform_id": profile_id,
+            "error": (
+                f"platform_id mismatch: manifest is unclassified (null), "
+                f"profile has {profile_id}"
+            ),
         }
     if profile_id is None:
         return {
@@ -176,7 +202,7 @@ def check_manifest_platform_match(
 def capture_runtime_backup(
     latest_dir: Path,
     *,
-    classified_platform_id: str,
+    classified_platform_id: str | None,
     backup_id: str | None = None,
     runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
 ) -> dict[str, Any]:
@@ -343,9 +369,15 @@ def merge_backup_after_apply(
     if apply_succeeded:
         if updated.get("status") == "failed":
             updated["rollback_available"] = False
-            updated["note"] = (
-                "Apply completed but pre-apply backup failed; rollback unavailable."
-            )
+            if runtime_apply_skipped:
+                updated["note"] = (
+                    "Power profile apply skipped; pre-apply backup failed; "
+                    "rollback unavailable."
+                )
+            else:
+                updated["note"] = (
+                    "Apply completed but pre-apply backup failed; rollback unavailable."
+                )
         else:
             updated["status"] = "captured"
             if runtime_apply_skipped:
