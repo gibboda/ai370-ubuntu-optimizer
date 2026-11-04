@@ -147,6 +147,27 @@ class Stage2KernelDriverTests(unittest.TestCase):
                 )
             self.assertEqual(destination.read_bytes(), before)
 
+    def test_build_s2_m2_normalizes_string_boolean_facts(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.14.0",
+                "target_kernel": "6.11",
+                "kernel_ok": "true",
+                "amdgpu_ok": "false",
+                "amdxdna_seen": "unknown",
+                "linux_firmware_state": "present",
+                "status": "WARN",
+                "os_description": "Ubuntu",
+                "os_version": "24.04",
+                "os_codename": "noble",
+                "recommendations": [],
+            },
+        )
+        system_profile.validate_document(report, kernel_validation.S2_M2_SCHEMA, "S2-M2")
+        self.assertIn("module-amdgpu-not-loaded", report["support_assessment"]["codes"])
+
     def test_support_matrix_flags_unsupported_ubuntu_and_missing_amdgpu(self) -> None:
         profile = load_reference_profile()
         report = kernel_validation.build_s2_m2_kernel_driver_validation(
