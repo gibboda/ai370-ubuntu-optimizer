@@ -315,7 +315,7 @@ persistent tuning remains Planned.
 ./ai370-optimize.sh stage2-npu-validate [--offline]   # S2-M4 NPU visibility ladder report
 ./ai370-optimize.sh stage2-optimize-plan              # plan-only; no mutation
 ./ai370-optimize.sh stage2-optimize-apply --approve [--dry-run]
-./ai370-optimize.sh stage2-optimize-rollback
+./ai370-optimize.sh stage2-optimize-rollback --approve
 ./ai370-optimize.sh stage2-platform-validate [--strict]
 ./ai370-optimize.sh stage2-platform-inventory [--strict]
 ```

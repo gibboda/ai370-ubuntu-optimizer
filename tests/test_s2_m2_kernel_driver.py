@@ -169,6 +169,26 @@ class Stage2KernelDriverTests(unittest.TestCase):
         self.assertIn("os-ubuntu-22.04-unsupported", codes)
         self.assertIn("module-amdgpu-not-loaded", codes)
 
+    def test_support_matrix_unlisted_ubuntu_release(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.14.0",
+                "target_kernel": "6.11",
+                "kernel_ok": True,
+                "amdgpu_ok": True,
+                "amdxdna_seen": False,
+                "linux_firmware_state": "present",
+                "status": "PASS",
+                "os_description": "Ubuntu 26.10",
+                "os_version": "26.10",
+                "os_codename": "unknown",
+                "recommendations": [],
+            },
+        )
+        self.assertIn("os-unlisted-ubuntu-release", report["support_assessment"]["codes"])
+
     def test_support_matrix_unknown_module_inventory_code(self) -> None:
         profile = load_reference_profile()
         report = kernel_validation.build_s2_m2_kernel_driver_validation(

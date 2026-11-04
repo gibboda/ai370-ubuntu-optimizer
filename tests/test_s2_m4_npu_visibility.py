@@ -231,6 +231,24 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
         self.assertIn("skipped-visibility-only", check_210)
         self.assertIn("VISIBILITY_ONLY", check_210)
 
+    def test_collector_checks_payload_wires_provider_selection(self) -> None:
+        """Mirror s2-m4-validate-npu-stack.sh payload fields (L125-137)."""
+        checks = {
+            "module_present": True,
+            "device_nodes_present": True,
+            "firmware_ready": True,
+            "runtime_ready": True,
+            "backend_ready": True,
+            "provider_candidates": ["VitisAIExecutionProvider"],
+            "provider_smoke": "visible",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            report = self.publish_cli(checks, PROFILE_FIXTURE, Path(directory) / "report.json")
+        self.assertIn("provider_selection", report)
+        self.assertEqual(
+            report["provider_selection"]["candidates"], ["VitisAIExecutionProvider"]
+        )
+
     def test_provider_selection_does_not_claim_inference(self) -> None:
         checks = {
             "module_present": True,

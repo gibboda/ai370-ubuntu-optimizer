@@ -22,6 +22,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Features
+
+- **stage2:** Portable S2 exit evidence — firmware remediation docs, kernel/driver
+  support matrix, GPU layer fixtures, NPU provider-selection reporting, runtime
+  power-profile backup/rollback (`stage2-optimize-rollback --approve`), and
+  canonical profile validation classes (#328).
+
+### Bug Fixes
+
+- **stage2:** Handle missing `powerprofilesctl` during S2-M6 backup capture;
+  record accurate rollback status (`restore-failed`) after failed apply (#328).
+- **stage2:** Exact BIOS version-token matching and `.env`/`hardware-profiles.json`
+  validation parity (#326, #327).
+
 ### Documentation
 
 - **architecture:** Sync current-version stamps to `2.2.0` in ROADMAP,

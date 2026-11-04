@@ -289,21 +289,24 @@ Path(sys.argv[1]).write_text(
 PY
     echo "[INFO] Applying runtime tuning commands (--approve)..."
     # shellcheck disable=SC1091
+    local restore_rc=""
     if bash "$LATEST_DIR/tier1-cpu-runtime-commands.sh"; then
       applied="true"
+      python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
+        --backup-json "$backup_json" \
+        --apply-succeeded true
     else
       echo "[WARN] Runtime tuning commands exited non-zero; attempting rollback..."
-      PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
-        --latest-dir "$LATEST_DIR" || echo "[WARN] Rollback did not complete cleanly."
-      python3 - "$backup_json" <<'PY'
-import json, sys
-from pathlib import Path
-path = Path(sys.argv[1])
-block = json.loads(path.read_text(encoding="utf-8"))
-block["status"] = "restored"
-block["note"] = "Apply failed; rollback attempted from pre-apply backup."
-path.write_text(json.dumps(block, indent=2) + "\n", encoding="utf-8")
-PY
+      restore_rc=0
+      if ! PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
+        --latest-dir "$LATEST_DIR"; then
+        restore_rc=$?
+        echo "[WARN] Rollback did not complete cleanly (exit ${restore_rc})."
+      fi
+      python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
+        --backup-json "$backup_json" \
+        --apply-succeeded false \
+        --restore-exit-code "$restore_rc"
     fi
   fi
 

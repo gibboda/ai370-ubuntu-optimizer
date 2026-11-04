@@ -59,16 +59,24 @@ def evaluate_support_matrix(
     os_codename = str(facts.get("os_codename") or "").lower()
     codes: list[str] = []
     tier = "unknown"
+    matched_os = False
     for entry in data.get("os_support") or []:
         version_ids = [str(item) for item in (entry.get("version_ids") or [])]
         codenames = [str(item).lower() for item in (entry.get("codenames") or [])]
         if os_version in version_ids or os_codename in codenames:
             tier = str(entry.get("tier") or "unknown")
+            matched_os = True
             if tier == "unsupported" and entry.get("code"):
                 codes.append(str(entry["code"]))
             break
-    if kernel_version and not _version_ge(kernel_version, minimum_kernel):
-        codes.append("kernel-below-minimum")
+    os_description = str(facts.get("os_description") or "").lower()
+    if not matched_os and (os_version or os_codename or "ubuntu" in os_description):
+        codes.append("os-unlisted-ubuntu-release")
+    matrix_kernel_ok: bool | None = None
+    if kernel_version:
+        matrix_kernel_ok = _version_ge(kernel_version, minimum_kernel)
+        if not matrix_kernel_ok:
+            codes.append("kernel-below-minimum")
     elif kernel_ok is False:
         codes.append("kernel-below-minimum")
     gpu_present = bool((profile or {}).get("gpus"))
@@ -100,6 +108,7 @@ def evaluate_support_matrix(
         "os_tier": tier,
         "codes": codes,
         "classified_platform_id": classified_platform_id,
+        "kernel_acceptable": matrix_kernel_ok,
     }
 
 
@@ -157,12 +166,18 @@ def build_s2_m2_kernel_driver_validation(
         classified_platform_id=classified,
         profile=profile,
     )
+    matrix_kernel_ok = support.pop("kernel_acceptable", None)
     for code in support["codes"]:
         message = f"Support matrix: {code}"
         if message not in warnings:
             warnings.append(message)
     if support["os_tier"] == "unsupported" and status == "PASS":
         status = "WARN"
+    if matrix_kernel_ok is not None:
+        kernel_ok = matrix_kernel_ok
+    elif kernel_version := str(facts.get("kernel") or ""):
+        kernel_ok = _version_ge(kernel_version, support["minimum_kernel"])
+    target_minimum = support["minimum_kernel"]
     return {
         "schema": {
             "name": "s2-m2-kernel-driver-validation",
@@ -182,7 +197,7 @@ def build_s2_m2_kernel_driver_validation(
         "dry_run": dry_run,
         "kernel": {
             "version": str(facts.get("kernel") or "unknown"),
-            "target_minimum": str(facts.get("target_kernel") or "6.11"),
+            "target_minimum": target_minimum,
             "acceptable": kernel_ok,
         },
         "os": {

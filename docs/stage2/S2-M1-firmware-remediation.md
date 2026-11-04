@@ -40,7 +40,7 @@ token split on whitespace and non-`.`/`_`/`-` separators). Substring matches suc
 
 | Condition | Typical cause | Operator action (manual, outside Stage 2) |
 | --- | --- | --- |
-| `false` | Observed BIOS ≠ classified-platform `EXPECTED_BIOS_VERSION` | Update BIOS from the OEM/minibox support page for your model. Re-run `stage1` then `stage2-firmware-validate`. Do **not** expect this toolkit to flash firmware. |
+| `false` | Observed BIOS ≠ classified-platform `EXPECTED_BIOS_VERSION` | Update BIOS from the OEM or Minisforum support page for your model. Re-run `stage1` then `stage2-firmware-validate`. Do **not** expect this toolkit to flash firmware. |
 | `unknown` | Missing observed BIOS or no expected target for the classified platform | Ensure `stage1` collected firmware facts. For reference AI370, confirm DMI is readable. Generic hosts may legitimately have no BIOS target. |
 
 Warning text example: `Observed BIOS X does not match classified-platform target Y.`

@@ -1,8 +1,9 @@
 """S2-M6 runtime configuration backup and rollback (power profile state).
 
-Backups are stored under ``reports/latest/s2-m6-runtime-backups/<id>/`` and are
-used only for Stage 2 approved runtime tuning. Persistent sysfs/tuned changes are
-out of scope until explicitly implemented.
+Backups live under ``reports/latest/s2-m6-runtime-backups/<id>/``. The apply
+pointer ``s2-m6-apply-backup-pointer.json`` records the manifest captured
+immediately before the last ``--approve`` apply; ``stage2-optimize-rollback``
+restores that manifest, not merely the newest directory by mtime.
 """
 
 from __future__ import annotations
@@ -13,9 +14,11 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 BACKUP_SUBDIR = "s2-m6-runtime-backups"
 MANIFEST_NAME = "manifest.json"
+APPLY_POINTER_NAME = "s2-m6-apply-backup-pointer.json"
 POWER_PROFILE_ITEM = "power_profile"
 
 
@@ -27,9 +30,12 @@ def _run_command(
     command: list[str],
     *,
     runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
-) -> subprocess.CompletedProcess[str]:
+) -> subprocess.CompletedProcess[str] | None:
     run = runner or subprocess.run
-    return run(command, check=False, capture_output=True, text=True)
+    try:
+        return run(command, check=False, capture_output=True, text=True)
+    except (FileNotFoundError, OSError):
+        return None
 
 
 def read_power_profile(
@@ -38,6 +44,12 @@ def read_power_profile(
 ) -> dict[str, Any]:
     """Return current power profile observation or an error payload."""
     completed = _run_command(["powerprofilesctl", "get"], runner=runner)
+    if completed is None:
+        return {
+            "available": False,
+            "value": None,
+            "error": "powerprofilesctl not available",
+        }
     if completed.returncode != 0:
         return {
             "available": False,
@@ -54,11 +66,18 @@ def write_power_profile(
     runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
 ) -> bool:
     completed = _run_command(["powerprofilesctl", "set", value], runner=runner)
+    if completed is None:
+        return False
     return completed.returncode == 0
 
 
 def backup_root(latest_dir: Path) -> Path:
     return latest_dir / BACKUP_SUBDIR
+
+
+def _unique_backup_id() -> str:
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
+    return f"{stamp}-{uuid4().hex[:8]}"
 
 
 def capture_runtime_backup(
@@ -68,9 +87,14 @@ def capture_runtime_backup(
     runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
 ) -> dict[str, Any]:
     """Capture pre-apply runtime state. Does not mutate system settings."""
-    backup_id = backup_id or datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    directory = backup_root(latest_dir) / backup_id
-    directory.mkdir(parents=True, exist_ok=True)
+    root = backup_root(latest_dir)
+    root.mkdir(parents=True, exist_ok=True)
+    backup_id = backup_id or _unique_backup_id()
+    directory = root / backup_id
+    while directory.exists():
+        backup_id = _unique_backup_id()
+        directory = root / backup_id
+    directory.mkdir(parents=False)
     power = read_power_profile(runner=runner)
     items: list[dict[str, Any]] = []
     if power["available"] and power.get("value"):
@@ -96,9 +120,11 @@ def capture_runtime_backup(
     note = (
         "Recorded pre-apply power profile for rollback."
         if items
-        else "Backup failed: powerprofilesctl state was unavailable."
+        else (
+            "Backup unavailable: powerprofilesctl missing or power profile state unreadable."
+        )
     )
-    return {
+    block = {
         "status": status,
         "manifest": relative_manifest,
         "backup_id": backup_id,
@@ -107,6 +133,43 @@ def capture_runtime_backup(
         "note": note,
         "manifest_path": manifest_path,
     }
+    write_apply_backup_pointer(latest_dir, block)
+    return block
+
+
+def write_apply_backup_pointer(latest_dir: Path, block: dict[str, Any]) -> None:
+    """Record the manifest tied to the current apply session."""
+    manifest_path = block.get("manifest_path")
+    pointer = {
+        "manifest": block.get("manifest"),
+        "backup_id": block.get("backup_id"),
+        "manifest_path": str(manifest_path) if manifest_path else None,
+        "captured_at": _utc_now(),
+    }
+    (latest_dir / APPLY_POINTER_NAME).write_text(
+        json.dumps(pointer, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def manifest_from_apply_pointer(latest_dir: Path) -> Path | None:
+    pointer_path = latest_dir / APPLY_POINTER_NAME
+    if not pointer_path.is_file():
+        return None
+    try:
+        pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    stored_path = pointer.get("manifest_path")
+    if stored_path:
+        path = Path(str(stored_path))
+        if path.is_file():
+            return path
+    backup_id = pointer.get("backup_id")
+    if backup_id:
+        candidate = backup_root(latest_dir) / str(backup_id) / MANIFEST_NAME
+        if candidate.is_file():
+            return candidate
+    return None
 
 
 def restore_runtime_backup(
@@ -136,18 +199,53 @@ def restore_runtime_backup(
 
 
 def latest_manifest_in(latest_dir: Path) -> Path | None:
+    """Newest manifest by mtime (fallback when no apply pointer exists)."""
     root = backup_root(latest_dir)
     if not root.is_dir():
         return None
-    candidates = sorted(
-        (path / MANIFEST_NAME for path in root.iterdir() if path.is_dir()),
-        key=lambda path: path.stat().st_mtime,
-        reverse=True,
-    )
-    for candidate in candidates:
-        if candidate.is_file():
-            return candidate
-    return None
+    manifests = [
+        path
+        for path in (child / MANIFEST_NAME for child in root.iterdir() if child.is_dir())
+        if path.is_file()
+    ]
+    if not manifests:
+        return None
+    return max(manifests, key=lambda path: path.stat().st_mtime)
+
+
+def resolve_restore_manifest(latest_dir: Path, explicit: Path | None = None) -> Path | None:
+    if explicit is not None:
+        return explicit if explicit.is_file() else None
+    return manifest_from_apply_pointer(latest_dir) or latest_manifest_in(latest_dir)
+
+
+def merge_backup_after_apply(
+    block: dict[str, Any],
+    *,
+    apply_succeeded: bool,
+    restore_exit_code: int | None,
+) -> dict[str, Any]:
+    """Update backup block status after apply and optional rollback."""
+    updated = {key: value for key, value in block.items() if key != "manifest_path"}
+    had_rollback = bool(updated.get("rollback_available"))
+    if apply_succeeded:
+        updated["status"] = "captured"
+        updated["note"] = "Apply succeeded; pre-apply backup retained for rollback."
+        return updated
+    if restore_exit_code is None:
+        updated["status"] = "failed"
+        updated["note"] = "Apply failed; rollback was not attempted."
+        updated["rollback_available"] = had_rollback
+        return updated
+    if restore_exit_code == 0:
+        updated["status"] = "restored"
+        updated["rollback_available"] = had_rollback
+        updated["note"] = "Apply failed; rollback restored pre-apply backup."
+        return updated
+    updated["status"] = "restore-failed"
+    updated["rollback_available"] = had_rollback
+    updated["note"] = "Apply failed and rollback did not complete."
+    return updated
 
 
 def rollback_from_latest(
@@ -155,7 +253,7 @@ def rollback_from_latest(
     *,
     runner: Callable[..., subprocess.CompletedProcess[str]] | None = None,
 ) -> dict[str, Any]:
-    manifest_path = latest_manifest_in(latest_dir)
+    manifest_path = resolve_restore_manifest(latest_dir)
     if manifest_path is None:
         return {"restored": False, "error": "no backup manifest under latest dir"}
     result = restore_runtime_backup(manifest_path, runner=runner)

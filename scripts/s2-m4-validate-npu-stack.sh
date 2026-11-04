@@ -128,6 +128,8 @@ payload = {
     "firmware_ready": firmware_ready,
     "runtime_ready": runtime_ready,
     "backend_ready": backend_ready,
+    "provider_candidates": providers,
+    "provider_smoke": provider_smoke,
     "module_text": module_text,
     "device_text": device_text,
     "xrt_smi_validate": xrt_validate,

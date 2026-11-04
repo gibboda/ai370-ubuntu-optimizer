@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""S2-M6: restore runtime tuning from the latest backup manifest under LATEST_DIR."""
+"""S2-M6: restore runtime tuning from the apply-session backup pointer or manifest."""
 
 from __future__ import annotations
 
@@ -23,13 +23,13 @@ def main() -> None:
     parser.add_argument(
         "--manifest",
         type=Path,
-        help="Explicit manifest path; default is the newest under latest-dir",
+        help="Explicit manifest path; default uses s2-m6-apply-backup-pointer.json",
     )
     args = parser.parse_args()
     latest = args.latest_dir.resolve()
-    manifest = args.manifest
-    if manifest is None:
-        manifest = optimization_backup.latest_manifest_in(latest)
+    manifest = optimization_backup.resolve_restore_manifest(
+        latest, args.manifest.resolve() if args.manifest else None
+    )
     if manifest is None:
         print("[ERROR] No S2-M6 runtime backup manifest found.", file=sys.stderr)
         raise SystemExit(2)

@@ -98,11 +98,18 @@
     },
     "backup": {
       "type": "object",
-      "required": ["status", "rollback_available"],
+      "required": ["status"],
       "additionalProperties": false,
       "properties": {
         "status": {
-          "enum": ["skipped", "captured", "failed", "restored", "not-implemented"]
+          "enum": [
+            "skipped",
+            "captured",
+            "failed",
+            "restored",
+            "restore-failed",
+            "not-implemented"
+          ]
         },
         "manifest": {"type": "string", "minLength": 1},
         "backup_id": {"type": "string", "minLength": 1},
