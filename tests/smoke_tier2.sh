@@ -12,10 +12,6 @@ LATEST_DIR="$PROJECT_ROOT/reports/latest"
 SMOKE_PROFILE="ai370"
 SMOKE_MODE="safe"
 
-# shellcheck source=lib/prepare-portable-model-root.sh
-source "$PROJECT_ROOT/tests/lib/prepare-portable-model-root.sh"
-prepare_portable_model_root "$PROJECT_ROOT"
-
 echo "[INFO] Stage 2 smoke test starting (profile=$SMOKE_PROFILE)"
 
 # 1. Syntax check critical Stage 2 scripts + libs

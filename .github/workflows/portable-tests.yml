@@ -68,9 +68,6 @@ jobs:
       - name: Run portable smoke tests
         shell: bash
         run: |
-          # shellcheck source=tests/lib/prepare-portable-model-root.sh
-          source tests/lib/prepare-portable-model-root.sh
-          prepare_portable_model_root "$GITHUB_WORKSPACE"
           bash tests/smoke_tier1.sh
           bash tests/smoke_stage2_platform.sh
           bash tests/smoke_tier2.sh

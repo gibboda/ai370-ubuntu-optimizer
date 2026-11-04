@@ -103,19 +103,6 @@ Unknown or future hardware must remain representable with explicit unknown,
 unsupported, unavailable, or capability-state values rather than failing only
 because it is not the current test platform.
 
-## GitHub Actions portable smoke
-
-The `ubuntu-latest` workspace filesystem often reports less than
-`configs/models/manifest.yaml` `minimum_free_gb` (20 GiB) free after earlier
-portable smoke steps. That makes `scripts/150-validate-offline-model-storage.sh`
-return `FAIL` with a storage free-space diagnostic even when model layout and
-manifest parsing are fine. This is runner capacity, not a repository regression.
-
-`tests/smoke_tier2.sh` calls `tests/lib/prepare-portable-model-root.sh` when
-`GITHUB_ACTIONS=true` to mount a loop-backed ext4 filesystem on
-`.ai370-ai/models` so offline storage validation sees sufficient free GiB on
-that mount. Physical integration hosts continue to use the real model root.
-
 ## Evidence handling
 
 When recording a test result, distinguish:
