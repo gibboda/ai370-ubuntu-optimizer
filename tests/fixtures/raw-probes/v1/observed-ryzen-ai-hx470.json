@@ -2,7 +2,7 @@
   "stage": 1,
   "phase": "detect-hardware",
   "artifact": "stage1-raw-probes",
-  "timestamp": "2026-01-01T00:00:00Z",
+  "timestamp": "2026-11-03T12:00:00Z",
   "inputs": {"profile": "auto", "mode": "auto", "persistence": "none"},
   "cpu": {
     "state": "observed",
@@ -12,7 +12,7 @@
     "model": 36,
     "stepping": 0,
     "architecture": "x86_64",
-    "topology": {"logical_processors": 24}
+    "topology": {"logical_processors": 24, "sockets": 1, "cores_per_socket": 12, "threads_per_core": 2}
   },
   "dmi": {
     "system": {
@@ -21,7 +21,7 @@
       "version": {"state": "observed", "value": "1.0"}
     },
     "board": {
-      "vendor": {"state": "observed", "value": "Generic"},
+      "vendor": {"state": "observed", "value": "Meigao Innovation Technology (Shen Zhen) Co., Ltd"},
       "product": {"state": "observed", "value": "GPBAC"},
       "version": {"state": "observed", "value": "1.0"}
     }
@@ -76,13 +76,22 @@
     }
   },
   "accelerators": {
-    "state": "unknown",
-    "devices": [],
+    "state": "observed",
+    "devices": [
+      {
+        "slot": "0000:c8:00.1",
+        "class": "Signal processing controller [1180]",
+        "vendor_id": "1022",
+        "device_id": "17f0",
+        "device_name": "Strix/Krackan/Strix Halo Neural Processing Unit [17f0]",
+        "bound_driver": "amdxdna"
+      }
+    ],
     "device_nodes": [
-      {"path": "/dev/accel/accel0", "state": "unrecognized", "evidence_source": "filesystem glob"}
+      {"path": "/dev/accel/accel0", "state": "observed", "evidence_source": "/sys/class/accel device", "slot": "0000:c8:00.1"}
     ]
   },
-  "memory": {"state": "observed", "total_bytes": 49057144832, "evidence_source": "/proc/meminfo"},
+  "memory": {"state": "observed", "total_bytes": 49057132544, "evidence_source": "/proc/meminfo"},
   "storage": {
     "state": "observed",
     "evidence_source": "lsblk -J -b -O",
@@ -97,7 +106,7 @@
     "version_codename": "resolute",
     "evidence_source": "/etc/os-release"
   },
-  "kernel": {"state": "observed", "release": "7.0.0-38-generic", "architecture": "x86_64", "evidence_source": "uname"},
+  "kernel": {"state": "observed", "release": "7.0.0-42-generic", "architecture": "x86_64", "evidence_source": "uname"},
   "firmware": {
     "bios_vendor": {"state": "observed", "value": "American Megatrends International, LLC."},
     "bios_version": {"state": "observed", "value": "1.00"},

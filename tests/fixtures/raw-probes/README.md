@@ -15,8 +15,13 @@ supplied because this repository has no verified Strix Halo PCI device id to
 add to `gpu-pci-architectures.json`. The NPU id `1022:17f0` is the existing
 XDNA2 mapping shared by Strix, Krackan, and Strix Halo. No CPUID is invented.
 
-`observed-ryzen-ai-hx470.json` is a sanitized probe of a Ryzen AI 9 HX 470
-host. The iGPU PCI id is `1002:150e`. The XDNA2 function `1022:17f0` is left
-only in the PCI inventory, with class `Signal processing controller`, because
-that is how current lspci reports it. The sensor hub `1022:164a` shares that
-class and must not become an NPU. No serial numbers are stored.
+`observed-ryzen-ai-hx470.json` is a sanitized Stage 1 probe derived from a
+Minisforum AI Series host (AMD Ryzen AI 9 HX 470) captured at repository
+commit `1d1f78b` on 2026-11-03. Redacted before commit: storage and block
+device serial numbers, partition/disk UUIDs, full `lsblk` inventory, probe
+stdout blobs, hostnames, usernames/home paths, and MAC addresses. Hardware
+IDs, DMI product/vendor strings, CPU model text, PCI slot ids, and BIOS version
+remain. The iGPU PCI id is `1002:150e`. The XDNA2 function `1022:17f0` appears
+in both the PCI inventory and accelerator inventory with class
+`Signal processing controller`, matching current lspci. The sensor hub
+`1022:164a` shares that class and must not become an NPU.

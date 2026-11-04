@@ -12,11 +12,15 @@ Default profile:
 - Radeon 890M integrated GPU
 - AMD XDNA2 NPU
 
-AI370 / Strix Point and Ryzen AI Halo / Strix Halo are separate hardware
-profiles of the same Ryzen AI Linux platform. The default profile remains
-`ai370`. `strix-halo-ryzen-ai` selects the officially documented Ryzen AI MAX /
-Strix Halo profile (`gfx1151`, no AI370 BIOS target). It does not define a
-second platform architecture.
+AI370 / Strix Point, Minisforum AI Series HX 470 (`ai470`), and Ryzen AI Halo /
+Strix Halo are separate hardware profiles of the same Ryzen AI Linux platform.
+The default CLI profile remains `ai370` (EliteMini reference integration).
+`ai470` classifies the Minisforum AI Series with Ryzen AI 9 HX 470 from DMI and
+CPU identity (Stage 1 probe verified; not the strict default). Unknown Strix
+Point hosts still fall back to `strix-point-ryzen-ai`. `strix-halo-ryzen-ai`
+selects the officially documented Ryzen AI MAX / Strix Halo profile
+(`gfx1151`, no AI370 BIOS target). It does not define a second platform
+architecture.
 
 ## Guiding Principles
 

@@ -307,8 +307,8 @@ class RawProbeNormalizationTests(unittest.TestCase):
     def test_hx470_profile_records_observed_gpu_and_npu(self) -> None:
         profile = system_profile.build_profile(self._load("observed-ryzen-ai-hx470.json"), "test")
         system_profile.validate_profile(profile)
-        self.assertEqual(profile["classification"]["platform_id"], "strix-point-ryzen-ai")
-        self.assertEqual(profile["classification"]["confidence"], "family")
+        self.assertEqual(profile["classification"]["platform_id"], "ai470")
+        self.assertEqual(profile["classification"]["confidence"], "exact")
         self.assertEqual(profile["system"]["product"], "AI Series")
         self.assertEqual(profile["cpu"]["model_name"], "AMD Ryzen AI 9 HX 470 w/ Radeon 890M")
         self.assertEqual(profile["gpus"][0]["architecture"], "gfx1150")
@@ -336,9 +336,10 @@ class RawProbeNormalizationTests(unittest.TestCase):
 
     def test_recovered_npu_keeps_non_amdxdna_driver(self) -> None:
         raw = self._load("observed-ryzen-ai-hx470.json")
-        for device in raw["pci"]["devices"]:
-            if device.get("device_id") == "17f0":
-                device["bound_driver"] = "vfio-pci"
+        for collection in (raw["pci"]["devices"], raw["accelerators"]["devices"]):
+            for device in collection:
+                if device.get("device_id") == "17f0":
+                    device["bound_driver"] = "vfio-pci"
         profile = system_profile.build_profile(raw, "test")
         system_profile.validate_profile(profile)
         accelerator = profile["accelerators"][0]
