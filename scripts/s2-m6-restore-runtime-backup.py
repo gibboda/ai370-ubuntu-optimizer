@@ -41,6 +41,17 @@ def _load_application(path: Path) -> dict | None:
     return loaded if isinstance(loaded, dict) else None
 
 
+def _rollback_publish_failure_summary(result: dict) -> str:
+    """Human-readable rollback outcome for publish-failure warnings (not JSON)."""
+    if result.get("dry_run"):
+        return "Rollback dry-run did not apply runtime changes"
+    if result.get("platform_mismatch"):
+        return "Rollback did not restore runtime settings (platform mismatch)"
+    if not result.get("restored"):
+        return "Rollback failed to restore runtime settings"
+    return "Rollback restored runtime settings"
+
+
 def _publish_rollback_report(latest: Path, *, dry_run: bool, result: dict) -> bool:
     """Merge manual rollback into the S2-M6 report. Returns False on publish failure."""
     application_path = latest / "s2-m6-optimization-application.json"
@@ -55,8 +66,9 @@ def _publish_rollback_report(latest: Path, *, dry_run: bool, result: dict) -> bo
             application_path, merged, plan=None
         )
     except (OSError, ValueError, TypeError) as exc:
+        summary = _rollback_publish_failure_summary(result)
         print(
-            f"[WARN] Rollback restored runtime settings but failed to update "
+            f"[WARN] {summary} but failed to update "
             f"{application_path.name}: {exc}",
             file=sys.stderr,
         )

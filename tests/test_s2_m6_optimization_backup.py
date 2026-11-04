@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import importlib.util
-import io
 import json
 import os
 import stat
@@ -13,8 +12,6 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
-
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
 TUNING_SCRIPT = ROOT / "scripts/40-platform-tuning.sh"
@@ -125,6 +122,43 @@ def _seed_manifest(
         },
     )
     return manifest_path
+
+
+def _seed_s2_m6_application(latest: Path, profile_path: Path) -> Path:
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    application = optimization_plan.build_s2_m6_optimization_application(
+        profile,
+        plan=None,
+        applied=True,
+        dry_run=False,
+        backup={"status": "captured", "rollback_available": True},
+    )
+    report_path = latest / "s2-m6-optimization-application.json"
+    optimization_plan.publish_s2_m6_optimization_application(
+        report_path, application, plan=None
+    )
+    return report_path
+
+
+def _make_report_publish_unwritable(latest: Path) -> None:
+    """Prevent atomic replace of s2-m6-optimization-application.json (real OSError)."""
+    latest.chmod(stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP)
+
+
+def _assert_no_false_restore_success_claims(stderr: str, stdout: str) -> None:
+    stderr_lower = stderr.lower()
+    stdout_lower = stdout.lower()
+    for text in (stderr, stdout):
+        assert "rollback succeeded" not in text.lower(), text
+    assert "restored" not in stderr_lower, stderr
+    assert "[info] restored runtime backup" not in stdout_lower, stdout
+    if stdout.strip():
+        payload = json.loads(stdout)
+        assert payload.get("restored") is not True, stdout
+        tail = stdout[stdout.rfind("}") + 1 :]
+        assert "restored" not in tail.lower(), stdout
+    else:
+        assert "restored" not in stdout_lower, stdout
 
 
 class OptimizationBackupTests(unittest.TestCase):
@@ -337,13 +371,7 @@ class OptimizationBackupTests(unittest.TestCase):
             self.assertEqual(report_path.read_text(encoding="utf-8"), before)
             self.assertNotIn("runtime_rollback", before)
 
-    def test_manual_restore_exits_zero_when_publish_fails(self) -> None:
-        spec = importlib.util.spec_from_file_location(
-            "s2_m6_restore_runtime_backup", RESTORE_CLI
-        )
-        assert spec and spec.loader
-        restore_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(restore_module)
+    def test_restore_success_wording_when_publish_fails_on_disk(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             latest = Path(directory)
             profile_path = _write_profile(latest, "ai370")
@@ -353,44 +381,114 @@ class OptimizationBackupTests(unittest.TestCase):
             bindir.mkdir()
             _powerprofilesctl_stub(bindir)
             _seed_manifest(latest, platform_id="ai370", observed="balanced")
-            profile = json.loads(profile_path.read_text(encoding="utf-8"))
-            application = optimization_plan.build_s2_m6_optimization_application(
-                profile,
-                plan=None,
-                applied=True,
-                dry_run=False,
-                backup={"status": "captured", "rollback_available": True},
-            )
-            report_path = latest / "s2-m6-optimization-application.json"
-            optimization_plan.publish_s2_m6_optimization_application(
-                report_path, application, plan=None
-            )
-            argv = [
-                "s2-m6-restore-runtime-backup.py",
-                "--latest-dir",
-                str(latest),
-                "--profile",
-                str(profile_path),
-            ]
-            env_patch = patch.dict(
-                os.environ,
-                {
-                    "PATH": f"{bindir}:/bin:/usr/bin",
-                    "STATE": str(state),
-                },
-                clear=False,
-            )
-            publish_patch = patch.object(
-                restore_module.optimization_plan,
-                "publish_s2_m6_optimization_application",
-                side_effect=OSError("publish failed"),
-            )
-            with env_patch, publish_patch, patch.object(sys, "argv", argv):
-                with patch.object(sys, "stderr", new=io.StringIO()) as err:
-                    restore_module.main()
-                    stderr = err.getvalue()
-            self.assertIn("failed to update", stderr.lower())
+            _seed_s2_m6_application(latest, profile_path)
+            _make_report_publish_unwritable(latest)
+            try:
+                completed = subprocess.run(
+                    [
+                        "python3",
+                        str(RESTORE_CLI),
+                        "--latest-dir",
+                        str(latest),
+                        "--profile",
+                        str(profile_path),
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    env=_stub_env(bindir, state),
+                )
+            finally:
+                latest.chmod(stat.S_IRWXU)
+            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
             self.assertEqual(state.read_text(encoding="utf-8").strip(), "balanced")
+            stderr = completed.stderr
+            self.assertIn("restored runtime settings", stderr.lower())
+            self.assertIn("failed to update", stderr.lower())
+            self.assertIn("rollback succeeded", stderr.lower())
+
+    def test_restore_publish_failure_warning_matches_outcome(self) -> None:
+        cases: list[tuple[str, dict, int]] = [
+            (
+                "restore_set_fails",
+                {
+                    "platform_id": "ai370",
+                    "stub_set_always_fails": True,
+                    "extra_argv": [],
+                },
+                1,
+            ),
+            (
+                "platform_mismatch",
+                {
+                    "manifest_platform_id": "ai370",
+                    "profile_platform_id": "ai470",
+                    "extra_argv": [],
+                },
+                2,
+            ),
+            (
+                "dry_run",
+                {
+                    "platform_id": "ai370",
+                    "extra_argv": ["--dry-run", "true"],
+                },
+                0,
+            ),
+        ]
+        for case_name, options, expected_rc in cases:
+            with self.subTest(case=case_name):
+                with tempfile.TemporaryDirectory() as directory:
+                    latest = Path(directory)
+                    state = latest / "power.state"
+                    state.write_text("performance\n", encoding="utf-8")
+                    state_before = state.read_text(encoding="utf-8")
+                    set_log = latest / "set.log"
+                    bindir = latest / "bin"
+                    bindir.mkdir()
+                    if options.get("stub_set_always_fails"):
+                        _powerprofilesctl_stub(bindir, set_always_fails=True)
+                    else:
+                        _powerprofilesctl_stub(bindir)
+                    manifest_platform = options.get("manifest_platform_id", options.get("platform_id", "ai370"))
+                    profile_platform = options.get("profile_platform_id", options.get("platform_id", "ai370"))
+                    manifest_path = _seed_manifest(
+                        latest, platform_id=manifest_platform, observed="balanced"
+                    )
+                    manifest_before = manifest_path.read_text(encoding="utf-8")
+                    profile_path = _write_profile(latest, profile_platform)
+                    _seed_s2_m6_application(latest, profile_path)
+                    _make_report_publish_unwritable(latest)
+                    argv = [
+                        "python3",
+                        str(RESTORE_CLI),
+                        "--latest-dir",
+                        str(latest),
+                        "--profile",
+                        str(profile_path),
+                        *options.get("extra_argv", []),
+                    ]
+                    try:
+                        completed = subprocess.run(
+                            argv,
+                            check=False,
+                            capture_output=True,
+                            text=True,
+                            env=_stub_env(bindir, state, set_log=set_log),
+                        )
+                    finally:
+                        latest.chmod(stat.S_IRWXU)
+                    self.assertEqual(
+                        completed.returncode,
+                        expected_rc,
+                        completed.stderr + completed.stdout,
+                    )
+                    _assert_no_false_restore_success_claims(completed.stderr, completed.stdout)
+                    self.assertIn("failed to update", completed.stderr.lower())
+                    if case_name in ("platform_mismatch", "dry_run"):
+                        self.assertEqual(state.read_text(encoding="utf-8"), state_before)
+                        self.assertFalse(set_log.exists())
+                        self.assertEqual(manifest_path.read_text(encoding="utf-8"), manifest_before)
 
     def test_restore_null_platform_round_trip(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
