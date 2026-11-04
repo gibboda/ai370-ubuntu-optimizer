@@ -16,8 +16,15 @@ or installs microcode packages.**
 | fwupd / linux-firmware / Secure Boot | Live probes in `20-check-bios.sh` | Supplemental visibility; not flash actions |
 
 Policy compares observed BIOS version to `EXPECTED_BIOS_VERSION` in the classified
-platform `.env` (for example `configs/profiles/ai370.env`). Generic or unknown
-classified platforms may have no expected BIOS target (`bios_acceptable: unknown`).
+platform `.env` when the profile has **project-verified** evidence that a specific
+BIOS matters (for example `configs/profiles/ai370.env` with `2.01`). The target is
+**advisory**: mismatch sets `bios_acceptable: false` and produces WARN, never FAIL.
+Profiles such as `ai470` intentionally omit `EXPECTED_BIOS_VERSION`; a single Stage 1
+probe observation belongs in fixtures or comments, not as an enforcement target.
+
+Matching uses exact version-token equality (case-insensitive, optional leading `v`,
+token split on whitespace and non-`.`/`_`/`-` separators). Substring matches such as
+`1.00` inside `11.00` are rejected.
 
 ## Interpreting status
 
