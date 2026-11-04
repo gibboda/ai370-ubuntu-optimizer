@@ -32,7 +32,10 @@ prepare_portable_model_root() {
   fi
 
   mkdir -p "$models_dir"
-  if ! sudo mount -o loop "$img" "$models_dir"; then
+  local uid gid
+  uid="$(id -u)"
+  gid="$(id -g)"
+  if ! sudo mount -o "loop,uid=${uid},gid=${gid}" "$img" "$models_dir"; then
     echo "[FAIL] Could not mount portable model-root loop filesystem on $models_dir" >&2
     return 1
   fi
