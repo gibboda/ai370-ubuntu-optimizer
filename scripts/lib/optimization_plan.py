@@ -154,6 +154,14 @@ def build_s2_m6_optimization_application(
         )
     if backup_block.get("status") == "rollback_failed":
         warnings.append("Runtime rollback did not complete successfully.")
+    if (
+        not dry_run
+        and not applied
+        and backup_block.get("status") == "restored"
+    ):
+        warnings.append(
+            "Runtime apply did not succeed; pre-apply backup was restored."
+        )
     status = "WARN" if warnings else "PASS"
     if applied and not dry_run and backup_block.get("status") == "failed":
         status = "WARN"
@@ -287,6 +295,17 @@ def publish_s2_m5_optimization_plan(
     return plan
 
 
+def _restore_refused_before_mutating(result: dict[str, Any]) -> bool:
+    """True when rollback was blocked (platform contract), not attempted restore."""
+    if result.get("platform_mismatch"):
+        return True
+    for error in result.get("errors") or []:
+        text = str(error).lower()
+        if "platform" in text and ("mismatch" in text or "missing" in text):
+            return True
+    return False
+
+
 def merge_manual_runtime_rollback(
     application: dict[str, Any],
     *,
@@ -309,6 +328,13 @@ def merge_manual_runtime_rollback(
     if result.get("error"):
         rollback_block["errors"] = list(rollback_block["errors"]) + [str(result["error"])]
     updated["runtime_rollback"] = rollback_block
+    if _restore_refused_before_mutating(result):
+        if dry_run:
+            message = "Dry-run rollback: no runtime settings were restored."
+            if message not in warnings:
+                warnings.append(message)
+        updated["warnings"] = warnings
+        return updated
     backup = dict(updated.get("backup") or {})
     backup.setdefault("rollback_available", False)
     if dry_run:

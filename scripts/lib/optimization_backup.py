@@ -254,7 +254,8 @@ def capture_runtime_backup(
         "note": note,
         "manifest_path": manifest_path,
     }
-    write_apply_backup_pointer(latest_dir, block)
+    if status == "captured":
+        write_apply_backup_pointer(latest_dir, block)
     return block
 
 

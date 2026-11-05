@@ -16,6 +16,7 @@ import tempfile
 import unittest
 from collections.abc import Iterator
 from pathlib import Path
+from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
 TUNING_SCRIPT = ROOT / "scripts/40-platform-tuning.sh"
@@ -272,6 +273,22 @@ class OptimizationBackupTests(unittest.TestCase):
             )
         self.assertEqual(block["status"], "failed")
         self.assertFalse(block["rollback_available"])
+        self.assertFalse((latest / optimization_backup.APPLY_POINTER_NAME).exists())
+
+    def test_failed_capture_does_not_overwrite_apply_pointer(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            _seed_manifest(latest, platform_id="ai370", observed="balanced")
+            pointer_path = latest / optimization_backup.APPLY_POINTER_NAME
+            pointer_before = pointer_path.read_text(encoding="utf-8")
+            optimization_backup.capture_runtime_backup(
+                latest,
+                classified_platform_id="ai370",
+                runner=lambda command, **kwargs: subprocess.run(
+                    command, env={"PATH": ""}, **kwargs
+                ),
+            )
+            self.assertEqual(pointer_path.read_text(encoding="utf-8"), pointer_before)
 
     def test_capture_records_platform_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -988,6 +1005,86 @@ class OptimizationBackupTests(unittest.TestCase):
         )
         self.assertEqual(application["status"], "WARN")
         self.assertIn("backup", " ".join(application["warnings"]).lower())
+
+    def test_build_s2_m6_warn_when_apply_failed_and_backup_restored(self) -> None:
+        profile = json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+        application = optimization_plan.build_s2_m6_optimization_application(
+            profile,
+            plan=None,
+            applied=False,
+            dry_run=False,
+            backup={
+                "status": "restored",
+                "rollback_available": True,
+                "note": "Apply failed; rollback restored pre-apply backup.",
+            },
+        )
+        self.assertEqual(application["status"], "WARN")
+        self.assertTrue(
+            any("pre-apply backup was restored" in w for w in application["warnings"]),
+            application["warnings"],
+        )
+
+    def test_merge_manual_mismatch_preserves_backup_block(self) -> None:
+        profile = json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+        application = optimization_plan.build_s2_m6_optimization_application(
+            profile,
+            plan=None,
+            applied=True,
+            dry_run=False,
+            backup={
+                "status": "captured",
+                "rollback_available": True,
+                "note": "Recorded pre-apply power profile for rollback.",
+            },
+        )
+        backup_before = dict(application["backup"])
+        merged = optimization_plan.merge_manual_runtime_rollback(
+            application,
+            dry_run=False,
+            result={
+                "restored": False,
+                "platform_mismatch": True,
+                "errors": ["platform mismatch: manifest ai370 vs profile ai470"],
+                "manifest": "/tmp/manifest.json",
+            },
+        )
+        self.assertEqual(merged["backup"], backup_before)
+        self.assertTrue(merged["runtime_rollback"]["errors"])
+
+    def test_root_chattr_publish_block_does_not_chown_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            profile_path = _write_profile(latest, "ai370")
+            with mock.patch(
+                "tests.test_s2_m6_optimization_backup._chattr_immutable",
+                return_value=True,
+            ), mock.patch(
+                "tests.test_s2_m6_optimization_backup._chown_tree"
+            ) as chown_mock, mock.patch.object(os, "geteuid", return_value=0):
+                with _block_s2_m6_report_publish(latest, profile_path) as block_mode:
+                    self.assertEqual(block_mode, "chattr")
+            chown_mock.assert_not_called()
+
+    def test_run_restore_subprocess_uses_runuser_from_default_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            argv = ["python3", "-c", "import sys; sys.exit(0)"]
+            env = dict(os.environ)
+            with mock.patch.object(os, "geteuid", return_value=0), mock.patch.object(
+                shutil, "which", return_value="/usr/sbin/runuser"
+            ) as which_mock, mock.patch(
+                "tests.test_s2_m6_optimization_backup._chown_tree"
+            ), mock.patch(
+                "tests.test_s2_m6_optimization_backup.subprocess.run"
+            ) as run_mock:
+                run_mock.return_value = subprocess.CompletedProcess(argv, 0, "", "")
+                _run_restore_subprocess(
+                    argv, env=env, latest=latest, drop_privileges=True
+                )
+            which_mock.assert_called_with("runuser")
+            cmd = run_mock.call_args[0][0]
+            self.assertEqual(cmd[0], "/usr/sbin/runuser")
 
     def test_apply_without_powerprofilesctl_still_publishes_s2_m6(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

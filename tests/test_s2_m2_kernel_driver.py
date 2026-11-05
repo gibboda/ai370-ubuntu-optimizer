@@ -219,6 +219,28 @@ class Stage2KernelDriverTests(unittest.TestCase):
             report["warnings"],
         )
 
+    def test_support_matrix_non_ubuntu_does_not_emit_unlisted_code(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.14.0",
+                "target_kernel": "6.11",
+                "kernel_ok": True,
+                "amdgpu_ok": True,
+                "amdxdna_seen": False,
+                "linux_firmware_state": "present",
+                "status": "PASS",
+                "os_description": "Fedora Linux 41",
+                "os_version": "41",
+                "os_codename": "unknown",
+                "recommendations": [],
+            },
+        )
+        self.assertNotIn(
+            "os-unlisted-ubuntu-release", report["support_assessment"]["codes"]
+        )
+
     def test_support_matrix_kernel_below_minimum_downgrades_pass(self) -> None:
         profile = load_reference_profile()
         report = kernel_validation.build_s2_m2_kernel_driver_validation(

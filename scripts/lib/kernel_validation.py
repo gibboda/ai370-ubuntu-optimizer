@@ -71,7 +71,11 @@ def evaluate_support_matrix(
                 codes.append(str(entry["code"]))
             break
     os_description = str(facts.get("os_description") or "").lower()
-    if not matched_os and (os_version or os_codename or "ubuntu" in os_description):
+    if (
+        not matched_os
+        and "ubuntu" in os_description
+        and (os_version or os_codename)
+    ):
         codes.append("os-unlisted-ubuntu-release")
     matrix_kernel_ok: bool | None = None
     if kernel_version:
