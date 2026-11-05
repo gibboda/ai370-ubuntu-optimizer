@@ -294,6 +294,7 @@ PY
       echo "[WARN] Runtime tuning commands exited non-zero; attempting rollback..."
       restore_attempted=true
       restore_rc=0
+      # Restore stdout is JSON-only (INFO goes to stderr) for finalize's --restore-result-json.
       PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
         --latest-dir "$LATEST_DIR" \
         --profile "$PROFILE_FILE" \

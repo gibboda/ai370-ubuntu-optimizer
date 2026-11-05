@@ -176,7 +176,9 @@ def main() -> None:
             )
     if not restored:
         raise SystemExit(1)
-    print(f"[INFO] Restored runtime backup from {manifest}")
+    # Keep stdout JSON-only: apply-time rollback redirects stdout into
+    # --restore-result-json for s2-m6-finalize-apply-backup.py.
+    print(f"[INFO] Restored runtime backup from {manifest}", file=sys.stderr)
 
 
 if __name__ == "__main__":

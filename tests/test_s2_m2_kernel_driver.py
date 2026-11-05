@@ -213,6 +213,33 @@ class Stage2KernelDriverTests(unittest.TestCase):
             },
         )
         self.assertIn("os-unlisted-ubuntu-release", report["support_assessment"]["codes"])
+        self.assertEqual(report["status"], "WARN")
+        self.assertTrue(
+            any("os-unlisted-ubuntu-release" in item for item in report["warnings"]),
+            report["warnings"],
+        )
+
+    def test_support_matrix_kernel_below_minimum_downgrades_pass(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.8.0",
+                "target_kernel": "6.11",
+                "kernel_ok": True,
+                "amdgpu_ok": True,
+                "amdxdna_seen": True,
+                "linux_firmware_state": "present",
+                "status": "PASS",
+                "os_description": "Ubuntu",
+                "os_version": "24.04",
+                "os_codename": "noble",
+                "recommendations": [],
+            },
+        )
+        self.assertIn("kernel-below-minimum", report["support_assessment"]["codes"])
+        self.assertIs(report["kernel"]["acceptable"], False)
+        self.assertEqual(report["status"], "WARN")
 
     def test_support_matrix_unknown_module_inventory_code(self) -> None:
         profile = load_reference_profile()

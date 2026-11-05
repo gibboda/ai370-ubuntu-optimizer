@@ -159,12 +159,19 @@ def build_s2_m2_kernel_driver_validation(
         message = f"Support matrix: {code}"
         if message not in warnings:
             warnings.append(message)
-    if support["os_tier"] == "unsupported" and status == "PASS":
+    # Any matrix code (unlisted OS, below-minimum kernel, missing modules, …)
+    # or an unsupported OS tier must not leave a PASS status while warnings
+    # and support_assessment.codes report problems.
+    if status == "PASS" and (support["codes"] or support["os_tier"] == "unsupported"):
         status = "WARN"
     if matrix_kernel_ok is not None:
         kernel_ok = matrix_kernel_ok
+        if matrix_kernel_ok is False and status == "PASS":
+            status = "WARN"
     elif kernel_version := str(facts.get("kernel") or ""):
         kernel_ok = _version_ge(kernel_version, support["minimum_kernel"])
+        if kernel_ok is False and status == "PASS":
+            status = "WARN"
     target_minimum = support["minimum_kernel"]
     return {
         "schema": {

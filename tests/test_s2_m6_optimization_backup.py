@@ -159,35 +159,58 @@ def _chattr_immutable(path: Path, *, immutable: bool) -> bool:
 
 
 def _chown_tree(path: Path, uid: int, gid: int) -> None:
+    """Give ``path`` and its children to ``uid``/``gid``.
+
+    Linux rejects ``chown`` on an immutable inode even for root. Callers that
+    already used ``chattr +i`` must not pass that tree here.
+    """
     os.chown(path, uid, gid)
     for child in path.rglob("*"):
         os.chown(child, uid, gid)
 
 
 def _run_restore_subprocess(
-    argv: list[str], *, env: dict[str, str], latest: Path
+    argv: list[str],
+    *,
+    env: dict[str, str],
+    latest: Path,
+    drop_privileges: bool,
 ) -> subprocess.CompletedProcess[str]:
-    if os.geteuid() == 0:
+    """Run restore. Privilege drop is only the non-immutable root fallback.
+
+    ``chown`` on a ``chattr +i`` report raises ``PermissionError`` before
+    restore runs, so that strategy stays root and relies on the immutable
+    inode. ``runuser`` is invoked by absolute path: ``shutil.which`` uses the
+    parent PATH (where Ubuntu keeps it in ``/usr/sbin``), while ``env`` is the
+    stub PATH ``bindir:/bin:/usr/bin``.
+    """
+    if drop_privileges:
         try:
             nobody = pwd.getpwnam("nobody")
         except KeyError as exc:
             raise unittest.SkipTest("root: nobody user unavailable for publish-failure tests") from exc
-        if not shutil.which("runuser"):
+        runuser = shutil.which("runuser")
+        if not runuser:
             raise unittest.SkipTest("root: runuser unavailable for publish-failure tests")
         _chown_tree(latest, nobody.pw_uid, nobody.pw_gid)
         latest.chmod(stat.S_IRUSR | stat.S_IXUSR)
-        cmd = ["runuser", "-u", "nobody", "--"] + argv
-        return subprocess.run(
-            cmd, check=False, capture_output=True, text=True, env=env
-        )
+        argv = [runuser, "-u", "nobody", "--", *argv]
     return subprocess.run(
         argv, check=False, capture_output=True, text=True, env=env
     )
 
 
 @contextlib.contextmanager
-def _block_s2_m6_report_publish(latest: Path, profile_path: Path) -> Iterator[Path]:
-    """Force a real publish OSError (not mocks). chmod 555 is ignored for root."""
+def _block_s2_m6_report_publish(latest: Path, profile_path: Path) -> Iterator[str]:
+    """Force a real publish OSError (not mocks).
+
+    Yields the block mode. Non-root removes directory write permission
+    (``readonly_dir``). Root ignores that mode. ``chattr`` marks the report
+    immutable when the attribute sticks. ``nobody_runuser`` means ``chattr``
+    was unavailable and the caller must drop to ``nobody`` instead. Those root
+    strategies are alternatives: chowning an immutable report fails with
+    ``EPERM``.
+    """
     report_path = _seed_s2_m6_application(latest, profile_path)
     mode = "readonly_dir"
     if os.geteuid() == 0:
@@ -198,7 +221,7 @@ def _block_s2_m6_report_publish(latest: Path, profile_path: Path) -> Iterator[Pa
     else:
         latest.chmod(stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP)
     try:
-        yield report_path
+        yield mode
     finally:
         if mode == "chattr":
             _chattr_immutable(report_path, immutable=False)
@@ -337,6 +360,92 @@ class OptimizationBackupTests(unittest.TestCase):
         self.assertFalse(updated["rollback_available"])
         self.assertIn("powerprofilesctl", updated["restore_errors"][0])
 
+    def test_finalize_loads_restore_result_with_trailing_info(self) -> None:
+        """Apply-time capture must still parse JSON if a legacy INFO trailed stdout."""
+        finalize = ROOT / "scripts/s2-m6-finalize-apply-backup.py"
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            backup_json = latest / "backup.json"
+            backup_json.write_text(
+                json.dumps(
+                    {
+                        "status": "captured",
+                        "rollback_available": True,
+                        "manifest": "reports/latest/x/manifest.json",
+                        "items": ["power_profile"],
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            restore_result = latest / "restore.json"
+            restore_result.write_text(
+                json.dumps(
+                    {
+                        "restored": True,
+                        "dry_run": False,
+                        "restored_items": ["power_profile"],
+                        "errors": [],
+                    },
+                    indent=2,
+                )
+                + "\n[INFO] Restored runtime backup from /tmp/manifest.json\n",
+                encoding="utf-8",
+            )
+            completed = subprocess.run(
+                [
+                    "python3",
+                    str(finalize),
+                    "--backup-json",
+                    str(backup_json),
+                    "--apply-succeeded",
+                    "false",
+                    "--restore-exit-code",
+                    "0",
+                    "--restore-result-json",
+                    str(restore_result),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            updated = json.loads(backup_json.read_text(encoding="utf-8"))
+            self.assertEqual(updated["status"], "restored")
+
+    def test_restore_success_keeps_info_off_stdout(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            profile_path = _write_profile(latest, "ai370")
+            state = latest / "power.state"
+            state.write_text("performance\n", encoding="utf-8")
+            bindir = latest / "bin"
+            bindir.mkdir()
+            _powerprofilesctl_stub(bindir)
+            _seed_manifest(latest, platform_id="ai370", observed="balanced")
+            completed = subprocess.run(
+                [
+                    "python3",
+                    str(RESTORE_CLI),
+                    "--latest-dir",
+                    str(latest),
+                    "--profile",
+                    str(profile_path),
+                    "--no-publish",
+                    "true",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                env=_stub_env(bindir, state),
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            payload = json.loads(completed.stdout)
+            self.assertTrue(payload.get("restored"))
+            self.assertIn("[INFO] Restored runtime backup", completed.stderr)
+            self.assertNotIn("[INFO]", completed.stdout)
+
     def test_merge_skipped_apply_note_when_backup_capture_failed(self) -> None:
         block = {
             "status": "failed",
@@ -442,7 +551,7 @@ class OptimizationBackupTests(unittest.TestCase):
             bindir.mkdir()
             _powerprofilesctl_stub(bindir)
             _seed_manifest(latest, platform_id="ai370", observed="balanced")
-            with _block_s2_m6_report_publish(latest, profile_path):
+            with _block_s2_m6_report_publish(latest, profile_path) as block_mode:
                 argv = [
                     "python3",
                     str(RESTORE_CLI),
@@ -452,7 +561,10 @@ class OptimizationBackupTests(unittest.TestCase):
                     str(profile_path),
                 ]
                 completed = _run_restore_subprocess(
-                    argv, env=_stub_env(bindir, state), latest=latest
+                    argv,
+                    env=_stub_env(bindir, state),
+                    latest=latest,
+                    drop_privileges=block_mode == "nobody_runuser",
                 )
             self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
             self.assertEqual(state.read_text(encoding="utf-8").strip(), "balanced")
@@ -520,11 +632,12 @@ class OptimizationBackupTests(unittest.TestCase):
                         str(profile_path),
                         *options.get("extra_argv", []),
                     ]
-                    with _block_s2_m6_report_publish(latest, profile_path):
+                    with _block_s2_m6_report_publish(latest, profile_path) as block_mode:
                         completed = _run_restore_subprocess(
                             argv,
                             env=_stub_env(bindir, state, set_log=set_log),
                             latest=latest,
+                            drop_privileges=block_mode == "nobody_runuser",
                         )
                     self.assertEqual(
                         completed.returncode,

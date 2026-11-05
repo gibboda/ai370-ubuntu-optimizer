@@ -16,6 +16,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 import optimization_backup  # noqa: E402
 
 
+def _load_restore_result_json(path: Path) -> dict | None:
+    """Load the restore CLI JSON object from a redirected stdout capture.
+
+    Accepts a pure JSON document. Also tolerates a leading JSON object followed
+    by trailing non-JSON text (legacy ``[INFO]`` lines on stdout) so apply-time
+    rollback still records ``restore_result`` / ``restore_errors``.
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    try:
+        loaded = json.loads(text)
+    except json.JSONDecodeError:
+        try:
+            loaded, _end = json.JSONDecoder().raw_decode(text.lstrip())
+        except json.JSONDecodeError:
+            return None
+    return loaded if isinstance(loaded, dict) else None
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Finalize S2-M6 backup block after apply")
     parser.add_argument("--backup-json", required=True, type=Path)
@@ -43,12 +64,7 @@ def main() -> None:
         restore_code = None
     restore_result: dict | None = None
     if args.restore_result_json is not None and args.restore_result_json.is_file():
-        try:
-            loaded = json.loads(args.restore_result_json.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            loaded = None
-        if isinstance(loaded, dict):
-            restore_result = loaded
+        restore_result = _load_restore_result_json(args.restore_result_json)
     updated = optimization_backup.merge_backup_after_apply(
         block,
         apply_succeeded=args.apply_succeeded == "true",
