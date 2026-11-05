@@ -244,6 +244,7 @@ PY
   local s2_m6_preexisting=false
   local restore_attempted=false
   local restore_rc=""
+  local apply_exit=0
   if [[ -f "$LATEST_DIR/s2-m6-optimization-application.json" ]]; then
     s2_m6_preexisting=true
   fi
@@ -257,6 +258,12 @@ PY
     python3 "$PROJECT_ROOT/scripts/s2-m6-backup-block.py" --output "$backup_json" capture \
       --latest-dir "$LATEST_DIR" \
       --profile "$PROFILE_FILE"
+    local backup_status=""
+    backup_status="$(python3 - "$backup_json" <<'PY'
+import json, sys
+print(json.load(open(sys.argv[1], encoding="utf-8")).get("status", ""))
+PY
+)"
     echo "[INFO] Applying runtime tuning commands (--approve)..."
     # shellcheck disable=SC1091
     local apply_rc=""
@@ -291,23 +298,35 @@ PY
         --backup-json "$backup_json" \
         --apply-succeeded true
     else
-      echo "[WARN] Runtime tuning commands exited non-zero; attempting rollback..."
-      restore_attempted=true
-      restore_rc=0
-      # Restore stdout is JSON-only (INFO goes to stderr) for finalize's --restore-result-json.
-      PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
-        --latest-dir "$LATEST_DIR" \
-        --profile "$PROFILE_FILE" \
-        --no-publish true > "$restore_result_json" || restore_rc=$?
-      cat "$restore_result_json"
-      if [[ "$restore_rc" != 0 ]]; then
-        echo "[WARN] Rollback did not complete cleanly (exit ${restore_rc})."
+      applied="false"
+      apply_exit=1
+      if [[ "$backup_status" != "captured" ]]; then
+        echo "[WARN] Pre-apply backup capture failed; skipping automatic rollback."
+        python3 "$PROJECT_ROOT/scripts/s2-m6-write-apply-warnings.py" \
+          --output "$apply_warnings_json" \
+          --warning "rollback skipped: pre-apply backup capture failed"
+        python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
+          --backup-json "$backup_json" \
+          --apply-succeeded false
+      else
+        echo "[WARN] Runtime tuning commands exited non-zero; attempting rollback..."
+        restore_attempted=true
+        restore_rc=0
+        # Restore stdout is JSON-only (INFO goes to stderr) for finalize's --restore-result-json.
+        PROJECT_ROOT="$PROJECT_ROOT" python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
+          --latest-dir "$LATEST_DIR" \
+          --profile "$PROFILE_FILE" \
+          --no-publish true > "$restore_result_json" || restore_rc=$?
+        cat "$restore_result_json"
+        if [[ "$restore_rc" != 0 ]]; then
+          echo "[WARN] Rollback did not complete cleanly (exit ${restore_rc})."
+        fi
+        python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
+          --backup-json "$backup_json" \
+          --apply-succeeded false \
+          --restore-exit-code "$restore_rc" \
+          --restore-result-json "$restore_result_json"
       fi
-      python3 "$PROJECT_ROOT/scripts/s2-m6-finalize-apply-backup.py" \
-        --backup-json "$backup_json" \
-        --apply-succeeded false \
-        --restore-exit-code "$restore_rc" \
-        --restore-result-json "$restore_result_json"
     fi
     rm -f "$apply_log" "$restore_result_json"
   fi
@@ -315,6 +334,7 @@ PY
   if [[ "$s2_m6_preexisting" == "true" && "$restore_attempted" == "true" && "$applied" == "false" && "$restore_rc" == "0" ]]; then
     echo "[INFO] Keeping pre-existing s2-m6-optimization-application.json (apply-time rollback did not republish)."
   else
+    local publish_rc=0
     python3 "$PROJECT_ROOT/scripts/s2-m6-publish-optimization-application.py" \
       --profile "$PROFILE_FILE" \
       --plan "$LATEST_DIR/s2-m5-optimization-plan.json" \
@@ -324,10 +344,20 @@ PY
       --dry-run "$DRY_RUN" \
       --applied "$applied" \
       --backup-json "$backup_json" \
-      --extra-warnings-json "$apply_warnings_json"
+      --extra-warnings-json "$apply_warnings_json" || publish_rc=$?
     echo "[INFO] Wrote s2-m6-optimization-application.json"
+    if [[ "$publish_rc" -eq 3 ]]; then
+      apply_exit=1
+    elif [[ "$publish_rc" -ne 0 ]]; then
+      echo "[INFO] 40-platform-tuning.sh complete (publish exit ${publish_rc})."
+      exit "$publish_rc"
+    fi
   fi
   rm -f "$backup_json" "$apply_warnings_json"
+  if [[ "$apply_exit" -ne 0 ]]; then
+    echo "[INFO] 40-platform-tuning.sh complete (apply failed, exit 1)."
+    exit 1
+  fi
   echo "[INFO] 40-platform-tuning.sh complete."
 }
 

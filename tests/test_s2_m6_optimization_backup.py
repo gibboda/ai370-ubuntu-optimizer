@@ -35,16 +35,22 @@ def _powerprofilesctl_stub(
     *,
     set_performance_fails: bool = False,
     set_always_fails: bool = False,
+    get_fails: bool = False,
 ) -> None:
     lines = [
         "#!/bin/sh",
         'case "$1" in',
-        "  get) cat \"$STATE\"; exit 0 ;;",
+    ]
+    if get_fails:
+        lines.append("  get) exit 1 ;;")
+    else:
+        lines.append('  get) cat "$STATE"; exit 0 ;;')
+    lines.extend([
         "  list)",
         '    printf "%s\\n" "${PROFILES_LIST:-performance balanced power-saver}"; exit 0 ;;',
         "  set)",
         '    [ -n "${SET_LOG:-}" ] && echo "set $2" >> "$SET_LOG"',
-    ]
+    ])
     if set_always_fails:
         lines.append("    exit 1 ;;")
     elif set_performance_fails:
@@ -275,12 +281,12 @@ class OptimizationBackupTests(unittest.TestCase):
         self.assertFalse(block["rollback_available"])
         self.assertFalse((latest / optimization_backup.APPLY_POINTER_NAME).exists())
 
-    def test_failed_capture_does_not_overwrite_apply_pointer(self) -> None:
+    def test_failed_capture_clears_stale_apply_pointer(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             latest = Path(directory)
             _seed_manifest(latest, platform_id="ai370", observed="balanced")
             pointer_path = latest / optimization_backup.APPLY_POINTER_NAME
-            pointer_before = pointer_path.read_text(encoding="utf-8")
+            self.assertTrue(pointer_path.is_file())
             optimization_backup.capture_runtime_backup(
                 latest,
                 classified_platform_id="ai370",
@@ -288,7 +294,7 @@ class OptimizationBackupTests(unittest.TestCase):
                     command, env={"PATH": ""}, **kwargs
                 ),
             )
-            self.assertEqual(pointer_path.read_text(encoding="utf-8"), pointer_before)
+            self.assertFalse(pointer_path.exists())
 
     def test_capture_records_platform_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -397,13 +403,14 @@ class OptimizationBackupTests(unittest.TestCase):
                 encoding="utf-8",
             )
             restore_result = latest / "restore.json"
+            restore_error = "failed to restore power_profile: powerprofilesctl not available"
             restore_result.write_text(
                 json.dumps(
                     {
-                        "restored": True,
+                        "restored": False,
                         "dry_run": False,
-                        "restored_items": ["power_profile"],
-                        "errors": [],
+                        "restored_items": [],
+                        "errors": [restore_error],
                     },
                     indent=2,
                 )
@@ -419,7 +426,7 @@ class OptimizationBackupTests(unittest.TestCase):
                     "--apply-succeeded",
                     "false",
                     "--restore-exit-code",
-                    "0",
+                    "1",
                     "--restore-result-json",
                     str(restore_result),
                 ],
@@ -429,7 +436,8 @@ class OptimizationBackupTests(unittest.TestCase):
             )
             self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
             updated = json.loads(backup_json.read_text(encoding="utf-8"))
-            self.assertEqual(updated["status"], "restored")
+            self.assertEqual(updated["status"], "rollback_failed")
+            self.assertEqual(updated["restore_errors"], [restore_error])
 
     def test_restore_success_keeps_info_off_stdout(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -849,7 +857,7 @@ class OptimizationBackupTests(unittest.TestCase):
                 text=True,
                 env=env,
             )
-            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            self.assertEqual(completed.returncode, 1, completed.stderr + completed.stdout)
             self.assertEqual(report_path.read_bytes(), before)
             self.assertNotIn(b"runtime_rollback", report_path.read_bytes())
             self.assertIn(b"QA sentinel", report_path.read_bytes())
@@ -871,7 +879,10 @@ class OptimizationBackupTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
+        payload = json.loads(completed.stdout)
+        self.assertFalse(payload["restored"])
         self.assertEqual(completed.returncode, 2)
+        self.assertIn("No S2-M6 runtime backup manifest", payload["errors"][0])
 
     def test_restore_fails_without_system_profile(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -905,6 +916,9 @@ class OptimizationBackupTests(unittest.TestCase):
             )
             combined = completed.stderr + completed.stdout
             self.assertEqual(completed.returncode, 2, combined)
+            payload = json.loads(completed.stdout)
+            self.assertFalse(payload["restored"])
+            self.assertIn("s1-m5-system-profile.json", payload["errors"][0])
             self.assertIn("s1-m5-system-profile.json", combined)
             self.assertFalse(set_log.exists())
 
@@ -1006,6 +1020,21 @@ class OptimizationBackupTests(unittest.TestCase):
         self.assertEqual(application["status"], "WARN")
         self.assertIn("backup", " ".join(application["warnings"]).lower())
 
+    def test_build_s2_m6_fail_when_apply_failed_and_rollback_failed(self) -> None:
+        profile = json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+        application = optimization_plan.build_s2_m6_optimization_application(
+            profile,
+            plan=None,
+            applied=False,
+            dry_run=False,
+            backup={
+                "status": "rollback_failed",
+                "rollback_available": False,
+                "restore_errors": ["failed to restore power_profile"],
+            },
+        )
+        self.assertEqual(application["status"], "FAIL")
+
     def test_build_s2_m6_warn_when_apply_failed_and_backup_restored(self) -> None:
         profile = json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
         application = optimization_plan.build_s2_m6_optimization_application(
@@ -1051,40 +1080,45 @@ class OptimizationBackupTests(unittest.TestCase):
         )
         self.assertEqual(merged["backup"], backup_before)
         self.assertTrue(merged["runtime_rollback"]["errors"])
+        self.assertEqual(merged["status"], "WARN")
+        self.assertTrue(
+            any("platform mismatch" in warning.lower() for warning in merged["warnings"]),
+            merged["warnings"],
+        )
 
+    @unittest.skipUnless(os.geteuid() == 0, "requires root for chattr publish-failure block")
     def test_root_chattr_publish_block_does_not_chown_tree(self) -> None:
+        if not _chattr_immutable(Path("/tmp/ai370-chattr-probe"), immutable=True):
+            self.skipTest("chattr +i unavailable on this filesystem")
+        _chattr_immutable(Path("/tmp/ai370-chattr-probe"), immutable=False)
         with tempfile.TemporaryDirectory() as directory:
             latest = Path(directory)
             profile_path = _write_profile(latest, "ai370")
             with mock.patch(
-                "tests.test_s2_m6_optimization_backup._chattr_immutable",
-                return_value=True,
-            ), mock.patch(
                 "tests.test_s2_m6_optimization_backup._chown_tree"
-            ) as chown_mock, mock.patch.object(os, "geteuid", return_value=0):
+            ) as chown_mock:
                 with _block_s2_m6_report_publish(latest, profile_path) as block_mode:
                     self.assertEqual(block_mode, "chattr")
             chown_mock.assert_not_called()
 
+    @unittest.skipUnless(os.geteuid() == 0, "requires root for runuser privilege drop")
     def test_run_restore_subprocess_uses_runuser_from_default_path(self) -> None:
+        runuser = shutil.which("runuser")
+        if not runuser:
+            self.skipTest("runuser not available")
         with tempfile.TemporaryDirectory() as directory:
             latest = Path(directory)
             argv = ["python3", "-c", "import sys; sys.exit(0)"]
             env = dict(os.environ)
-            with mock.patch.object(os, "geteuid", return_value=0), mock.patch.object(
-                shutil, "which", return_value="/usr/sbin/runuser"
-            ) as which_mock, mock.patch(
-                "tests.test_s2_m6_optimization_backup._chown_tree"
-            ), mock.patch(
+            with mock.patch(
                 "tests.test_s2_m6_optimization_backup.subprocess.run"
             ) as run_mock:
                 run_mock.return_value = subprocess.CompletedProcess(argv, 0, "", "")
                 _run_restore_subprocess(
                     argv, env=env, latest=latest, drop_privileges=True
                 )
-            which_mock.assert_called_with("runuser")
             cmd = run_mock.call_args[0][0]
-            self.assertEqual(cmd[0], "/usr/sbin/runuser")
+            self.assertEqual(cmd[0], runuser)
 
     def test_apply_without_powerprofilesctl_still_publishes_s2_m6(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1153,7 +1187,88 @@ class OptimizationBackupTests(unittest.TestCase):
             manifest_dir.mkdir()
             (manifest_dir / "manifest.json").write_text("{}", encoding="utf-8")
             resolved = optimization_backup.latest_manifest_in(latest)
-            self.assertEqual(resolved, manifest_dir / "manifest.json")
+            self.assertIsNone(resolved)
+
+    def test_latest_manifest_in_skips_failed_capture_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            root = optimization_backup.backup_root(latest)
+            failed_dir = root / "20260104T120000-failed001"
+            failed_dir.mkdir(parents=True)
+            (failed_dir / optimization_backup.MANIFEST_NAME).write_text(
+                json.dumps({"items": []}, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            captured_dir = root / "20260103T120000-captured01"
+            captured_dir.mkdir(parents=True)
+            (captured_dir / optimization_backup.MANIFEST_NAME).write_text(
+                json.dumps(
+                    {
+                        "items": [{"id": "power_profile", "observed": "balanced"}],
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            resolved = optimization_backup.latest_manifest_in(latest)
+            self.assertEqual(resolved, captured_dir / optimization_backup.MANIFEST_NAME)
+
+    def test_apply_skips_rollback_when_pre_apply_capture_failed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            latest = Path(directory)
+            (latest / "s1-m5-system-profile.json").write_text(
+                PROFILE_FIXTURE.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            _seed_manifest(latest, platform_id="ai370", observed="balanced")
+            state = latest / "power.state"
+            state.write_text("performance\n", encoding="utf-8")
+            set_log = latest / "set.log"
+            bindir = latest / "bin"
+            bindir.mkdir()
+            _powerprofilesctl_stub(bindir, set_performance_fails=True, get_fails=True)
+            (bindir / "cpupower").write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            (bindir / "cpupower").chmod(0o755)
+            env = {
+                **os.environ,
+                "LATEST_DIR": str(latest),
+                "PATH": f"{bindir}:/bin:/usr/bin",
+                "STATE": str(state),
+                "SET_LOG": str(set_log),
+                "DRY_RUN": "false",
+            }
+            completed = subprocess.run(
+                [
+                    "bash",
+                    str(TUNING_SCRIPT),
+                    "generic-ryzen-ai",
+                    "aggressive",
+                    "runtime",
+                    "apply",
+                    "--approve",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            self.assertEqual(completed.returncode, 1, completed.stderr + completed.stdout)
+            report = json.loads(
+                (latest / "s2-m6-optimization-application.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(report["backup"]["status"], "failed")
+            self.assertEqual(report["status"], "FAIL")
+            self.assertEqual(state.read_text(encoding="utf-8").strip(), "performance")
+            if set_log.exists():
+                self.assertNotIn(
+                    "set balanced",
+                    set_log.read_text(encoding="utf-8"),
+                    "rollback must not restore from stale manifest",
+                )
+            self.assertTrue(
+                any("rollback skipped" in warning.lower() for warning in report["warnings"]),
+                report["warnings"],
+            )
 
     def test_aggressive_apply_degrades_when_performance_profile_missing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1240,12 +1355,13 @@ class OptimizationBackupTests(unittest.TestCase):
                 text=True,
                 env=env,
             )
-            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            self.assertEqual(completed.returncode, 1, completed.stderr + completed.stdout)
             report = json.loads(
                 (latest / "s2-m6-optimization-application.json").read_text(encoding="utf-8")
             )
             system_profile.validate_document(report, optimization_plan.S2_M6_SCHEMA, "S2-M6")
             self.assertFalse(report["applied"])
+            self.assertEqual(report["status"], "WARN")
             self.assertEqual(report["backup"]["status"], "restored")
             self.assertEqual(state.read_text(encoding="utf-8").strip(), "balanced")
             self.assertNotIn("runtime_rollback", report)
@@ -1286,13 +1402,13 @@ class OptimizationBackupTests(unittest.TestCase):
                 env=env,
             )
             combined = completed.stderr + completed.stdout
-            self.assertEqual(completed.returncode, 0, combined)
+            self.assertEqual(completed.returncode, 1, combined)
             report = json.loads(
                 (latest / "s2-m6-optimization-application.json").read_text(encoding="utf-8")
             )
             system_profile.validate_document(report, optimization_plan.S2_M6_SCHEMA, "S2-M6")
             self.assertFalse(report["applied"])
-            self.assertEqual(report["status"], "WARN")
+            self.assertEqual(report["status"], "FAIL")
             self.assertEqual(report["backup"]["status"], "rollback_failed")
             self.assertFalse(report["backup"]["rollback_available"])
             self.assertTrue(report["backup"].get("restore_errors"))

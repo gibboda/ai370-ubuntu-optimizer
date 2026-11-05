@@ -16,18 +16,36 @@ import optimization_plan  # noqa: E402
 DEFAULT_PROFILE_NAME = "s1-m5-system-profile.json"
 
 
+def _emit_exit_result(exit_code: int, message: str) -> None:
+    """Print a JSON object on stdout for early exit paths (apply-time capture)."""
+    print(
+        json.dumps(
+            {
+                "restored": False,
+                "dry_run": False,
+                "restored_items": [],
+                "errors": [message],
+            },
+            indent=2,
+        )
+    )
+    raise SystemExit(exit_code)
+
+
 def _load_required_profile(path: Path) -> dict:
     try:
         profile = firmware_policy.load_system_profile(path)
     except FileNotFoundError as exc:
         print(f"[ERROR] {exc}", file=sys.stderr)
-        raise SystemExit(2) from exc
+        _emit_exit_result(2, str(exc))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        print(f"[ERROR] Stage 1 profile unreadable: {path}: {exc}", file=sys.stderr)
-        raise SystemExit(2) from exc
+        message = f"Stage 1 profile unreadable: {path}: {exc}"
+        print(f"[ERROR] {message}", file=sys.stderr)
+        _emit_exit_result(2, message)
     if not isinstance(profile, dict):
-        print(f"[ERROR] Stage 1 profile is not a JSON object: {path}", file=sys.stderr)
-        raise SystemExit(2)
+        message = f"Stage 1 profile is not a JSON object: {path}"
+        print(f"[ERROR] {message}", file=sys.stderr)
+        _emit_exit_result(2, message)
     return profile
 
 
@@ -119,8 +137,9 @@ def main() -> None:
         latest, args.manifest.resolve() if args.manifest else None
     )
     if manifest is None:
-        print("[ERROR] No S2-M6 runtime backup manifest found.", file=sys.stderr)
-        raise SystemExit(2)
+        message = "No S2-M6 runtime backup manifest found."
+        print(f"[ERROR] {message}", file=sys.stderr)
+        _emit_exit_result(2, message)
 
     manifest_data = json.loads(manifest.read_text(encoding="utf-8"))
     match = optimization_backup.check_manifest_platform_match(

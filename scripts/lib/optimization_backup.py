@@ -256,7 +256,25 @@ def capture_runtime_backup(
     }
     if status == "captured":
         write_apply_backup_pointer(latest_dir, block)
+    else:
+        clear_apply_backup_pointer(latest_dir)
     return block
+
+
+def _manifest_has_captured_items(manifest_path: Path) -> bool:
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    items = manifest.get("items")
+    return isinstance(items, list) and bool(items)
+
+
+def clear_apply_backup_pointer(latest_dir: Path) -> None:
+    """Drop a stale apply-session pointer (failed capture must not leave a prior manifest)."""
+    pointer_path = latest_dir / APPLY_POINTER_NAME
+    if pointer_path.is_file():
+        pointer_path.unlink()
 
 
 def write_apply_backup_pointer(latest_dir: Path, block: dict[str, Any]) -> None:
@@ -266,6 +284,7 @@ def write_apply_backup_pointer(latest_dir: Path, block: dict[str, Any]) -> None:
         "manifest": block.get("manifest"),
         "backup_id": block.get("backup_id"),
         "manifest_path": str(manifest_path) if manifest_path else None,
+        "capture_status": block.get("status"),
         "captured_at": _utc_now(),
     }
     (latest_dir / APPLY_POINTER_NAME).write_text(
@@ -281,15 +300,18 @@ def manifest_from_apply_pointer(latest_dir: Path) -> Path | None:
         pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
+    capture_status = pointer.get("capture_status", "captured")
+    if capture_status != "captured":
+        return None
     stored_path = pointer.get("manifest_path")
     if stored_path:
         path = Path(str(stored_path))
-        if path.is_file():
+        if path.is_file() and _manifest_has_captured_items(path):
             return path
     backup_id = pointer.get("backup_id")
     if backup_id:
         candidate = backup_root(latest_dir) / str(backup_id) / MANIFEST_NAME
-        if candidate.is_file():
+        if candidate.is_file() and _manifest_has_captured_items(candidate):
             return candidate
     return None
 
@@ -336,7 +358,7 @@ def latest_manifest_in(latest_dir: Path) -> Path | None:
     )
     for backup_id in reversed(backup_ids):
         candidate = root / backup_id / MANIFEST_NAME
-        if candidate.is_file():
+        if candidate.is_file() and _manifest_has_captured_items(candidate):
             return candidate
     return None
 

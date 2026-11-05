@@ -165,6 +165,22 @@ def build_s2_m6_optimization_application(
     status = "WARN" if warnings else "PASS"
     if applied and not dry_run and backup_block.get("status") == "failed":
         status = "WARN"
+    if not dry_run and not applied:
+        backup_status = backup_block.get("status")
+        if backup_status == "restored":
+            status = "WARN"
+        elif backup_status == "rollback_failed":
+            status = "FAIL"
+        elif backup_status == "failed":
+            degraded_apply = any(
+                marker in warning
+                for warning in warnings
+                for marker in (
+                    "powerprofilesctl not available",
+                    "power_profile: unsupported",
+                )
+            )
+            status = "WARN" if degraded_apply else "FAIL"
     classified = firmware_policy.classified_platform_id(profile)
     plan_artifact = "s2-m5-optimization-plan.json"
     if plan and plan.get("artifact"):
@@ -333,7 +349,13 @@ def merge_manual_runtime_rollback(
             message = "Dry-run rollback: no runtime settings were restored."
             if message not in warnings:
                 warnings.append(message)
+        else:
+            message = "Runtime rollback refused: platform mismatch with backup manifest."
+            if message not in warnings:
+                warnings.append(message)
         updated["warnings"] = warnings
+        if updated.get("status") == "PASS":
+            updated["status"] = "WARN"
         return updated
     backup = dict(updated.get("backup") or {})
     backup.setdefault("rollback_available", False)
