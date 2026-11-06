@@ -24,6 +24,13 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Print runner disk and image metadata
+        shell: bash
+        run: |
+          df -h
+          df -h "$GITHUB_WORKSPACE"
+          echo "$ImageOS $ImageVersion"
+
       - name: Snapshot CI host drift canary
         shell: bash
         run: bash .github/scripts/ci-host-drift-canary.sh snapshot "${RUNNER_TEMP}/ci-host-canary.txt"
@@ -72,6 +79,7 @@ jobs:
             tests.test_s2_optimize_profile \
             tests.test_s2_m5_optimization_plan \
             tests.test_s2_m6_optimization_apply \
+            tests.test_s2_m6_optimization_backup \
             tests.test_repository_instructions \
             tests.test_external_agent \
             tests.test_github_label_policy \
@@ -101,6 +109,15 @@ jobs:
           bash .github/scripts/ci-as-test-user.sh bash tests/smoke_tier1.sh
           bash .github/scripts/ci-as-test-user.sh bash tests/smoke_stage2_platform.sh
           bash .github/scripts/ci-as-test-user.sh bash tests/smoke_tier2.sh
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: portable-test-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/latest/**
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Verify CI host drift canary
         if: always()

@@ -113,6 +113,79 @@ class Stage2GpuVisibilityTests(unittest.TestCase):
         self.assertEqual(hardware["gpu"]["devices"][0]["bound_driver"], "amdgpu")
         self.assertEqual(capability_ladder.target_gpu_arch_from_profile(profile), "gfx1150")
 
+    def test_missing_driver_keeps_vulkan_rocm_unknown(self) -> None:
+        checks = {
+            "amdgpu": "missing",
+            "gpu_arch": "gfx1150",
+            "gpu_text": "1002:1900 AMD GPU",
+            "vulkan": "not-visible",
+            "rocm": "not-visible",
+            "opencl": "not-visible",
+        }
+        hardware = capability_ladder.hardware_from_live_gpu_checks(checks)
+        report = capability_ladder.build_s2_m3_visibility_report(
+            hardware,
+            checks,
+            capability_ladder.consumed_profile_from_system_profile(
+                json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+            ),
+        )
+        system_profile.validate_document(report, capability_ladder.S2_M3_SCHEMA, "S2-M3")
+        by_id = {step["id"]: step for step in report["ladder"]["steps"]}
+        self.assertEqual(by_id["DRIVER_READY"]["status"], "not_satisfied")
+        self.assertEqual(by_id["VULKAN_READY"]["status"], "not_satisfied")
+        self.assertEqual(by_id["ROCM_READY"]["status"], "not_satisfied")
+        self.assertEqual(by_id["APPLICATION_READY"]["status"], "unknown")
+        self.assertFalse(report["ladder"]["validation_claim"])
+
+    def test_missing_vulkan_with_driver_loaded(self) -> None:
+        checks = {
+            "amdgpu": "loaded",
+            "gpu_arch": "gfx1150",
+            "gpu_text": "1002:1900 AMD GPU",
+            "vulkan": "not-visible",
+            "rocm": "visible",
+            "opencl": "visible",
+        }
+        hardware = capability_ladder.hardware_from_live_gpu_checks(checks)
+        report = capability_ladder.build_s2_m3_visibility_report(
+            hardware,
+            checks,
+            capability_ladder.consumed_profile_from_system_profile(
+                json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+            ),
+        )
+        system_profile.validate_document(report, capability_ladder.S2_M3_SCHEMA, "S2-M3")
+        by_id = {step["id"]: step for step in report["ladder"]["steps"]}
+        self.assertEqual(by_id["DRIVER_READY"]["status"], "satisfied")
+        self.assertEqual(by_id["VULKAN_READY"]["status"], "not_satisfied")
+        self.assertEqual(by_id["ROCM_READY"]["status"], "satisfied")
+        self.assertEqual(by_id["APPLICATION_READY"]["status"], "unknown")
+
+    def test_missing_rocm_with_vulkan_visible(self) -> None:
+        checks = {
+            "amdgpu": "loaded",
+            "gpu_arch": "gfx1150",
+            "gpu_text": "1002:1900 AMD GPU",
+            "vulkan": "visible",
+            "rocm": "not-visible",
+            "opencl": "not-visible",
+        }
+        hardware = capability_ladder.hardware_from_live_gpu_checks(checks)
+        report = capability_ladder.build_s2_m3_visibility_report(
+            hardware,
+            checks,
+            capability_ladder.consumed_profile_from_system_profile(
+                json.loads(PROFILE_FIXTURE.read_text(encoding="utf-8"))
+            ),
+        )
+        system_profile.validate_document(report, capability_ladder.S2_M3_SCHEMA, "S2-M3")
+        by_id = {step["id"]: step for step in report["ladder"]["steps"]}
+        self.assertEqual(by_id["VULKAN_READY"]["status"], "satisfied")
+        self.assertEqual(by_id["ROCM_READY"]["status"], "not_satisfied")
+        self.assertEqual(by_id["HIP_READY"]["status"], "not_satisfied")
+        self.assertEqual(by_id["FRAMEWORK_READY"]["status"], "unknown")
+
     def test_missing_device_checks_publish_unsupported_ladder(self) -> None:
         checks = {
             "amdgpu": "missing",

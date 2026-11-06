@@ -126,7 +126,7 @@ class Stage2OptimizationApplyTests(unittest.TestCase):
             self.assertTrue(report["approved"])
             self.assertTrue(report["dry_run"])
             self.assertFalse(report["applied"])
-            self.assertEqual(report["backup"]["status"], "not-implemented")
+            self.assertEqual(report["backup"]["status"], "skipped")
             compat = json.loads((latest / "tier1-platform-tuning.json").read_text(encoding="utf-8"))
             self.assertTrue(compat["runtime_apply"]["requested"])
             self.assertTrue(compat["runtime_apply"]["dry_run"])
@@ -139,8 +139,19 @@ class Stage2OptimizationApplyTests(unittest.TestCase):
             fake_bin = latest / "bin"
             fake_bin.mkdir()
             marker = latest / "powerprofilesctl.called"
+            state = latest / "power.state"
+            state.write_text("balanced\n", encoding="utf-8")
             stub = fake_bin / "powerprofilesctl"
-            stub.write_text('#!/bin/sh\necho called > "$MARKER"\n', encoding="utf-8")
+            stub.write_text(
+                "#!/bin/sh\n"
+                'case "$1" in\n'
+                "  get) echo balanced; exit 0 ;;\n"
+                "  list) echo balanced performance; exit 0 ;;\n"
+                '  set) echo called > "$MARKER"; echo "$2" > "$STATE"; exit 0 ;;\n'
+                "esac\n"
+                "exit 1\n",
+                encoding="utf-8",
+            )
             stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
             completed = subprocess.run(
                 [
@@ -160,6 +171,7 @@ class Stage2OptimizationApplyTests(unittest.TestCase):
                     "LATEST_DIR": str(latest),
                     "PATH": f"{fake_bin}:{os.environ.get('PATH', '')}",
                     "MARKER": str(marker),
+                    "STATE": str(state),
                     "DRY_RUN": "false",
                 },
             )
@@ -168,6 +180,7 @@ class Stage2OptimizationApplyTests(unittest.TestCase):
             report = json.loads(
                 (latest / "s2-m6-optimization-application.json").read_text(encoding="utf-8")
             )
+            system_profile.validate_document(report, optimization_plan.S2_M6_SCHEMA, "S2-M6")
             self.assertTrue(report["approved"])
             self.assertFalse(report["dry_run"])
             self.assertTrue(report["applied"])

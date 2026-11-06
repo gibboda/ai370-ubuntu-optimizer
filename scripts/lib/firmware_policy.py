@@ -79,14 +79,38 @@ def observed_text(value: Any) -> str | None:
     return text
 
 
+def _normalize_bios_version_token(value: str) -> str:
+    text = value.strip().strip('"').strip("'")
+    if len(text) >= 2 and text[0] in {"v", "V"} and text[1].isdigit():
+        text = text[1:]
+    return text.casefold()
+
+
+def _bios_version_tokens(observed: str) -> list[str]:
+    import re
+
+    tokens: list[str] = []
+    for chunk in re.split(r"\s+", observed.strip()):
+        if not chunk:
+            continue
+        for piece in re.split(r"[^\w.\-_]+", chunk):
+            if piece:
+                tokens.append(piece)
+    return tokens
+
+
 def bios_acceptable(observed: str | None, expected: str) -> str:
     """Return true/false/unknown for observed BIOS vs platform policy."""
     expected_text = (expected or "").strip()
     observed_text_value = (observed or "").strip()
     if not expected_text or not observed_text_value:
         return "unknown"
-    if observed_text_value == expected_text or expected_text in observed_text_value:
+    normalized_expected = _normalize_bios_version_token(expected_text)
+    if _normalize_bios_version_token(observed_text_value) == normalized_expected:
         return "true"
+    for token in _bios_version_tokens(observed_text_value):
+        if _normalize_bios_version_token(token) == normalized_expected:
+            return "true"
     return "false"
 
 

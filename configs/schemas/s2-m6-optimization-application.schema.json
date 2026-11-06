@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ai370.local/schemas/s2-m6-optimization-application-v1.json",
   "title": "S2-M6 Optimization Application v1",
-  "description": "Stage 2 approved optimization application. Records whether --approve was given and whether runtime commands ran. Backup and rollback remain Planned.",
+  "description": "Stage 2 approved optimization application. Records --approve, runtime apply, and optional runtime backup/rollback metadata.",
   "type": "object",
   "required": [
     "schema",
@@ -38,6 +38,7 @@
     "plan_artifact": {"type": "string", "minLength": 1},
     "runtime_apply": {"$ref": "#/$defs/runtimeApply"},
     "backup": {"$ref": "#/$defs/backup"},
+    "runtime_rollback": {"$ref": "#/$defs/runtimeRollback"},
     "warnings": {"type": "array", "items": {"type": "string", "minLength": 1}},
     "notes": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
   },
@@ -96,12 +97,48 @@
         "commands": {"type": "string", "minLength": 1}
       }
     },
+    "runtimeRollback": {
+      "type": "object",
+      "required": ["requested", "dry_run", "restored"],
+      "additionalProperties": false,
+      "properties": {
+        "requested": {"type": "boolean"},
+        "dry_run": {"type": "boolean"},
+        "restored": {"type": "boolean"},
+        "manifest": {"type": "string", "minLength": 1},
+        "restored_items": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "errors": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
     "backup": {
       "type": "object",
       "required": ["status"],
       "additionalProperties": false,
       "properties": {
-        "status": {"enum": ["not-implemented"]},
+        "status": {
+          "enum": [
+            "skipped",
+            "captured",
+            "failed",
+            "restored",
+            "rollback_failed",
+            "not-implemented"
+          ]
+        },
+        "manifest": {"type": "string", "minLength": 1},
+        "backup_id": {"type": "string", "minLength": 1},
+        "items": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "rollback_available": {"type": "boolean"},
+        "restore_errors": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
         "note": {"type": "string", "minLength": 1}
       }
     }

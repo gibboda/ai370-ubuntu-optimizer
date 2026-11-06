@@ -43,6 +43,7 @@ Usage (Roadmap stages - recommended):
   ./ai370-optimize.sh stage2-optimize-plan [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
   ./ai370-optimize.sh stage2-optimize-apply --approve [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime]
        [--dry-run]
+  ./ai370-optimize.sh stage2-optimize-rollback --approve
   ./ai370-optimize.sh stage2 [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
        [--with-lemonade] [--with-digest] [--with-rag]
   ./ai370-optimize.sh stage2-validate [--profile=ai370] [--mode=safe|aggressive] [--persistence=runtime] [--offline]
@@ -94,6 +95,7 @@ Stage 2 platform (S2-M7 aggregate via 90-validate shim; S2-M1/M2 canonical JSON 
     always refreshes tier3-validation.json on this command.
   stage2-optimize-plan = 40-platform-tuning plan-only (S2-M5 In progress)
   stage2-optimize-apply --approve = 40-platform-tuning apply (S2-M6 In progress)
+  stage2-optimize-rollback --approve = restore apply-session S2-M6 runtime backup
   stage2-platform-validate = firmware + kernel + GPU + NPU visibility + S2-M7 (90-validate shim)
   --strict (or AI370_STAGE1_STRICT=true): FAIL if gfx1150 or NPU missing (S2-M7)
   stage2-platform-inventory = detect + firmware + kernel + GPU + inventory-scope S2-M7
@@ -322,6 +324,19 @@ run_stage2_optimize_apply() {
   ensure_stage1_profile
   run_script "scripts/40-platform-tuning.sh" apply --approve
   write_report_index
+}
+
+run_stage2_optimize_rollback() {
+  if [[ "$APPROVE" != "true" ]]; then
+    echo "[ERROR] stage2-optimize-rollback requires --approve (mutates runtime power profile)."
+    exit 2
+  fi
+  echo "[INFO] Stage 2 optimize rollback – restore apply-session S2-M6 runtime backup"
+  ai370_init_latest_dir
+  python3 "$PROJECT_ROOT/scripts/s2-m6-restore-runtime-backup.py" \
+    --latest-dir "$LATEST_DIR" \
+    --profile "$LATEST_DIR/s1-m5-system-profile.json" \
+    --dry-run "$DRY_RUN"
 }
 
 write_report_index() {
@@ -640,6 +655,10 @@ case "$CMD" in
 
   stage2-optimize-apply)
     run_stage2_optimize_apply
+    ;;
+
+  stage2-optimize-rollback)
+    run_stage2_optimize_rollback
     ;;
 
   stage2)
