@@ -189,5 +189,25 @@ class Stage1ClassifyTests(unittest.TestCase):
                     self.assertEqual(completed.stdout, expected)
 
 
+class HardwareProfileValidationClassTests(unittest.TestCase):
+    PROFILES_DIR = ROOT / "configs/profiles"
+
+    def test_catalog_validation_classes_are_canonical(self) -> None:
+        for profile in hardware_profile.profiles():
+            self.assertIn(profile["validation"], hardware_profile.PROFILE_VALIDATION_CLASSES)
+
+    def test_env_profile_validation_matches_hardware_profiles_json(self) -> None:
+        import re
+
+        pattern = re.compile(r'^PROFILE_VALIDATION="([^"]+)"', re.MULTILINE)
+        for profile in hardware_profile.profiles():
+            profile_id = profile["id"]
+            env_path = self.PROFILES_DIR / f"{profile_id}.env"
+            self.assertTrue(env_path.is_file(), f"missing env for {profile_id}")
+            match = pattern.search(env_path.read_text(encoding="utf-8"))
+            self.assertIsNotNone(match, profile_id)
+            self.assertEqual(match.group(1), profile["validation"])
+
+
 if __name__ == "__main__":
     unittest.main()

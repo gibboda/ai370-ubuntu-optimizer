@@ -16,6 +16,7 @@ PROFILE_FIXTURE = ROOT / "tests/fixtures/system-profile/v3/valid-reference.json"
 KERNEL_SCRIPT = ROOT / "scripts/30-validate-kernel.sh"
 sys.path.insert(0, str(ROOT / "scripts/lib"))
 import kernel_validation  # noqa: E402
+import kernel_validation_facts  # noqa: E402
 import system_profile  # noqa: E402
 
 
@@ -146,6 +147,142 @@ class Stage2KernelDriverTests(unittest.TestCase):
                 )
             self.assertEqual(destination.read_bytes(), before)
 
+    def test_build_s2_m2_normalizes_string_boolean_facts(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.14.0",
+                "target_kernel": "6.11",
+                "kernel_ok": "true",
+                "amdgpu_ok": "false",
+                "amdxdna_seen": "unknown",
+                "linux_firmware_state": "present",
+                "status": "WARN",
+                "os_description": "Ubuntu",
+                "os_version": "24.04",
+                "os_codename": "noble",
+                "recommendations": [],
+            },
+        )
+        system_profile.validate_document(report, kernel_validation.S2_M2_SCHEMA, "S2-M2")
+        self.assertIs(report["kernel"]["acceptable"], True)
+        self.assertIs(report["modules"]["amdgpu_loaded"], False)
+        self.assertIs(report["modules"]["amdxdna_seen"], None)
+        self.assertIn("module-amdgpu-not-loaded", report["support_assessment"]["codes"])
+
+    def test_support_matrix_flags_unsupported_ubuntu_and_missing_amdgpu(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.14.0",
+                "target_kernel": "6.11",
+                "kernel_ok": True,
+                "amdgpu_ok": False,
+                "amdxdna_seen": False,
+                "linux_firmware_state": "present",
+                "status": "WARN",
+                "os_description": "Ubuntu",
+                "os_version": "22.04",
+                "os_codename": "jammy",
+                "recommendations": [],
+            },
+        )
+        system_profile.validate_document(report, kernel_validation.S2_M2_SCHEMA, "S2-M2")
+        codes = report["support_assessment"]["codes"]
+        self.assertIn("os-ubuntu-22.04-unsupported", codes)
+        self.assertIn("module-amdgpu-not-loaded", codes)
+
+    def test_support_matrix_unlisted_ubuntu_release(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.14.0",
+                "target_kernel": "6.11",
+                "kernel_ok": True,
+                "amdgpu_ok": True,
+                "amdxdna_seen": False,
+                "linux_firmware_state": "present",
+                "status": "PASS",
+                "os_description": "Ubuntu 26.10",
+                "os_version": "26.10",
+                "os_codename": "unknown",
+                "recommendations": [],
+            },
+        )
+        self.assertIn("os-unlisted-ubuntu-release", report["support_assessment"]["codes"])
+        self.assertEqual(report["status"], "WARN")
+        self.assertTrue(
+            any("os-unlisted-ubuntu-release" in item for item in report["warnings"]),
+            report["warnings"],
+        )
+
+    def test_support_matrix_non_ubuntu_does_not_emit_unlisted_code(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.14.0",
+                "target_kernel": "6.11",
+                "kernel_ok": True,
+                "amdgpu_ok": True,
+                "amdxdna_seen": False,
+                "linux_firmware_state": "present",
+                "status": "PASS",
+                "os_description": "Fedora Linux 41",
+                "os_version": "41",
+                "os_codename": "unknown",
+                "recommendations": [],
+            },
+        )
+        self.assertNotIn(
+            "os-unlisted-ubuntu-release", report["support_assessment"]["codes"]
+        )
+
+    def test_support_matrix_kernel_below_minimum_downgrades_pass(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.8.0",
+                "target_kernel": "6.11",
+                "kernel_ok": True,
+                "amdgpu_ok": True,
+                "amdxdna_seen": True,
+                "linux_firmware_state": "present",
+                "status": "PASS",
+                "os_description": "Ubuntu",
+                "os_version": "24.04",
+                "os_codename": "noble",
+                "recommendations": [],
+            },
+        )
+        self.assertIn("kernel-below-minimum", report["support_assessment"]["codes"])
+        self.assertIs(report["kernel"]["acceptable"], False)
+        self.assertEqual(report["status"], "WARN")
+
+    def test_support_matrix_unknown_module_inventory_code(self) -> None:
+        profile = load_reference_profile()
+        report = kernel_validation.build_s2_m2_kernel_driver_validation(
+            profile,
+            facts={
+                "kernel": "6.14.0",
+                "target_kernel": "6.11",
+                "kernel_ok": True,
+                "amdgpu_ok": None,
+                "amdxdna_seen": None,
+                "linux_firmware_state": "present",
+                "status": "WARN",
+                "os_description": "Ubuntu",
+                "os_version": "24.04",
+                "os_codename": "noble",
+                "recommendations": [],
+            },
+        )
+        self.assertIn("module-inventory-unavailable", report["support_assessment"]["codes"])
+
     def test_unknown_module_probe_is_not_false(self) -> None:
         profile = load_reference_profile()
         report = kernel_validation.build_s2_m2_kernel_driver_validation(
@@ -222,6 +359,81 @@ class Stage2KernelDriverTests(unittest.TestCase):
             any("inventory is unavailable" in item for item in canonical["recommendations"]),
             canonical["recommendations"],
         )
+
+    def test_kernel_facts_writer_rejects_invalid_recommendations_json(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / "facts.json"
+            completed = subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "scripts/s2-m2-write-kernel-facts-json.py"),
+                    "--output",
+                    str(out),
+                    "--recommendations-json",
+                    "{not-json",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 2, completed.stderr + completed.stdout)
+            self.assertFalse(out.exists())
+
+    def test_kernel_facts_json_writer_emits_booleans_not_strings(self) -> None:
+        document = kernel_validation_facts.build_kernel_facts_document(
+            kernel="6.12.0",
+            target_kernel="6.11",
+            kernel_ok="true",
+            amdgpu_ok="false",
+            amdxdna_seen="unknown",
+            linux_firmware_state="present",
+            status="WARN",
+            os_description="Ubuntu",
+            os_version="24.04",
+            os_codename="noble",
+            recommendations=[],
+        )
+        self.assertIs(document["kernel_ok"], True)
+        self.assertIs(document["amdgpu_ok"], False)
+        self.assertIsNone(document["amdxdna_seen"])
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / "facts.json"
+            completed = subprocess.run(
+                [
+                    "python3",
+                    str(ROOT / "scripts/s2-m2-write-kernel-facts-json.py"),
+                    "--output",
+                    str(out),
+                    "--kernel",
+                    "6.12.0",
+                    "--target-kernel",
+                    "6.11",
+                    "--kernel-ok",
+                    "true",
+                    "--amdgpu-ok",
+                    "false",
+                    "--amdxdna-seen",
+                    "unknown",
+                    "--linux-firmware-state",
+                    "present",
+                    "--status",
+                    "WARN",
+                    "--os-description",
+                    "Ubuntu",
+                    "--os-version",
+                    "24.04",
+                    "--os-codename",
+                    "noble",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 0)
+            loaded = json.loads(out.read_text(encoding="utf-8"))
+        self.assertIs(loaded["kernel_ok"], True)
+        self.assertIs(loaded["amdgpu_ok"], False)
+        self.assertIsNone(loaded["amdxdna_seen"])
 
 
 if __name__ == "__main__":

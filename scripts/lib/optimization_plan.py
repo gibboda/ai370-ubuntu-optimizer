@@ -128,14 +128,59 @@ def build_s2_m6_optimization_application(
     dry_run: bool = False,
     applied: bool = False,
     commands: str = COMMANDS_RELATIVE,
+    backup: dict[str, Any] | None = None,
+    extra_warnings: list[str] | None = None,
 ) -> dict[str, Any]:
     """Build the canonical S2-M6 apply document. Caller must have --approve."""
     warnings: list[str] = []
+    if extra_warnings:
+        warnings.extend(str(item) for item in extra_warnings if str(item).strip())
     if dry_run:
         warnings.append("Dry-run: runtime tuning commands were not executed.")
     if plan is None:
         warnings.append("S2-M5 plan artifact was missing; apply recorded without a consumed plan.")
+    backup_block = dict(
+        backup
+        or {
+            "status": "skipped" if dry_run else "not-implemented",
+            "rollback_available": False,
+            "note": "No runtime backup was recorded for this apply.",
+        }
+    )
+    backup_block.setdefault("rollback_available", False)
+    if applied and not dry_run and backup_block.get("status") != "captured":
+        warnings.append(
+            "Runtime apply ran without a successful pre-apply backup; rollback may be unavailable."
+        )
+    if backup_block.get("status") == "rollback_failed":
+        warnings.append("Runtime rollback did not complete successfully.")
+    if (
+        not dry_run
+        and not applied
+        and backup_block.get("status") == "restored"
+    ):
+        warnings.append(
+            "Runtime apply did not succeed; pre-apply backup was restored."
+        )
     status = "WARN" if warnings else "PASS"
+    if applied and not dry_run and backup_block.get("status") == "failed":
+        status = "WARN"
+    if not dry_run and not applied:
+        backup_status = backup_block.get("status")
+        if backup_status == "restored":
+            status = "WARN"
+        elif backup_status == "rollback_failed":
+            status = "FAIL"
+        elif backup_status == "failed":
+            degraded_apply = any(
+                marker in warning
+                for warning in warnings
+                for marker in (
+                    "powerprofilesctl not available",
+                    "power_profile: unsupported",
+                )
+            )
+            status = "WARN" if degraded_apply else "FAIL"
     classified = firmware_policy.classified_platform_id(profile)
     plan_artifact = "s2-m5-optimization-plan.json"
     if plan and plan.get("artifact"):
@@ -163,15 +208,12 @@ def build_s2_m6_optimization_application(
             "dry_run": dry_run,
             "commands": commands,
         },
-        "backup": {
-            "status": "not-implemented",
-            "note": ("Configuration backup and rollback remain Planned S2-M6 exit evidence."),
-        },
+        "backup": backup_block,
         "warnings": warnings,
         "notes": [
             "S2-M6 requires --approve. AI370_APPLY_TUNING alone does not apply tuning.",
-            "Backup and rollback are not implemented; keep S2-M6 In progress until "
-            "those exit-evidence tests exist.",
+            "Runtime backup captures power profile state before apply; use stage2-optimize-rollback "
+            "to restore the latest manifest.",
         ],
     }
 
@@ -267,6 +309,80 @@ def publish_s2_m5_optimization_plan(
     if compat_markdown is not None and markdown_text is not None:
         system_profile.atomic_write_text(compat_markdown, markdown_text)
     return plan
+
+
+def _restore_refused_before_mutating(result: dict[str, Any]) -> bool:
+    """True when rollback was blocked (platform contract), not attempted restore."""
+    if result.get("platform_mismatch"):
+        return True
+    for error in result.get("errors") or []:
+        text = str(error).lower()
+        if "platform" in text and ("mismatch" in text or "missing" in text):
+            return True
+    return False
+
+
+def merge_manual_runtime_rollback(
+    application: dict[str, Any],
+    *,
+    dry_run: bool,
+    result: dict[str, Any],
+) -> dict[str, Any]:
+    """Update an existing S2-M6 report after ``stage2-optimize-rollback``."""
+    updated = dict(application)
+    warnings = list(updated.get("warnings") or [])
+    rollback_block: dict[str, Any] = {
+        "requested": True,
+        "dry_run": dry_run,
+        "restored": bool(result.get("restored")) and not dry_run,
+        "restored_items": list(result.get("restored_items") or []),
+        "errors": list(result.get("errors") or []),
+    }
+    manifest = str(result.get("manifest") or "").strip()
+    if manifest:
+        rollback_block["manifest"] = manifest
+    if result.get("error"):
+        rollback_block["errors"] = list(rollback_block["errors"]) + [str(result["error"])]
+    updated["runtime_rollback"] = rollback_block
+    if _restore_refused_before_mutating(result):
+        if dry_run:
+            message = "Dry-run rollback: no runtime settings were restored."
+            if message not in warnings:
+                warnings.append(message)
+        else:
+            message = "Runtime rollback refused: platform mismatch with backup manifest."
+            if message not in warnings:
+                warnings.append(message)
+        updated["warnings"] = warnings
+        if updated.get("status") == "PASS":
+            updated["status"] = "WARN"
+        return updated
+    backup = dict(updated.get("backup") or {})
+    backup.setdefault("rollback_available", False)
+    if dry_run:
+        message = "Dry-run rollback: no runtime settings were restored."
+        if message not in warnings:
+            warnings.append(message)
+    elif result.get("restored"):
+        backup["status"] = "restored"
+        backup["note"] = "Manual rollback restored pre-apply runtime backup."
+    else:
+        backup["status"] = "rollback_failed"
+        backup["rollback_available"] = False
+        backup["note"] = "Manual rollback did not complete."
+        restore_errors = list(result.get("errors") or [])
+        if restore_errors:
+            backup["restore_errors"] = restore_errors
+        message = "Runtime rollback failed."
+        if message not in warnings:
+            warnings.append(message)
+    updated["backup"] = backup
+    updated["warnings"] = warnings
+    if not dry_run and not result.get("restored"):
+        updated["status"] = "WARN"
+    elif warnings and updated.get("status") == "PASS":
+        updated["status"] = "WARN"
+    return updated
 
 
 def publish_s2_m6_optimization_application(

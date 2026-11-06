@@ -139,7 +139,7 @@ else
   MISSING_TOOLS="$(collect_missing_tools)"
 fi
 
-if [[ "${PROFILE_VALIDATION:-strict}" == "strict" ]]; then
+if [[ "${PROFILE_VALIDATION:-project-verified}" == "project-verified" ]]; then
   if [[ -n "${EXPECTED_CPU:-}" && "$CPU_MODEL" != *"$EXPECTED_CPU"* ]]; then
     msg="CPU mismatch: expected '$EXPECTED_CPU', detected '${CPU_MODEL:-unknown}'"
     mark_fail "$msg"
@@ -279,7 +279,7 @@ ids=lines("RULE_IDS"); statuses=lines("RULE_STATUSES"); cats=lines("RULE_CATEGOR
 for i, rid in enumerate(ids):
     rules.append({"id": rid, "status": statuses[i] if i < len(statuses) else "UNKNOWN", "category": cats[i] if i < len(cats) else "UNKNOWN", "message": msgs[i] if i < len(msgs) else ""})
 data={
-  "profile": {"id": env("PROFILE_ID") or env("PROFILE"), "name": env("PROFILE_NAME") or "unknown", "validation": env("PROFILE_VALIDATION") or "strict", "mode": env("MODE"), "persistence": env("PERSISTENCE")},
+  "profile": {"id": env("PROFILE_ID") or env("PROFILE"), "name": env("PROFILE_NAME") or "unknown", "validation": env("PROFILE_VALIDATION") or "project-verified", "mode": env("MODE"), "persistence": env("PERSISTENCE")},
   "validation": {"status": env("status"), "rules": rules, "failures": lines("FAILURES"), "warnings": lines("WARNINGS"), "opportunities": lines("OPPORTUNITIES"), "skips": lines("SKIPS")},
   "system": {"vendor": env("SYSTEM_VENDOR"), "product": env("SYSTEM_PRODUCT"), "bios_version": env("BIOS_VERSION"), "os": env("OS_DESCRIPTION"), "os_id": env("OS_ID"), "os_version_id": env("OS_VERSION_ID"), "os_codename": env("OS_CODENAME"), "kernel": env("KERNEL")},
   "cpu": {"vendor": env("CPU_VENDOR"), "model": env("CPU_MODEL"), "logical_cpus": int0(env("CPU_CORES"))},

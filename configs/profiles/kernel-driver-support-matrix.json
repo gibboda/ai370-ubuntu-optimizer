@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "description": "Declarative kernel, module, and firmware support matrix for S2-M2. Classified-platform overlays adjust policy; generic hosts are not failed solely for missing reference GPU/NPU modules.",
+  "minimum_kernel_default": "6.11",
+  "os_support": [
+    {
+      "family": "ubuntu",
+      "version_ids": ["24.04", "26.04"],
+      "codenames": ["noble", "resolute"],
+      "tier": "supported"
+    },
+    {
+      "family": "ubuntu",
+      "version_ids": ["22.04"],
+      "codenames": ["jammy"],
+      "tier": "unsupported",
+      "code": "os-ubuntu-22.04-unsupported"
+    }
+  ],
+  "module_expectations": {
+    "amdgpu": {
+      "when_gpu_present": "warn_if_missing",
+      "code_missing": "module-amdgpu-not-loaded",
+      "code_unknown": "module-inventory-unavailable"
+    },
+    "amdxdna": {
+      "when_npu_present": "info_if_missing",
+      "code_missing": "module-amdxdna-not-loaded",
+      "code_unknown": "module-inventory-unavailable"
+    }
+  },
+  "firmware_expectations": {
+    "amdgpu_directory": {
+      "path": "/lib/firmware/amdgpu",
+      "when_gpu_present": "warn_if_missing",
+      "code_missing": "firmware-amdgpu-dir-missing"
+    }
+  },
+  "classified_platform_overlays": {
+    "ai370": {
+      "minimum_kernel": "6.11",
+      "notes": "Reference Minisforum AI370 / Strix Point enablement expects HWE/OEM 6.11+."
+    },
+    "ai470": {
+      "minimum_kernel": "6.11",
+      "notes": "HX 470 / AI Series uses the same minimum kernel policy until platform data extends the matrix."
+    },
+    "generic-ryzen-ai": {
+      "minimum_kernel": "6.11",
+      "notes": "Generic Ryzen AI hosts use matrix defaults without reference-only FAIL."
+    }
+  }
+}

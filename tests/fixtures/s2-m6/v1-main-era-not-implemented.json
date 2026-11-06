@@ -1,0 +1,45 @@
+{
+  "schema": {
+    "name": "s2-m6-optimization-application",
+    "version": 1,
+    "uri": "https://ai370.local/schemas/s2-m6-optimization-application-v1.json"
+  },
+  "stage": 2,
+  "milestone": "S2-M6",
+  "artifact": "s2-m6-optimization-application",
+  "consumed_profile": {
+    "artifact": "s1-m5-system-profile.json",
+    "schema": {
+      "name": "ai370-system-profile",
+      "version": 3,
+      "uri": "https://ai370.local/schemas/system-profile-v3.json"
+    },
+    "fingerprint": {
+      "algorithm": "sha256",
+      "algorithm_version": 1,
+      "value": "022d700e39ace1057b4f46f83ee7fc12480adbd6336c576585b3fe1214e4908b"
+    }
+  },
+  "status": "PASS",
+  "cli_profile": "ai370",
+  "classified_platform_id": "ai370",
+  "approved": true,
+  "dry_run": false,
+  "applied": false,
+  "plan_artifact": "s2-m5-optimization-plan.json",
+  "runtime_apply": {
+    "requested": true,
+    "applied": false,
+    "dry_run": false,
+    "commands": "reports/latest/tier1-cpu-runtime-commands.sh"
+  },
+  "backup": {
+    "status": "not-implemented",
+    "note": "Configuration backup and rollback remain Planned S2-M6 exit evidence."
+  },
+  "warnings": [],
+  "notes": [
+    "S2-M6 requires --approve. AI370_APPLY_TUNING alone does not apply tuning.",
+    "Backup and rollback are not implemented; keep S2-M6 In progress until those exit-evidence tests exist."
+  ]
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -230,6 +231,133 @@ class Stage2NpuVisibilityTests(unittest.TestCase):
         check_210 = CHECK_210.read_text(encoding="utf-8")
         self.assertIn("skipped-visibility-only", check_210)
         self.assertIn("VISIBILITY_ONLY", check_210)
+
+    def test_provider_smoke_visible_is_not_a_provider_candidate(self) -> None:
+        checks = {
+            "module_present": True,
+            "device_nodes_present": True,
+            "firmware_ready": True,
+            "runtime_ready": True,
+            "backend_ready": True,
+            "provider_smoke": "visible",
+        }
+        selection = capability_ladder.npu_provider_selection_from_checks(checks)
+        self.assertIsNone(selection)
+
+    def test_provider_smoke_missing_and_not_run_are_not_candidates(self) -> None:
+        for smoke in ("missing", "not-run"):
+            checks = {
+                "module_present": True,
+                "device_nodes_present": True,
+                "firmware_ready": True,
+                "runtime_ready": True,
+                "backend_ready": True,
+                "provider_smoke": smoke,
+            }
+            selection = capability_ladder.npu_provider_selection_from_checks(checks)
+            self.assertIsNone(selection)
+
+    def test_collector_end_to_end_writes_provider_selection(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            (workspace / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
+            (workspace / "configs").symlink_to(ROOT / "configs", target_is_directory=True)
+            latest = workspace / "reports" / "latest"
+            latest.mkdir(parents=True)
+            (latest / "s1-m5-system-profile.json").write_text(
+                PROFILE_FIXTURE.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            (latest / "xrt-ryzen-ai-install.json").write_text(
+                json.dumps({"runtime": {"xrt": "available", "ryzen_ai": "available"}}),
+                encoding="utf-8",
+            )
+            (latest / "npu-acceleration-status.json").write_text(
+                json.dumps({"runtime_tools": "available"}),
+                encoding="utf-8",
+            )
+            (latest / "npu-capabilities.json").write_text(
+                json.dumps({"xrt_smi_examine": "ok", "xrt_smi_validate": "skipped-visibility-only"}),
+                encoding="utf-8",
+            )
+            (latest / "vitis-ai-ep-status.json").write_text(
+                json.dumps(
+                    {
+                        "amd_provider_candidates": ["VitisAIExecutionProvider"],
+                        "provider_smoke": "visible",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            collector = workspace / "scripts" / "s2-m4-validate-npu-stack.sh"
+            env = os.environ.copy()
+            env["AI370_SKIP_NPU_INVENTORY"] = "true"
+            completed = subprocess.run(
+                ["bash", str(collector), "generic-ryzen-ai", "safe", "runtime", "true"],
+                check=False,
+                capture_output=True,
+                text=True,
+                cwd=workspace,
+                env=env,
+            )
+            combined = completed.stderr + completed.stdout
+            self.assertEqual(completed.returncode, 0, combined)
+            report_path = latest / "s2-m4-npu-runtime-validation.json"
+            self.assertTrue(report_path.is_file(), combined)
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            system_profile.validate_document(report, capability_ladder.S2_M4_SCHEMA, "S2-M4")
+            self.assertIn("provider_selection", report)
+            self.assertEqual(
+                report["provider_selection"]["candidates"], ["VitisAIExecutionProvider"]
+            )
+
+    def test_collector_checks_payload_wires_provider_selection(self) -> None:
+        """Mirror s2-m4-validate-npu-stack.sh payload fields (L125-137)."""
+        checks = {
+            "module_present": True,
+            "device_nodes_present": True,
+            "firmware_ready": True,
+            "runtime_ready": True,
+            "backend_ready": True,
+            "provider_candidates": ["VitisAIExecutionProvider"],
+            "provider_smoke": "visible",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            report = self.publish_cli(checks, PROFILE_FIXTURE, Path(directory) / "report.json")
+        self.assertIn("provider_selection", report)
+        self.assertEqual(
+            report["provider_selection"]["candidates"], ["VitisAIExecutionProvider"]
+        )
+
+    def test_provider_selection_does_not_claim_inference(self) -> None:
+        checks = {
+            "module_present": True,
+            "device_nodes_present": True,
+            "firmware_ready": True,
+            "runtime_ready": True,
+            "backend_ready": True,
+            "provider_candidates": ["VitisAIExecutionProvider"],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            report = self.publish_cli(checks, PROFILE_FIXTURE, Path(directory) / "report.json")
+        self.assertIn("provider_selection", report)
+        self.assertFalse(report["provider_selection"]["inference_executed"])
+        self.assertTrue(report["provider_selection"]["selection_recorded"])
+        self.assertFalse(report["ladder"]["validation_claim"])
+        by_id = {step["id"]: step for step in report["ladder"]["steps"]}
+        self.assertEqual(by_id["APPLICATION_READY"]["status"], "unknown")
+
+    def test_backend_ready_without_provider_candidates_stays_visibility_only(self) -> None:
+        checks = {
+            "module_present": True,
+            "device_nodes_present": True,
+            "firmware_ready": True,
+            "runtime_ready": True,
+            "backend_ready": True,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            report = self.publish_cli(checks, PROFILE_FIXTURE, Path(directory) / "report.json")
+        self.assertNotIn("provider_selection", report)
+        self.assertFalse(report["ladder"]["validation_claim"])
 
     def test_collector_requires_stage1_profile(self) -> None:
         source = COLLECTOR.read_text(encoding="utf-8")

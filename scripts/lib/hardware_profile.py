@@ -21,6 +21,14 @@ CATALOG_PATH = PROJECT_ROOT / "configs/profiles/hardware-profiles.json"
 TUNING_DIR = PROJECT_ROOT / "configs/tuning"
 _PROFILE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _MODE_PROFILES = frozenset({"safe", "aggressive"})
+PROFILE_VALIDATION_CLASSES = frozenset(
+    {
+        "project-verified",
+        "stage1-probe-verified",
+        "officially-documented",
+        "capability-detection-rule",
+    }
+)
 _MATCH_KEYS = (
     "id",
     "confidence",
@@ -77,9 +85,15 @@ def load_catalog() -> dict[str, Any]:
             "requires",
             "capabilities",
             "providers",
+            "validation",
         ):
             if key not in profile:
                 raise HardwareProfileError(f"{profile_id} is missing {key}")
+        validation = str(profile.get("validation") or "")
+        if validation not in PROFILE_VALIDATION_CLASSES:
+            raise HardwareProfileError(
+                f"{profile_id} validation {validation!r} is not in {sorted(PROFILE_VALIDATION_CLASSES)}"
+            )
         overlay = str(profile.get("optimization_profile") or "")
         if overlay:
             _require_profile_id(overlay, f"{profile_id} optimization_profile")

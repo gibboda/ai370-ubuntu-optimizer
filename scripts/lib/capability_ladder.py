@@ -634,6 +634,40 @@ def build_s2_m3_visibility_report(
     }
 
 
+_PROVIDER_SMOKE_NON_CANDIDATES = frozenset(
+    {
+        "not-visible",
+        "unknown",
+        "missing",
+        "not-run",
+        "visible",
+    }
+)
+
+
+def npu_provider_selection_from_checks(checks: dict[str, Any]) -> dict[str, Any] | None:
+    """Record provider selection without claiming executed inference."""
+    candidates = checks.get("provider_candidates")
+    if not isinstance(candidates, list) or not candidates:
+        provider_smoke = str(checks.get("provider_smoke") or "").strip()
+        if provider_smoke and provider_smoke not in _PROVIDER_SMOKE_NON_CANDIDATES:
+            candidates = [provider_smoke]
+        else:
+            return None
+    cleaned = [
+        str(item).strip()
+        for item in candidates
+        if str(item).strip() and str(item).strip() not in _PROVIDER_SMOKE_NON_CANDIDATES
+    ]
+    if not cleaned:
+        return None
+    return {
+        "candidates": cleaned,
+        "selection_recorded": True,
+        "inference_executed": False,
+    }
+
+
 def build_s2_m4_visibility_report(
     hardware: dict[str, Any],
     checks: dict[str, Any],
@@ -642,9 +676,10 @@ def build_s2_m4_visibility_report(
     notes: list[str] | None = None,
 ) -> dict[str, Any]:
     """Build the canonical S2-M4 NPU runtime visibility report document."""
+    provider_selection = npu_provider_selection_from_checks(checks)
     normalized_checks = normalize_npu_checks(checks, hardware)
     ladder = npu_ladder_from_visibility(hardware, normalized_checks)
-    return {
+    document: dict[str, Any] = {
         "schema": {
             "name": "s2-m4-npu-runtime-validation",
             "version": 1,
@@ -663,3 +698,6 @@ def build_s2_m4_visibility_report(
             "MODEL_READY and APPLICATION_READY remain unknown in Stage 2 visibility.",
         ],
     }
+    if provider_selection is not None:
+        document["provider_selection"] = provider_selection
+    return document
