@@ -1088,18 +1088,25 @@ class OptimizationBackupTests(unittest.TestCase):
 
     @unittest.skipUnless(os.geteuid() == 0, "requires root for chattr publish-failure block")
     def test_root_chattr_publish_block_does_not_chown_tree(self) -> None:
-        if not _chattr_immutable(Path("/tmp/ai370-chattr-probe"), immutable=True):
-            self.skipTest("chattr +i unavailable on this filesystem")
-        _chattr_immutable(Path("/tmp/ai370-chattr-probe"), immutable=False)
-        with tempfile.TemporaryDirectory() as directory:
-            latest = Path(directory)
-            profile_path = _write_profile(latest, "ai370")
-            with mock.patch(
-                "tests.test_s2_m6_optimization_backup._chown_tree"
-            ) as chown_mock:
-                with _block_s2_m6_report_publish(latest, profile_path) as block_mode:
-                    self.assertEqual(block_mode, "chattr")
-            chown_mock.assert_not_called()
+        with tempfile.TemporaryDirectory() as probe_directory:
+            probe_path = Path(probe_directory) / "chattr-probe"
+            probe_path.touch()
+            if not _chattr_immutable(probe_path, immutable=True):
+                self.skipTest("chattr +i unavailable on this filesystem")
+            try:
+                with tempfile.TemporaryDirectory() as directory:
+                    latest = Path(directory)
+                    profile_path = _write_profile(latest, "ai370")
+                    with mock.patch(
+                        "tests.test_s2_m6_optimization_backup._chown_tree"
+                    ) as chown_mock:
+                        with _block_s2_m6_report_publish(
+                            latest, profile_path
+                        ) as block_mode:
+                            self.assertEqual(block_mode, "chattr")
+                    chown_mock.assert_not_called()
+            finally:
+                self.assertTrue(_chattr_immutable(probe_path, immutable=False))
 
     @unittest.skipUnless(os.geteuid() == 0, "requires root for runuser privilege drop")
     def test_run_restore_subprocess_uses_runuser_from_default_path(self) -> None:
