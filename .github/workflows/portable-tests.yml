@@ -52,6 +52,7 @@ jobs:
             tests.test_s2_optimize_profile \
             tests.test_s2_m5_optimization_plan \
             tests.test_s2_m6_optimization_apply \
+            tests.test_s2_m6_optimization_backup \
             tests.test_repository_instructions \
             tests.test_external_agent \
             tests.test_github_label_policy \

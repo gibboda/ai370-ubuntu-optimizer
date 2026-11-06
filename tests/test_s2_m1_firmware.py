@@ -60,11 +60,21 @@ class FirmwarePolicyTests(unittest.TestCase):
         self.assertEqual(report["bios_acceptable"], "unknown")
 
     def test_matching_bios_is_acceptable(self) -> None:
-        self.assertEqual(firmware_policy.bios_acceptable("2.01", "2.01"), "true")
-        self.assertEqual(firmware_policy.bios_acceptable("MB 2.01", "2.01"), "true")
-        self.assertEqual(firmware_policy.bios_acceptable("2.00", "2.01"), "false")
-        self.assertEqual(firmware_policy.bios_acceptable(None, "2.01"), "unknown")
-        self.assertEqual(firmware_policy.bios_acceptable("2.01", ""), "unknown")
+        cases = [
+            ("2.01", "2.01", "true"),
+            ("MB 2.01", "2.01", "true"),
+            ("V2.01", "2.01", "true"),
+            ("11.00", "1.00", "false"),
+            ("2.010", "2.01", "false"),
+            ("1.00", "11.00", "false"),
+            ("2.00", "2.01", "false"),
+            ("", "2.01", "unknown"),
+            (None, "2.01", "unknown"),
+            ("2.01", "", "unknown"),
+        ]
+        for observed, expected, result in cases:
+            with self.subTest(observed=observed, expected=expected):
+                self.assertEqual(firmware_policy.bios_acceptable(observed, expected), result)
 
     def test_missing_profile_raises(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -129,25 +129,19 @@ main() {
   local facts_json recommendations_json
   facts_json="$(mktemp "${TMPDIR:-/tmp}/s2-m2-facts.XXXXXX")"
   recommendations_json="$(printf '%s\n' "${recommendations[@]:-}" | python3 -c 'import json,sys; print(json.dumps([x for x in sys.stdin.read().splitlines() if x.strip()]))')"
-  python3 - "$facts_json" "$kernel" "$target_kernel" "$kernel_ok" "$amdgpu_ok" \
-    "$amdxdna_seen" "$linux_firmware_state" "$status" \
-    "$os_description" "$os_version" "$os_codename" "$recommendations_json" <<'PY'
-import json, sys
-from pathlib import Path
-Path(sys.argv[1]).write_text(json.dumps({
-    "kernel": sys.argv[2],
-    "target_kernel": sys.argv[3],
-    "kernel_ok": sys.argv[4],
-    "amdgpu_ok": sys.argv[5],
-    "amdxdna_seen": sys.argv[6],
-    "linux_firmware_state": sys.argv[7],
-    "status": sys.argv[8],
-    "os_description": sys.argv[9],
-    "os_version": sys.argv[10],
-    "os_codename": sys.argv[11],
-    "recommendations": json.loads(sys.argv[12] or "[]"),
-}, indent=2) + "\n", encoding="utf-8")
-PY
+  python3 "$PROJECT_ROOT/scripts/s2-m2-write-kernel-facts-json.py" \
+    --output "$facts_json" \
+    --kernel "$kernel" \
+    --target-kernel "$target_kernel" \
+    --kernel-ok "$kernel_ok" \
+    --amdgpu-ok "$amdgpu_ok" \
+    --amdxdna-seen "$amdxdna_seen" \
+    --linux-firmware-state "$linux_firmware_state" \
+    --status "$status" \
+    --os-description "$os_description" \
+    --os-version "$os_version" \
+    --os-codename "$os_codename" \
+    --recommendations-json "$recommendations_json"
 
   python3 "$PROJECT_ROOT/scripts/s2-m2-publish-kernel-driver-validation.py" \
     --profile "$PROFILE_FILE" \

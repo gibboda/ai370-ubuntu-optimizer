@@ -363,5 +363,17 @@ print(f"[INFO] Offline model storage status: {status}")
 print(f"[INFO] Wrote {status_json}")
 print(f"[INFO] Wrote {status_md}")
 if status == "FAIL":
+    for item in messages:
+        if item.get("level") == "FAIL":
+            print(f"[FAIL] {item['message']}", file=sys.stderr)
+    storage = report.get("storage") or {}
+    if storage:
+        print(
+            "[FAIL] Storage: "
+            f"{storage.get('free_gb')} GiB free / "
+            f"{storage.get('minimum_free_gb')} GiB required "
+            f"(model_root={report.get('model_root')})",
+            file=sys.stderr,
+        )
     sys.exit(1)
 PY

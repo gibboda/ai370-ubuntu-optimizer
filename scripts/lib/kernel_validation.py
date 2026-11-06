@@ -12,29 +12,113 @@ from pathlib import Path
 from typing import Any
 
 import firmware_policy
+import kernel_validation_facts
 import system_profile
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 S2_M2_SCHEMA = PROJECT_ROOT / "configs/schemas/s2-m2-kernel-driver-validation.schema.json"
 S2_M2_ARTIFACT = "s2-m2-kernel-driver-validation"
+SUPPORT_MATRIX = PROJECT_ROOT / "configs/profiles/kernel-driver-support-matrix.json"
 COMPAT_RELATIVE = "reports/latest"
+
+
+def load_support_matrix(path: Path = SUPPORT_MATRIX) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _version_ge(left: str, right: str) -> bool:
+    import re
+
+    def parts(value: str) -> list[int]:
+        return [int(x) for x in re.findall(r"\d+", value)[:3]]
+
+    left_parts = parts(left) + [0, 0, 0]
+    right_parts = parts(right) + [0, 0, 0]
+    left_parts = left_parts[:3]
+    right_parts = right_parts[:3]
+    return left_parts >= right_parts
+
+
+def evaluate_support_matrix(
+    facts: dict[str, Any],
+    *,
+    classified_platform_id: str | None,
+    profile: dict[str, Any] | None = None,
+    matrix: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Evaluate declarative kernel/driver support; returns codes and tier."""
+    data = matrix or load_support_matrix()
+    overlay = (data.get("classified_platform_overlays") or {}).get(classified_platform_id or "")
+    minimum_kernel = str(
+        (overlay or {}).get("minimum_kernel")
+        or data.get("minimum_kernel_default")
+        or "6.11"
+    )
+    kernel_version = str(facts.get("kernel") or "")
+    kernel_ok = kernel_validation_facts.bool_or_none(facts.get("kernel_ok"))
+    os_version = str(facts.get("os_version") or "")
+    os_codename = str(facts.get("os_codename") or "").lower()
+    codes: list[str] = []
+    tier = "unknown"
+    matched_os = False
+    for entry in data.get("os_support") or []:
+        version_ids = [str(item) for item in (entry.get("version_ids") or [])]
+        codenames = [str(item).lower() for item in (entry.get("codenames") or [])]
+        if os_version in version_ids or os_codename in codenames:
+            tier = str(entry.get("tier") or "unknown")
+            matched_os = True
+            if tier == "unsupported" and entry.get("code"):
+                codes.append(str(entry["code"]))
+            break
+    os_description = str(facts.get("os_description") or "").lower()
+    if (
+        not matched_os
+        and "ubuntu" in os_description
+        and (os_version or os_codename)
+    ):
+        codes.append("os-unlisted-ubuntu-release")
+    matrix_kernel_ok: bool | None = None
+    if kernel_version:
+        matrix_kernel_ok = _version_ge(kernel_version, minimum_kernel)
+        if not matrix_kernel_ok:
+            codes.append("kernel-below-minimum")
+    elif kernel_ok is False:
+        codes.append("kernel-below-minimum")
+    gpu_present = bool((profile or {}).get("gpus"))
+    accelerators = (profile or {}).get("accelerators") or []
+    npu_present = any(
+        isinstance(item, dict) and str(item.get("kind") or "").lower() == "npu"
+        for item in accelerators
+    )
+    module_rules = data.get("module_expectations") or {}
+    amdgpu_ok = kernel_validation_facts.bool_or_none(facts.get("amdgpu_ok"))
+    if gpu_present:
+        rule = module_rules.get("amdgpu") or {}
+        if amdgpu_ok is False and rule.get("code_missing"):
+            codes.append(str(rule["code_missing"]))
+        elif amdgpu_ok is None and rule.get("code_unknown"):
+            codes.append(str(rule["code_unknown"]))
+    amdxdna_seen = kernel_validation_facts.bool_or_none(facts.get("amdxdna_seen"))
+    if npu_present:
+        rule = module_rules.get("amdxdna") or {}
+        if amdxdna_seen is False and rule.get("code_missing"):
+            codes.append(str(rule["code_missing"]))
+    firmware_state = str(facts.get("linux_firmware_state") or "unknown")
+    fw_rules = (data.get("firmware_expectations") or {}).get("amdgpu_directory") or {}
+    if gpu_present and firmware_state == "missing" and fw_rules.get("code_missing"):
+        codes.append(str(fw_rules["code_missing"]))
+    return {
+        "matrix_version": data.get("schema_version", 1),
+        "minimum_kernel": minimum_kernel,
+        "os_tier": tier,
+        "codes": codes,
+        "classified_platform_id": classified_platform_id,
+        "kernel_acceptable": matrix_kernel_ok,
+    }
 
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
-
-
-def _bool_or_none(value: Any) -> bool | None:
-    if value is None:
-        return None
-    if isinstance(value, bool):
-        return value
-    text = str(value).strip().lower()
-    if text in {"true", "1", "yes", "on"}:
-        return True
-    if text in {"false", "0", "no", "off"}:
-        return False
-    return None
 
 
 def build_s2_m2_kernel_driver_validation(
@@ -51,9 +135,9 @@ def build_s2_m2_kernel_driver_validation(
         str(item) for item in (facts.get("recommendations") or []) if str(item).strip()
     ]
     warnings = [str(item) for item in (facts.get("warnings") or []) if str(item).strip()]
-    kernel_ok = _bool_or_none(facts.get("kernel_ok"))
-    amdgpu_ok = _bool_or_none(facts.get("amdgpu_ok"))
-    amdxdna_seen = _bool_or_none(facts.get("amdxdna_seen"))
+    kernel_ok = kernel_validation_facts.bool_or_none(facts.get("kernel_ok"))
+    amdgpu_ok = kernel_validation_facts.bool_or_none(facts.get("amdgpu_ok"))
+    amdxdna_seen = kernel_validation_facts.bool_or_none(facts.get("amdxdna_seen"))
     firmware_state = str(facts.get("linux_firmware_state") or "unknown")
     if firmware_state not in {"present", "missing", "unknown"}:
         firmware_state = "unknown"
@@ -68,6 +152,31 @@ def build_s2_m2_kernel_driver_validation(
             status = "WARN"
     if status == "WARN" and not warnings and recommendations:
         warnings = list(recommendations)
+    classified = firmware_policy.classified_platform_id(profile)
+    support = evaluate_support_matrix(
+        facts,
+        classified_platform_id=classified,
+        profile=profile,
+    )
+    matrix_kernel_ok = support.pop("kernel_acceptable", None)
+    for code in support["codes"]:
+        message = f"Support matrix: {code}"
+        if message not in warnings:
+            warnings.append(message)
+    # Any matrix code (unlisted OS, below-minimum kernel, missing modules, …)
+    # or an unsupported OS tier must not leave a PASS status while warnings
+    # and support_assessment.codes report problems.
+    if status == "PASS" and (support["codes"] or support["os_tier"] == "unsupported"):
+        status = "WARN"
+    if matrix_kernel_ok is not None:
+        kernel_ok = matrix_kernel_ok
+        if matrix_kernel_ok is False and status == "PASS":
+            status = "WARN"
+    elif kernel_version := str(facts.get("kernel") or ""):
+        kernel_ok = _version_ge(kernel_version, support["minimum_kernel"])
+        if kernel_ok is False and status == "PASS":
+            status = "WARN"
+    target_minimum = support["minimum_kernel"]
     return {
         "schema": {
             "name": "s2-m2-kernel-driver-validation",
@@ -80,13 +189,14 @@ def build_s2_m2_kernel_driver_validation(
         "consumed_profile": firmware_policy.consumed_profile_block(profile),
         "status": status,
         "cli_profile": cli_profile,
-        "classified_platform_id": firmware_policy.classified_platform_id(profile),
+        "classified_platform_id": classified,
+        "support_assessment": support,
         "mode": mode,
         "persistence": persistence,
         "dry_run": dry_run,
         "kernel": {
             "version": str(facts.get("kernel") or "unknown"),
-            "target_minimum": str(facts.get("target_kernel") or "6.11"),
+            "target_minimum": target_minimum,
             "acceptable": kernel_ok,
         },
         "os": {
