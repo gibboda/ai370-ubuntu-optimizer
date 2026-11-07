@@ -226,6 +226,13 @@ Release Please PRs (`autorelease:*` or `chore(release):`) are left untouched.
    Deterministic GitHub Actions (ShellCheck, portable tests, PR title lint,
    labels) never call an LLM.
 
+   The **Portable tests** workflow runs the suite as an unprivileged `ai370ci`
+   user (no passwordless `sudo`), attempts to revoke the job user's sudo when
+   the image allows it, sets `AI370_CI_NO_HOST_MUTATION=1` for test steps, and
+   compares a host drift canary before and after the run. Repository scripts may
+   read `AI370_CI_NO_HOST_MUTATION` in a follow-up change to refuse apply-path
+   host mutation when it is set; CI does not depend on scripts honoring it yet.
+
    Independent review (advisory; not a merge gate):
    - **Exclusive (SuperGrok)**: Use Grok Build (`grok`, included with
      SuperGrok) for interactive, agentic PR review on the pull-request
