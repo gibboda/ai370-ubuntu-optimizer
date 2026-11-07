@@ -133,6 +133,12 @@ class AgentArchitectureConformanceTests(unittest.TestCase):
         self.assertNotRegex(self.workflow, r"(?i)\b(?:xai|gemini|openai|anthropic)_api_key\b")
         self.assertNotRegex(self.workflow, r"(?i)\b(?:grok|antigravity|cursor)_gh_pat\b")
 
+    def test_reports_are_owned_by_runner_before_artifact_upload(self):
+        prepare = self.workflow.index("name: Prepare reports for artifact upload")
+        upload = self.workflow.index("name: Upload test reports")
+        self.assertLess(prepare, upload)
+        self.assertIn("chown -R --no-dereference", self.workflow[prepare:upload])
+
     def test_collapsed_yaml_comments_join_wrapped_secret_free_phrase(self):
         wrapped = (
             "# Deterministic validation only. This workflow never calls an LLM and does\n"

@@ -110,6 +110,18 @@ jobs:
           bash .github/scripts/ci-as-test-user.sh bash tests/smoke_stage2_platform.sh
           bash .github/scripts/ci-as-test-user.sh bash tests/smoke_tier2.sh
 
+      - name: Prepare reports for artifact upload
+        if: always()
+        shell: bash
+        run: |
+          sudo bash -c '
+            owner="$1"
+            if [[ -d reports && ! -L reports && -d reports/latest && ! -L reports/latest ]]; then
+              chown --no-dereference "$owner" reports
+              chown -R --no-dereference "$owner" reports/latest
+            fi
+          ' _ "$(id -u):$(id -g)"
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
