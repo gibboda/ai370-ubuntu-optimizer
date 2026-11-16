@@ -47,6 +47,7 @@ if ! id "\$test_user" >/dev/null 2>&1; then
 fi
 home_dir="\$(eval echo "~\${test_user}")"
 exec sudo -n -u "\$test_user" -H env \\
+  GITHUB_WORKSPACE="\${workspace}" \\
   AI370_CI_NO_HOST_MUTATION="\${AI370_CI_NO_HOST_MUTATION:-}" \\
   RUNNER_TEMP="\${RUNNER_TEMP:-}" \\
   HOME="\$home_dir" \\
