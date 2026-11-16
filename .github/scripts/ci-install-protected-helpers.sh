@@ -3,8 +3,10 @@
 set -euo pipefail
 
 repo_root="${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
+run_user="$(whoami)"
 test_user="${AI370_CI_TEST_USER:-ai370ci}"
 ci_root='/opt/ai370-ci'
+sudoers_runas='/etc/sudoers.d/ai370-portable-ci-runas'
 
 if ! sudo -n true 2>/dev/null; then
   echo '::error::Protected CI helper install requires passwordless sudo'
@@ -61,5 +63,20 @@ GITHUB_WORKSPACE='${repo_root}'
 EOF
 sudo chmod 0644 "$config_path"
 sudo chown root:root "$config_path"
+
+sudoers_tmp="$(mktemp)"
+trap 'rm -f "$sudoers_tmp"' EXIT
+cat >"$sudoers_tmp" <<EOF
+# Allow the job user to run commands only as ${test_user} without a password.
+${run_user} ALL=(${test_user}) NOPASSWD: ALL
+EOF
+sudo cp "$sudoers_tmp" "$sudoers_runas"
+sudo chmod 0440 "$sudoers_runas"
+sudo chown root:root "$sudoers_runas"
+if ! sudo visudo -cf "$sudoers_runas" >/dev/null; then
+  echo '::error::Invalid portable CI run-as sudoers fragment'
+  sudo rm -f "$sudoers_runas"
+  exit 1
+fi
 
 echo "Installed protected portable CI helpers under ${ci_root}"
