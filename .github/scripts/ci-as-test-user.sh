@@ -20,7 +20,7 @@ if ! id "$test_user" >/dev/null 2>&1; then
   exit 1
 fi
 
-exec sudo -u "$test_user" -H env \
+exec sudo -n -u "$test_user" -H env \
   AI370_CI_NO_HOST_MUTATION="${AI370_CI_NO_HOST_MUTATION:-}" \
   RUNNER_TEMP="${RUNNER_TEMP:-}" \
   HOME="$(eval echo "~$test_user")" \
