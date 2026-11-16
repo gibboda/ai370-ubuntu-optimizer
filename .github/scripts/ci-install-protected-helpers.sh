@@ -58,8 +58,6 @@ cat >"$sudoers_tmp" <<EOF
 # Allow only the constrained portable-test launcher for ${run_user}.
 Defaults!${launcher} env_keep += "AI370_CI_NO_HOST_MUTATION"
 Defaults!${launcher} env_keep += "RUNNER_TEMP"
-Defaults!${launcher} !requiretty
-Defaults!${launcher} !use_pty
 ${run_user} ALL=(${test_user}) NOPASSWD: ${launcher}
 EOF
 sudo cp "$sudoers_tmp" "$sudoers_launcher"
