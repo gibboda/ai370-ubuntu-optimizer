@@ -16,20 +16,20 @@ if [[ ! -x "$launcher" ]]; then
   exit 1
 fi
 
-if ! sudo visudo -cf "$sudoers_launcher" >/dev/null 2>&1; then
-  echo '::error::Portable CI launcher sudoers fragment is missing or invalid'
-  exit 1
-fi
+test_user="$(grep -E '^AI370_CI_TEST_USER=' /opt/ai370-ci/config 2>/dev/null | head -n1 | cut -d= -f2- | tr -d "'\" ")"
+test_user="${test_user:-ai370ci}"
 
-sudo -n bash -s -- "$run_user" "$sudoers_launcher" <<'SUDO_DROP'
+sudo -n bash -s -- "$run_user" "$test_user" "$launcher" "$sudoers_launcher" <<'SUDO_DROP'
 set -euo pipefail
 run_user="$1"
-sudoers_launcher="$2"
+test_user="$2"
+launcher="$3"
+sudoers_launcher="$4"
 
 restore_if_invalid() {
   local file="$1"
   local backup="$2"
-  if ! visudo -cf "$file" >/dev/null 2>&1 && [[ "$file" == /etc/sudoers ]]; then
+  if [[ "$file" == /etc/sudoers ]]; then
     if ! visudo -c >/dev/null 2>&1; then
       cp "$backup" "$file"
       return 1
@@ -46,12 +46,13 @@ restore_if_invalid() {
 while IFS= read -r sudoers_file; do
   [[ -n "$sudoers_file" && -f "$sudoers_file" ]] || continue
   [[ "$sudoers_file" == "$sudoers_launcher" ]] && continue
-  if ! grep -qE "^${run_user}[[:space:]].*NOPASSWD" "$sudoers_file" 2>/dev/null; then
+  if ! grep -qE "^${run_user}[[:space:]].*ALL=\\(ALL\\).*NOPASSWD" "$sudoers_file" 2>/dev/null \
+    && ! grep -qE "^${run_user}[[:space:]]ALL=\\(ALL\\).*NOPASSWD" "$sudoers_file" 2>/dev/null; then
     continue
   fi
   backup="$(mktemp)"
   cp "$sudoers_file" "$backup"
-  sed -i "/^${run_user}[[:space:]].*NOPASSWD/d" "$sudoers_file"
+  sed -i "/^${run_user}[[:space:]].*ALL=(ALL).*NOPASSWD/d" "$sudoers_file"
   if ! restore_if_invalid "$sudoers_file" "$backup"; then
     echo "::error::Refusing to keep invalid sudoers file ${sudoers_file}"
     exit 1
@@ -60,10 +61,20 @@ while IFS= read -r sudoers_file; do
   echo "Removed broad NOPASSWD rule for ${run_user} from ${sudoers_file}"
 done < <(find /etc/sudoers /etc/sudoers.d -maxdepth 1 -type f 2>/dev/null || true)
 
+cat >"$sudoers_launcher" <<EOF
+# Managed by portable CI; allow only the test-user launcher.
+Defaults!${launcher} env_keep += "AI370_CI_NO_HOST_MUTATION"
+Defaults!${launcher} env_keep += "RUNNER_TEMP"
+${run_user} ALL=(${test_user}) NOPASSWD: ${launcher}
+EOF
+chmod 0440 "$sudoers_launcher"
+chown root:root "$sudoers_launcher"
+if ! visudo -cf "$sudoers_launcher" >/dev/null 2>&1; then
+  echo "::error::Failed to refresh portable CI launcher sudoers fragment"
+  exit 1
+fi
+echo "Refreshed portable CI launcher sudoers for ${run_user}"
 SUDO_DROP
-
-test_user="$(grep -E '^AI370_CI_TEST_USER=' /opt/ai370-ci/config 2>/dev/null | head -n1 | cut -d= -f2- | tr -d "'\" ")"
-test_user="${test_user:-ai370ci}"
 
 if sudo -n true 2>/dev/null; then
   echo '::notice::Broad passwordless sudo remains on this image; tests still run only via the protected launcher'
