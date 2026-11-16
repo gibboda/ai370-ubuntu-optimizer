@@ -13,6 +13,7 @@ source_dir="${workspace}/reports/latest"
 mkdir -p "$dest"
 if [[ -d "$source_dir" && ! -L "$source_dir" ]]; then
   cp -a "$source_dir/." "$dest/"
+  chmod -R a+rX "$dest"
   echo "Staged reports for artifact upload at ${dest}"
 else
   echo "No reports/latest directory to stage"
