@@ -133,11 +133,14 @@ class AgentArchitectureConformanceTests(unittest.TestCase):
         self.assertNotRegex(self.workflow, r"(?i)\b(?:xai|gemini|openai|anthropic)_api_key\b")
         self.assertNotRegex(self.workflow, r"(?i)\b(?:grok|antigravity|cursor)_gh_pat\b")
 
-    def test_reports_are_owned_by_runner_before_artifact_upload(self):
-        prepare = self.workflow.index("name: Prepare reports for artifact upload")
+    def test_reports_are_staged_for_runner_artifact_upload(self):
+        stage = self.workflow.index("name: Stage reports for artifact upload")
         upload = self.workflow.index("name: Upload test reports")
-        self.assertLess(prepare, upload)
-        self.assertIn("chown -R --no-dereference", self.workflow[prepare:upload])
+        self.assertLess(stage, upload)
+        section = self.workflow[stage:upload]
+        self.assertIn("ci-stage-reports-for-upload.sh", section)
+        self.assertNotIn("sudo bash -c", section)
+        self.assertIn("portable-test-reports", self.workflow[upload:])
 
     def test_collapsed_yaml_comments_join_wrapped_secret_free_phrase(self):
         wrapped = (

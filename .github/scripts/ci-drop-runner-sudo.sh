@@ -1,50 +1,84 @@
 #!/usr/bin/env bash
-# Best-effort removal of passwordless sudo for the workflow user before portable tests.
-# Primary isolation is ci-as-test-user.sh; this reduces accidental sudo use while preparing the job.
+# Remove broad passwordless sudo; keep only the constrained portable-test launcher.
 set -euo pipefail
 
 run_user="$(whoami)"
+launcher='/opt/ai370-ci/bin/ci-test-user-launcher'
+sudoers_launcher='/etc/sudoers.d/ai370-portable-ci-launcher'
 
 if ! sudo -n true 2>/dev/null; then
   echo 'Passwordless sudo already unavailable for job user'
   exit 0
 fi
 
-removed=0
+if [[ ! -x "$launcher" ]]; then
+  echo '::error::Protected CI launcher missing; run ci-install-protected-helpers.sh first'
+  exit 1
+fi
+
+if ! sudo visudo -cf "$sudoers_launcher" >/dev/null 2>&1; then
+  echo '::error::Portable CI launcher sudoers fragment is missing or invalid'
+  exit 1
+fi
+
+sudo -n bash -s -- "$run_user" "$sudoers_launcher" <<'SUDO_DROP'
+set -euo pipefail
+run_user="$1"
+sudoers_launcher="$2"
+
+restore_if_invalid() {
+  local file="$1"
+  local backup="$2"
+  if ! visudo -cf "$file" >/dev/null 2>&1 && [[ "$file" == /etc/sudoers ]]; then
+    if ! visudo -c >/dev/null 2>&1; then
+      cp "$backup" "$file"
+      return 1
+    fi
+    return 0
+  fi
+  if ! visudo -cf "$file" >/dev/null 2>&1; then
+    cp "$backup" "$file"
+    return 1
+  fi
+  return 0
+}
 
 while IFS= read -r sudoers_file; do
   [[ -n "$sudoers_file" && -f "$sudoers_file" ]] || continue
-  if sudo grep -qE "(^|[[:space:]])${run_user}[[:space:]].*NOPASSWD" "$sudoers_file" 2>/dev/null; then
-    backup="$(mktemp)"
-    sudo cp "$sudoers_file" "$backup"
-    sudo sed -i "/^${run_user}[[:space:]].*NOPASSWD/d" "$sudoers_file"
-    if sudo visudo -cf "$sudoers_file" >/dev/null 2>&1 || [[ "$sudoers_file" == /etc/sudoers ]]; then
-      if [[ "$sudoers_file" == /etc/sudoers ]] && ! sudo visudo -c >/dev/null 2>&1; then
-        sudo cp "$backup" "$sudoers_file"
-      else
-        echo "Removed NOPASSWD rule for ${run_user} from ${sudoers_file}"
-        removed=1
-      fi
-    else
-      sudo cp "$backup" "$sudoers_file"
-    fi
-    rm -f "$backup"
+  [[ "$sudoers_file" == "$sudoers_launcher" ]] && continue
+  if ! grep -qE "^${run_user}[[:space:]].*NOPASSWD" "$sudoers_file" 2>/dev/null; then
+    continue
   fi
-done < <(sudo grep -lE "(^|[[:space:]])${run_user}[[:space:]].*NOPASSWD" /etc/sudoers /etc/sudoers.d/* 2>/dev/null || true)
-
-if id -nG "$run_user" | tr ' ' '\n' | grep -qx sudo; then
-  if sudo deluser "$run_user" sudo >/dev/null 2>&1 || sudo gpasswd -d "$run_user" sudo >/dev/null 2>&1; then
-    echo "Removed ${run_user} from sudo group"
-    removed=1
+  backup="$(mktemp)"
+  cp "$sudoers_file" "$backup"
+  sed -i "/^${run_user}[[:space:]].*NOPASSWD/d" "$sudoers_file"
+  if ! restore_if_invalid "$sudoers_file" "$backup"; then
+    echo "::error::Refusing to keep invalid sudoers file ${sudoers_file}"
+    exit 1
   fi
-fi
+  rm -f "$backup"
+  echo "Removed broad NOPASSWD rule for ${run_user} from ${sudoers_file}"
+done < <(find /etc/sudoers /etc/sudoers.d -maxdepth 1 -type f 2>/dev/null || true)
 
-if (( removed == 0 )); then
-  echo '::notice::Could not revoke job-user sudo; portable tests run as unprivileged ai370ci'
-fi
+SUDO_DROP
+
+test_user="$(grep -E '^AI370_CI_TEST_USER=' /opt/ai370-ci/config 2>/dev/null | head -n1 | cut -d= -f2- | tr -d "'\" ")"
+test_user="${test_user:-ai370ci}"
 
 if sudo -n true 2>/dev/null; then
-  echo '::notice::Job user retains passwordless sudo; test steps use unprivileged ai370ci'
+  echo '::notice::Broad passwordless sudo remains on this image; tests still run only via the protected launcher'
 else
-  echo "Passwordless sudo revoked for ${run_user}"
+  echo "Broad passwordless sudo revoked for ${run_user}"
 fi
+
+if ! sudo -n "$launcher" id -un >/dev/null 2>&1; then
+  echo '::error::Constrained portable-test launcher is not usable after sudo drop'
+  exit 1
+fi
+
+if [[ "$(sudo -n "$launcher" id -un)" != "$test_user" ]]; then
+  echo "::error::Portable-test launcher did not execute as ${test_user}"
+  exit 1
+fi
+
+echo "Constrained portable-test launcher verified for ${run_user}"

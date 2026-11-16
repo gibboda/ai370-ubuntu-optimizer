@@ -16,6 +16,9 @@ concurrency:
   group: portable-tests-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  AI370_CI_ROOT: /opt/ai370-ci
+
 jobs:
   portable-tests:
     name: Portable tests
@@ -23,6 +26,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install protected portable CI helpers
+        shell: bash
+        run: bash .github/scripts/ci-install-protected-helpers.sh
 
       - name: Print runner disk and image metadata
         shell: bash
@@ -33,22 +40,22 @@ jobs:
 
       - name: Snapshot CI host drift canary
         shell: bash
-        run: bash .github/scripts/ci-host-drift-canary.sh snapshot "${RUNNER_TEMP}/ci-host-canary.txt"
+        run: bash "$AI370_CI_ROOT/helpers/ci-host-drift-canary.sh" snapshot "${RUNNER_TEMP}/ci-host-canary.txt"
 
       - name: Prepare unprivileged portable test user
         shell: bash
-        run: bash .github/scripts/ci-prepare-portable-test-user.sh
+        run: bash "$AI370_CI_ROOT/helpers/ci-prepare-portable-test-user.sh"
 
       - name: Drop runner sudo before portable tests
         shell: bash
-        run: bash .github/scripts/ci-drop-runner-sudo.sh
+        run: bash "$AI370_CI_ROOT/helpers/ci-drop-runner-sudo.sh"
 
       - name: Assert sudo is unavailable during tests
         shell: bash
         env:
           AI370_CI_NO_HOST_MUTATION: "1"
         run: |
-          bash .github/scripts/ci-as-test-user.sh bash -c '
+          bash "$AI370_CI_ROOT/bin/ci-as-test-user.sh" bash -c '
             if sudo -n true 2>/dev/null; then
               echo "::error::passwordless sudo is still available to the portable test user"
               exit 1
@@ -61,7 +68,7 @@ jobs:
         env:
           AI370_CI_NO_HOST_MUTATION: "1"
         run: |
-          bash .github/scripts/ci-as-test-user.sh python3 -m unittest \
+          bash "$AI370_CI_ROOT/bin/ci-as-test-user.sh" python3 -m unittest \
             tests.test_system_profile \
             tests.test_s1_m1_probe \
             tests.test_s1_m2_normalize \
@@ -97,41 +104,36 @@ jobs:
         env:
           AI370_CI_NO_HOST_MUTATION: "1"
         run: |
-          bash .github/scripts/ci-as-test-user.sh python3 -m unittest tests.test_agent_architecture_conformance
-          bash .github/scripts/ci-as-test-user.sh python3 -m unittest tests.test_agent_architecture_coverage
-          bash .github/scripts/ci-as-test-user.sh python3 -m unittest discover -s tests -p 'test_agent_architecture_mutations*.py'
+          bash "$AI370_CI_ROOT/bin/ci-as-test-user.sh" python3 -m unittest tests.test_agent_architecture_conformance
+          bash "$AI370_CI_ROOT/bin/ci-as-test-user.sh" python3 -m unittest tests.test_agent_architecture_coverage
+          bash "$AI370_CI_ROOT/bin/ci-as-test-user.sh" python3 -m unittest discover -s tests -p 'test_agent_architecture_mutations*.py'
 
       - name: Run portable smoke tests
         shell: bash
         env:
           AI370_CI_NO_HOST_MUTATION: "1"
         run: |
-          bash .github/scripts/ci-as-test-user.sh bash tests/smoke_tier1.sh
-          bash .github/scripts/ci-as-test-user.sh bash tests/smoke_stage2_platform.sh
-          bash .github/scripts/ci-as-test-user.sh bash tests/smoke_tier2.sh
+          bash "$AI370_CI_ROOT/bin/ci-as-test-user.sh" bash tests/smoke_tier1.sh
+          bash "$AI370_CI_ROOT/bin/ci-as-test-user.sh" bash tests/smoke_stage2_platform.sh
+          bash "$AI370_CI_ROOT/bin/ci-as-test-user.sh" bash tests/smoke_tier2.sh
 
-      - name: Prepare reports for artifact upload
+      - name: Stage reports for artifact upload
         if: always()
         shell: bash
-        run: |
-          sudo bash -c '
-            owner="$1"
-            if [[ -d reports && ! -L reports && -d reports/latest && ! -L reports/latest ]]; then
-              chown --no-dereference "$owner" reports
-              chown -R --no-dereference "$owner" reports/latest
-            fi
-          ' _ "$(id -u):$(id -g)"
+        env:
+          AI370_CI_NO_HOST_MUTATION: "1"
+        run: bash "$AI370_CI_ROOT/bin/ci-as-test-user.sh" bash "$AI370_CI_ROOT/helpers/ci-stage-reports-for-upload.sh"
 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: portable-test-reports-${{ github.run_id }}-${{ github.run_attempt }}
-          path: reports/latest/**
+          path: ${{ runner.temp }}/portable-test-reports/**
           if-no-files-found: ignore
           retention-days: 7
 
       - name: Verify CI host drift canary
         if: always()
         shell: bash
-        run: bash .github/scripts/ci-host-drift-canary.sh verify "${RUNNER_TEMP}/ci-host-canary.txt"
+        run: bash "$AI370_CI_ROOT/helpers/ci-host-drift-canary.sh" verify "${RUNNER_TEMP}/ci-host-canary.txt"

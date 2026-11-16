@@ -2,6 +2,11 @@
 # Run a command as the unprivileged portable-test user (no passwordless sudo).
 set -euo pipefail
 
+protected='/opt/ai370-ci/bin/ci-as-test-user.sh'
+if [[ -x "$protected" ]]; then
+  exec "$protected" "$@"
+fi
+
 test_user="${AI370_CI_TEST_USER:-ai370ci}"
 workspace="${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
 
